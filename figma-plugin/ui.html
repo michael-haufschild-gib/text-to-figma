@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text-to-Figma Bridge</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 12px;
+      color: #333;
+      padding: 16px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #000;
+    }
+
+    .status-section {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .status-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .status-label {
+      font-weight: 500;
+      color: #666;
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .status-connected {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .status-connected .status-dot {
+      background: #4caf50;
+    }
+
+    .status-disconnected {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .status-disconnected .status-dot {
+      background: #f44336;
+    }
+
+    .status-connecting {
+      background: #fff3e0;
+      color: #e65100;
+    }
+
+    .status-connecting .status-dot {
+      background: #ff9800;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .log-section {
+      background: white;
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .log-title {
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: #000;
+    }
+
+    .log-container {
+      background: #fafafa;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 10px;
+    }
+
+    .log-entry {
+      margin-bottom: 4px;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .log-entry:last-child {
+      margin-bottom: 0;
+    }
+
+    .log-info {
+      color: #1976d2;
+    }
+
+    .log-success {
+      color: #2e7d32;
+      background: #e8f5e9;
+    }
+
+    .log-error {
+      color: #c62828;
+      background: #ffebee;
+    }
+
+    .log-warning {
+      color: #e65100;
+      background: #fff3e0;
+    }
+
+    .reconnect-info {
+      font-size: 11px;
+      color: #666;
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    code {
+      background: #f5f5f5;
+      padding: 2px 4px;
+      border-radius: 2px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Text-to-Figma Bridge</h1>
+
+    <div class="status-section">
+      <div class="status-row">
+        <span class="status-label">WebSocket:</span>
+        <span id="ws-status" class="status-indicator status-disconnected">
+          <span class="status-dot"></span>
+          <span>Disconnected</span>
+        </span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Server:</span>
+        <code id="ws-url">ws://localhost:8080</code>
+      </div>
+      <p class="reconnect-info">Auto-reconnect enabled (5s interval)</p>
+    </div>
+
+    <div class="log-section">
+      <div class="log-title">Activity Log</div>
+      <div id="log-container" class="log-container"></div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    // TypeScript-like strict typing enforced via JSDoc
+    /**
+     * @typedef {'create_frame' | 'create_text'} CommandType
+     */
+
+    /**
+     * @typedef {Object} FigmaCommand
+     * @property {CommandType} type
+     * @property {Object} payload
+     */
+
+    /**
+     * @typedef {Object} PluginResponse
+     * @property {'success' | 'error'} status
+     * @property {string} message
+     * @property {string} [nodeId]
+     * @property {string} [error]
+     */
+
+    /**
+     * WebSocket connection state
+     */
+    let ws = null;
+    let reconnectInterval = null;
+    const WS_URL = 'ws://localhost:8080';
+    const RECONNECT_DELAY = 5000; // 5 seconds
+
+    /**
+     * Log entry to the UI
+     * @param {string} message - Log message
+     * @param {'info' | 'success' | 'error' | 'warning'} level - Log level
+     */
+    function log(message, level = 'info') {
+      const logContainer = document.getElementById('log-container');
+      if (!logContainer) return;
+
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${level}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logContainer.appendChild(entry);
+
+      // Auto-scroll to bottom
+      logContainer.scrollTop = logContainer.scrollHeight;
+
+      // Keep only last 50 entries
+      while (logContainer.children.length > 50) {
+        logContainer.removeChild(logContainer.firstChild);
+      }
+    }
+
+    /**
+     * Update connection status indicator
+     * @param {'connected' | 'disconnected' | 'connecting'} status
+     */
+    function updateStatus(status) {
+      const statusEl = document.getElementById('ws-status');
+      if (!statusEl) return;
+
+      statusEl.className = `status-indicator status-${status}`;
+
+      const statusText = {
+        connected: 'Connected',
+        disconnected: 'Disconnected',
+        connecting: 'Connecting...'
+      };
+
+      statusEl.innerHTML = `
+        <span class="status-dot"></span>
+        <span>${statusText[status]}</span>
+      `;
+    }
+
+    /**
+     * Validate WebSocket message structure
+     * @param {unknown} data - Raw message data
+     * @returns {data is FigmaCommand}
+     */
+    function isValidCommand(data) {
+      if (!data || typeof data !== 'object') return false;
+      const cmd = /** @type {Record<string, unknown>} */ (data);
+      return (
+        typeof cmd.type === 'string' &&
+        (cmd.type === 'create_frame' || cmd.type === 'create_text') &&
+        typeof cmd.payload === 'object' &&
+        cmd.payload !== null
+      );
+    }
+
+    /**
+     * Connect to WebSocket server
+     */
+    function connect() {
+      if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+        return; // Already connected or connecting
+      }
+
+      updateStatus('connecting');
+      log('Connecting to WebSocket server...', 'info');
+
+      try {
+        ws = new WebSocket(WS_URL);
+
+        ws.onopen = () => {
+          updateStatus('connected');
+          log('WebSocket connected', 'success');
+
+          // Clear reconnect interval
+          if (reconnectInterval) {
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+          }
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            // Parse and validate message
+            const data = JSON.parse(event.data);
+
+            if (!isValidCommand(data)) {
+              log('Invalid message format received', 'warning');
+              return;
+            }
+
+            const command = /** @type {FigmaCommand} */ (data);
+            log(`Command received: ${command.type}`, 'info');
+
+            // Forward to Figma plugin main thread
+            parent.postMessage({
+              pluginMessage: command
+            }, '*');
+
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            log(`Message parse error: ${errorMsg}`, 'error');
+          }
+        };
+
+        ws.onerror = (error) => {
+          log('WebSocket error occurred', 'error');
+          console.error('WebSocket error:', error);
+        };
+
+        ws.onclose = () => {
+          updateStatus('disconnected');
+          log('WebSocket disconnected', 'warning');
+          ws = null;
+
+          // Start reconnection attempts
+          if (!reconnectInterval) {
+            log(`Will retry in ${RECONNECT_DELAY / 1000}s...`, 'info');
+            reconnectInterval = setInterval(connect, RECONNECT_DELAY);
+          }
+        };
+
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        log(`Connection error: ${errorMsg}`, 'error');
+        updateStatus('disconnected');
+
+        // Start reconnection attempts
+        if (!reconnectInterval) {
+          reconnectInterval = setInterval(connect, RECONNECT_DELAY);
+        }
+      }
+    }
+
+    /**
+     * Handle messages from Figma plugin main thread
+     */
+    window.onmessage = (event) => {
+      try {
+        const message = event.data;
+
+        if (!message || typeof message !== 'object') {
+          return;
+        }
+
+        const msg = /** @type {Record<string, unknown>} */ (message);
+
+        // Handle plugin responses
+        if (msg.type === 'response' && msg.data) {
+          const response = /** @type {PluginResponse} */ (msg.data);
+
+          if (response.status === 'success') {
+            log(`Success: ${response.message}`, 'success');
+          } else if (response.status === 'error') {
+            log(`Error: ${response.message}`, 'error');
+            if (response.error) {
+              log(`Details: ${response.error}`, 'error');
+            }
+          }
+
+          // Send response back to WebSocket server if connected
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(response));
+          }
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        log(`Message handling error: ${errorMsg}`, 'error');
+      }
+    };
+
+    /**
+     * Initialize plugin UI
+     */
+    function init() {
+      log('Plugin UI initialized', 'info');
+      connect();
+    }
+
+    // Start on load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+      if (reconnectInterval) {
+        clearInterval(reconnectInterval);
+      }
+      if (ws) {
+        ws.close();
+      }
+    });
+  </script>
+</body>
+</html>

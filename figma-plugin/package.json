@@ -1,0 +1,12 @@
+{
+  "name": "figma-text-to-design-plugin",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.87.0",
+    "typescript": "^5.3.0"
+  }
+}

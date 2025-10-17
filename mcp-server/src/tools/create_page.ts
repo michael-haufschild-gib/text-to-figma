@@ -1,0 +1,111 @@
+/**
+ * MCP Tool: create_page
+ *
+ * Creates a new page in the Figma document.
+ *
+ * PRIMITIVE: Raw Figma page primitive.
+ * In Figma: figma.createPage()
+ * Use for: organizing designs, separating flows, multi-page documents
+ */
+
+import { z } from 'zod';
+import { getFigmaBridge } from '../figma-bridge.js';
+
+/**
+ * Input schema
+ */
+export const CreatePageInputSchema = z.object({
+  name: z.string().min(1).describe('Name for the new page')
+});
+
+export type CreatePageInput = z.infer<typeof CreatePageInputSchema>;
+
+/**
+ * Tool definition
+ */
+export const createPageToolDefinition = {
+  name: 'create_page',
+  description: `Creates a new page in the Figma document.
+
+PRIMITIVE: Raw Figma page primitive - not a pre-made component.
+Use for: organizing designs, separating user flows, multi-page documents.
+
+Example - Create Flow Page:
+create_page({
+  name: "User Onboarding Flow"
+})
+
+Example - Create Component Library Page:
+create_page({
+  name: "Design System - Components"
+})
+
+Example - Create Mockup Page:
+create_page({
+  name: "Mobile Mockups"
+})
+
+Use Cases:
+- Separate user flows (onboarding, checkout, etc.)
+- Organize component libraries
+- Create design iterations
+- Structure complex projects
+- Separate pages for different screen sizes
+
+Note: The new page becomes the current page after creation.`,
+  inputSchema: {
+    type: 'object' as const,
+    properties: {
+      name: {
+        type: 'string' as const,
+        description: 'Name for the new page'
+      }
+    },
+    required: ['name']
+  }
+};
+
+/**
+ * Result type
+ */
+export interface CreatePageResult {
+  pageId: string;
+  name: string;
+  message: string;
+}
+
+/**
+ * Implementation
+ */
+export async function createPage(
+  input: CreatePageInput
+): Promise<CreatePageResult> {
+  // Validate input
+  const validated = CreatePageInputSchema.parse(input);
+
+  // Get Figma bridge
+  const bridge = getFigmaBridge();
+
+  if (!bridge.isConnected()) {
+    throw new Error('Not connected to Figma. Ensure the plugin is running.');
+  }
+
+  // Send command to Figma
+  const response = await bridge.sendToFigma<{
+    success: boolean;
+    pageId?: string;
+    error?: string;
+  }>('create_page', {
+    name: validated.name
+  });
+
+  if (!response.success || !response.pageId) {
+    throw new Error(response.error || 'Failed to create page');
+  }
+
+  return {
+    pageId: response.pageId,
+    name: validated.name,
+    message: `Page "${validated.name}" created successfully`
+  };
+}

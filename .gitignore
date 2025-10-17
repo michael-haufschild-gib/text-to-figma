@@ -1,0 +1,69 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Node / TypeScript
+node_modules/
+**/node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+/build/
+/dist/
+/out/
+/.out/
+/.cache/
+.cache/
+coverage/
+**/coverage/
+*.tsbuildinfo
+
+# Env files
+.env
+.env.*
+.env.local
+.env.test
+.env.production
+
+# Editors/IDE
+.vscode/
+.idea/
+*.swp
+
+# Playwright / E2E
+playwright-report/
+playwright/.cache/
+.test-results/
+playwright/.playwright/
+
+# Figma plugin build artifacts
+figma-plugin/build/
+figma-plugin/dist/
+
+# MCP server build artifacts
+mcp-server/dist/
+
+# Tests workspace artifacts
+tests/node_modules/
+**/.DS_Store
+
+# Websocket server artifacts
+websocket-server/node_modules/
+websocket-server/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Lock/Temp
+.tmp/
+.temp/
+*.tmp
+*.temp

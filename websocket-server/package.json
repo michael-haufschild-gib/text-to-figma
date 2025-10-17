@@ -1,0 +1,22 @@
+{
+  "name": "text-to-figma-websocket-server",
+  "version": "1.0.0",
+  "description": "WebSocket bridge server for Text-to-Figma MCP integration",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "websocket",
+    "figma",
+    "mcp",
+    "bridge"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.16.0"
+  }
+}
