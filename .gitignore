@@ -41,6 +41,8 @@ playwright-report/
 playwright/.cache/
 .test-results/
 playwright/.playwright/
+screenshots/
+tests/
 
 # Figma plugin build artifacts
 figma-plugin/build/
@@ -48,6 +50,7 @@ figma-plugin/dist/
 
 # MCP server build artifacts
 mcp-server/dist/
+mcp-server/node_modules/
 
 # Tests workspace artifacts
 tests/node_modules/
