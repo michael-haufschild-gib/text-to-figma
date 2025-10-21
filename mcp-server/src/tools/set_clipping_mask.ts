@@ -17,7 +17,11 @@ import { getFigmaBridge } from '../figma-bridge.js';
 export const SetClippingMaskInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the frame or node'),
   enabled: z.boolean().describe('Enable or disable clipping'),
-  useMask: z.boolean().optional().default(false).describe('Use first child as mask (vector masking)')
+  useMask: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Use first child as mask (vector masking)')
 });
 
 export type SetClippingMaskInput = z.infer<typeof SetClippingMaskInputSchema>;
@@ -103,29 +107,24 @@ export interface SetClippingMaskResult {
 /**
  * Implementation
  */
-export async function setClippingMask(
-  input: SetClippingMaskInput
-): Promise<SetClippingMaskResult> {
+export async function setClippingMask(input: SetClippingMaskInput): Promise<SetClippingMaskResult> {
   // Validate input
   const validated = SetClippingMaskInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_clipping_mask', {
-    nodeId: validated.nodeId,
-    enabled: validated.enabled,
-    useMask: validated.useMask
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set clipping mask');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_clipping_mask',
+    {
+      nodeId: validated.nodeId,
+      enabled: validated.enabled,
+      useMask: validated.useMask
+    }
+  )
 
   // Build CSS equivalent
   let cssEquivalent: string;

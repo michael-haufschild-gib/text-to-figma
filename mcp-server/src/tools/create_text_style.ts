@@ -18,11 +18,30 @@ export const CreateTextStyleInputSchema = z.object({
   name: z.string().min(1).describe('Name for the text style'),
   fontFamily: z.string().optional().default('Inter').describe('Font family'),
   fontSize: z.number().positive().describe('Font size in pixels'),
-  fontWeight: z.number().int().min(100).max(900).optional().default(400).describe('Font weight (100-900)'),
-  lineHeight: z.number().positive().optional().describe('Line height in pixels (auto if not specified)'),
+  fontWeight: z
+    .number()
+    .int()
+    .min(100)
+    .max(900)
+    .optional()
+    .default(400)
+    .describe('Font weight (100-900)'),
+  lineHeight: z
+    .number()
+    .positive()
+    .optional()
+    .describe('Line height in pixels (auto if not specified)'),
   letterSpacing: z.number().optional().describe('Letter spacing in pixels or percent'),
-  textCase: z.enum(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE']).optional().default('ORIGINAL').describe('Text case transformation'),
-  textDecoration: z.enum(['NONE', 'UNDERLINE', 'STRIKETHROUGH']).optional().default('NONE').describe('Text decoration'),
+  textCase: z
+    .enum(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE'])
+    .optional()
+    .default('ORIGINAL')
+    .describe('Text case transformation'),
+  textDecoration: z
+    .enum(['NONE', 'UNDERLINE', 'STRIKETHROUGH'])
+    .optional()
+    .default('NONE')
+    .describe('Text decoration'),
   description: z.string().optional().describe('Optional description of the text style')
 });
 
@@ -146,35 +165,29 @@ export interface CreateTextStyleResult {
 /**
  * Implementation
  */
-export async function createTextStyle(
-  input: CreateTextStyleInput
-): Promise<CreateTextStyleResult> {
+export async function createTextStyle(input: CreateTextStyleInput): Promise<CreateTextStyleResult> {
   // Validate input
   const validated = CreateTextStyleInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; styleId?: string; error?: string }>('create_text_style', {
-    name: validated.name,
-    fontFamily: validated.fontFamily,
-    fontSize: validated.fontSize,
-    fontWeight: validated.fontWeight,
-    lineHeight: validated.lineHeight,
-    letterSpacing: validated.letterSpacing,
-    textCase: validated.textCase,
-    textDecoration: validated.textDecoration,
-    description: validated.description
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create text style');
-  }
+  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; styleId?: string; error?: string }>(
+    'create_text_style',
+    {
+      name: validated.name,
+      fontFamily: validated.fontFamily,
+      fontSize: validated.fontSize,
+      fontWeight: validated.fontWeight,
+      lineHeight: validated.lineHeight,
+      letterSpacing: validated.letterSpacing,
+      textCase: validated.textCase,
+      textDecoration: validated.textDecoration,
+      description: validated.description
+    }
+  );
+  // Note: Response validated by bridge at protocol level
 
   return {
     styleId: response.styleId || '',

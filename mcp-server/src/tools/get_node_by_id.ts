@@ -68,6 +68,7 @@ Use Cases:
  * Result type
  */
 export interface GetNodeByIdResult {
+  success: true;
   nodeId: string;
   name: string;
   type: string;
@@ -78,27 +79,23 @@ export interface GetNodeByIdResult {
   parentId?: string;
   childrenCount?: number;
   message: string;
+  timestamp: string;
 }
 
 /**
  * Implementation
  */
-export async function getNodeById(
-  input: GetNodeByIdInput
-): Promise<GetNodeByIdResult> {
+export async function getNodeById(input: GetNodeByIdInput): Promise<GetNodeByIdResult> {
   // Validate input
   const validated = GetNodeByIdInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
-    success: boolean;
+  // Note: Bridge unwraps response, returns data on success, throws on failure
+  const response = await bridge.sendToFigmaWithRetry<{
+    exists: boolean;
     node?: {
       id: string;
       name: string;
@@ -115,13 +112,14 @@ export async function getNodeById(
     nodeId: validated.nodeId
   });
 
-  if (!response.success || !response.node) {
+  if (!response.exists || !response.node) {
     throw new Error(response.error || 'Node not found');
   }
 
   const node = response.node;
 
   return {
+    success: true as const,
     nodeId: node.id,
     name: node.name,
     type: node.type,
@@ -131,6 +129,7 @@ export async function getNodeById(
     y: node.y,
     parentId: node.parentId,
     childrenCount: node.childrenCount,
-    message: `Found ${node.type} node "${node.name}"`
+    message: `Found ${node.type} node "${node.name}"`,
+    timestamp: new Date().toISOString()
   };
 }

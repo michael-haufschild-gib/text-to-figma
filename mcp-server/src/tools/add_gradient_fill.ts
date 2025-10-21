@@ -27,7 +27,11 @@ export const AddGradientFillInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to apply gradient to'),
   type: z.enum(['LINEAR', 'RADIAL']).describe('Gradient type: LINEAR or RADIAL'),
   stops: z.array(GradientStopSchema).min(2).describe('Gradient color stops (minimum 2)'),
-  angle: z.number().optional().default(0).describe('Angle in degrees for LINEAR gradient (0 = left to right, 90 = bottom to top)'),
+  angle: z
+    .number()
+    .optional()
+    .default(0)
+    .describe('Angle in degrees for LINEAR gradient (0 = left to right, 90 = bottom to top)'),
   opacity: z.number().min(0).max(1).optional().default(1).describe('Overall gradient opacity (0-1)')
 });
 
@@ -146,9 +150,7 @@ export interface AddGradientFillResult {
 /**
  * Implementation
  */
-export async function addGradientFill(
-  input: AddGradientFillInput
-): Promise<AddGradientFillResult> {
+export async function addGradientFill(input: AddGradientFillInput): Promise<AddGradientFillResult> {
   // Validate input
   const validated = AddGradientFillInputSchema.parse(input);
 
@@ -160,36 +162,33 @@ export async function addGradientFill(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('add_gradient_fill', {
-    nodeId: validated.nodeId,
-    type: validated.type,
-    stops: validated.stops,
-    angle: validated.angle,
-    opacity: validated.opacity
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to add gradient fill');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'add_gradient_fill',
+    {
+      nodeId: validated.nodeId,
+      type: validated.type,
+      stops: validated.stops,
+      angle: validated.angle,
+      opacity: validated.opacity
+    }
+  )
 
   // Build CSS equivalent
   let cssEquivalent = '';
 
   if (validated.type === 'LINEAR') {
     const stopsCSS = validated.stops
-      .map(stop => `${stop.color} ${Math.round(stop.position * 100)}%`)
+      .map((stop) => `${stop.color} ${Math.round(stop.position * 100)}%`)
       .join(', ');
 
     cssEquivalent = `background: linear-gradient(${validated.angle}deg, ${stopsCSS});`;
   } else {
     // RADIAL
     const stopsCSS = validated.stops
-      .map(stop => `${stop.color} ${Math.round(stop.position * 100)}%`)
+      .map((stop) => `${stop.color} ${Math.round(stop.position * 100)}%`)
       .join(', ');
 
     cssEquivalent = `background: radial-gradient(circle, ${stopsCSS});`;

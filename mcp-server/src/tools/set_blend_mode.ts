@@ -16,26 +16,28 @@ import { getFigmaBridge } from '../figma-bridge.js';
  */
 export const SetBlendModeInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node'),
-  blendMode: z.enum([
-    'NORMAL',
-    'DARKEN',
-    'MULTIPLY',
-    'LINEAR_BURN',
-    'COLOR_BURN',
-    'LIGHTEN',
-    'SCREEN',
-    'LINEAR_DODGE',
-    'COLOR_DODGE',
-    'OVERLAY',
-    'SOFT_LIGHT',
-    'HARD_LIGHT',
-    'DIFFERENCE',
-    'EXCLUSION',
-    'HUE',
-    'SATURATION',
-    'COLOR',
-    'LUMINOSITY'
-  ]).describe('Blend mode for compositing')
+  blendMode: z
+    .enum([
+      'NORMAL',
+      'DARKEN',
+      'MULTIPLY',
+      'LINEAR_BURN',
+      'COLOR_BURN',
+      'LIGHTEN',
+      'SCREEN',
+      'LINEAR_DODGE',
+      'COLOR_DODGE',
+      'OVERLAY',
+      'SOFT_LIGHT',
+      'HARD_LIGHT',
+      'DIFFERENCE',
+      'EXCLUSION',
+      'HUE',
+      'SATURATION',
+      'COLOR',
+      'LUMINOSITY'
+    ])
+    .describe('Blend mode for compositing')
 });
 
 export type SetBlendModeInput = z.infer<typeof SetBlendModeInputSchema>;
@@ -141,28 +143,23 @@ export interface SetBlendModeResult {
 /**
  * Implementation
  */
-export async function setBlendMode(
-  input: SetBlendModeInput
-): Promise<SetBlendModeResult> {
+export async function setBlendMode(input: SetBlendModeInput): Promise<SetBlendModeResult> {
   // Validate input
   const validated = SetBlendModeInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_blend_mode', {
-    nodeId: validated.nodeId,
-    blendMode: validated.blendMode
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set blend mode');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_blend_mode',
+    {
+      nodeId: validated.nodeId,
+      blendMode: validated.blendMode
+    }
+  )
 
   // Map Figma blend modes to CSS (most are 1:1, some need conversion)
   const cssBlendModeMap: Record<string, string> = {
@@ -186,7 +183,8 @@ export async function setBlendMode(
     LUMINOSITY: 'luminosity'
   };
 
-  const cssBlendMode = cssBlendModeMap[validated.blendMode] || validated.blendMode.toLowerCase().replace(/_/g, '-');
+  const cssBlendMode =
+    cssBlendModeMap[validated.blendMode] || validated.blendMode.toLowerCase().replace(/_/g, '-');
   const cssEquivalent = `mix-blend-mode: ${cssBlendMode};`;
 
   return {

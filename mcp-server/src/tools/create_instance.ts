@@ -24,7 +24,10 @@ const textOverrideSchema = z.object({
 const fillOverrideSchema = z.object({
   type: z.literal('fill'),
   nodeId: z.string().describe('ID of the node to change fill'),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).describe('New color in hex format')
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .describe('New color in hex format')
 });
 
 /**
@@ -70,7 +73,7 @@ export async function createInstance(input: CreateInstanceInput): Promise<Create
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  const response = await bridge.sendToFigma<{ instanceId: string }>('create_instance', {
+  const response = await bridge.sendToFigmaWithRetry<{ instanceId: string }>('create_instance', {
     componentId: validated.componentId,
     name: validated.name,
     x: validated.x,

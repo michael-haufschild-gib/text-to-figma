@@ -38,7 +38,7 @@ export async function createComponent(input: CreateComponentInput): Promise<Crea
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  const response = await bridge.sendToFigma<{ componentId: string }>('create_component', {
+  const response = await bridge.sendToFigmaWithRetry<{ componentId: string }>('create_component', {
     frameId: validated.frameId,
     name: validated.name,
     description: validated.description
@@ -93,7 +93,7 @@ Example workflow:
       },
       description: {
         type: 'string' as const,
-        description: 'Optional description explaining the component\'s purpose and usage'
+        description: "Optional description explaining the component's purpose and usage"
       }
     },
     required: ['frameId', 'name']

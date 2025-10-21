@@ -12,7 +12,11 @@ import { z } from 'zod';
  */
 export const gridConfigSchema = z.object({
   columns: z.number().int().positive().default(12).describe('Number of columns in the grid'),
-  columnGap: z.number().nonnegative().default(16).describe('Horizontal gap between columns in pixels'),
+  columnGap: z
+    .number()
+    .nonnegative()
+    .default(16)
+    .describe('Horizontal gap between columns in pixels'),
   rowGap: z.number().nonnegative().default(16).describe('Vertical gap between rows in pixels'),
   padding: z.number().nonnegative().default(24).describe('Container padding in pixels'),
   maxWidth: z.number().positive().optional().describe('Maximum container width in pixels')
@@ -108,7 +112,7 @@ export const DEFAULT_BREAKPOINTS: Breakpoint[] = [
  */
 function calculateColumnWidth(config: GridConfig, containerWidth: number): number {
   const totalGapWidth = config.columnGap * (config.columns - 1);
-  const availableWidth = containerWidth - (config.padding * 2) - totalGapWidth;
+  const availableWidth = containerWidth - config.padding * 2 - totalGapWidth;
   return availableWidth / config.columns;
 }
 
@@ -121,7 +125,9 @@ function validateGridItem(item: GridItem, columns: number): void {
   }
 
   if (item.columnStart !== undefined && item.columnStart > columns) {
-    throw new Error(`Grid item ${item.id}: columnStart (${item.columnStart}) exceeds grid columns (${columns})`);
+    throw new Error(
+      `Grid item ${item.id}: columnStart (${item.columnStart}) exceeds grid columns (${columns})`
+    );
   }
 
   if (item.columnSpan < 1) {
@@ -129,7 +135,9 @@ function validateGridItem(item: GridItem, columns: number): void {
   }
 
   if (item.columnStart !== undefined && item.columnStart + item.columnSpan - 1 > columns) {
-    throw new Error(`Grid item ${item.id}: item spans beyond grid (start: ${item.columnStart}, span: ${item.columnSpan}, columns: ${columns})`);
+    throw new Error(
+      `Grid item ${item.id}: item spans beyond grid (start: ${item.columnStart}, span: ${item.columnSpan}, columns: ${columns})`
+    );
   }
 
   if (item.rowStart !== undefined && item.rowStart < 1) {
@@ -144,7 +152,10 @@ function validateGridItem(item: GridItem, columns: number): void {
 /**
  * Auto-placement algorithm for grid items without explicit positioning
  */
-function autoPlaceItems(items: GridItem[], columns: number): Map<string, { column: number; row: number }> {
+function autoPlaceItems(
+  items: GridItem[],
+  columns: number
+): Map<string, { column: number; row: number }> {
   const placements = new Map<string, { column: number; row: number }>();
   const occupiedCells = new Set<string>();
 
@@ -153,8 +164,8 @@ function autoPlaceItems(items: GridItem[], columns: number): Map<string, { colum
     if (a.order !== undefined && b.order !== undefined) {
       return a.order - b.order;
     }
-    if (a.order !== undefined) return -1;
-    if (b.order !== undefined) return 1;
+    if (a.order !== undefined) {return -1;}
+    if (b.order !== undefined) {return 1;}
     return 0;
   });
 
@@ -196,7 +207,7 @@ function autoPlaceItems(items: GridItem[], columns: number): Map<string, { colum
             break;
           }
         }
-        if (!canPlace) break;
+        if (!canPlace) {break;}
       }
 
       if (canPlace) {
@@ -244,7 +255,7 @@ export function calculateGridLayout(
   const validatedConfig = gridConfigSchema.parse(config);
 
   // Validate all items
-  items.forEach(item => validateGridItem(item, validatedConfig.columns));
+  items.forEach((item) => validateGridItem(item, validatedConfig.columns));
 
   // Determine container width
   const actualContainerWidth = containerWidth ?? validatedConfig.maxWidth ?? 1200;
@@ -256,21 +267,22 @@ export function calculateGridLayout(
   const placements = autoPlaceItems(items, validatedConfig.columns);
 
   // Calculate positioned items
-  const positionedItems: PositionedGridItem[] = items.map(item => {
+  const positionedItems: PositionedGridItem[] = items.map((item) => {
     const placement = placements.get(item.id);
     const columnStart = item.columnStart ?? placement?.column ?? 1;
     const rowStart = item.rowStart ?? placement?.row ?? 1;
 
     // Calculate x position
-    const x = validatedConfig.padding +
-              (columnStart - 1) * (columnWidth + validatedConfig.columnGap);
+    const x =
+      validatedConfig.padding + (columnStart - 1) * (columnWidth + validatedConfig.columnGap);
 
     // Calculate width
-    const calculatedWidth = item.width ??
-      (columnWidth * item.columnSpan + validatedConfig.columnGap * (item.columnSpan - 1));
+    const calculatedWidth =
+      item.width ??
+      columnWidth * item.columnSpan + validatedConfig.columnGap * (item.columnSpan - 1);
 
     // Calculate y position (will be updated after we know row heights)
-    const y = validatedConfig.padding + (rowStart - 1) * (validatedConfig.rowGap);
+    const y = validatedConfig.padding + (rowStart - 1) * validatedConfig.rowGap;
 
     // Use provided height or default
     const calculatedHeight = item.height ?? 100;
@@ -308,7 +320,7 @@ export function calculateGridLayout(
   }
 
   // Calculate total rows and container height
-  const maxRow = Math.max(...positionedItems.map(item => item.rowStart + item.rowSpan - 1));
+  const maxRow = Math.max(...positionedItems.map((item) => item.rowStart + item.rowSpan - 1));
   let containerHeight = validatedConfig.padding;
 
   for (let r = 1; r <= maxRow; r++) {
@@ -337,7 +349,7 @@ export function getBreakpointConfig(
   baseConfig: GridConfig = { columns: 12, columnGap: 16, rowGap: 16, padding: 24 }
 ): GridConfig {
   // Find matching breakpoint
-  const breakpoint = breakpoints.find(bp => {
+  const breakpoint = breakpoints.find((bp) => {
     const meetsMin = viewportWidth >= bp.minWidth;
     const meetsMax = bp.maxWidth === undefined || viewportWidth <= bp.maxWidth;
     return meetsMin && meetsMax;
@@ -384,7 +396,7 @@ export function convertGridToFigmaFrames(
     width: layout.containerWidth,
     height: layout.containerHeight,
     layoutMode: 'NONE',
-    children: layout.items.map(item => ({
+    children: layout.items.map((item) => ({
       type: 'FRAME',
       name: item.id,
       x: item.x,
@@ -436,6 +448,6 @@ export function generateCssGridItem(item: GridItem): string {
   }
 
   return `.grid-item-${item.id} {
-  ${rules.map(rule => `${rule};`).join('\n  ')}
+  ${rules.map((rule) => `${rule};`).join('\n  ')}
 }`;
 }

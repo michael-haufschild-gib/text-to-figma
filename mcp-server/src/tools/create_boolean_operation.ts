@@ -16,8 +16,14 @@ import { getFigmaBridge } from '../figma-bridge.js';
  */
 export const CreateBooleanOperationInputSchema = z.object({
   nodeIds: z.array(z.string().min(1)).min(2).describe('Array of node IDs to combine (minimum 2)'),
-  operation: z.enum(['UNION', 'SUBTRACT', 'INTERSECT', 'EXCLUDE']).describe('Boolean operation type'),
-  name: z.string().optional().default('Boolean Group').describe('Name for the resulting boolean node')
+  operation: z
+    .enum(['UNION', 'SUBTRACT', 'INTERSECT', 'EXCLUDE'])
+    .describe('Boolean operation type'),
+  name: z
+    .string()
+    .optional()
+    .default('Boolean Group')
+    .describe('Name for the resulting boolean node')
 });
 
 export type CreateBooleanOperationInput = z.infer<typeof CreateBooleanOperationInputSchema>;
@@ -121,20 +127,16 @@ export async function createBooleanOperation(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; nodeId?: string; error?: string }>('create_boolean_operation', {
-    nodeIds: validated.nodeIds,
-    operation: validated.operation,
-    name: validated.name
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create boolean operation');
-  }
+  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
+    'create_boolean_operation',
+    {
+      nodeIds: validated.nodeIds,
+      operation: validated.operation,
+      name: validated.name
+    }
+  );
+  // Note: Response validated by bridge at protocol level
 
   // Build CSS equivalent and description
   const operationLabel = {

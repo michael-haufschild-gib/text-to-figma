@@ -111,20 +111,17 @@ export async function setParagraphSpacing(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_paragraph_spacing', {
-    nodeId: validated.nodeId,
-    paragraphSpacing: validated.paragraphSpacing,
-    paragraphIndent: validated.paragraphIndent
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set paragraph spacing');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_paragraph_spacing',
+    {
+      nodeId: validated.nodeId,
+      paragraphSpacing: validated.paragraphSpacing,
+      paragraphIndent: validated.paragraphIndent
+    }
+  )
 
   // Build CSS equivalent
   let cssEquivalent = 'p {\n';
@@ -141,7 +138,12 @@ export async function setParagraphSpacing(
     parts.push(`paragraph spacing: ${validated.paragraphSpacing}px`);
   }
   if (validated.paragraphIndent !== undefined) {
-    const indentType = validated.paragraphIndent > 0 ? 'indent' : validated.paragraphIndent < 0 ? 'hanging indent' : 'no indent';
+    const indentType =
+      validated.paragraphIndent > 0
+        ? 'indent'
+        : validated.paragraphIndent < 0
+          ? 'hanging indent'
+          : 'no indent';
     parts.push(`${indentType}: ${Math.abs(validated.paragraphIndent)}px`);
   }
 

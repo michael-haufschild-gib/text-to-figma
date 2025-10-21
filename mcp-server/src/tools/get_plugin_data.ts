@@ -80,21 +80,15 @@ export interface GetPluginDataResult {
 /**
  * Implementation
  */
-export async function getPluginData(
-  input: GetPluginDataInput
-): Promise<GetPluginDataResult> {
+export async function getPluginData(input: GetPluginDataInput): Promise<GetPluginDataResult> {
   // Validate input
   const validated = GetPluginDataInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
+  const response = await bridge.sendToFigmaWithRetry<{
     success: boolean;
     value?: string;
     error?: string;
@@ -102,10 +96,7 @@ export async function getPluginData(
     nodeId: validated.nodeId,
     key: validated.key
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to get plugin data');
-  }
+  // Note: Response validated by bridge at protocol level
 
   const value = response.value || '';
   const hasValue = value.length > 0;

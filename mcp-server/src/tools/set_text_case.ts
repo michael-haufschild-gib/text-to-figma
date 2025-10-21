@@ -96,28 +96,23 @@ export interface SetTextCaseResult {
 /**
  * Implementation
  */
-export async function setTextCase(
-  input: SetTextCaseInput
-): Promise<SetTextCaseResult> {
+export async function setTextCase(input: SetTextCaseInput): Promise<SetTextCaseResult> {
   // Validate input
   const validated = SetTextCaseInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_text_case', {
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_text_case',
+    {
     nodeId: validated.nodeId,
     textCase: validated.textCase
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set text case');
   }
+  )
 
   // Build CSS equivalent
   const cssMap = {

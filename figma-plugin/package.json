@@ -3,10 +3,19 @@
   "version": "1.0.0",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --check \"*.ts\"",
+    "format:fix": "prettier --write \"*.ts\"",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@figma/plugin-typings": "^1.87.0",
+    "@figma/plugin-typings": "^1.118.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
     "typescript": "^5.3.0"
   }
 }

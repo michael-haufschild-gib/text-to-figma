@@ -72,21 +72,15 @@ export interface GetParentResult {
 /**
  * Implementation
  */
-export async function getParent(
-  input: GetParentInput
-): Promise<GetParentResult> {
+export async function getParent(input: GetParentInput): Promise<GetParentResult> {
   // Validate input
   const validated = GetParentInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
+  const response = await bridge.sendToFigmaWithRetry<{
     success: boolean;
     parent?: {
       id: string;
@@ -97,10 +91,7 @@ export async function getParent(
   }>('get_parent', {
     nodeId: validated.nodeId
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to get parent');
-  }
+  // Note: Response validated by bridge at protocol level
 
   if (!response.parent) {
     return {

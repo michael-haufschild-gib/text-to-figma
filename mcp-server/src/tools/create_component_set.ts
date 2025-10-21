@@ -15,7 +15,10 @@ import { getFigmaBridge } from '../figma-bridge.js';
  * Input schema
  */
 export const CreateComponentSetInputSchema = z.object({
-  componentIds: z.array(z.string().min(1)).min(2).describe('Array of component IDs to combine as variants (minimum 2)'),
+  componentIds: z
+    .array(z.string().min(1))
+    .min(2)
+    .describe('Array of component IDs to combine as variants (minimum 2)'),
   name: z.string().min(1).describe('Name for the component set'),
   description: z.string().optional().describe('Optional description')
 });
@@ -105,20 +108,17 @@ export async function createComponentSet(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; componentSetId?: string; error?: string }>('create_component_set', {
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    componentSetId?: string;
+    error?: string;
+  }>('create_component_set', {
     componentIds: validated.componentIds,
     name: validated.name,
     description: validated.description
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create component set');
-  }
+  // Note: Response validated by bridge at protocol level
 
   return {
     componentSetId: response.componentSetId || '',

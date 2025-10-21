@@ -104,9 +104,7 @@ export interface SetLayoutSizingResult {
 /**
  * Implementation
  */
-export async function setLayoutSizing(
-  input: SetLayoutSizingInput
-): Promise<SetLayoutSizingResult> {
+export async function setLayoutSizing(input: SetLayoutSizingInput): Promise<SetLayoutSizingResult> {
   // Validate input
   const validated = SetLayoutSizingInputSchema.parse(input);
 
@@ -117,35 +115,25 @@ export async function setLayoutSizing(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
-    success: boolean;
-    error?: string;
-  }>('set_layout_sizing', {
+  // Note: Response validated by bridge at protocol level
+  await bridge.sendToFigma('set_layout_sizing', {
     nodeId: validated.nodeId,
     horizontal: validated.horizontal,
     vertical: validated.vertical
   });
 
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set layout sizing');
-  }
-
   // Build CSS equivalent
   const cssParts: string[] = [];
   if (validated.horizontal) {
-    if (validated.horizontal === 'FIXED') cssParts.push('width: [fixed]px');
-    else if (validated.horizontal === 'HUG') cssParts.push('width: fit-content');
-    else if (validated.horizontal === 'FILL') cssParts.push('flex: 1');
+    if (validated.horizontal === 'FIXED') {cssParts.push('width: [fixed]px');}
+    else if (validated.horizontal === 'HUG') {cssParts.push('width: fit-content');}
+    else if (validated.horizontal === 'FILL') {cssParts.push('flex: 1');}
   }
   if (validated.vertical) {
-    if (validated.vertical === 'FIXED') cssParts.push('height: [fixed]px');
-    else if (validated.vertical === 'HUG') cssParts.push('height: fit-content');
-    else if (validated.vertical === 'FILL') cssParts.push('align-self: stretch');
+    if (validated.vertical === 'FIXED') {cssParts.push('height: [fixed]px');}
+    else if (validated.vertical === 'HUG') {cssParts.push('height: fit-content');}
+    else if (validated.vertical === 'FILL') {cssParts.push('align-self: stretch');}
   }
 
   const cssEquivalent = cssParts.join('; ');

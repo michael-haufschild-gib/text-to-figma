@@ -16,8 +16,14 @@ import { getFigmaBridge } from '../figma-bridge.js';
  */
 export const AddVariantPropertyInputSchema = z.object({
   componentSetId: z.string().min(1).describe('ID of the component set'),
-  propertyName: z.string().min(1).describe('Name of the variant property (e.g., "State", "Size", "Theme")'),
-  values: z.array(z.string().min(1)).min(2).describe('Array of possible values (e.g., ["Default", "Hover", "Pressed"])')
+  propertyName: z
+    .string()
+    .min(1)
+    .describe('Name of the variant property (e.g., "State", "Size", "Theme")'),
+  values: z
+    .array(z.string().min(1))
+    .min(2)
+    .describe('Array of possible values (e.g., ["Default", "Hover", "Pressed"])')
 });
 
 export type AddVariantPropertyInput = z.infer<typeof AddVariantPropertyInputSchema>;
@@ -105,20 +111,17 @@ export async function addVariantProperty(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('add_variant_property', {
-    componentSetId: validated.componentSetId,
-    propertyName: validated.propertyName,
-    values: validated.values
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to add variant property');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'add_variant_property',
+    {
+      componentSetId: validated.componentSetId,
+      propertyName: validated.propertyName,
+      values: validated.values
+    }
+  )
 
   return {
     componentSetId: validated.componentSetId,

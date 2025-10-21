@@ -69,43 +69,38 @@ Note: The new page becomes the current page after creation.`,
  * Result type
  */
 export interface CreatePageResult {
+  success: true;
   pageId: string;
   name: string;
   message: string;
+  timestamp: string;
 }
 
 /**
  * Implementation
  */
-export async function createPage(
-  input: CreatePageInput
-): Promise<CreatePageResult> {
+export async function createPage(input: CreatePageInput): Promise<CreatePageResult> {
   // Validate input
   const validated = CreatePageInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
-    success: boolean;
-    pageId?: string;
-    error?: string;
+  // Note: Bridge unwraps response, returns data on success, throws on failure
+  const response = await bridge.sendToFigmaWithRetry<{
+    pageId: string;
+    name: string;
+    message: string;
   }>('create_page', {
     name: validated.name
   });
 
-  if (!response.success || !response.pageId) {
-    throw new Error(response.error || 'Failed to create page');
-  }
-
   return {
+    success: true as const,
     pageId: response.pageId,
     name: validated.name,
-    message: `Page "${validated.name}" created successfully`
+    message: `Page "${validated.name}" created successfully`,
+    timestamp: new Date().toISOString()
   };
 }

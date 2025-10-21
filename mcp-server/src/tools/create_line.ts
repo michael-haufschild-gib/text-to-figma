@@ -19,10 +19,26 @@ export const CreateLineInputSchema = z.object({
   y1: z.number().describe('Starting Y coordinate'),
   x2: z.number().describe('Ending X coordinate'),
   y2: z.number().describe('Ending Y coordinate'),
-  strokeColor: z.string().optional().default('#000000').describe('Line color in hex (default: black)'),
-  strokeWeight: z.number().positive().optional().default(1).describe('Line thickness in pixels (default: 1)'),
-  strokeCap: z.enum(['NONE', 'ROUND', 'SQUARE']).optional().default('NONE').describe('Line end cap style'),
-  dashPattern: z.array(z.number()).optional().describe('Dash pattern [dashLength, gapLength] for dashed lines'),
+  strokeColor: z
+    .string()
+    .optional()
+    .default('#000000')
+    .describe('Line color in hex (default: black)'),
+  strokeWeight: z
+    .number()
+    .positive()
+    .optional()
+    .default(1)
+    .describe('Line thickness in pixels (default: 1)'),
+  strokeCap: z
+    .enum(['NONE', 'ROUND', 'SQUARE'])
+    .optional()
+    .default('NONE')
+    .describe('Line end cap style'),
+  dashPattern: z
+    .array(z.number())
+    .optional()
+    .describe('Dash pattern [dashLength, gapLength] for dashed lines'),
   name: z.string().optional().default('Line').describe('Name for the line node'),
   parentId: z.string().optional().describe('Parent frame ID (optional)')
 });
@@ -135,36 +151,30 @@ export interface CreateLineResult {
 /**
  * Implementation
  */
-export async function createLine(
-  input: CreateLineInput
-): Promise<CreateLineResult> {
+export async function createLine(input: CreateLineInput): Promise<CreateLineResult> {
   // Validate input
   const validated = CreateLineInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; nodeId?: string; error?: string }>('create_line', {
-    x1: validated.x1,
-    y1: validated.y1,
-    x2: validated.x2,
-    y2: validated.y2,
-    strokeColor: validated.strokeColor,
-    strokeWeight: validated.strokeWeight,
-    strokeCap: validated.strokeCap,
-    dashPattern: validated.dashPattern,
-    name: validated.name,
-    parentId: validated.parentId
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create line');
-  }
+  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
+    'create_line',
+    {
+      x1: validated.x1,
+      y1: validated.y1,
+      x2: validated.x2,
+      y2: validated.y2,
+      strokeColor: validated.strokeColor,
+      strokeWeight: validated.strokeWeight,
+      strokeCap: validated.strokeCap,
+      dashPattern: validated.dashPattern,
+      name: validated.name,
+      parentId: validated.parentId
+    }
+  );
+  // Note: Response validated by bridge at protocol level
 
   // Calculate line properties
   const dx = validated.x2 - validated.x1;
@@ -187,7 +197,7 @@ export async function createLine(
     }
   } else {
     // Diagonal line - use SVG or transform
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
     cssEquivalent = `/* Diagonal line - use SVG or CSS transform */
 width: ${length}px;
 height: ${validated.strokeWeight}px;

@@ -61,44 +61,40 @@ Use Cases:
  * Result type
  */
 export interface ListPagesResult {
+  success: true;
   pageCount: number;
   pages: PageInfo[];
   currentPageId?: string;
   message: string;
+  timestamp: string;
 }
 
 /**
  * Implementation
  */
-export async function listPages(
-  input: ListPagesInput
-): Promise<ListPagesResult> {
+export async function listPages(input: ListPagesInput): Promise<ListPagesResult> {
   // Validate input
   ListPagesInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
-    success: boolean;
-    pages?: PageInfo[];
-    currentPageId?: string;
-    error?: string;
+  // Note: Bridge unwraps response, returns data on success, throws on failure
+  const response = await bridge.sendToFigmaWithRetry<{
+    pages: PageInfo[];
+    message: string;
   }>('list_pages', {});
 
-  if (!response.success || !response.pages) {
-    throw new Error(response.error || 'Failed to list pages');
+  if (!response.pages) {
+    throw new Error('Failed to list pages');
   }
 
   return {
+    success: true as const,
     pageCount: response.pages.length,
     pages: response.pages,
-    currentPageId: response.currentPageId,
-    message: `Found ${response.pages.length} page(s)`
+    message: `Found ${response.pages.length} page(s)`,
+    timestamp: new Date().toISOString()
   };
 }

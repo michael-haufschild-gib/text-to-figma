@@ -47,7 +47,7 @@ export interface XYZ {
  */
 const D65_WHITE_POINT = {
   x: 95.047,
-  y: 100.000,
+  y: 100.0,
   z: 108.883
 } as const;
 
@@ -72,8 +72,8 @@ export function rgbToXyz(rgb: RGB): XYZ {
 
   // Apply transformation matrix (sRGB to XYZ D65)
   const x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
-  const y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
-  const z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
+  const y = r * 0.2126729 + g * 0.7151522 + b * 0.072175;
+  const z = r * 0.0193339 + g * 0.119192 + b * 0.9503041;
 
   return { x, y, z };
 }
@@ -84,7 +84,7 @@ export function rgbToXyz(rgb: RGB): XYZ {
 export function xyzToRgb(xyz: XYZ): RGB {
   // Apply inverse transformation matrix (XYZ D65 to sRGB)
   let r = xyz.x * 3.2404542 + xyz.y * -1.5371385 + xyz.z * -0.4985314;
-  let g = xyz.x * -0.9692660 + xyz.y * 1.8760108 + xyz.z * 0.0415560;
+  let g = xyz.x * -0.969266 + xyz.y * 1.8760108 + xyz.z * 0.041556;
   let b = xyz.x * 0.0556434 + xyz.y * -0.2040259 + xyz.z * 1.0572252;
 
   // Scale from [0-100] to [0-1]
@@ -120,9 +120,7 @@ export function xyzToLab(xyz: XYZ): Lab {
 
   const f = (t: number): number => {
     const deltaCubed = delta * delta * delta;
-    return t > deltaCubed
-      ? Math.pow(t, 1 / 3)
-      : t / (3 * deltaSquared) + 4 / 29;
+    return t > deltaCubed ? Math.pow(t, 1 / 3) : t / (3 * deltaSquared) + 4 / 29;
   };
 
   x = f(x);
@@ -149,9 +147,7 @@ export function labToXyz(lab: Lab): XYZ {
   const deltaSquared = delta * delta;
 
   const f = (t: number): number => {
-    return t > delta
-      ? Math.pow(t, 3)
-      : 3 * deltaSquared * (t - 4 / 29);
+    return t > delta ? Math.pow(t, 3) : 3 * deltaSquared * (t - 4 / 29);
   };
 
   const x = D65_WHITE_POINT.x * f(fx);
@@ -245,7 +241,12 @@ export function adjustHue(rgb: RGB, degrees: number): RGB {
 /**
  * Color harmony type
  */
-export type ColorHarmonyType = 'complementary' | 'triadic' | 'analogous' | 'split-complementary' | 'tetradic';
+export type ColorHarmonyType =
+  | 'complementary'
+  | 'triadic'
+  | 'analogous'
+  | 'split-complementary'
+  | 'tetradic';
 
 /**
  * Generates color harmonies based on hue relationships

@@ -43,8 +43,18 @@ export interface CacheStatistics {
  */
 export const cacheConfigSchema = z.object({
   maxSize: z.number().int().positive().default(100).describe('Maximum number of entries'),
-  ttl: z.number().int().positive().default(3600000).describe('Time to live in milliseconds (default: 1 hour)'),
-  maxMemoryUsage: z.number().int().positive().default(10485760).describe('Maximum memory usage in bytes (default: 10MB)')
+  ttl: z
+    .number()
+    .int()
+    .positive()
+    .default(3600000)
+    .describe('Time to live in milliseconds (default: 1 hour)'),
+  maxMemoryUsage: z
+    .number()
+    .int()
+    .positive()
+    .default(10485760)
+    .describe('Maximum memory usage in bytes (default: 10MB)')
 });
 
 export type CacheConfig = z.infer<typeof cacheConfigSchema>;
@@ -109,7 +119,9 @@ export class PromptCache<T = string> {
 
     // Check if adding this entry would exceed memory limit
     if (size > this.maxMemoryUsage) {
-      throw new Error(`Entry size (${size} bytes) exceeds maximum memory usage (${this.maxMemoryUsage} bytes)`);
+      throw new Error(
+        `Entry size (${size} bytes) exceeds maximum memory usage (${this.maxMemoryUsage} bytes)`
+      );
     }
 
     // Remove existing entry if present
@@ -291,7 +303,7 @@ export class PromptCache<T = string> {
    * Get all values in cache
    */
   values(): T[] {
-    return Array.from(this.cache.values()).map(entry => entry.value);
+    return Array.from(this.cache.values()).map((entry) => entry.value);
   }
 
   /**
@@ -373,7 +385,7 @@ export function generatePromptCacheKey(
   // Sort parameters for consistent keys
   const sortedParams = Object.keys(parameters)
     .sort()
-    .map(key => `${key}=${JSON.stringify(parameters[key])}`)
+    .map((key) => `${key}=${JSON.stringify(parameters[key])}`)
     .join('&');
 
   return `prompt:${templateName}?${sortedParams}`;

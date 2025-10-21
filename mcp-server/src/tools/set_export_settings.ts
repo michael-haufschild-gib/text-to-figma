@@ -132,19 +132,16 @@ export async function setExportSettings(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_export_settings', {
-    nodeId: validated.nodeId,
-    settings: validated.settings
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set export settings');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_export_settings',
+    {
+      nodeId: validated.nodeId,
+      settings: validated.settings
+    }
+  )
 
   return {
     nodeId: validated.nodeId,

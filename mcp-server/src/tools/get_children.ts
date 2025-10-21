@@ -16,7 +16,11 @@ import { getFigmaBridge } from '../figma-bridge.js';
  */
 export const GetChildrenInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the parent node'),
-  recursive: z.boolean().optional().default(false).describe('Get all descendants (recursive) or just direct children')
+  recursive: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Get all descendants (recursive) or just direct children')
 });
 
 export type GetChildrenInput = z.infer<typeof GetChildrenInputSchema>;
@@ -94,21 +98,15 @@ export interface GetChildrenResult {
 /**
  * Implementation
  */
-export async function getChildren(
-  input: GetChildrenInput
-): Promise<GetChildrenResult> {
+export async function getChildren(input: GetChildrenInput): Promise<GetChildrenResult> {
   // Validate input
   const validated = GetChildrenInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
+  const response = await bridge.sendToFigmaWithRetry<{
     success: boolean;
     children?: ChildNodeInfo[];
     error?: string;
@@ -116,10 +114,7 @@ export async function getChildren(
     nodeId: validated.nodeId,
     recursive: validated.recursive
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to get children');
-  }
+  // Note: Response validated by bridge at protocol level
 
   const children = response.children || [];
   const scope = validated.recursive ? 'descendants' : 'direct children';

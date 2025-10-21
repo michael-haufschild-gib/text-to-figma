@@ -11,229 +11,140 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
+  GetPromptRequestSchema,
+  ListPromptsRequestSchema,
   ListToolsRequestSchema,
   type CallToolRequest
 } from '@modelcontextprotocol/sdk/types.js';
 import {
+  hexToRgb,
+  validateContrast,
   validateSpacing,
   validateTypography,
-  validateContrast,
-  hexToRgb,
+  type ContrastValidationResult,
   type RGB,
   type SpacingConstraintResult,
-  type TypographyConstraintResult,
-  type ContrastValidationResult
+  type TypographyConstraintResult
 } from './constraints/index.js';
 import { getFigmaBridge } from './figma-bridge.js';
 
 // Import new tools
-import {
-  createFrame,
-  createFrameToolDefinition,
-  type CreateFrameInput
-} from './tools/create_frame.js';
-import {
-  setLayoutProperties,
-  setLayoutPropertiesToolDefinition,
-  type SetLayoutPropertiesInput
-} from './tools/set_layout_properties.js';
-import {
-  createText,
-  createTextToolDefinition,
-  type CreateTextInput
-} from './tools/create_text.js';
-import {
-  setFills,
-  setFillsToolDefinition,
-  type SetFillsInput
-} from './tools/set_fills.js';
-import {
-  validateDesignTokens,
-  formatValidationReport,
-  validateDesignTokensToolDefinition,
-  type DesignTokensInput
-} from './tools/validate_design_tokens.js';
-import {
-  checkWcagContrast,
-  formatContrastCheckResult,
-  checkWcagContrastToolDefinition,
-  type CheckWcagContrastInput
-} from './tools/check_wcag_contrast.js';
-import {
-  createComponent,
-  createComponentToolDefinition,
-  type CreateComponentInput
-} from './tools/create_component.js';
-import {
-  createInstance,
-  createInstanceToolDefinition,
-  type CreateInstanceInput
-} from './tools/create_instance.js';
-import {
-  setComponentProperties,
-  setComponentPropertiesToolDefinition,
-  type SetComponentPropertiesInput
-} from './tools/set_component_properties.js';
-import {
-  applyEffects,
-  applyEffectsToolDefinition,
-  type ApplyEffectsInput
-} from './tools/apply_effects.js';
-import {
-  setConstraints,
-  setConstraintsToolDefinition,
-  type SetConstraintsInput
-} from './tools/set_constraints.js';
-import {
-  createRectangleWithImageFill,
-  createRectangleWithImageFillToolDefinition,
-  type CreateRectangleWithImageFillInput
-} from './tools/create_rectangle_with_image_fill.js';
-import {
-  setImageFill,
-  setImageFillToolDefinition,
-  type SetImageFillInput
-} from './tools/set_image_fill.js';
-import {
-  createEllipse,
-  createEllipseToolDefinition,
-  type CreateEllipseInput
-} from './tools/create_ellipse.js';
-import {
-  createLine,
-  createLineToolDefinition,
-  type CreateLineInput
-} from './tools/create_line.js';
+import { getConfig, loadConfig } from './config.js';
+import { startHealthCheck, stopHealthCheck } from './health.js';
+import { getFewShotExamples, getFewShotPrompt } from './prompts/few-shot.js';
+import { getZeroShotPrompt } from './prompts/zero-shot.js';
 import {
   addGradientFill,
   addGradientFillToolDefinition,
   type AddGradientFillInput
 } from './tools/add_gradient_fill.js';
 import {
-  setCornerRadius,
-  setCornerRadiusToolDefinition,
-  type SetCornerRadiusInput
-} from './tools/set_corner_radius.js';
+  addLayoutGrid,
+  addLayoutGridToolDefinition,
+  type AddLayoutGridInput
+} from './tools/add_layout_grid.js';
 import {
-  setStroke,
-  setStrokeToolDefinition,
-  type SetStrokeInput
-} from './tools/set_stroke.js';
-import {
-  createPolygon,
-  createPolygonToolDefinition,
-  type CreatePolygonInput
-} from './tools/create_polygon.js';
-import {
-  createStar,
-  createStarToolDefinition,
-  type CreateStarInput
-} from './tools/create_star.js';
-import {
-  setRotation,
-  setRotationToolDefinition,
-  type SetRotationInput
-} from './tools/set_rotation.js';
-import {
-  setAbsolutePosition,
-  setAbsolutePositionToolDefinition,
-  type SetAbsolutePositionInput
-} from './tools/set_absolute_position.js';
-import {
-  setTextDecoration,
-  setTextDecorationToolDefinition,
-  type SetTextDecorationInput
-} from './tools/set_text_decoration.js';
-import {
-  setLetterSpacing,
-  setLetterSpacingToolDefinition,
-  type SetLetterSpacingInput
-} from './tools/set_letter_spacing.js';
-import {
-  setTextCase,
-  setTextCaseToolDefinition,
-  type SetTextCaseInput
-} from './tools/set_text_case.js';
-import {
-  createBooleanOperation,
-  createBooleanOperationToolDefinition,
-  type CreateBooleanOperationInput
-} from './tools/create_boolean_operation.js';
-import {
-  setBlendMode,
-  setBlendModeToolDefinition,
-  type SetBlendModeInput
-} from './tools/set_blend_mode.js';
-import {
-  setOpacity,
-  setOpacityToolDefinition,
-  type SetOpacityInput
-} from './tools/set_opacity.js';
-import {
-  setStrokeJoin,
-  setStrokeJoinToolDefinition,
-  type SetStrokeJoinInput
-} from './tools/set_stroke_join.js';
-import {
-  setStrokeCap,
-  setStrokeCapToolDefinition,
-  type SetStrokeCapInput
-} from './tools/set_stroke_cap.js';
-import {
-  setSize,
-  setSizeToolDefinition,
-  type SetSizeInput
-} from './tools/set_size.js';
-import {
-  createColorStyle,
-  createColorStyleToolDefinition,
-  type CreateColorStyleInput
-} from './tools/create_color_style.js';
-import {
-  applyFillStyle,
-  applyFillStyleToolDefinition,
-  type ApplyFillStyleInput
-} from './tools/apply_fill_style.js';
-import {
-  createTextStyle,
-  createTextStyleToolDefinition,
-  type CreateTextStyleInput
-} from './tools/create_text_style.js';
-import {
-  applyTextStyle,
-  applyTextStyleToolDefinition,
-  type ApplyTextStyleInput
-} from './tools/apply_text_style.js';
-import {
-  createEffectStyle,
-  createEffectStyleToolDefinition,
-  type CreateEffectStyleInput
-} from './tools/create_effect_style.js';
+  addVariantProperty,
+  addVariantPropertyToolDefinition,
+  type AddVariantPropertyInput
+} from './tools/add_variant_property.js';
 import {
   applyEffectStyle,
   applyEffectStyleToolDefinition,
   type ApplyEffectStyleInput
 } from './tools/apply_effect_style.js';
 import {
-  setClippingMask,
-  setClippingMaskToolDefinition,
-  type SetClippingMaskInput
-} from './tools/set_clipping_mask.js';
+  applyEffects,
+  applyEffectsToolDefinition,
+  type ApplyEffectsInput
+} from './tools/apply_effects.js';
 import {
-  setParagraphSpacing,
-  setParagraphSpacingToolDefinition,
-  type SetParagraphSpacingInput
-} from './tools/set_paragraph_spacing.js';
+  applyFillStyle,
+  applyFillStyleToolDefinition,
+  type ApplyFillStyleInput
+} from './tools/apply_fill_style.js';
+import {
+  applyTextStyle,
+  applyTextStyleToolDefinition,
+  type ApplyTextStyleInput
+} from './tools/apply_text_style.js';
+import {
+  checkWcagContrast,
+  checkWcagContrastToolDefinition,
+  formatContrastCheckResult,
+  type CheckWcagContrastInput
+} from './tools/check_wcag_contrast.js';
+import {
+  createBooleanOperation,
+  createBooleanOperationToolDefinition,
+  type CreateBooleanOperationInput
+} from './tools/create_boolean_operation.js';
+import {
+  createColorStyle,
+  createColorStyleToolDefinition,
+  type CreateColorStyleInput
+} from './tools/create_color_style.js';
+import {
+  createComponent,
+  createComponentToolDefinition,
+  type CreateComponentInput
+} from './tools/create_component.js';
 import {
   createComponentSet,
   createComponentSetToolDefinition,
   type CreateComponentSetInput
 } from './tools/create_component_set.js';
 import {
-  addVariantProperty,
-  addVariantPropertyToolDefinition,
-  type AddVariantPropertyInput
-} from './tools/add_variant_property.js';
+  createEffectStyle,
+  createEffectStyleToolDefinition,
+  type CreateEffectStyleInput
+} from './tools/create_effect_style.js';
+import {
+  createEllipse,
+  createEllipseToolDefinition,
+  type CreateEllipseInput
+} from './tools/create_ellipse.js';
+import {
+  createFrame,
+  createFrameToolDefinition,
+  type CreateFrameInput
+} from './tools/create_frame.js';
+import {
+  createInstance,
+  createInstanceToolDefinition,
+  type CreateInstanceInput
+} from './tools/create_instance.js';
+import { createLine, createLineToolDefinition, type CreateLineInput } from './tools/create_line.js';
+import { createPage, createPageToolDefinition, type CreatePageInput } from './tools/create_page.js';
+import {
+  createPolygon,
+  createPolygonToolDefinition,
+  type CreatePolygonInput
+} from './tools/create_polygon.js';
+import {
+  createRectangleWithImageFill,
+  createRectangleWithImageFillToolDefinition,
+  type CreateRectangleWithImageFillInput
+} from './tools/create_rectangle_with_image_fill.js';
+import { createStar, createStarToolDefinition, type CreateStarInput } from './tools/create_star.js';
+import { createText, createTextToolDefinition, type CreateTextInput } from './tools/create_text.js';
+import {
+  createTextStyle,
+  createTextStyleToolDefinition,
+  type CreateTextStyleInput
+} from './tools/create_text_style.js';
+import { exportNode, exportNodeToolDefinition, type ExportNodeInput } from './tools/export_node.js';
+import { flipNode, flipNodeToolDefinition, type FlipNodeInput } from './tools/flip_node.js';
+import {
+  getAbsoluteBounds,
+  getAbsoluteBoundsToolDefinition,
+  type GetAbsoluteBoundsInput
+} from './tools/get_absolute_bounds.js';
+import {
+  getChildren,
+  getChildrenToolDefinition,
+  type GetChildrenInput
+} from './tools/get_children.js';
 import {
   getNodeById,
   getNodeByIdToolDefinition,
@@ -244,98 +155,156 @@ import {
   getNodeByNameToolDefinition,
   type GetNodeByNameInput
 } from './tools/get_node_by_name.js';
-import {
-  addLayoutGrid,
-  addLayoutGridToolDefinition,
-  type AddLayoutGridInput
-} from './tools/add_layout_grid.js';
-import {
-  flipNode,
-  flipNodeToolDefinition,
-  type FlipNodeInput
-} from './tools/flip_node.js';
-import {
-  setVisible,
-  setVisibleToolDefinition,
-  type SetVisibleInput
-} from './tools/set_visible.js';
-import {
-  setLocked,
-  setLockedToolDefinition,
-  type SetLockedInput
-} from './tools/set_locked.js';
-import {
-  setExportSettings,
-  setExportSettingsToolDefinition,
-  type SetExportSettingsInput
-} from './tools/set_export_settings.js';
-import {
-  exportNode,
-  exportNodeToolDefinition,
-  type ExportNodeInput
-} from './tools/export_node.js';
-import {
-  getChildren,
-  getChildrenToolDefinition,
-  type GetChildrenInput
-} from './tools/get_children.js';
-import {
-  getParent,
-  getParentToolDefinition,
-  type GetParentInput
-} from './tools/get_parent.js';
-import {
-  setPluginData,
-  setPluginDataToolDefinition,
-  type SetPluginDataInput
-} from './tools/set_plugin_data.js';
+import { getParent, getParentToolDefinition, type GetParentInput } from './tools/get_parent.js';
 import {
   getPluginData,
   getPluginDataToolDefinition,
   type GetPluginDataInput
 } from './tools/get_plugin_data.js';
+import { listPages, listPagesToolDefinition, type ListPagesInput } from './tools/list_pages.js';
 import {
-  setInstanceSwap,
-  setInstanceSwapToolDefinition,
-  type SetInstanceSwapInput
-} from './tools/set_instance_swap.js';
+  setAbsolutePosition,
+  setAbsolutePositionToolDefinition,
+  type SetAbsolutePositionInput
+} from './tools/set_absolute_position.js';
 import {
-  setScale,
-  setScaleToolDefinition,
-  type SetScaleInput
-} from './tools/set_scale.js';
+  setBlendMode,
+  setBlendModeToolDefinition,
+  type SetBlendModeInput
+} from './tools/set_blend_mode.js';
 import {
-  createPage,
-  createPageToolDefinition,
-  type CreatePageInput
-} from './tools/create_page.js';
+  setClippingMask,
+  setClippingMaskToolDefinition,
+  type SetClippingMaskInput
+} from './tools/set_clipping_mask.js';
 import {
-  listPages,
-  listPagesToolDefinition,
-  type ListPagesInput
-} from './tools/list_pages.js';
+  setComponentProperties,
+  setComponentPropertiesToolDefinition,
+  type SetComponentPropertiesInput
+} from './tools/set_component_properties.js';
+import {
+  setConstraints,
+  setConstraintsToolDefinition,
+  type SetConstraintsInput
+} from './tools/set_constraints.js';
+import {
+  setCornerRadius,
+  setCornerRadiusToolDefinition,
+  type SetCornerRadiusInput
+} from './tools/set_corner_radius.js';
 import {
   setCurrentPage,
   setCurrentPageToolDefinition,
   type SetCurrentPageInput
 } from './tools/set_current_page.js';
 import {
-  getAbsoluteBounds,
-  getAbsoluteBoundsToolDefinition,
-  type GetAbsoluteBoundsInput
-} from './tools/get_absolute_bounds.js';
+  setExportSettings,
+  setExportSettingsToolDefinition,
+  type SetExportSettingsInput
+} from './tools/set_export_settings.js';
+import { setFills, setFillsToolDefinition, type SetFillsInput } from './tools/set_fills.js';
+import {
+  setImageFill,
+  setImageFillToolDefinition,
+  type SetImageFillInput
+} from './tools/set_image_fill.js';
+import {
+  setInstanceSwap,
+  setInstanceSwapToolDefinition,
+  type SetInstanceSwapInput
+} from './tools/set_instance_swap.js';
+import {
+  setLayoutAlign,
+  setLayoutAlignToolDefinition,
+  type SetLayoutAlignInput
+} from './tools/set_layout_align.js';
+import {
+  setLayoutProperties,
+  setLayoutPropertiesToolDefinition,
+  type SetLayoutPropertiesInput
+} from './tools/set_layout_properties.js';
 import {
   setLayoutSizing,
   setLayoutSizingToolDefinition,
   type SetLayoutSizingInput
 } from './tools/set_layout_sizing.js';
 import {
-  setLayoutAlign,
-  setLayoutAlignToolDefinition,
-  type SetLayoutAlignInput
-} from './tools/set_layout_align.js';
-import { getZeroShotPrompt } from './prompts/zero-shot.js';
-import { getFewShotPrompt, getFewShotExamples } from './prompts/few-shot.js';
+  setLetterSpacing,
+  setLetterSpacingToolDefinition,
+  type SetLetterSpacingInput
+} from './tools/set_letter_spacing.js';
+import { setLocked, setLockedToolDefinition, type SetLockedInput } from './tools/set_locked.js';
+import { setOpacity, setOpacityToolDefinition, type SetOpacityInput } from './tools/set_opacity.js';
+import {
+  setParagraphSpacing,
+  setParagraphSpacingToolDefinition,
+  type SetParagraphSpacingInput
+} from './tools/set_paragraph_spacing.js';
+import {
+  setPluginData,
+  setPluginDataToolDefinition,
+  type SetPluginDataInput
+} from './tools/set_plugin_data.js';
+import {
+  setRotation,
+  setRotationToolDefinition,
+  type SetRotationInput
+} from './tools/set_rotation.js';
+import { setScale, setScaleToolDefinition, type SetScaleInput } from './tools/set_scale.js';
+import { setSize, setSizeToolDefinition, type SetSizeInput } from './tools/set_size.js';
+import { setStroke, setStrokeToolDefinition, type SetStrokeInput } from './tools/set_stroke.js';
+import {
+  setStrokeCap,
+  setStrokeCapToolDefinition,
+  type SetStrokeCapInput
+} from './tools/set_stroke_cap.js';
+import {
+  setStrokeJoin,
+  setStrokeJoinToolDefinition,
+  type SetStrokeJoinInput
+} from './tools/set_stroke_join.js';
+import {
+  setTextCase,
+  setTextCaseToolDefinition,
+  type SetTextCaseInput
+} from './tools/set_text_case.js';
+import {
+  setTextDecoration,
+  setTextDecorationToolDefinition,
+  type SetTextDecorationInput
+} from './tools/set_text_decoration.js';
+import { setVisible, setVisibleToolDefinition, type SetVisibleInput } from './tools/set_visible.js';
+import {
+  formatValidationReport,
+  validateDesignTokens,
+  validateDesignTokensToolDefinition,
+  type DesignTokensInput
+} from './tools/validate_design_tokens.js';
+
+// New drawing helper tools
+import { alignNodes, alignNodesToolDefinition, type AlignNodesInput } from './tools/align_nodes.js';
+import {
+  connectShapes,
+  connectShapesToolDefinition,
+  type ConnectShapesInput
+} from './tools/connect_shapes.js';
+
+import { createPath, createPathToolDefinition, type CreatePathInput } from './tools/create_path.js';
+import {
+  distributeNodes,
+  distributeNodesToolDefinition,
+  type DistributeNodesInput
+} from './tools/distribute_nodes.js';
+import {
+  getRelativeBounds,
+  getRelativeBoundsToolDefinition,
+  type GetRelativeBoundsInput
+} from './tools/get_relative_bounds.js';
+import {
+  setLayerOrder,
+  setLayerOrderToolDefinition,
+  type SetLayerOrderInput
+} from './tools/set_layer_order.js';
 
 /**
  * Initialize MCP Server
@@ -347,7 +316,8 @@ const server = new Server(
   },
   {
     capabilities: {
-      tools: {}
+      tools: {},
+      prompts: {}
     }
   }
 );
@@ -464,10 +434,20 @@ const TOOLS = [
 
   // Positioning and bounds primitives
   getAbsoluteBoundsToolDefinition,
+  getRelativeBoundsToolDefinition,
 
   // Advanced layout primitives
   setLayoutSizingToolDefinition,
   setLayoutAlignToolDefinition,
+
+  // Drawing helper tools
+  alignNodesToolDefinition,
+  distributeNodesToolDefinition,
+  setLayerOrderToolDefinition,
+  connectShapesToolDefinition,
+
+  // Custom path primitives
+  createPathToolDefinition,
 
   // Validation tools
   validateDesignTokensToolDefinition,
@@ -548,7 +528,8 @@ const TOOLS = [
   },
   {
     name: 'get_system_prompt',
-    description: 'Returns the zero-shot system prompt for Text-to-Figma with HTML/CSS mappings and constraint guidelines',
+    description:
+      'Returns the zero-shot system prompt for Text-to-Figma with HTML/CSS mappings and constraint guidelines',
     inputSchema: {
       type: 'object' as const,
       properties: {}
@@ -556,7 +537,8 @@ const TOOLS = [
   },
   {
     name: 'get_few_shot_prompt',
-    description: 'Returns the few-shot system prompt with complete workflow examples for creating UI components (button, card, form, navbar)',
+    description:
+      'Returns the few-shot system prompt with complete workflow examples for creating UI components (button, card, form, navbar)',
     inputSchema: {
       type: 'object' as const,
       properties: {}
@@ -569,7 +551,7 @@ const TOOLS = [
       type: 'object' as const,
       properties: {}
     }
-  },
+  }
 ];
 
 /**
@@ -579,6 +561,84 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: TOOLS
   };
+});
+
+/**
+ * Handler for listing available prompts
+ */
+server.setRequestHandler(ListPromptsRequestSchema, async () => {
+  return {
+    prompts: [
+      {
+        name: 'text-to-figma-system',
+        description:
+          'Zero-shot system prompt: HTML/CSS to Figma mental model, primitive composition patterns, and design constraints',
+        arguments: []
+      },
+      {
+        name: 'text-to-figma-examples',
+        description:
+          'Few-shot examples: Complete workflows for building UI components (button, card, form, navbar) from primitives',
+        arguments: []
+      }
+    ]
+  };
+});
+
+/**
+ * Handler for getting prompt content
+ */
+server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+  const { name } = request.params;
+
+  switch (name) {
+    case 'text-to-figma-system': {
+      const systemPrompt = getZeroShotPrompt();
+      return {
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: 'Please review the Text-to-Figma system prompt to understand how to think about Figma design in HTML/CSS terms and compose UI components from primitives.'
+            }
+          },
+          {
+            role: 'assistant',
+            content: {
+              type: 'text',
+              text: systemPrompt
+            }
+          }
+        ]
+      };
+    }
+
+    case 'text-to-figma-examples': {
+      const fewShotPrompt = getFewShotPrompt();
+      return {
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: 'Please show me complete examples of building UI components in Figma from primitives.'
+            }
+          },
+          {
+            role: 'assistant',
+            content: {
+              type: 'text',
+              text: fewShotPrompt
+            }
+          }
+        ]
+      };
+    }
+
+    default:
+      throw new Error(`Unknown prompt: ${name}`);
+  }
 });
 
 /**
@@ -1474,6 +1534,60 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
         };
       }
 
+      case 'get_relative_bounds': {
+        const input = args as GetRelativeBoundsInput;
+        const result = await getRelativeBounds(input);
+
+        return {
+          content: [{ type: 'text', text: result.message }]
+        };
+      }
+
+      case 'align_nodes': {
+        const input = args as AlignNodesInput;
+        const result = await alignNodes(input);
+
+        return {
+          content: [{ type: 'text', text: result.message }]
+        };
+      }
+
+      case 'distribute_nodes': {
+        const input = args as DistributeNodesInput;
+        const result = await distributeNodes(input);
+
+        return {
+          content: [{ type: 'text', text: result.message }]
+        };
+      }
+
+      case 'create_path': {
+        const input = args as CreatePathInput;
+        const result = await createPath(input);
+
+        return {
+          content: [{ type: 'text', text: result.message }]
+        };
+      }
+
+      case 'set_layer_order': {
+        const input = args as SetLayerOrderInput;
+        const result = await setLayerOrder(input);
+
+        return {
+          content: [{ type: 'text', text: result.message }]
+        };
+      }
+
+      case 'connect_shapes': {
+        const input = args as ConnectShapesInput;
+        const result = await connectShapes(input);
+
+        return {
+          content: [{ type: 'text', text: result.message }]
+        };
+      }
+
       case 'set_layout_sizing': {
         const input = args as SetLayoutSizingInput;
         const result = await setLayoutSizing(input);
@@ -1565,10 +1679,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
 
         if (!fgRgb || !bgRgb) {
           return {
-            content: [{
-              type: 'text',
-              text: 'Error: Invalid hex color format. Use format like #000000'
-            }]
+            content: [
+              {
+                type: 'text',
+                text: 'Error: Invalid hex color format. Use format like #000000'
+              }
+            ]
           };
         }
 
@@ -1597,28 +1713,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
 
         if (!bridge.isConnected()) {
           return {
-            content: [{
-              type: 'text',
-              text: 'Error: Not connected to Figma plugin. Ensure the plugin is running and WebSocket bridge is active.'
-            }]
+            content: [
+              {
+                type: 'text',
+                text: 'Error: Not connected to Figma plugin. Ensure the plugin is running and WebSocket bridge is active.'
+              }
+            ]
           };
         }
 
         try {
           const response = await bridge.sendToFigma(command, data);
           return {
-            content: [{
-              type: 'text',
-              text: `Success: Command sent to Figma\n${JSON.stringify(response, null, 2)}`
-            }]
+            content: [
+              {
+                type: 'text',
+                text: `Success: Command sent to Figma\n${JSON.stringify(response, null, 2)}`
+              }
+            ]
           };
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           return {
-            content: [{
-              type: 'text',
-              text: `Error: Failed to send command to Figma\n${errorMessage}`
-            }]
+            content: [
+              {
+                type: 'text',
+                text: `Error: Failed to send command to Figma\n${errorMessage}`
+              }
+            ]
           };
         }
       }
@@ -1776,10 +1898,12 @@ Remember: Compose from primitives, don't look for high-level abstractions.
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return {
-      content: [{
-        type: 'text',
-        text: `Error: ${errorMessage}`
-      }]
+      content: [
+        {
+          type: 'text',
+          text: `Error: ${errorMessage}`
+        }
+      ]
     };
   }
 });
@@ -1790,14 +1914,34 @@ Remember: Compose from primitives, don't look for high-level abstractions.
 async function main(): Promise<void> {
   console.error('[MCP Server] Starting Text-to-Figma MCP Server...');
 
-  // Connect to Figma bridge
+  // Load configuration
+  loadConfig();
+  console.error('[MCP Server] Configuration loaded');
+
+  // Start health check server if enabled
+  try {
+    startHealthCheck();
+    const config = getConfig();
+    if (config.HEALTH_CHECK_ENABLED) {
+      console.error(`[MCP Server] Health check server started on port ${config.HEALTH_CHECK_PORT}`);
+    }
+  } catch (error) {
+    console.error('[MCP Server] Warning: Could not start health check server:', error);
+  }
+
+  // Connect to Figma bridge with retry
   const bridge = getFigmaBridge();
   try {
     await bridge.connect();
     console.error('[MCP Server] Connected to Figma WebSocket bridge');
   } catch (error) {
-    console.error('[MCP Server] Warning: Could not connect to Figma bridge. Figma integration will be unavailable.');
-    console.error('[MCP Server] Constraint validation tools will still work.');
+    console.error(
+      '[MCP Server] Warning: Could not connect to Figma bridge initially. Will retry automatically.'
+    );
+    console.error(
+      '[MCP Server] Figma integration will become available once WebSocket server is running.'
+    );
+    console.error('[MCP Server] Constraint validation tools will work immediately.');
   }
 
   // Create transport and connect
@@ -1805,19 +1949,52 @@ async function main(): Promise<void> {
   await server.connect(transport);
 
   console.error('[MCP Server] Server running and ready for requests');
-  console.error('[MCP Server] Available tools: create_frame, set_layout_properties, create_text, set_fills, validate_design_tokens');
+  console.error(
+    '[MCP Server] Available tools: create_frame, set_layout_properties, create_text, set_fills, validate_design_tokens'
+  );
 
   // Handle cleanup on exit
+  const shutdown = async (signal: string): Promise<void> => {
+    console.error(`[MCP Server] Received ${signal}, shutting down gracefully...`);
+
+    const config = getConfig();
+    const shutdownTimeout = config.GRACEFUL_SHUTDOWN_TIMEOUT;
+
+    // Set a timeout for forced shutdown
+    const forceShutdownTimer = setTimeout(() => {
+      console.error('[MCP Server] Graceful shutdown timeout exceeded, forcing exit');
+      process.exit(1);
+    }, shutdownTimeout);
+
+    try {
+      // Stop accepting new requests
+      console.error('[MCP Server] Stopping health check server...');
+      await stopHealthCheck();
+
+      // Disconnect from Figma bridge
+      console.error('[MCP Server] Disconnecting from Figma bridge...');
+      bridge.disconnect();
+
+      // Close MCP server transport
+      console.error('[MCP Server] Closing MCP server transport...');
+      await server.close();
+
+      clearTimeout(forceShutdownTimer);
+      console.error('[MCP Server] Shutdown complete');
+      process.exit(0);
+    } catch (error) {
+      console.error('[MCP Server] Error during shutdown:', error);
+      clearTimeout(forceShutdownTimer);
+      process.exit(1);
+    }
+  };
+
   process.on('SIGINT', () => {
-    console.error('[MCP Server] Shutting down...');
-    bridge.disconnect();
-    process.exit(0);
+    void shutdown('SIGINT');
   });
 
   process.on('SIGTERM', () => {
-    console.error('[MCP Server] Shutting down...');
-    bridge.disconnect();
-    process.exit(0);
+    void shutdown('SIGTERM');
   });
 }
 

@@ -42,7 +42,9 @@ export interface SetComponentPropertiesResult {
 /**
  * Sets properties on a component in Figma
  */
-export async function setComponentProperties(input: SetComponentPropertiesInput): Promise<SetComponentPropertiesResult> {
+export async function setComponentProperties(
+  input: SetComponentPropertiesInput
+): Promise<SetComponentPropertiesResult> {
   // Validate input
   const validated = setComponentPropertiesInputSchema.parse(input);
 
@@ -131,7 +133,7 @@ This creates a component set where instances can switch between variants.`,
       },
       description: {
         type: 'string' as const,
-        description: 'New description explaining the component\'s purpose and usage guidelines'
+        description: "New description explaining the component's purpose and usage guidelines"
       },
       variantProperties: {
         type: 'array' as const,

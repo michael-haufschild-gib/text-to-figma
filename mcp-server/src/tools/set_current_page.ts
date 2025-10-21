@@ -67,31 +67,22 @@ export interface SetCurrentPageResult {
 /**
  * Implementation
  */
-export async function setCurrentPage(
-  input: SetCurrentPageInput
-): Promise<SetCurrentPageResult> {
+export async function setCurrentPage(input: SetCurrentPageInput): Promise<SetCurrentPageResult> {
   // Validate input
   const validated = SetCurrentPageInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
+  const response = await bridge.sendToFigmaWithRetry<{
     success: boolean;
     pageName?: string;
     error?: string;
   }>('set_current_page', {
     pageId: validated.pageId
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set current page');
-  }
+  // Note: Response validated by bridge at protocol level
 
   return {
     pageId: validated.pageId,

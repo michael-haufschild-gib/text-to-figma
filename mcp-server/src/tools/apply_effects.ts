@@ -25,7 +25,10 @@ export type EffectType = z.infer<typeof effectTypeSchema>;
  */
 const shadowEffectSchema = z.object({
   type: z.enum(['DROP_SHADOW', 'INNER_SHADOW']),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).describe('Shadow color in hex format'),
+  color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .describe('Shadow color in hex format'),
   opacity: z.number().min(0).max(1).default(0.25).describe('Shadow opacity (0-1)'),
   x: z.number().describe('Horizontal offset in pixels'),
   y: z.number().describe('Vertical offset in pixels'),
@@ -44,10 +47,7 @@ const blurEffectSchema = z.object({
 /**
  * Union type for all effect types
  */
-const effectSchema = z.discriminatedUnion('type', [
-  shadowEffectSchema,
-  blurEffectSchema
-]);
+const effectSchema = z.discriminatedUnion('type', [shadowEffectSchema, blurEffectSchema]);
 
 export type Effect = z.infer<typeof effectSchema>;
 
@@ -89,7 +89,9 @@ function generateCssEquivalent(effects: Effect[]): string {
       dropShadows.push(`${effect.x}px ${effect.y}px ${effect.blur}px ${effect.spread}px ${rgba}`);
     } else if (effect.type === 'INNER_SHADOW') {
       const rgba = hexToRgba(effect.color, effect.opacity);
-      innerShadows.push(`inset ${effect.x}px ${effect.y}px ${effect.blur}px ${effect.spread}px ${rgba}`);
+      innerShadows.push(
+        `inset ${effect.x}px ${effect.y}px ${effect.blur}px ${effect.spread}px ${rgba}`
+      );
     } else if (effect.type === 'LAYER_BLUR') {
       layerBlur = `blur(${effect.radius}px)`;
     } else if (effect.type === 'BACKGROUND_BLUR') {

@@ -72,9 +72,11 @@ Use Cases:
  * Result type
  */
 export interface GetAbsoluteBoundsResult {
+  success: true;
   nodeId: string;
   bounds: BoundsInfo;
   message: string;
+  timestamp: string;
 }
 
 /**
@@ -89,26 +91,25 @@ export async function getAbsoluteBounds(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
-    success: boolean;
-    bounds?: BoundsInfo;
-    error?: string;
+  // Note: Bridge unwraps response, returns data on success, throws on failure
+  const response = await bridge.sendToFigmaWithRetry<{
+    nodeId: string;
+    bounds: BoundsInfo;
+    message: string;
   }>('get_absolute_bounds', {
     nodeId: validated.nodeId
   });
 
-  if (!response.success || !response.bounds) {
-    throw new Error(response.error || 'Failed to get absolute bounds');
+  if (!response.bounds) {
+    throw new Error('Failed to get absolute bounds');
   }
 
   return {
+    success: true as const,
     nodeId: validated.nodeId,
     bounds: response.bounds,
-    message: `Bounds: (${response.bounds.x}, ${response.bounds.y}) ${response.bounds.width}×${response.bounds.height}`
+    message: `Bounds: (${response.bounds.x}, ${response.bounds.y}) ${response.bounds.width}×${response.bounds.height}`,
+    timestamp: new Date().toISOString()
   };
 }

@@ -16,8 +16,14 @@ import { getFigmaBridge } from '../figma-bridge.js';
  */
 export const SetLayoutAlignInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the frame with auto-layout'),
-  primaryAxis: z.enum(['MIN', 'CENTER', 'MAX', 'SPACE_BETWEEN']).optional().describe('Alignment along primary axis (justify-content)'),
-  counterAxis: z.enum(['MIN', 'CENTER', 'MAX']).optional().describe('Alignment along counter axis (align-items)')
+  primaryAxis: z
+    .enum(['MIN', 'CENTER', 'MAX', 'SPACE_BETWEEN'])
+    .optional()
+    .describe('Alignment along primary axis (justify-content)'),
+  counterAxis: z
+    .enum(['MIN', 'CENTER', 'MAX'])
+    .optional()
+    .describe('Alignment along counter axis (align-items)')
 });
 
 export type SetLayoutAlignInput = z.infer<typeof SetLayoutAlignInputSchema>;
@@ -102,9 +108,7 @@ export interface SetLayoutAlignResult {
 /**
  * Implementation
  */
-export async function setLayoutAlign(
-  input: SetLayoutAlignInput
-): Promise<SetLayoutAlignResult> {
+export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLayoutAlignResult> {
   // Validate input
   const validated = SetLayoutAlignInputSchema.parse(input);
 
@@ -115,42 +119,32 @@ export async function setLayoutAlign(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
-    success: boolean;
-    error?: string;
-  }>('set_layout_align', {
+  // Note: Response validated by bridge at protocol level
+  await bridge.sendToFigma('set_layout_align', {
     nodeId: validated.nodeId,
     primaryAxis: validated.primaryAxis,
     counterAxis: validated.counterAxis
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set layout alignment');
-  }
 
   // Build CSS equivalent
   const cssParts: string[] = [];
 
   if (validated.primaryAxis) {
     const primaryMap: Record<string, string> = {
-      'MIN': 'flex-start',
-      'CENTER': 'center',
-      'MAX': 'flex-end',
-      'SPACE_BETWEEN': 'space-between'
+      MIN: 'flex-start',
+      CENTER: 'center',
+      MAX: 'flex-end',
+      SPACE_BETWEEN: 'space-between'
     };
     cssParts.push(`justify-content: ${primaryMap[validated.primaryAxis]}`);
   }
 
   if (validated.counterAxis) {
     const counterMap: Record<string, string> = {
-      'MIN': 'flex-start',
-      'CENTER': 'center',
-      'MAX': 'flex-end'
+      MIN: 'flex-start',
+      CENTER: 'center',
+      MAX: 'flex-end'
     };
     cssParts.push(`align-items: ${counterMap[validated.counterAxis]}`);
   }

@@ -106,29 +106,24 @@ export interface SetSizeResult {
 /**
  * Implementation
  */
-export async function setSize(
-  input: SetSizeInput
-): Promise<SetSizeResult> {
+export async function setSize(input: SetSizeInput): Promise<SetSizeResult> {
   // Validate input
   const validated = SetSizeInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_size', {
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_size',
+    {
     nodeId: validated.nodeId,
     width: validated.width,
     height: validated.height
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set size');
   }
+  )
 
   // Calculate aspect ratio
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));

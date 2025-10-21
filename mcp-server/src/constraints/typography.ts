@@ -12,7 +12,7 @@ import { z } from 'zod';
  */
 export const VALID_FONT_SIZES = [12, 16, 20, 24, 32, 40, 48, 64] as const;
 
-export type FontSize = typeof VALID_FONT_SIZES[number];
+export type FontSize = (typeof VALID_FONT_SIZES)[number];
 
 /**
  * Common font weight values
@@ -29,7 +29,7 @@ export const FONT_WEIGHTS = {
   black: 900
 } as const;
 
-export type FontWeight = typeof FONT_WEIGHTS[keyof typeof FONT_WEIGHTS];
+export type FontWeight = (typeof FONT_WEIGHTS)[keyof typeof FONT_WEIGHTS];
 
 /**
  * Line height recommendations based on font size
@@ -45,24 +45,23 @@ export function getRecommendedLineHeight(fontSize: FontSize): number {
 /**
  * Zod schema for validating font sizes
  */
-export const fontSizeSchema = z.number().refine(
-  (value): value is FontSize =>
-    VALID_FONT_SIZES.includes(value as FontSize),
-  {
+export const fontSizeSchema = z
+  .number()
+  .refine((value): value is FontSize => VALID_FONT_SIZES.includes(value as FontSize), {
     message: `Font size must be one of: ${VALID_FONT_SIZES.join(', ')}`
-  }
-);
+  });
 
 /**
  * Zod schema for validating font weights
  */
-export const fontWeightSchema = z.number().refine(
-  (value): value is FontWeight =>
-    Object.values(FONT_WEIGHTS).includes(value as FontWeight),
-  {
-    message: 'Font weight must be a valid weight value (100-900 in steps of 100)'
-  }
-);
+export const fontWeightSchema = z
+  .number()
+  .refine(
+    (value): value is FontWeight => Object.values(FONT_WEIGHTS).includes(value as FontWeight),
+    {
+      message: 'Font weight must be a valid weight value (100-900 in steps of 100)'
+    }
+  );
 
 /**
  * Validates if a value is a valid font size

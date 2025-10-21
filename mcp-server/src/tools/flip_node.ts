@@ -90,28 +90,23 @@ export interface FlipNodeResult {
 /**
  * Implementation
  */
-export async function flipNode(
-  input: FlipNodeInput
-): Promise<FlipNodeResult> {
+export async function flipNode(input: FlipNodeInput): Promise<FlipNodeResult> {
   // Validate input
   const validated = FlipNodeInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('flip_node', {
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'flip_node',
+    {
     nodeId: validated.nodeId,
     direction: validated.direction
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to flip node');
   }
+  )
 
   // Build CSS equivalent
   const cssMap = {

@@ -108,20 +108,16 @@ export async function createColorStyle(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; styleId?: string; error?: string }>('create_color_style', {
-    name: validated.name,
-    color: validated.color,
-    description: validated.description
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create color style');
-  }
+  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; styleId?: string; error?: string }>(
+    'create_color_style',
+    {
+      name: validated.name,
+      color: validated.color,
+      description: validated.description
+    }
+  );
+  // Note: Response validated by bridge at protocol level
 
   return {
     styleId: response.styleId || '',

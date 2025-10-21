@@ -7,14 +7,21 @@
 
 import { z } from 'zod';
 import {
+  FONT_WEIGHTS,
   fontSizeSchema,
   fontWeightSchema,
-  VALID_FONT_SIZES,
-  FONT_WEIGHTS,
   getRecommendedLineHeight,
+  VALID_FONT_SIZES,
   type FontSize
 } from '../constraints/typography.js';
 import { getFigmaBridge } from '../figma-bridge.js';
+import {
+  validateParentRelationship,
+  formatValidationError
+} from '../utils/parent-validator.js';
+import { getLogger } from '../monitoring/logger.js';
+
+const logger = getLogger().child({ tool: 'create_text' });
 
 /**
  * Supported text alignment values
@@ -30,7 +37,11 @@ export const createTextInputSchema = z.object({
   fontSize: fontSizeSchema.default(16).describe('Font size in pixels (must be in type scale)'),
   fontFamily: z.string().default('Inter').describe('Font family name'),
   fontWeight: fontWeightSchema.default(400).describe('Font weight (100-900)'),
-  lineHeight: z.number().positive().optional().describe('Line height in pixels (auto-calculated if not provided)'),
+  lineHeight: z
+    .number()
+    .positive()
+    .optional()
+    .describe('Line height in pixels (auto-calculated if not provided)'),
   textAlign: textAlignSchema.default('LEFT').describe('Text alignment'),
   color: z.string().optional().describe('Text color in hex format (e.g., #000000)'),
   letterSpacing: z.number().optional().describe('Letter spacing in pixels'),
@@ -52,7 +63,8 @@ export interface CreateTextResult {
  * Generates CSS equivalent for text properties
  */
 function generateCssEquivalent(input: CreateTextInput, appliedLineHeight: number): string {
-  const fontWeightName = Object.entries(FONT_WEIGHTS).find(([_, val]) => val === input.fontWeight)?.[0] || 'normal';
+  const fontWeightName =
+    Object.entries(FONT_WEIGHTS).find(([_, val]) => val === input.fontWeight)?.[0] || 'normal';
 
   let css = `font-family: ${input.fontFamily};
   font-size: ${input.fontSize}px;
@@ -81,15 +93,31 @@ export async function createText(input: CreateTextInput): Promise<CreateTextResu
   // Validate input
   const validated = createTextInputSchema.parse(input);
 
+  // Validate parent relationship - STRICT MODE to enforce hierarchy
+  const parentValidation = await validateParentRelationship('text', validated.parentId, {
+    strict: true, // STRICT: Prevent creation without parent to maintain HTML-like hierarchy
+    checkExists: true // Check if parent actually exists
+  });
+
+  // Throw error if parent validation failed
+  if (!parentValidation.isValid) {
+    const errorMessage = formatValidationError(parentValidation);
+    logger.error('Parent validation failed - text must have a parent container', new Error(errorMessage), {
+      input: validated
+    });
+    throw new Error(errorMessage);
+  }
+
   // Calculate line height if not provided
-  const appliedLineHeight = validated.lineHeight ?? getRecommendedLineHeight(validated.fontSize as FontSize);
+  const appliedLineHeight =
+    validated.lineHeight ?? getRecommendedLineHeight(validated.fontSize as FontSize);
 
   // Generate CSS equivalent
   const cssEquivalent = generateCssEquivalent(validated, appliedLineHeight);
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  const response = await bridge.sendToFigma<{ nodeId: string }>('create_text', {
+  const response = await bridge.sendToFigmaWithRetry<{ nodeId: string }>('create_text', {
     content: validated.content,
     fontSize: validated.fontSize,
     fontFamily: validated.fontFamily,
@@ -100,6 +128,11 @@ export async function createText(input: CreateTextInput): Promise<CreateTextResu
     letterSpacing: validated.letterSpacing,
     parentId: validated.parentId
   });
+
+  // Validate response contains nodeId
+  if (!response.nodeId) {
+    throw new Error('Figma plugin returned invalid response: missing nodeId field');
+  }
 
   return {
     textId: response.nodeId,
@@ -117,10 +150,18 @@ export const createTextToolDefinition = {
 
 HTML/CSS Analogy: Like setting text content with CSS font properties.
 
+🚨 MANDATORY REQUIREMENT: parentId is REQUIRED
+- Text nodes CANNOT exist at canvas root (just like text can't float outside HTML elements)
+- You MUST specify parentId to place text inside a frame container
+- Think HTML: text always lives inside <div>, <p>, <span>, etc.
+- Without parentId, the tool will REJECT creation with an error
+
 Typography Scale (valid font sizes): ${VALID_FONT_SIZES.join(', ')}
 
 Font Weights:
-${Object.entries(FONT_WEIGHTS).map(([name, value]) => `  - ${name}: ${value}`).join('\n')}
+${Object.entries(FONT_WEIGHTS)
+  .map(([name, value]) => `  - ${name}: ${value}`)
+  .join('\n')}
 
 Line Height:
 - Auto-calculated based on font size if not provided
@@ -132,7 +173,8 @@ Example:
   content: "Hello World",
   fontSize: 24,
   fontWeight: 600,
-  fontFamily: "Inter"
+  fontFamily: "Inter",
+  parentId: "frame-id-123"  // ← Always specify parent!
 }
 
 CSS equivalent:
@@ -178,9 +220,30 @@ line-height: 29px; // auto-calculated`,
       },
       parentId: {
         type: 'string' as const,
-        description: 'Optional parent frame ID to place text inside'
+        description: '⚠️ RECOMMENDED: Parent frame ID to place text inside. Without this, text will be at canvas root.'
       }
     },
     required: ['content']
   }
+};
+
+/**
+ * Handler export for tool registration
+ */
+export const createTextHandler: import('../routing/tool-handler.js').ToolHandler<
+  CreateTextInput,
+  CreateTextResult
+> = {
+  name: 'create_text',
+  schema: createTextInputSchema as any,
+  execute: createText,
+  formatResponse: (result) => {
+    let text = `Text Created Successfully\n`;
+    text += `Text ID: ${result.textId}\n`;
+    text += `Applied Line Height: ${result.appliedLineHeight}px\n\n`;
+    text += `CSS Equivalent:\n  ${result.cssEquivalent}\n`;
+
+    return [{ type: 'text', text }];
+  },
+  definition: createTextToolDefinition
 };

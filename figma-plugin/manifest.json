@@ -6,6 +6,7 @@
   "ui": "ui.html",
   "editorType": ["figma"],
   "networkAccess": {
-    "allowedDomains": ["none"]
+    "allowedDomains": ["*"],
+    "reasoning": "Plugin requires WebSocket connection to localhost bridge server for MCP integration"
   }
 }

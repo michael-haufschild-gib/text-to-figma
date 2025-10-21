@@ -31,8 +31,8 @@ export enum WCAGLevel {
  * Text size categories for WCAG
  */
 export enum TextSize {
-  Normal = 'normal',    // < 18pt regular or < 14pt bold
-  Large = 'large'       // >= 18pt regular or >= 14pt bold
+  Normal = 'normal', // < 18pt regular or < 14pt bold
+  Large = 'large' // >= 18pt regular or >= 14pt bold
 }
 
 /**
@@ -63,11 +63,13 @@ export const rgbSchema = z.object({
  */
 export function hexToRgb(hex: string): RGB | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16)
-  } : null;
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      }
+    : null;
 }
 
 /**
@@ -132,10 +134,7 @@ export interface ContrastValidationResult {
 /**
  * Validates contrast ratio against WCAG standards
  */
-export function validateContrast(
-  foreground: RGB,
-  background: RGB
-): ContrastValidationResult {
+export function validateContrast(foreground: RGB, background: RGB): ContrastValidationResult {
   const ratio = getContrastRatio(foreground, background);
 
   const passes = {

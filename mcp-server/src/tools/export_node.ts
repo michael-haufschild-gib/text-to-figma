@@ -17,8 +17,17 @@ import { getFigmaBridge } from '../figma-bridge.js';
 export const ExportNodeInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to export'),
   format: z.enum(['PNG', 'JPG', 'SVG', 'PDF']).describe('Export format'),
-  scale: z.number().positive().optional().default(1).describe('Export scale (1 = 1x, 2 = 2x, etc.)'),
-  returnBase64: z.boolean().optional().default(true).describe('Return base64 data (true) or save to file (false)')
+  scale: z
+    .number()
+    .positive()
+    .optional()
+    .default(1)
+    .describe('Export scale (1 = 1x, 2 = 2x, etc.)'),
+  returnBase64: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Return base64 data (true) or save to file (false)')
 });
 
 export type ExportNodeInput = z.infer<typeof ExportNodeInputSchema>;
@@ -114,21 +123,15 @@ export interface ExportNodeResult {
 /**
  * Implementation
  */
-export async function exportNode(
-  input: ExportNodeInput
-): Promise<ExportNodeResult> {
+export async function exportNode(input: ExportNodeInput): Promise<ExportNodeResult> {
   // Validate input
   const validated = ExportNodeInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
+  const response = await bridge.sendToFigmaWithRetry<{
     success: boolean;
     base64Data?: string;
     filePath?: string;
@@ -139,10 +142,7 @@ export async function exportNode(
     scale: validated.scale,
     returnBase64: validated.returnBase64
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to export node');
-  }
+  // Note: Response validated by bridge at protocol level
 
   const scaleLabel = validated.scale === 1 ? '1x' : `${validated.scale}x`;
 

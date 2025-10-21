@@ -60,12 +60,15 @@ echo -e "${BLUE}Text-to-Figma Comprehensive Test Suite${NC}"
 echo "==========================================="
 echo ""
 
+# Get the project root directory (parent of tests directory)
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
 # Check if MCP server is built
-if [ ! -d "mcp-server/dist" ]; then
+if [ ! -d "$PROJECT_ROOT/mcp-server/dist" ]; then
   echo -e "${YELLOW}⚠ MCP server not built. Building now...${NC}"
-  cd mcp-server
+  cd "$PROJECT_ROOT/mcp-server"
   npm run build
-  cd ..
+  cd "$PROJECT_ROOT"
   echo -e "${GREEN}✓ MCP server built${NC}"
 fi
 

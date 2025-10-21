@@ -9,12 +9,7 @@ import { z } from 'zod';
 /**
  * Metric types
  */
-export const metricTypeSchema = z.enum([
-  'counter',
-  'gauge',
-  'histogram',
-  'timer'
-]);
+export const metricTypeSchema = z.enum(['counter', 'gauge', 'histogram', 'timer']);
 
 export type MetricType = z.infer<typeof metricTypeSchema>;
 
@@ -230,7 +225,7 @@ class Histogram {
   }
 
   getBuckets(): HistogramBucket[] {
-    return this.buckets.map(le => ({
+    return this.buckets.map((le) => ({
       le,
       count: this.counts.get(le) ?? 0
     }));

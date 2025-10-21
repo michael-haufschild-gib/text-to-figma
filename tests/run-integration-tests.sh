@@ -40,6 +40,36 @@ if [ ! -d "$PROJECT_ROOT/mcp-server/dist" ]; then
     npm run build
     cd "$PROJECT_ROOT"
     echo ""
+else
+    # Verify TypeScript compilation is up-to-date
+    echo -e "${YELLOW}Verifying TypeScript compilation...${NC}"
+    cd "$PROJECT_ROOT/mcp-server"
+
+    # Run type-check to ensure no compilation errors
+    if ! npm run type-check > /dev/null 2>&1; then
+        echo -e "${RED}Error: TypeScript compilation check failed${NC}"
+        echo -e "${YELLOW}Running full build...${NC}"
+        npm run build
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Build failed. Exiting.${NC}"
+            exit 1
+        fi
+    else
+        # Check if any .ts files are newer than dist directory
+        if find src -name "*.ts" -newer dist -print -quit | grep -q .; then
+            echo -e "${YELLOW}Source files changed. Rebuilding...${NC}"
+            npm run build
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}Build failed. Exiting.${NC}"
+                exit 1
+            fi
+        else
+            echo -e "${GREEN}TypeScript compilation is up-to-date${NC}"
+        fi
+    fi
+
+    cd "$PROJECT_ROOT"
+    echo ""
 fi
 
 # Check if WebSocket server dependencies are installed

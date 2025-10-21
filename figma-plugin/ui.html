@@ -283,7 +283,6 @@
       const cmd = /** @type {Record<string, unknown>} */ (data);
       return (
         typeof cmd.type === 'string' &&
-        (cmd.type === 'create_frame' || cmd.type === 'create_text') &&
         typeof cmd.payload === 'object' &&
         cmd.payload !== null
       );
@@ -328,8 +327,13 @@
             log(`Command received: ${command.type}`, 'info');
 
             // Forward to Figma plugin main thread
+            // Map MCP format (id) to Figma format (requestId)
             parent.postMessage({
-              pluginMessage: command
+              pluginMessage: {
+                type: command.type,
+                payload: command.payload,
+                requestId: command.id  // MCP sends 'id', Figma expects 'requestId'
+              }
             }, '*');
 
           } catch (error) {
@@ -372,7 +376,7 @@
      */
     window.onmessage = (event) => {
       try {
-        const message = event.data;
+        const message = event.data.pluginMessage;
 
         if (!message || typeof message !== 'object') {
           return;
@@ -381,21 +385,25 @@
         const msg = /** @type {Record<string, unknown>} */ (message);
 
         // Handle plugin responses
-        if (msg.type === 'response' && msg.data) {
-          const response = /** @type {PluginResponse} */ (msg.data);
-
-          if (response.status === 'success') {
-            log(`Success: ${response.message}`, 'success');
-          } else if (response.status === 'error') {
-            log(`Error: ${response.message}`, 'error');
-            if (response.error) {
-              log(`Details: ${response.error}`, 'error');
-            }
+        // Plugin sends { id, success, data/error } directly
+        if (msg.id && typeof msg.success === 'boolean') {
+          // Log the response
+          if (msg.success) {
+            const data = msg.data;
+            const dataMsg = (data && typeof data === 'object' && 'message' in data)
+              ? String(data.message)
+              : JSON.stringify(data);
+            log(`Success: ${dataMsg}`, 'success');
+          } else {
+            const errorMsg = msg.error || 'Unknown error';
+            log(`Error: ${errorMsg}`, 'error');
           }
 
           // Send response back to WebSocket server if connected
+          // Forward in MCP format: { id, success, data, error }
           if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify(response));
+            ws.send(JSON.stringify(msg));
+            log(`Sent MCP response for request ${msg.id}`, 'info');
           }
         }
       } catch (error) {

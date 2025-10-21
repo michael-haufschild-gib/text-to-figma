@@ -1,336 +1,739 @@
-# Front-End Engineering Style Guide
+# Backend Engineering Style Guide
+## Text-to-Figma MCP Server
+
+**Last Updated:** October 18, 2025  
+**Technology Stack:** Node.js, TypeScript, MCP Protocol, WebSocket, Zod
+
+---
+
+## Overview
+
+This style guide governs the Text-to-Figma MCP Server codebase—a Node.js/TypeScript backend that provides 58+ Figma design tools through the Model Context Protocol. This is **NOT** a frontend/React project. For Figma Plugin (frontend) guidelines, see `docs/architecture-figma-plugin.md`.
+
+---
 
 ## Core Engineering Principles
 
-- **Intentional architecture:** Every module should have a single responsibility, clearly expressed through its folder structure and exports. Domain-specific logic lives in hooks or services, while UI components stay presentational.
-- **Deterministic state management:** Prefer explicit state machines, typed events, and transitions over ad-hoc `useState` chains. Determinism makes simulations, logging, and testing reliable.
-- **Performance as a first-class concern:** Build with frame-by-frame awareness. Memoize aggressively, subscribe to external stores for animation loops, and keep render trees flat and predictable.
-- **Resilience and recovery:** Assume failures. Wrap major surfaces in error boundaries, provide user feedback (toast notifications, fallbacks), and coordinate reset flows so the app can recover without a page refresh.
-- **Observability and guard rails:** Instrument telemetry at critical state transitions. Use refs and guards to prevent illegal transitions and log anomalies immediately.
+### P1: Intentional Architecture
+- **Single Responsibility**: Each module has one clear purpose expressed through exports
+- **Domain Logic**: Business rules live in pure functions (services, constraints)
+- **Tool Modules**: Each tool is self-contained with schema, execute function, and definition
+- **Example**: `tools/create_frame.ts` owns frame creation logic, validation, and Figma API calls
+
+### P2: Deterministic Operations
+- **Input Validation**: Use Zod schemas for all tool inputs with explicit error messages
+- **Pure Functions**: Constraint validators (spacing, typography, contrast) are pure and testable
+- **Predictable Errors**: Custom error hierarchy (ValidationError, FigmaAPIError, NetworkError)
+- **Example**: `validateSpacing(16)` always returns same result for same input
+
+### P3: Performance Awareness
+- **Async Patterns**: All I/O operations use async/await with proper error handling
+- **Circuit Breaker**: Prevent cascading failures with configurable circuit breaker
+- **Connection Pooling**: WebSocket connection reused across requests
+- **Retry Logic**: Exponential backoff for transient failures
+
+### P4: Resilience & Recovery
+- **Error Boundaries**: Errors wrapped in typed error classes with context
+- **Graceful Degradation**: Circuit breaker opens on repeated failures
+- **Auto-reconnect**: WebSocket bridge reconnects with exponential backoff
+- **Cleanup**: Proper resource cleanup on shutdown (close connections, clear timers)
+
+### P5: Observability & Telemetry
+- **Structured Logging**: Winston/Pino-style logger with severity levels
+- **Metrics**: Counters, histograms for tool invocations, errors, duration
+- **Error Tracking**: Aggregated error fingerprints with deduplication
+- **Health Checks**: HTTP endpoint for readiness/liveness probes
+
+---
 
 ## Architectural Conventions
 
-### Folder Structure
+### A1: Folder Structure
 
-- `components/` holds presentational and container components organized by domain. Prefer colocating assets, tests, and stories with the component.
-- `hooks/` encapsulate reusable logic. Compose small hooks into feature-level orchestrators while keeping side effects localized.
-- `services/` (or equivalent) own pure domain logic: business rules, data transforms, deterministic simulations. Keep them framework-agnostic to simplify testing.
-- `config/` exposes typed context providers and helpers for runtime configuration, feature flags, and environment wiring.
-- `theme/`, `constants/`, and `utils/` collect shared primitives. Avoid leaking implementation details across domains or importing from deep paths.
-
-### State & Effects
-
-- Model complex flows with a state machine and typed events. Document transitions in `docs/` so newcomers can trace the lifecycle.
-- Co-locate side effects with the components or hooks that own the state. Each `useEffect` should have a single reason to re-run and include clear exit conditions.
-- Prefer `useCallback`, `useMemo`, and `useSyncExternalStore` to stabilize references across renders, especially when passing callbacks through context or animation loops.
-- Use refs to coordinate multi-phase flows (e.g., locking the winning prize, tracking current animation frame) without forcing re-renders.
-
-### Rendering & Styling
-
-- Keep component trees shallow. Split large containers into focused subcomponents so that rendering concerns, layout, and domain logic remain isolated.
-- Drive animations through a shared driver (Framer Motion or equivalent), providing a consistent API for timing and transitions.
-- Centralize layout tokens (spacing, radii, gradients) in the theme system, even when applying inline styles. Inline styles are acceptable for dynamic values but mirror them in Tailwind or CSS variables for consistency.
-- Apply memoization or `React.memo` to heavy child components, especially those rendering grids, lists, or SVG/Canvas primitives.
-
-#### Style Pattern Tokens & Utilities (NEW)
-
-To reduce inline style verbosity and improve consistency, use the new **style pattern tokens** and **utility functions**:
-
-**Style Pattern Tokens** (`stylePatternTokens` from `theme/tokens.ts`):
-```tsx
-import { stylePatternTokens } from '../theme/tokens';
-
-// Flexbox patterns
-<div style={stylePatternTokens.flexCenter}>Centered content</div>
-<div style={stylePatternTokens.flexCenterColumn}>Column layout</div>
-<div style={stylePatternTokens.flexBetween}>Space between</div>
-
-// Positioning patterns
-<div style={stylePatternTokens.absoluteFill}>Full overlay</div>
-<div style={stylePatternTokens.absoluteCenter}>Centered overlay</div>
-<div style={stylePatternTokens.overlay}>Non-interactive overlay</div>
-
-// Text patterns
-<div style={stylePatternTokens.textTruncate}>Truncated text...</div>
-<div style={stylePatternTokens.textClamp(3)}>Max 3 lines</div>
+```
+mcp-server/src/
+├── index.ts              # MCP server entry point
+├── config.ts             # Environment configuration with Zod validation
+├── figma-bridge.ts       # WebSocket client to Figma plugin
+├── health.ts             # Health check HTTP server
+│
+├── tools/                # 58+ MCP tool modules
+│   ├── create_frame.ts
+│   ├── set_fills.ts
+│   └── ...               # Each tool: schema + execute + definition
+│
+├── constraints/          # Design system validation
+│   ├── color.ts          # Hex/RGB conversion, WCAG contrast
+│   ├── spacing.ts        # 8pt grid validation
+│   └── typography.ts     # Modular scale validation
+│
+├── errors/               # Custom error hierarchy
+│   └── index.ts          # ValidationError, FigmaAPIError, NetworkError
+│
+├── monitoring/           # Observability infrastructure
+│   ├── logger.ts         # Structured logging
+│   ├── metrics.ts        # Prometheus-style metrics
+│   └── error-tracker.ts  # Error aggregation and deduplication
+│
+└── prompts/              # LLM system prompts
+    ├── zero-shot.ts      # Primitive-first workflow
+    └── few-shot.ts       # Example-driven workflows
 ```
 
-**Utility Functions** (`theme/themeUtils.tsx`):
-```tsx
-import {
-  createOverlayBackground,
-  createCardBackground,
-  createGradientText,
-  createFlexLayout,
-  createAbsoluteOverlay,
-  createTransform,
-  createResponsiveFontSize
-} from '../theme/themeUtils';
+**Key Principles:**
+- **Colocated Concerns**: Related files grouped by domain (tools/, constraints/, monitoring/)
+- **Flat Structure**: Avoid deep nesting (max 2 levels in src/)
+- **Explicit Exports**: Each module exports specific interfaces/types
+- **No Circular Dependencies**: Use dependency injection to break cycles
 
-// Semi-transparent backgrounds
-<div style={{ background: createOverlayBackground('#000000', 0.5) }}>
-  Dark overlay
-</div>
+### A2: Module Patterns
 
-// Card backgrounds with theme integration
-<div style={createCardBackground(theme.colors.surface.primary, 0.8)}>
-  Semi-transparent card
-</div>
+#### Tool Module Template
+Every tool in `tools/` follows this structure:
 
-// Gradient text (cross-platform safe)
-<h1 style={createGradientText(theme.gradients.buttonPrimary)}>
-  Gradient Title
-</h1>
+```typescript
+/**
+ * Tool: set_fills
+ * Sets fill colors on Figma nodes (frames or text).
+ */
 
-// Flexbox layouts with gap
-<div style={createFlexLayout('center', 'space-between', '12px', 'column')}>
-  Flex container
-</div>
+import { z } from 'zod';
+import { getFigmaBridge } from '../figma-bridge.js';
 
-// Absolute overlays
-<div style={createAbsoluteOverlay({ top: 0, left: 0 }, 10)}>
-  Positioned overlay
-</div>
+// 1. Input Schema (Zod)
+export const setFillsInputSchema = z.object({
+  nodeId: z.string().min(1).describe('ID of the node'),
+  color: z.string().regex(/^#?[0-9A-Fa-f]{6}$/).describe('Hex color'),
+  opacity: z.number().min(0).max(1).default(1).describe('Opacity 0-1')
+});
 
-// Transform combinations
-<div style={createTransform({ translateX: '50%', scale: 1.2, rotate: 45 })}>
-  Transformed element
-</div>
+export type SetFillsInput = z.infer<typeof setFillsInputSchema>;
 
-// Responsive font sizes
-<div style={{
-  fontSize: createResponsiveFontSize(containerWidth, {
-    min: 10, max: 16, minWidth: 300, maxWidth: 600
-  })
-}}>
-  Responsive text
-</div>
+// 2. Result Interface
+export interface SetFillsResult {
+  nodeId: string;
+  appliedColor: string;
+  cssEquivalent: string;
+}
+
+// 3. Execute Function
+export async function setFills(input: SetFillsInput): Promise<SetFillsResult> {
+  const validated = setFillsInputSchema.parse(input);
+  const bridge = getFigmaBridge();
+  
+  await bridge.sendToFigma('set_fills', {
+    nodeId: validated.nodeId,
+    fills: [{ type: 'SOLID', color: hexToRgb(validated.color), opacity: validated.opacity }]
+  });
+  
+  return {
+    nodeId: validated.nodeId,
+    appliedColor: validated.color,
+    cssEquivalent: `background-color: ${validated.color}; opacity: ${validated.opacity};`
+  };
+}
+
+// 4. MCP Tool Definition
+export const setFillsToolDefinition = {
+  name: 'set_fills',
+  description: 'Sets fill colors on frames or text nodes...',
+  inputSchema: {
+    type: 'object' as const,
+    properties: { /* JSON Schema */ },
+    required: ['nodeId', 'color']
+  }
+};
 ```
 
 **Benefits:**
-- Reduces inline style duplication across components
-- Maintains consistency with theme tokens
-- Cross-platform compatible (React Native ready)
-- Better type safety and autocomplete
-- Easier to refactor and maintain
+- Schema-driven validation catches errors early
+- Execute function is unit-testable
+- MCP definition separate from implementation logic
 
-## Coding Standards
+#### Service Module Template
+Pure business logic with no I/O dependencies:
 
-- **TypeScript everywhere:** Use strict types, discriminated unions, and generics. Avoid `any`; prefer helper types to keep state machine context and events precise.
-- **Documentation-first mindset:** Add top-level JSDoc blocks describing each hook/component’s responsibility, parameters, and side effects. Maintain companion docs (`docs/*.md` or an ADR folder) for complex systems or refactors.
-- **Error handling:** Surface actionable messages to users via toasts or inline UI. Log internal errors with context (state, event) and guard against cascading failures.
-- **Pure functions for domain logic:** Keep physics, randomization, and prize calculations pure and testable. Inject dependencies (seed overrides, adapters) via parameters.
-
-## Testing Expectations
-
-- **Unit tests:** Cover domain modules (state machines, trajectory generators) with deterministic seeds. Validate edge cases—invalid transitions, timeouts, reset races.
-- **Component tests:** Use Testing Library to assert rendering behavior, accessibility, and state transitions from user interactions.
-- **Integration & E2E:** Leverage Playwright (or similar) for animation-heavy flows, visual regressions, and device viewport coverage.
-- **Dev tooling hooks:** When exposing internal APIs for tests or dev tools, mark them clearly (`_internal`) and ensure they’re gated from production usage.
-- **CI discipline:** Tests should run quickly and deterministically. Use seeds, mocked timers, and controlled feature flags to eliminate flakiness.
-
-## Documentation & Knowledge Sharing
-
-- Maintain ADR-style records for major architectural decisions (state machine refactors, animation driver swaps, testing overhauls).
-- Keep reset orchestration, animation pipelines, and domain algorithms documented with diagrams and troubleshooting tips.
-- Provide onboarding guides highlighting the flow from root entry points through feature orchestrators to reusable primitives so newcomers can trace the happy path quickly.
-
-## Developer Experience
-
-- Ship dev tools (debug panels, performance toggles, deterministic seeds) that plug into the architecture without touching production code paths.
-- Use feature flags and configuration providers to toggle experiences safely.
-- Keep the bundle modular: lazy-load dev-only panels and effect-heavy components where appropriate.
-- Favor predictable, typed adapters for platform features (viewport sizing, device detection) so tests can stub them easily.
-
-## Code Review Checklist
-
-- Does the change respect the folder boundaries and domain ownership?
-- Are state transitions and side effects deterministic and well-documented?
-- Have performance characteristics (render count, animation frames) been considered?
-- Are error states handled with user feedback and logged for telemetry?
-- Are tests covering both happy paths and failure scenarios, including reset flows?
-- Is documentation updated (inline comments + docs) for new concepts or refactors?
-
-## Common Mistakes to Avoid
-
-- **Unstructured state:** Relying on scattered `useState` calls or implicit side effects makes behavior unpredictable. Always model complex flows with explicit reducers, state machines, or finite state diagrams.
-- **Inline styling sprawl:** Sprinkling layout-critical inline styles across components hides design tokens. Move shared styling to theme variables, utility classes, or styled primitives.
-- **Over-engineering without payoff:** Excessive abstraction, nested providers, or premature indirection slows velocity. Start with the simplest architecture that meets requirements, then generalize once real duplication appears.
-- **Custom platform detection hacks:** User-agent sniffing breaks easily. Prefer `matchMedia`, `ResizeObserver`, and progressive enhancement strategies with tested adapter layers.
-- **Insufficient testing depth:** Smoke tests alone miss race conditions. Add deterministic unit tests for domain logic, integration tests for state transitions, and targeted E2E coverage for critical user journeys.
-- **Opaque error handling:** Silent failures or generic alerts erode trust. Provide actionable user feedback and structured logs with context so on-call engineers can diagnose quickly.
-
-## Documentation Standards
-
-### JSDoc Template for Components
-
-All exported components and hooks should include comprehensive JSDoc documentation:
-
-```tsx
+```typescript
 /**
- * Brief one-line description of the component's purpose.
- *
- * Detailed description explaining:
- * - What the component does
- * - Key features or behaviors
- * - Important implementation details
- * - Performance characteristics (if relevant)
- *
- * @param props - Component props
- * @param props.propName - Description of each prop
- *
- * @returns Brief description of what the component renders
- *
- * @example
- * ```tsx
- * <MyComponent
- *   propName="value"
- *   onEvent={() => console.log('event')}
- * />
- * ```
- *
- * @example
- * Complex usage with multiple scenarios:
- * ```tsx
- * <MyComponent
- *   propName="advanced"
- *   config={{ option: true }}
- * >
- *   <ChildComponent />
- * </MyComponent>
- * ```
- *
- * @remarks
- * - Additional notes about edge cases
- * - Dependencies on external systems
- * - Performance considerations
- * - Migration notes (if replacing legacy component)
- *
- * @see {@link RelatedComponent} for similar functionality
- * @see {@link https://docs.example.com} for external documentation
+ * Spacing Constraint Validator
+ * Validates values against 8pt grid system.
  */
-export function MyComponent({ propName, onEvent }: MyComponentProps) {
-  // Implementation
+
+export const VALID_SPACING_VALUES = [0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 128];
+
+export interface SpacingConstraintResult {
+  value: number;
+  isValid: boolean;
+  suggestedValue?: number;
+  message?: string;
+}
+
+export function validateSpacing(value: number): SpacingConstraintResult {
+  if (VALID_SPACING_VALUES.includes(value)) {
+    return { value, isValid: true };
+  }
+  
+  const closest = findClosestValue(value, VALID_SPACING_VALUES);
+  return {
+    value,
+    isValid: false,
+    suggestedValue: closest,
+    message: `${value}px not on 8pt grid. Use ${closest}px instead.`
+  };
 }
 ```
 
-### JSDoc Template for Hooks
+**Benefits:**
+- Pure functions are deterministic and easily tested
+- No external dependencies (database, network, filesystem)
+- Can be imported and reused across tools
 
-```tsx
-/**
- * Brief one-line description of the hook's purpose.
- *
- * Detailed explanation of:
- * - What problem the hook solves
- * - Side effects (API calls, subscriptions, timers)
- * - State management approach
- * - Performance characteristics
- *
- * @param config - Hook configuration object
- * @param config.option - Description of each config property
- *
- * @returns Hook return value description
- * @returns {Object} returnValue - Return value object
- * @returns {Type} returnValue.property - Each returned property
- *
- * @example
- * ```tsx
- * function MyComponent() {
- *   const { data, loading, error } = useMyHook({
- *     option: 'value'
- *   })
- *
- *   if (loading) return <Spinner />
- *   if (error) return <Error message={error} />
- *
- *   return <div>{data}</div>
- * }
- * ```
- *
- * @remarks
- * - Cleanup is handled automatically
- * - Uses internal caching for performance
- * - Requires XProvider in component tree
- *
- * @throws {Error} When used outside of provider context
- */
-export function useMyHook(config: HookConfig) {
-  // Implementation
+### A3: Configuration Management
+
+Centralized configuration with environment variable validation:
+
+```typescript
+// config.ts
+import { z } from 'zod';
+
+const configSchema = z.object({
+  NODE_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
+  FIGMA_WS_URL: z.string().url().default('ws://localhost:8080'),
+  FIGMA_REQUEST_TIMEOUT: z.coerce.number().int().positive().default(30000),
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().positive().default(5)
+});
+
+export type Config = z.infer<typeof configSchema>;
+
+let loadedConfig: Config | null = null;
+
+export function loadConfig(): Config {
+  if (loadedConfig) return loadedConfig;
+  loadedConfig = configSchema.parse(process.env);
+  return loadedConfig;
+}
+
+export function getConfig(): Config {
+  if (!loadedConfig) throw new Error('Config not loaded');
+  return loadedConfig;
 }
 ```
 
-### JSDoc Template for Utility Functions
+**Benefits:**
+- Fail fast on missing/invalid environment variables
+- Type-safe access to configuration
+- Testable with `resetConfig()` helper
 
-```tsx
-/**
- * Brief one-line description of the function's purpose.
- *
- * Detailed explanation of:
- * - Algorithm or approach used
- * - Edge cases handled
- * - Performance characteristics (O(n), etc.)
- *
- * @param input - Description of parameter
- * @param options - Optional configuration object
- * @returns Description of return value
- *
- * @example
- * ```tsx
- * const result = myUtility('input', { option: true })
- * console.log(result) // Expected output
- * ```
- *
- * @throws {TypeError} When input is invalid
- * @throws {RangeError} When value out of bounds
- */
-export function myUtility(input: string, options?: Options): Result {
-  // Implementation
+---
+
+## Async Patterns & Error Handling
+
+### Async/Await Best Practices
+
+```typescript
+// ✅ GOOD: Explicit error handling with typed errors
+export async function createFrame(input: CreateFrameInput): Promise<CreateFrameResult> {
+  try {
+    const validated = createFrameInputSchema.parse(input);
+    const bridge = getFigmaBridge();
+    
+    const response = await bridge.sendToFigma('create_frame', validated);
+    
+    return {
+      frameId: response.nodeId,
+      htmlAnalogy: '...',
+      cssEquivalent: '...'
+    };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new ValidationError('Input validation failed', 'create_frame', input, error.errors);
+    }
+    if (error instanceof Error && error.message.includes('Connection')) {
+      throw new NetworkError('Figma bridge unavailable', 'create_frame', 'figma-bridge', input);
+    }
+    throw new ToolExecutionError(error.message, 'create_frame', input, error);
+  }
 }
-```
 
-### Documentation Coverage Goals
-
-- **Exported Components**: 100% JSDoc coverage required
-- **Exported Hooks**: 100% JSDoc coverage required
-- **Public APIs**: 100% JSDoc coverage required
-- **Utility Functions**: 80%+ JSDoc coverage recommended
-- **Internal/Private**: JSDoc optional but encouraged for complex logic
-
-### ESLint Enforcement
-
-Configure ESLint to require JSDoc for exported declarations:
-
-```json
-{
-  "rules": {
-    "jsdoc/require-jsdoc": ["warn", {
-      "publicOnly": true,
-      "require": {
-        "FunctionDeclaration": true,
-        "ClassDeclaration": true,
-        "ArrowFunctionExpression": false,
-        "FunctionExpression": false
-      }
-    }],
-    "jsdoc/require-param": "warn",
-    "jsdoc/require-returns": "warn",
-    "jsdoc/require-example": "off"
+// ❌ BAD: Silent failures, generic errors
+export async function createFrame(input: any): Promise<any> {
+  try {
+    const response = await bridge.sendToFigma('create_frame', input);
+    return response;
+  } catch (error) {
+    console.error('Error:', error);
+    return null; // Silent failure!
   }
 }
 ```
 
-### Documentation Best Practices
+### Error Hierarchy
 
-1. **Be Specific**: Avoid vague descriptions like "handles data" - explain what data and how
-2. **Include Examples**: Show real-world usage, not trivial examples
-3. **Document Side Effects**: API calls, subscriptions, timers, DOM manipulation
-4. **Explain "Why"**: If implementation is non-obvious, explain the reasoning
-5. **Keep Updated**: Update JSDoc when changing component behavior
-6. **Link Related Docs**: Use `@see` tags to connect related components/docs
+```typescript
+// Custom error classes with structured context
+export class ToolExecutionError extends Error {
+  constructor(
+    message: string,
+    public readonly tool: string,
+    public readonly input?: unknown,
+    public readonly cause?: Error
+  ) {
+    super(message);
+    this.name = 'ToolExecutionError';
+  }
+}
+
+export class ValidationError extends ToolExecutionError {
+  constructor(
+    message: string,
+    tool: string,
+    input?: unknown,
+    public readonly validationErrors?: unknown
+  ) {
+    super(message, tool, input);
+  }
+}
+
+export class FigmaAPIError extends ToolExecutionError {
+  constructor(
+    message: string,
+    tool: string,
+    public readonly operation: string,
+    input?: unknown,
+    cause?: Error
+  ) {
+    super(message, tool, input, cause);
+  }
+}
+
+export class NetworkError extends ToolExecutionError {
+  constructor(
+    message: string,
+    tool: string,
+    public readonly endpoint?: string,
+    input?: unknown,
+    cause?: Error
+  ) {
+    super(message, tool, input, cause);
+  }
+}
+```
+
+**Usage Pattern:**
+```typescript
+try {
+  await tool.execute(input);
+} catch (error) {
+  if (isValidationError(error)) {
+    logger.warn('Invalid input', { tool: error.tool, errors: error.validationErrors });
+    return { status: 'error', message: 'Invalid input parameters' };
+  }
+  if (isNetworkError(error)) {
+    logger.error('Network failure', error);
+    return { status: 'error', message: 'Figma connection lost' };
+  }
+  throw error; // Unknown error, propagate
+}
+```
+
+---
+
+## Testing Expectations
+
+### T1: Unit Tests (Deterministic)
+
+Test pure functions with explicit inputs:
+
+```typescript
+// typography.test.ts
+import { validateTypography } from '../mcp-server/src/constraints/typography';
+
+describe('Typography Validation', () => {
+  test('accepts valid modular scale values', () => {
+    expect(validateTypography(16)).toEqual({ fontSize: 16, isValid: true });
+    expect(validateTypography(24)).toEqual({ fontSize: 24, isValid: true });
+  });
+  
+  test('rejects off-scale values with suggestions', () => {
+    const result = validateTypography(18);
+    expect(result.isValid).toBe(false);
+    expect(result.suggestedFontSize).toBe(20);
+    expect(result.message).toContain('Use 16px or 20px');
+  });
+  
+  test('calculates recommended line height', () => {
+    const result = validateTypography(16);
+    expect(result.recommendedLineHeight).toBe(24); // 1.5x ratio
+  });
+});
+```
+
+### T2: Integration Tests
+
+Test tool modules end-to-end with mocked Figma bridge:
+
+```typescript
+// create-frame.integration.test.ts
+import { createFrame } from '../mcp-server/src/tools/create_frame';
+import { getFigmaBridge } from '../mcp-server/src/figma-bridge';
+
+jest.mock('../mcp-server/src/figma-bridge');
+
+describe('create_frame integration', () => {
+  beforeEach(() => {
+    const mockBridge = {
+      sendToFigma: jest.fn().mockResolvedValue({ nodeId: 'frame-123' })
+    };
+    (getFigmaBridge as jest.Mock).mockReturnValue(mockBridge);
+  });
+  
+  test('creates frame with valid input', async () => {
+    const result = await createFrame({
+      name: 'Button',
+      layoutMode: 'HORIZONTAL',
+      itemSpacing: 16,
+      padding: 24
+    });
+    
+    expect(result.frameId).toBe('frame-123');
+    expect(result.cssEquivalent).toContain('flex-direction: row');
+    expect(result.cssEquivalent).toContain('gap: 16px');
+  });
+  
+  test('throws ValidationError for invalid spacing', async () => {
+    await expect(createFrame({
+      name: 'Button',
+      itemSpacing: 13 // Not on 8pt grid
+    })).rejects.toThrow(ValidationError);
+  });
+});
+```
+
+### T3: Test Organization
+
+```
+tests/
+├── unit/                 # Pure function tests
+│   ├── color-converter.test.ts
+│   └── typography-generator.test.ts
+├── integration/          # Tool end-to-end tests
+│   ├── component-tools.test.ts
+│   └── foundation.test.ts
+└── e2e/                  # Full workflow tests
+    └── button-component.test.ts
+```
+
+### T4: Test Scripts
+
+```json
+{
+  "scripts": {
+    "test": "npm run test:all",
+    "test:unit": "cd ../tests && node --test unit/**/*.test.ts",
+    "test:integration": "cd ../tests && node --test integration/**/*.test.ts",
+    "test:all": "npm run build && npm run test:unit && npm run test:integration",
+    "test:coverage": "c8 npm run test:all",
+    "test:watch": "node --test --watch unit/**/*.test.ts"
+  }
+}
+```
+
+---
+
+## Documentation Standards
+
+### JSDoc Requirements
+
+All exported functions, classes, and types must have comprehensive JSDoc:
+
+```typescript
+/**
+ * Validates WCAG contrast ratio between foreground and background colors.
+ *
+ * Calculates relative luminance using sRGB color space and applies
+ * WCAG 2.1 contrast formula. Returns detailed pass/fail for AA/AAA levels.
+ *
+ * @param foreground - Foreground RGB color {r: 0-255, g: 0-255, b: 0-255}
+ * @param background - Background RGB color {r: 0-255, g: 0-255, b: 0-255}
+ * @returns Contrast validation result with ratio and WCAG compliance
+ *
+ * @example
+ * ```typescript
+ * const result = validateContrast(
+ *   { r: 0, g: 0, b: 0 },    // Black text
+ *   { r: 255, g: 255, b: 255 } // White background
+ * );
+ * console.log(result.ratio);          // 21
+ * console.log(result.passes.AA.normal); // true
+ * ```
+ *
+ * @remarks
+ * - AA normal text requires 4.5:1 minimum
+ * - AA large text requires 3.0:1 minimum
+ * - AAA normal text requires 7.0:1 minimum
+ * - Large text is 18pt+ or 14pt+ bold
+ *
+ * @see {@link https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html WCAG 2.1 SC 1.4.3}
+ */
+export function validateContrast(
+  foreground: RGB,
+  background: RGB
+): ContrastValidationResult {
+  // Implementation...
+}
+```
+
+**Required JSDoc Tags:**
+- `@param` for every parameter with description
+- `@returns` describing return value structure
+- `@throws` listing error types that may be thrown
+- `@example` with realistic code snippet
+- `@remarks` for important notes, caveats, performance characteristics
+- `@see` for related functions or external documentation
+
+### ESLint JSDoc Enforcement
+
+```json
+// .eslintrc.json
+{
+  "plugins": ["jsdoc"],
+  "rules": {
+    "jsdoc/require-jsdoc": ["warn", { "publicOnly": true }],
+    "jsdoc/require-param": "warn",
+    "jsdoc/require-param-description": "warn",
+    "jsdoc/require-returns": "warn",
+    "jsdoc/require-returns-description": "warn",
+    "jsdoc/check-param-names": "warn"
+  }
+}
+```
+
+---
+
+## Observability & Monitoring
+
+### Structured Logging
+
+```typescript
+import { getLogger } from './monitoring/logger';
+
+const logger = getLogger().child({ tool: 'create_frame' });
+
+// Log with structured context
+logger.info('Frame created', {
+  frameId: 'frame-123',
+  layoutMode: 'HORIZONTAL',
+  duration: 45
+});
+
+// Log errors with full context
+logger.error('Validation failed', new ValidationError(...), {
+  input: { name: 'Button', itemSpacing: 13 }
+});
+```
+
+### Metrics Tracking
+
+```typescript
+import { getMetrics } from './monitoring/metrics';
+
+const metrics = getMetrics();
+
+// Counter: Track event occurrences
+const toolCounter = metrics.counter('tool_invocations_total', 'Tool calls', ['tool']);
+toolCounter.inc(1, { tool: 'create_frame' });
+
+// Histogram: Track value distributions
+const durationHist = metrics.histogram('tool_duration_ms', 'Duration', [10, 50, 100, 500, 1000]);
+durationHist.observe(duration);
+```
+
+### Error Tracking
+
+```typescript
+import { trackError } from './monitoring/error-tracker';
+
+try {
+  await tool.execute(input);
+} catch (error) {
+  const errorId = trackError(
+    error,
+    { tool: 'create_frame', input },
+    'high',        // severity
+    'figma_api'    // category
+  );
+  logger.error('Tool execution failed', error, { errorId });
+}
+```
+
+---
+
+## Code Review Checklist
+
+### Q1: Architecture & Domain Boundaries
+- [ ] Tool module follows standard structure (schema → execute → definition)
+- [ ] Business logic in pure functions, I/O in tool layer
+- [ ] No circular dependencies between modules
+
+### Q2: Type Safety & Validation
+- [ ] Zod schema defined for all inputs
+- [ ] TypeScript strict mode enabled, no `any` types
+- [ ] Custom error classes used for domain errors
+
+### Q3: Async Patterns & Error Handling
+- [ ] Async/await used consistently
+- [ ] Errors wrapped in typed error classes
+- [ ] Circuit breaker applied for external calls
+
+### Q4: Observability
+- [ ] Structured logging at key transitions
+- [ ] Metrics tracked for tool invocations and errors
+- [ ] Error tracking for aggregation/alerting
+
+### Q5: Testing
+- [ ] Unit tests for pure functions
+- [ ] Integration tests for tool end-to-end
+- [ ] Test coverage >80% for new code
+
+### Q6: Documentation
+- [ ] JSDoc with @param, @returns, @example
+- [ ] README updated if architecture changed
+- [ ] ADR created for major decisions
+
+---
+
+## Common Anti-Patterns
+
+### M1: Unvalidated Inputs
+❌ **Bad**: Accepting `any` without validation
+```typescript
+export async function createFrame(input: any) {
+  const bridge = getFigmaBridge();
+  return await bridge.sendToFigma('create_frame', input);
+}
+```
+
+✅ **Good**: Zod schema validation
+```typescript
+export async function createFrame(input: CreateFrameInput) {
+  const validated = createFrameInputSchema.parse(input);
+  const bridge = getFigmaBridge();
+  return await bridge.sendToFigma('create_frame', validated);
+}
+```
+
+### M2: Silent Failures
+❌ **Bad**: Swallowing errors
+```typescript
+try {
+  await riskyOperation();
+} catch (error) {
+  console.log('Oops');
+  return null;
+}
+```
+
+✅ **Good**: Explicit error handling
+```typescript
+try {
+  await riskyOperation();
+} catch (error) {
+  logger.error('Operation failed', error, { context });
+  throw new ToolExecutionError('Failed to complete operation', 'tool_name', input, error);
+}
+```
+
+### M3: Mixing I/O and Logic
+❌ **Bad**: Business logic coupled to I/O
+```typescript
+export async function validateAndCreate(input: any) {
+  const isValid = input.spacing % 8 === 0; // Logic
+  if (!isValid) return { error: 'Invalid spacing' };
+  
+  const bridge = getFigmaBridge(); // I/O
+  return await bridge.sendToFigma('create_frame', input);
+}
+```
+
+✅ **Good**: Separate concerns
+```typescript
+// Pure validation logic
+export function validateSpacing(value: number): SpacingResult {
+  return { isValid: value % 8 === 0, value };
+}
+
+// I/O in tool layer
+export async function createFrame(input: CreateFrameInput) {
+  const spacingCheck = validateSpacing(input.itemSpacing);
+  if (!spacingCheck.isValid) {
+    throw new ValidationError('Invalid spacing');
+  }
+  
+  const bridge = getFigmaBridge();
+  return await bridge.sendToFigma('create_frame', input);
+}
+```
+
+### M4: Missing Context in Errors
+❌ **Bad**: Generic error messages
+```typescript
+throw new Error('Failed');
+```
+
+✅ **Good**: Structured error context
+```typescript
+throw new FigmaAPIError(
+  'Failed to create frame in Figma',
+  'create_frame',        // tool name
+  'create_frame',        // operation
+  { name: 'Button', layoutMode: 'HORIZONTAL' }, // input
+  originalError          // cause
+);
+```
+
+---
 
 ## Continuous Improvement
 
-- Periodically prune legacy compatibility code (e.g., older signatures in hooks) once consumers migrate.
-- Revisit custom infrastructure (reset orchestration, animation drivers) to ensure they still outperform off-the-shelf solutions.
-- Encourage engineers to add small quality-of-life improvements (better typing, helper utilities) as part of feature work.
-- **Document as you go**: Add JSDoc when creating new components, not as cleanup work
+### I1: Remove Legacy Code
+- Audit unused exports quarterly
+- Remove deprecated function signatures after migration period
+- Document breaking changes in CHANGELOG.md
+
+### I2: Tooling Evaluation
+- Review custom infrastructure vs off-the-shelf annually
+- Benchmark circuit breaker, retry logic, error tracking
+- Consider migration to established libraries if maintenance burden high
+
+### I3: Developer Experience
+- Add CLI tools for common operations (test data generation, tool scaffolding)
+- Improve error messages with actionable suggestions
+- Document troubleshooting steps in runbooks
+
+---
+
+## Migration from Previous Style Guide
+
+**Previous Guide Context:**  
+The original style guide was written for a React/frontend project and is not applicable to this Node.js backend codebase. It has been archived to `docs/meta/styleguide-react-archived.md`.
+
+**What Changed:**
+- Removed React-specific patterns (hooks, components, JSX, styling)
+- Added backend patterns (async/await, error handling, WebSocket)
+- Focused on MCP server architecture (tools, constraints, monitoring)
+- Updated code examples to TypeScript backend patterns
+
+**If You're New:**  
+This codebase is a **backend MCP server**, not a frontend application. Read `docs/architecture.md` for system overview before diving into code.
+
+---
+
+## Additional Resources
+
+- **Architecture Overview**: `docs/architecture.md`
+- **MCP Protocol**: `docs/architecture-mcp-server.md`
+- **WebSocket Bridge**: `docs/architecture-websocket-server.md`
+- **Figma Plugin**: `docs/architecture-figma-plugin.md`
+- **Testing Guide**: `tests/README.md`
+- **Deployment**: `docs/operations/deployment-runbook.md`

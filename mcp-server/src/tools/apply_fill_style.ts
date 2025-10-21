@@ -84,28 +84,23 @@ export interface ApplyFillStyleResult {
 /**
  * Implementation
  */
-export async function applyFillStyle(
-  input: ApplyFillStyleInput
-): Promise<ApplyFillStyleResult> {
+export async function applyFillStyle(input: ApplyFillStyleInput): Promise<ApplyFillStyleResult> {
   // Validate input
   const validated = ApplyFillStyleInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; styleName?: string; error?: string }>('apply_fill_style', {
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    styleName?: string;
+    error?: string;
+  }>('apply_fill_style', {
     nodeId: validated.nodeId,
     styleNameOrId: validated.styleNameOrId
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to apply fill style');
-  }
+  // Note: Response validated by bridge at protocol level
 
   return {
     nodeId: validated.nodeId,

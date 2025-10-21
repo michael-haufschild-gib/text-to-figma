@@ -7,8 +7,8 @@
 
 import { z } from 'zod';
 import { spacingSchema, VALID_SPACING_VALUES } from '../constraints/spacing.js';
-import { layoutModeSchema } from './create_frame.js';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { layoutModeSchema } from './create_frame.js';
 
 /**
  * Input schema for set_layout_properties tool
@@ -72,17 +72,29 @@ function generateCssEquivalent(input: SetLayoutPropertiesInput): string {
 /**
  * Updates layout properties on an existing frame
  */
-export async function setLayoutProperties(input: SetLayoutPropertiesInput): Promise<SetLayoutPropertiesResult> {
+export async function setLayoutProperties(
+  input: SetLayoutPropertiesInput
+): Promise<SetLayoutPropertiesResult> {
   // Validate input
   const validated = setLayoutPropertiesInputSchema.parse(input);
 
   // Track what was updated
   const updated: string[] = [];
-  if (validated.layoutMode !== undefined) updated.push('layoutMode');
-  if (validated.itemSpacing !== undefined) updated.push('itemSpacing');
-  if (validated.padding !== undefined) updated.push('padding');
-  if (validated.width !== undefined) updated.push('width');
-  if (validated.height !== undefined) updated.push('height');
+  if (validated.layoutMode !== undefined) {
+    updated.push('layoutMode');
+  }
+  if (validated.itemSpacing !== undefined) {
+    updated.push('itemSpacing');
+  }
+  if (validated.padding !== undefined) {
+    updated.push('padding');
+  }
+  if (validated.width !== undefined) {
+    updated.push('width');
+  }
+  if (validated.height !== undefined) {
+    updated.push('height');
+  }
 
   if (updated.length === 0) {
     throw new Error('No properties specified to update');
@@ -145,7 +157,8 @@ CSS equivalent: flex-direction: row; gap: 24px;`,
       layoutMode: {
         type: 'string' as const,
         enum: ['HORIZONTAL', 'VERTICAL', 'NONE'],
-        description: 'Layout direction: HORIZONTAL (row), VERTICAL (column), or NONE (no auto-layout)'
+        description:
+          'Layout direction: HORIZONTAL (row), VERTICAL (column), or NONE (no auto-layout)'
       },
       itemSpacing: {
         type: 'number' as const,
@@ -166,4 +179,25 @@ CSS equivalent: flex-direction: row; gap: 24px;`,
     },
     required: ['nodeId']
   }
+};
+
+/**
+ * Handler export for tool registration
+ */
+export const setLayoutPropertiesHandler: import('../routing/tool-handler.js').ToolHandler<
+  SetLayoutPropertiesInput,
+  SetLayoutPropertiesResult
+> = {
+  name: 'set_layout_properties',
+  schema: setLayoutPropertiesInputSchema as any,
+  execute: setLayoutProperties,
+  formatResponse: (result) => {
+    let text = `Layout Properties Updated\n`;
+    text += `Node ID: ${result.nodeId}\n`;
+    text += `Updated Properties: ${result.updated.join(', ')}\n\n`;
+    text += `CSS Equivalent:\n  ${result.cssEquivalent}\n`;
+
+    return [{ type: 'text', text }];
+  },
+  definition: setLayoutPropertiesToolDefinition
 };

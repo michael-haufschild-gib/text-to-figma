@@ -94,28 +94,23 @@ export interface SetStrokeCapResult {
 /**
  * Implementation
  */
-export async function setStrokeCap(
-  input: SetStrokeCapInput
-): Promise<SetStrokeCapResult> {
+export async function setStrokeCap(input: SetStrokeCapInput): Promise<SetStrokeCapResult> {
   // Validate input
   const validated = SetStrokeCapInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_stroke_cap', {
-    nodeId: validated.nodeId,
-    strokeCap: validated.strokeCap
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set stroke cap');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_stroke_cap',
+    {
+      nodeId: validated.nodeId,
+      strokeCap: validated.strokeCap
+    }
+  )
 
   // Map Figma NONE to CSS 'butt'
   const cssCapMap = {

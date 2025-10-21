@@ -17,12 +17,18 @@ export const CreateRectangleWithImageFillInputSchema = z.object({
   imageUrl: z.string().url().describe('URL of the image to load'),
   width: z.number().positive().describe('Width of the rectangle in pixels'),
   height: z.number().positive().describe('Height of the rectangle in pixels'),
-  scaleMode: z.enum(['FILL', 'FIT', 'CROP', 'TILE']).optional().default('FILL').describe('How the image should scale within the rectangle'),
+  scaleMode: z
+    .enum(['FILL', 'FIT', 'CROP', 'TILE'])
+    .optional()
+    .default('FILL')
+    .describe('How the image should scale within the rectangle'),
   name: z.string().optional().default('Image').describe('Name for the rectangle node'),
   parentId: z.string().optional().describe('Parent frame ID (optional)')
 });
 
-export type CreateRectangleWithImageFillInput = z.infer<typeof CreateRectangleWithImageFillInputSchema>;
+export type CreateRectangleWithImageFillInput = z.infer<
+  typeof CreateRectangleWithImageFillInputSchema
+>;
 
 /**
  * Tool definition for MCP
@@ -117,29 +123,31 @@ export async function createRectangleWithImageFill(
   const bridge = getFigmaBridge();
 
   if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running and WebSocket bridge is active.');
+    throw new Error(
+      'Not connected to Figma. Ensure the plugin is running and WebSocket bridge is active.'
+    );
   }
 
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; nodeId?: string; error?: string }>('create_rectangle_with_image_fill', {
-    imageUrl: validated.imageUrl,
-    width: validated.width,
-    height: validated.height,
-    scaleMode: validated.scaleMode,
-    name: validated.name,
-    parentId: validated.parentId
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create rectangle with image fill');
-  }
+  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
+    'create_rectangle_with_image_fill',
+    {
+      imageUrl: validated.imageUrl,
+      width: validated.width,
+      height: validated.height,
+      scaleMode: validated.scaleMode,
+      name: validated.name,
+      parentId: validated.parentId
+    }
+  );
+  // Note: Response validated by bridge at protocol level
 
   // Map scale mode to CSS
   const scaleModeToCSS: Record<string, string> = {
-    'FILL': 'background-size: cover;',
-    'FIT': 'background-size: contain;',
-    'CROP': 'background-size: cover; background-position: center;',
-    'TILE': 'background-repeat: repeat;'
+    FILL: 'background-size: cover;',
+    FIT: 'background-size: contain;',
+    CROP: 'background-size: cover; background-position: center;',
+    TILE: 'background-repeat: repeat;'
   };
 
   const cssEquivalent = `.image {

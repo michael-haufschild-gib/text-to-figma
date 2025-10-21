@@ -15,9 +15,20 @@ import { getFigmaBridge } from '../figma-bridge.js';
  * Input schema
  */
 export const CreateStarInputSchema = z.object({
-  pointCount: z.number().int().min(3).max(100).optional().default(5).describe('Number of star points (default: 5)'),
+  pointCount: z
+    .number()
+    .int()
+    .min(3)
+    .max(100)
+    .optional()
+    .default(5)
+    .describe('Number of star points (default: 5)'),
   radius: z.number().positive().describe('Radius of outer points in pixels'),
-  innerRadius: z.number().positive().optional().describe('Radius of inner points (if not provided, calculated as radius * 0.382)'),
+  innerRadius: z
+    .number()
+    .positive()
+    .optional()
+    .describe('Radius of inner points (if not provided, calculated as radius * 0.382)'),
   name: z.string().optional().default('Star').describe('Name for the star node'),
   parentId: z.string().optional().describe('Parent frame ID (optional)'),
   fillColor: z.string().optional().describe('Fill color in hex format'),
@@ -119,9 +130,7 @@ export interface CreateStarResult {
 /**
  * Implementation
  */
-export async function createStar(
-  input: CreateStarInput
-): Promise<CreateStarResult> {
+export async function createStar(input: CreateStarInput): Promise<CreateStarResult> {
   // Validate input
   const validated = CreateStarInputSchema.parse(input);
 
@@ -131,25 +140,21 @@ export async function createStar(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; nodeId?: string; error?: string }>('create_star', {
-    pointCount: validated.pointCount,
-    radius: validated.radius,
-    innerRadius,
-    name: validated.name,
-    parentId: validated.parentId,
-    fillColor: validated.fillColor,
-    strokeColor: validated.strokeColor,
-    strokeWeight: validated.strokeWeight
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create star');
-  }
+  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
+    'create_star',
+    {
+      pointCount: validated.pointCount,
+      radius: validated.radius,
+      innerRadius,
+      name: validated.name,
+      parentId: validated.parentId,
+      fillColor: validated.fillColor,
+      strokeColor: validated.strokeColor,
+      strokeWeight: validated.strokeWeight
+    }
+  );
+  // Note: Response validated by bridge at protocol level
 
   // Build CSS equivalent
   const cssEquivalent = `/* ${validated.pointCount}-point star requires SVG or clip-path */

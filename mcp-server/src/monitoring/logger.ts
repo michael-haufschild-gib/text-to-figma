@@ -191,12 +191,9 @@ export class Logger {
       }
     }
 
-    // Use stderr for errors and warnings, stdout for others
-    if (entry.level === 'error' || entry.level === 'fatal' || entry.level === 'warn') {
-      console.error(output);
-    } else {
-      console.log(output);
-    }
+    // MCP REQUIREMENT: ALL logs must go to stderr to avoid stdout contamination
+    // Always use console.error regardless of log level
+    console.error(output);
   }
 
   /**
@@ -205,12 +202,9 @@ export class Logger {
   private writeJson(entry: LogEntry): void {
     const json = JSON.stringify(entry);
 
-    // Use stderr for errors and warnings, stdout for others
-    if (entry.level === 'error' || entry.level === 'fatal' || entry.level === 'warn') {
-      console.error(json);
-    } else {
-      console.log(json);
-    }
+    // MCP REQUIREMENT: ALL logs must go to stderr to avoid stdout contamination
+    // Always use console.error regardless of log level
+    console.error(json);
   }
 
   /**
@@ -219,10 +213,10 @@ export class Logger {
   private getLevelColor(level: LogLevel): string {
     const colors: Record<LogLevel, string> = {
       debug: '\x1b[36m', // Cyan
-      info: '\x1b[32m',  // Green
-      warn: '\x1b[33m',  // Yellow
+      info: '\x1b[32m', // Green
+      warn: '\x1b[33m', // Yellow
       error: '\x1b[31m', // Red
-      fatal: '\x1b[35m'  // Magenta
+      fatal: '\x1b[35m' // Magenta
     };
     return colors[level];
   }

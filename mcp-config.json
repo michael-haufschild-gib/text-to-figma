@@ -1,0 +1,16 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/config.json",
+  "mcpServers": {
+    "text-to-figma": {
+      "command": "node",
+      "args": [
+        "./mcp-server/dist/index.js"
+      ],
+      "env": {
+        "FIGMA_WS_URL": "ws://localhost:8080",
+        "NODE_ENV": "development",
+        "LOG_LEVEL": "info"
+      }
+    }
+  }
+}

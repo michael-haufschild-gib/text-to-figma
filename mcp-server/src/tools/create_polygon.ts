@@ -15,7 +15,12 @@ import { getFigmaBridge } from '../figma-bridge.js';
  * Input schema
  */
 export const CreatePolygonInputSchema = z.object({
-  sideCount: z.number().int().min(3).max(100).describe('Number of sides (3=triangle, 4=diamond, 5=pentagon, 6=hexagon, 8=octagon)'),
+  sideCount: z
+    .number()
+    .int()
+    .min(3)
+    .max(100)
+    .describe('Number of sides (3=triangle, 4=diamond, 5=pentagon, 6=hexagon, 8=octagon)'),
   radius: z.number().positive().describe('Radius from center to vertices in pixels'),
   name: z.string().optional().default('Polygon').describe('Name for the polygon node'),
   parentId: z.string().optional().describe('Parent frame ID (optional)'),
@@ -116,33 +121,27 @@ export interface CreatePolygonResult {
 /**
  * Implementation
  */
-export async function createPolygon(
-  input: CreatePolygonInput
-): Promise<CreatePolygonResult> {
+export async function createPolygon(input: CreatePolygonInput): Promise<CreatePolygonResult> {
   // Validate input
   const validated = CreatePolygonInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; nodeId?: string; error?: string }>('create_polygon', {
-    sideCount: validated.sideCount,
-    radius: validated.radius,
-    name: validated.name,
-    parentId: validated.parentId,
-    fillColor: validated.fillColor,
-    strokeColor: validated.strokeColor,
-    strokeWeight: validated.strokeWeight
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create polygon');
-  }
+  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
+    'create_polygon',
+    {
+      sideCount: validated.sideCount,
+      radius: validated.radius,
+      name: validated.name,
+      parentId: validated.parentId,
+      fillColor: validated.fillColor,
+      strokeColor: validated.strokeColor,
+      strokeWeight: validated.strokeWeight
+    }
+  );
+  // Note: Response validated by bridge at protocol level
 
   // Determine polygon type
   const polygonTypes: Record<number, string> = {

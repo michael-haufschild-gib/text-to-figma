@@ -112,10 +112,23 @@ export interface RefinementIteration {
  * Refinement loop configuration
  */
 export const refinementConfigSchema = z.object({
-  maxIterations: z.number().int().positive().default(3).describe('Maximum number of refinement iterations'),
-  convergenceThreshold: z.number().min(0).max(100).default(95).describe('Quality score threshold for convergence'),
+  maxIterations: z
+    .number()
+    .int()
+    .positive()
+    .default(3)
+    .describe('Maximum number of refinement iterations'),
+  convergenceThreshold: z
+    .number()
+    .min(0)
+    .max(100)
+    .default(95)
+    .describe('Quality score threshold for convergence'),
   autoFix: z.boolean().default(true).describe('Automatically apply corrections'),
-  enabledRules: z.array(validationRuleTypeSchema).optional().describe('Enabled validation rule types')
+  enabledRules: z
+    .array(validationRuleTypeSchema)
+    .optional()
+    .describe('Enabled validation rule types')
 });
 
 export type RefinementConfig = z.infer<typeof refinementConfigSchema>;
@@ -276,10 +289,10 @@ function validateAlignment(nodes: DesignNode[]): ValidationIssue[] {
  */
 function validateHierarchy(nodes: DesignNode[]): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  const textNodes = nodes.filter(node => node.type === 'TEXT');
+  const textNodes = nodes.filter((node) => node.type === 'TEXT');
 
   if (textNodes.length > 0) {
-    const fontSizes = textNodes.map(node => node.fontSize ?? 16);
+    const fontSizes = textNodes.map((node) => node.fontSize ?? 16);
     const uniqueSizes = [...new Set(fontSizes)].sort((a, b) => b - a);
 
     // Check if there's a clear hierarchy (at least 2 different sizes)
@@ -288,7 +301,8 @@ function validateHierarchy(nodes: DesignNode[]): ValidationIssue[] {
         id: 'hierarchy-font-sizes',
         type: 'hierarchy',
         severity: 'warning',
-        message: 'All text elements use the same font size - consider establishing visual hierarchy',
+        message:
+          'All text elements use the same font size - consider establishing visual hierarchy',
         autoFixable: false
       });
     }
@@ -324,7 +338,7 @@ export function validateDesign(
     'hierarchy'
   ];
 
-  let allIssues: ValidationIssue[] = [];
+  const allIssues: ValidationIssue[] = [];
 
   // Run enabled validation rules
   if (allRules.includes('spacing')) {
@@ -344,9 +358,9 @@ export function validateDesign(
   }
 
   // Count issues by severity
-  const errorCount = allIssues.filter(i => i.severity === 'error').length;
-  const warningCount = allIssues.filter(i => i.severity === 'warning').length;
-  const infoCount = allIssues.filter(i => i.severity === 'info').length;
+  const errorCount = allIssues.filter((i) => i.severity === 'error').length;
+  const warningCount = allIssues.filter((i) => i.severity === 'warning').length;
+  const infoCount = allIssues.filter((i) => i.severity === 'info').length;
 
   const result: ValidationResult = {
     issues: allIssues,
@@ -423,20 +437,17 @@ export function generateCorrections(issues: ValidationIssue[]): CorrectionAction
 /**
  * Apply corrections to design state
  */
-export function applyCorrections(
-  state: DesignState,
-  corrections: CorrectionAction[]
-): DesignState {
+export function applyCorrections(state: DesignState, corrections: CorrectionAction[]): DesignState {
   // Create a deep copy of the state
   const newState: DesignState = JSON.parse(JSON.stringify(state));
 
   // Apply each correction
   for (const correction of corrections) {
-    if (!correction.nodeId) continue;
+    if (!correction.nodeId) {continue;}
 
     // Find the node to update
     const node = findNodeById(newState.nodes, correction.nodeId);
-    if (!node) continue;
+    if (!node) {continue;}
 
     switch (correction.action) {
       case 'update_spacing':
@@ -471,7 +482,7 @@ function findNodeById(nodes: DesignNode[], id: string): DesignNode | undefined {
     }
     if (node.children) {
       const found = findNodeById(node.children, id);
-      if (found) return found;
+      if (found) {return found;}
     }
   }
   return undefined;
@@ -495,9 +506,7 @@ export function runRefinementLoop(
     const validation = validateDesign(currentState, validatedConfig.enabledRules);
 
     // Generate corrections
-    const corrections = validatedConfig.autoFix
-      ? generateCorrections(validation.issues)
-      : [];
+    const corrections = validatedConfig.autoFix ? generateCorrections(validation.issues) : [];
 
     // Check convergence
     const converged = validation.score >= validatedConfig.convergenceThreshold;
@@ -529,7 +538,7 @@ export function runRefinementLoop(
     previousScore = validation.score;
 
     // Stop if no more issues can be auto-fixed
-    const autoFixableIssues = validation.issues.filter(i => i.autoFixable);
+    const autoFixableIssues = validation.issues.filter((i) => i.autoFixable);
     if (autoFixableIssues.length === 0) {
       break;
     }

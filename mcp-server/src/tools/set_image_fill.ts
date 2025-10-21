@@ -16,8 +16,18 @@ import { getFigmaBridge } from '../figma-bridge.js';
 export const SetImageFillInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to apply image fill to'),
   imageUrl: z.string().url().describe('URL of the image to load'),
-  scaleMode: z.enum(['FILL', 'FIT', 'CROP', 'TILE']).optional().default('FILL').describe('How the image should scale'),
-  opacity: z.number().min(0).max(1).optional().default(1).describe('Image opacity (0-1, default: 1)')
+  scaleMode: z
+    .enum(['FILL', 'FIT', 'CROP', 'TILE'])
+    .optional()
+    .default('FILL')
+    .describe('How the image should scale'),
+  opacity: z
+    .number()
+    .min(0)
+    .max(1)
+    .optional()
+    .default(1)
+    .describe('Image opacity (0-1, default: 1)')
 });
 
 export type SetImageFillInput = z.infer<typeof SetImageFillInputSchema>;
@@ -96,37 +106,32 @@ export interface SetImageFillResult {
 /**
  * Implementation
  */
-export async function setImageFill(
-  input: SetImageFillInput
-): Promise<SetImageFillResult> {
+export async function setImageFill(input: SetImageFillInput): Promise<SetImageFillResult> {
   // Validate input
   const validated = SetImageFillInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_image_fill', {
-    nodeId: validated.nodeId,
-    imageUrl: validated.imageUrl,
-    scaleMode: validated.scaleMode,
-    opacity: validated.opacity
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set image fill');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_image_fill',
+    {
+      nodeId: validated.nodeId,
+      imageUrl: validated.imageUrl,
+      scaleMode: validated.scaleMode,
+      opacity: validated.opacity
+    }
+  )
 
   // Map scale mode to CSS
   const scaleModeToCSS: Record<string, string> = {
-    'FILL': 'background-size: cover;',
-    'FIT': 'background-size: contain;',
-    'CROP': 'background-size: cover; background-position: center;',
-    'TILE': 'background-repeat: repeat;'
+    FILL: 'background-size: cover;',
+    FIT: 'background-size: contain;',
+    CROP: 'background-size: cover; background-position: center;',
+    TILE: 'background-repeat: repeat;'
   };
 
   const cssEquivalent = `background-image: url('${validated.imageUrl}');

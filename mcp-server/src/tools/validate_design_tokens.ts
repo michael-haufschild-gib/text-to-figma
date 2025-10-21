@@ -6,35 +6,38 @@
  */
 
 import { z } from 'zod';
+import { hexToRgb, validateContrast } from '../constraints/color.js';
 import {
-  validateSpacing,
   VALID_SPACING_VALUES,
+  validateSpacing,
   type SpacingValue
 } from '../constraints/spacing.js';
-import {
-  validateTypography,
-  VALID_FONT_SIZES,
-  type FontSize
-} from '../constraints/typography.js';
-import {
-  validateContrast,
-  hexToRgb
-} from '../constraints/color.js';
+import { VALID_FONT_SIZES, validateTypography, type FontSize } from '../constraints/typography.js';
 
 /**
  * Design tokens input schema
  */
 export const designTokensInputSchema = z.object({
   spacing: z.array(z.number()).optional().describe('Array of spacing values to validate'),
-  typography: z.array(z.object({
-    fontSize: z.number(),
-    name: z.string().optional()
-  })).optional().describe('Array of typography tokens with fontSize'),
-  colors: z.array(z.object({
-    foreground: z.string(),
-    background: z.string(),
-    name: z.string().optional()
-  })).optional().describe('Array of color pairs for contrast validation')
+  typography: z
+    .array(
+      z.object({
+        fontSize: z.number(),
+        name: z.string().optional()
+      })
+    )
+    .optional()
+    .describe('Array of typography tokens with fontSize'),
+  colors: z
+    .array(
+      z.object({
+        foreground: z.string(),
+        background: z.string(),
+        name: z.string().optional()
+      })
+    )
+    .optional()
+    .describe('Array of color pairs for contrast validation')
 });
 
 export type DesignTokensInput = z.infer<typeof designTokensInputSchema>;
@@ -233,7 +236,9 @@ export async function validateDesignTokens(input: DesignTokensInput): Promise<Va
       if (!passesAA) {
         report.summary.allValid = false;
         const label = colorPair.name || `${colorPair.foreground} / ${colorPair.background}`;
-        report.summary.issues.push(`Color pair ${label} fails WCAG AA (${result.ratio.toFixed(2)}:1)`);
+        report.summary.issues.push(
+          `Color pair ${label} fails WCAG AA (${result.ratio.toFixed(2)}:1)`
+        );
         report.summary.recommendations.push(result.recommendation);
       }
     }
@@ -418,4 +423,21 @@ Returns detailed report with:
       }
     }
   }
+};
+
+/**
+ * Handler export for tool registration
+ */
+export const validateDesignTokensHandler: import('../routing/tool-handler.js').ToolHandler<
+  DesignTokensInput,
+  ValidationReport
+> = {
+  name: 'validate_design_tokens',
+  schema: designTokensInputSchema as any,
+  execute: validateDesignTokens,
+  formatResponse: (result) => {
+    const text = formatValidationReport(result);
+    return [{ type: 'text', text }];
+  },
+  definition: validateDesignTokensToolDefinition
 };

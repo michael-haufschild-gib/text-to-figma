@@ -4,6 +4,7 @@
  * Aggregates and reports errors for monitoring and debugging.
  */
 
+import { clearInterval, setInterval } from 'node:timers';
 import { z } from 'zod';
 
 /**
@@ -58,8 +59,24 @@ export interface ErrorStatistics {
  * Error tracker configuration
  */
 export const errorTrackerConfigSchema = z.object({
-  maxErrors: z.number().int().positive().default(1000).describe('Maximum number of errors to track'),
-  aggregationWindow: z.number().int().positive().default(3600000).describe('Time window for error aggregation in ms (default: 1 hour)')
+  maxErrors: z
+    .number()
+    .int()
+    .positive()
+    .default(1000)
+    .describe('Maximum number of errors to track'),
+  aggregationWindow: z
+    .number()
+    .int()
+    .positive()
+    .default(3600000)
+    .describe('Time window for error aggregation in ms (default: 1 hour)'),
+  pruneInterval: z
+    .number()
+    .int()
+    .positive()
+    .default(300000)
+    .describe('Interval for automatic pruning in ms (default: 5 minutes)')
 });
 
 export type ErrorTrackerConfig = z.infer<typeof errorTrackerConfigSchema>;
@@ -145,9 +162,41 @@ export class ErrorTracker {
   private errors: Map<string, TrackedError> = new Map();
   private readonly config: Required<ErrorTrackerConfig>;
   private errorCount: number = 0;
+  private pruneTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(config?: Partial<ErrorTrackerConfig>) {
     this.config = errorTrackerConfigSchema.parse(config ?? {});
+
+    // Start automatic pruning timer to prevent memory leaks in long-running processes
+    this.startPruneTimer();
+  }
+
+  /**
+   * Start automatic pruning timer
+   */
+  private startPruneTimer(): void {
+    if (this.pruneTimer) {
+      clearInterval(this.pruneTimer);
+    }
+
+    this.pruneTimer = setInterval(() => {
+      this.pruneOldErrors();
+    }, this.config.pruneInterval);
+
+    // Don't keep the process alive just for pruning
+    if ((this.pruneTimer as unknown as { unref?: () => void }).unref) {
+      (this.pruneTimer as unknown as { unref: () => void }).unref();
+    }
+  }
+
+  /**
+   * Stop automatic pruning timer (called during cleanup/destruction)
+   */
+  private stopPruneTimer(): void {
+    if (this.pruneTimer) {
+      clearInterval(this.pruneTimer);
+      this.pruneTimer = null;
+    }
   }
 
   /**
@@ -233,14 +282,14 @@ export class ErrorTracker {
    * Get errors by category
    */
   getByCategory(category: ErrorCategory): TrackedError[] {
-    return Array.from(this.errors.values()).filter(e => e.category === category);
+    return Array.from(this.errors.values()).filter((e) => e.category === category);
   }
 
   /**
    * Get errors by severity
    */
   getBySeverity(severity: ErrorSeverity): TrackedError[] {
-    return Array.from(this.errors.values()).filter(e => e.severity === severity);
+    return Array.from(this.errors.values()).filter((e) => e.severity === severity);
   }
 
   /**
@@ -273,7 +322,7 @@ export class ErrorTracker {
     const mostCommon = Array.from(this.errors.values())
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
-      .map(e => ({
+      .map((e) => ({
         fingerprint: e.fingerprint,
         count: e.count,
         message: e.error.message
@@ -294,6 +343,17 @@ export class ErrorTracker {
   clear(): void {
     this.errors.clear();
     this.errorCount = 0;
+    this.stopPruneTimer();
+    this.startPruneTimer(); // Restart timer for future errors
+  }
+
+  /**
+   * Destroy the error tracker and clean up resources
+   */
+  destroy(): void {
+    this.stopPruneTimer();
+    this.errors.clear();
+    this.errorCount = 0;
   }
 
   /**
@@ -311,8 +371,7 @@ export class ErrorTracker {
 
     // If still over limit, remove least frequent errors
     if (this.errors.size > this.config.maxErrors) {
-      const sorted = Array.from(this.errors.entries())
-        .sort(([, a], [, b]) => a.count - b.count);
+      const sorted = Array.from(this.errors.entries()).sort(([, a], [, b]) => a.count - b.count);
 
       const toRemove = sorted.slice(0, sorted.length - this.config.maxErrors);
       for (const [fingerprint] of toRemove) {
@@ -327,7 +386,7 @@ export class ErrorTracker {
   toJSON(): unknown {
     return {
       statistics: this.getStatistics(),
-      errors: Array.from(this.errors.values()).map(e => ({
+      errors: Array.from(this.errors.values()).map((e) => ({
         id: e.id,
         timestamp: e.timestamp,
         message: e.error.message,
@@ -363,7 +422,7 @@ export function getErrorTracker(config?: ErrorTrackerConfig): ErrorTracker {
  */
 export function resetErrorTracker(): void {
   if (globalTracker) {
-    globalTracker.clear();
+    globalTracker.destroy();
   }
   globalTracker = null;
 }

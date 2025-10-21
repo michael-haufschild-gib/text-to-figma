@@ -10,22 +10,18 @@ import { z } from 'zod';
 /**
  * Valid spacing values in the 8pt grid system
  */
-export const VALID_SPACING_VALUES = [
-  0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 128
-] as const;
+export const VALID_SPACING_VALUES = [0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 128] as const;
 
-export type SpacingValue = typeof VALID_SPACING_VALUES[number];
+export type SpacingValue = (typeof VALID_SPACING_VALUES)[number];
 
 /**
  * Zod schema for validating spacing values
  */
-export const spacingSchema = z.number().refine(
-  (value): value is SpacingValue =>
-    VALID_SPACING_VALUES.includes(value as SpacingValue),
-  {
+export const spacingSchema = z
+  .number()
+  .refine((value): value is SpacingValue => VALID_SPACING_VALUES.includes(value as SpacingValue), {
     message: `Spacing must be one of: ${VALID_SPACING_VALUES.join(', ')}`
-  }
-);
+  });
 
 /**
  * Validates if a value conforms to the 8pt grid system
@@ -38,7 +34,7 @@ export function isValidSpacing(value: number): value is SpacingValue {
  * Snaps a value to the nearest valid spacing value
  */
 export function snapToGrid(value: number): SpacingValue {
-  if (value <= 0) return 0;
+  if (value <= 0) {return 0;}
 
   let closest: SpacingValue = VALID_SPACING_VALUES[0];
   let minDiff = Math.abs(value - closest);

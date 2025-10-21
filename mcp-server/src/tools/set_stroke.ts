@@ -18,8 +18,15 @@ export const SetStrokeInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node'),
   strokeWeight: z.number().positive().describe('Stroke width in pixels'),
   strokeColor: z.string().describe('Stroke color in hex format (e.g., #000000)'),
-  strokeAlign: z.enum(['INSIDE', 'OUTSIDE', 'CENTER']).optional().default('INSIDE').describe('Stroke alignment'),
-  dashPattern: z.array(z.number()).optional().describe('Dash pattern [dash, gap] for dashed strokes'),
+  strokeAlign: z
+    .enum(['INSIDE', 'OUTSIDE', 'CENTER'])
+    .optional()
+    .default('INSIDE')
+    .describe('Stroke alignment'),
+  dashPattern: z
+    .array(z.number())
+    .optional()
+    .describe('Dash pattern [dash, gap] for dashed strokes'),
   opacity: z.number().min(0).max(1).optional().default(1).describe('Stroke opacity (0-1)')
 });
 
@@ -115,32 +122,27 @@ export interface SetStrokeResult {
 /**
  * Implementation
  */
-export async function setStroke(
-  input: SetStrokeInput
-): Promise<SetStrokeResult> {
+export async function setStroke(input: SetStrokeInput): Promise<SetStrokeResult> {
   // Validate input
   const validated = SetStrokeInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_stroke', {
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_stroke',
+    {
     nodeId: validated.nodeId,
     strokeWeight: validated.strokeWeight,
     strokeColor: validated.strokeColor,
     strokeAlign: validated.strokeAlign,
     dashPattern: validated.dashPattern,
     opacity: validated.opacity
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set stroke');
   }
+  )
 
   const isDashed = !!validated.dashPattern;
 

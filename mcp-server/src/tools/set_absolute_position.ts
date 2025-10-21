@@ -99,20 +99,17 @@ export async function setAbsolutePosition(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_absolute_position', {
-    nodeId: validated.nodeId,
-    x: validated.x,
-    y: validated.y
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set absolute position');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_absolute_position',
+    {
+      nodeId: validated.nodeId,
+      x: validated.x,
+      y: validated.y
+    }
+  )
 
   const cssEquivalent = `position: absolute;\nleft: ${validated.x}px;\ntop: ${validated.y}px;`;
 

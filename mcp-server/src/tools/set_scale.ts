@@ -103,21 +103,15 @@ export interface SetScaleResult {
 /**
  * Implementation
  */
-export async function setScale(
-  input: SetScaleInput
-): Promise<SetScaleResult> {
+export async function setScale(input: SetScaleInput): Promise<SetScaleResult> {
   // Validate input
   const validated = SetScaleInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
+  const response = await bridge.sendToFigmaWithRetry<{
     success: boolean;
     newWidth?: number;
     newHeight?: number;
@@ -127,10 +121,7 @@ export async function setScale(
     scaleX: validated.scaleX,
     scaleY: validated.scaleY
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to scale node');
-  }
+  // Note: Response validated by bridge at protocol level
 
   const cssEquivalent = `transform: scale(${validated.scaleX}, ${validated.scaleY});`;
   const scaleXPercent = Math.round(validated.scaleX * 100);

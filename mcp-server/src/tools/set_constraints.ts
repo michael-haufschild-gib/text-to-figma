@@ -84,24 +84,24 @@ function generateCssEquivalent(input: SetConstraintsInput): string {
     cssRules.push('left: 50%;');
     cssRules.push('transform: translateX(-50%);');
   } else if (input.horizontal === 'STRETCH') {
-    if (!input.pinLeft) cssRules.push('left: 0;');
-    if (!input.pinRight) cssRules.push('right: 0;');
+    if (!input.pinLeft) {cssRules.push('left: 0;');}
+    if (!input.pinRight) {cssRules.push('right: 0;');}
   }
 
   // Handle vertical constraints
   if (input.vertical === 'CENTER' && !input.pinTop && !input.pinBottom) {
-    const hasTransform = cssRules.some(rule => rule.includes('transform'));
+    const hasTransform = cssRules.some((rule) => rule.includes('transform'));
     if (hasTransform) {
       // Update existing transform
-      const transformIndex = cssRules.findIndex(rule => rule.includes('transform'));
+      const transformIndex = cssRules.findIndex((rule) => rule.includes('transform'));
       cssRules[transformIndex] = 'transform: translate(-50%, -50%);';
     } else {
       cssRules.push('transform: translateY(-50%);');
     }
     cssRules.push('top: 50%;');
   } else if (input.vertical === 'STRETCH') {
-    if (!input.pinTop) cssRules.push('top: 0;');
-    if (!input.pinBottom) cssRules.push('bottom: 0;');
+    if (!input.pinTop) {cssRules.push('top: 0;');}
+    if (!input.pinBottom) {cssRules.push('bottom: 0;');}
   }
 
   // Handle aspect ratio
@@ -109,7 +109,7 @@ function generateCssEquivalent(input: SetConstraintsInput): string {
     cssRules.push('aspect-ratio: auto; /* Maintain aspect ratio */');
   }
 
-  return cssRules.map(rule => `  ${rule}`).join('\n');
+  return cssRules.map((rule) => `  ${rule}`).join('\n');
 }
 
 /**
@@ -141,10 +141,10 @@ function generateDescription(input: SetConstraintsInput): string {
   }
 
   const pinParts: string[] = [];
-  if (input.pinLeft === true) pinParts.push('left');
-  if (input.pinRight === true) pinParts.push('right');
-  if (input.pinTop === true) pinParts.push('top');
-  if (input.pinBottom === true) pinParts.push('bottom');
+  if (input.pinLeft === true) {pinParts.push('left');}
+  if (input.pinRight === true) {pinParts.push('right');}
+  if (input.pinTop === true) {pinParts.push('top');}
+  if (input.pinBottom === true) {pinParts.push('bottom');}
 
   if (pinParts.length > 0) {
     parts.push(`pinned to ${pinParts.join(', ')} edge${pinParts.length > 1 ? 's' : ''}`);
@@ -183,11 +183,19 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
   }
 
   // If both pins are set, constraint should be STRETCH
-  if (resolvedInput.pinLeft === true && resolvedInput.pinRight === true && !resolvedInput.horizontal) {
+  if (
+    resolvedInput.pinLeft === true &&
+    resolvedInput.pinRight === true &&
+    !resolvedInput.horizontal
+  ) {
     resolvedInput.horizontal = 'STRETCH';
   }
 
-  if (resolvedInput.pinTop === true && resolvedInput.pinBottom === true && !resolvedInput.vertical) {
+  if (
+    resolvedInput.pinTop === true &&
+    resolvedInput.pinBottom === true &&
+    !resolvedInput.vertical
+  ) {
     resolvedInput.vertical = 'STRETCH';
   }
 
@@ -197,17 +205,17 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
 
   // Build list of applied constraints
   const applied: string[] = [];
-  if (resolvedInput.horizontal) applied.push(`horizontal: ${resolvedInput.horizontal}`);
-  if (resolvedInput.vertical) applied.push(`vertical: ${resolvedInput.vertical}`);
-  if (resolvedInput.aspectRatioLocked) applied.push('aspectRatioLocked');
-  if (resolvedInput.pinLeft) applied.push('pinLeft');
-  if (resolvedInput.pinRight) applied.push('pinRight');
-  if (resolvedInput.pinTop) applied.push('pinTop');
-  if (resolvedInput.pinBottom) applied.push('pinBottom');
+  if (resolvedInput.horizontal) {applied.push(`horizontal: ${resolvedInput.horizontal}`);}
+  if (resolvedInput.vertical) {applied.push(`vertical: ${resolvedInput.vertical}`);}
+  if (resolvedInput.aspectRatioLocked) {applied.push('aspectRatioLocked');}
+  if (resolvedInput.pinLeft) {applied.push('pinLeft');}
+  if (resolvedInput.pinRight) {applied.push('pinRight');}
+  if (resolvedInput.pinTop) {applied.push('pinTop');}
+  if (resolvedInput.pinBottom) {applied.push('pinBottom');}
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigma<{ nodeId: string }>('set_constraints', {
+  await bridge.sendToFigmaWithRetry<{ nodeId: string }>('set_constraints', {
     nodeId: resolvedInput.nodeId,
     constraints: {
       horizontal: resolvedInput.horizontal,

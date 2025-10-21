@@ -10,7 +10,21 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js"
+    "dev": "tsc && node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --check \"src/**/*.ts\"",
+    "format:fix": "prettier --write \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit",
+    "test": "npm run test:all",
+    "test:unit": "cd ../tests && node --test unit/**/*.test.js",
+    "test:integration": "cd ../tests && node --test integration/**/*.test.js",
+    "test:e2e": "cd ../tests && node --test e2e/**/*.test.js",
+    "test:validation": "cd ../tests && node --test validation/**/*.test.js",
+    "test:all": "npm run build && npm run test:unit && npm run test:integration && npm run test:validation",
+    "test:coverage": "c8 npm run test:all",
+    "audit:check": "npm audit --audit-level=moderate",
+    "audit:fix": "npm audit fix"
   },
   "keywords": [
     "mcp",
@@ -27,6 +41,12 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "c8": "^9.1.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-jsdoc": "^48.0.0",
+    "prettier": "^3.2.4",
     "typescript": "^5.3.3"
   }
 }

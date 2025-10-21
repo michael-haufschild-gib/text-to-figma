@@ -100,29 +100,24 @@ export interface SetPluginDataResult {
 /**
  * Implementation
  */
-export async function setPluginData(
-  input: SetPluginDataInput
-): Promise<SetPluginDataResult> {
+export async function setPluginData(input: SetPluginDataInput): Promise<SetPluginDataResult> {
   // Validate input
   const validated = SetPluginDataInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_plugin_data', {
-    nodeId: validated.nodeId,
-    key: validated.key,
-    value: validated.value
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set plugin data');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_plugin_data',
+    {
+      nodeId: validated.nodeId,
+      key: validated.key,
+      value: validated.value
+    }
+  )
 
   return {
     nodeId: validated.nodeId,

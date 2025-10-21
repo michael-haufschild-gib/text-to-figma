@@ -17,7 +17,11 @@ import { getFigmaBridge } from '../figma-bridge.js';
 export const SetLetterSpacingInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the text node'),
   value: z.number().describe('Letter spacing value'),
-  unit: z.enum(['PIXELS', 'PERCENT']).optional().default('PERCENT').describe('Unit for letter spacing (PIXELS or PERCENT)')
+  unit: z
+    .enum(['PIXELS', 'PERCENT'])
+    .optional()
+    .default('PERCENT')
+    .describe('Unit for letter spacing (PIXELS or PERCENT)')
 });
 
 export type SetLetterSpacingInput = z.infer<typeof SetLetterSpacingInputSchema>;
@@ -111,20 +115,17 @@ export async function setLetterSpacing(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_letter_spacing', {
-    nodeId: validated.nodeId,
-    value: validated.value,
-    unit: validated.unit
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set letter spacing');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_letter_spacing',
+    {
+      nodeId: validated.nodeId,
+      value: validated.value,
+      unit: validated.unit
+    }
+  )
 
   // Build CSS equivalent
   let cssEquivalent: string;

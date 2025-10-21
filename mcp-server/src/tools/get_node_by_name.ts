@@ -16,8 +16,16 @@ import { getFigmaBridge } from '../figma-bridge.js';
  */
 export const GetNodeByNameInputSchema = z.object({
   name: z.string().min(1).describe('Name or partial name to search for'),
-  findAll: z.boolean().optional().default(false).describe('Find all matches (default: first match only)'),
-  exactMatch: z.boolean().optional().default(false).describe('Require exact name match (default: partial match)')
+  findAll: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Find all matches (default: first match only)'),
+  exactMatch: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Require exact name match (default: partial match)')
 });
 
 export type GetNodeByNameInput = z.infer<typeof GetNodeByNameInputSchema>;
@@ -108,21 +116,15 @@ export interface GetNodeByNameResult {
 /**
  * Implementation
  */
-export async function getNodeByName(
-  input: GetNodeByNameInput
-): Promise<GetNodeByNameResult> {
+export async function getNodeByName(input: GetNodeByNameInput): Promise<GetNodeByNameResult> {
   // Validate input
   const validated = GetNodeByNameInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{
+  const response = await bridge.sendToFigmaWithRetry<{
     success: boolean;
     nodes?: NodeInfo[];
     error?: string;
@@ -131,10 +133,7 @@ export async function getNodeByName(
     findAll: validated.findAll,
     exactMatch: validated.exactMatch
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to find nodes');
-  }
+  // Note: Response validated by bridge at protocol level
 
   const nodes = response.nodes || [];
   const matchType = validated.exactMatch ? 'exact' : 'partial';

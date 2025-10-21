@@ -89,9 +89,9 @@ export class HealthCheckRegistry {
 
     // Calculate summary
     const summary = {
-      healthy: components.filter(c => c.status === 'healthy').length,
-      degraded: components.filter(c => c.status === 'degraded').length,
-      unhealthy: components.filter(c => c.status === 'unhealthy').length
+      healthy: components.filter((c) => c.status === 'healthy').length,
+      degraded: components.filter((c) => c.status === 'degraded').length,
+      unhealthy: components.filter((c) => c.status === 'unhealthy').length
     };
 
     // Determine overall status
@@ -206,9 +206,7 @@ export function createErrorRateHealthChecker(
 /**
  * Figma connection health checker
  */
-export function createFigmaConnectionHealthChecker(
-  checkConnection: () => boolean
-): HealthChecker {
+export function createFigmaConnectionHealthChecker(checkConnection: () => boolean): HealthChecker {
   return (): ComponentHealth => {
     const isConnected = checkConnection();
 
@@ -227,9 +225,9 @@ export function createFigmaConnectionHealthChecker(
 /**
  * Cache health checker
  */
-export function createCacheHealthChecker(
-  cache: { getStatistics: () => { hitRate: number; memoryUsage: number; maxMemoryUsage: number } }
-): HealthChecker {
+export function createCacheHealthChecker(cache: {
+  getStatistics: () => { hitRate: number; memoryUsage: number; maxMemoryUsage: number };
+}): HealthChecker {
   return (): ComponentHealth => {
     const stats = cache.getStatistics();
     const memoryUsagePercent = stats.memoryUsage / stats.maxMemoryUsage;

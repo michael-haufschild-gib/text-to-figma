@@ -14,24 +14,26 @@ import { getFigmaBridge } from '../figma-bridge.js';
 /**
  * Input schema
  */
-export const SetCornerRadiusInputSchema = z.object({
-  nodeId: z.string().min(1).describe('ID of the node (rectangle or frame)'),
-  radius: z.number().min(0).optional().describe('Uniform radius for all corners'),
-  topLeft: z.number().min(0).optional().describe('Top-left corner radius'),
-  topRight: z.number().min(0).optional().describe('Top-right corner radius'),
-  bottomRight: z.number().min(0).optional().describe('Bottom-right corner radius'),
-  bottomLeft: z.number().min(0).optional().describe('Bottom-left corner radius')
-}).refine(
-  data => data.radius !== undefined || (
-    data.topLeft !== undefined ||
-    data.topRight !== undefined ||
-    data.bottomRight !== undefined ||
-    data.bottomLeft !== undefined
-  ),
-  {
-    message: 'Must provide either radius (uniform) or at least one individual corner'
-  }
-);
+export const SetCornerRadiusInputSchema = z
+  .object({
+    nodeId: z.string().min(1).describe('ID of the node (rectangle or frame)'),
+    radius: z.number().min(0).optional().describe('Uniform radius for all corners'),
+    topLeft: z.number().min(0).optional().describe('Top-left corner radius'),
+    topRight: z.number().min(0).optional().describe('Top-right corner radius'),
+    bottomRight: z.number().min(0).optional().describe('Bottom-right corner radius'),
+    bottomLeft: z.number().min(0).optional().describe('Bottom-left corner radius')
+  })
+  .refine(
+    (data) =>
+      data.radius !== undefined ||
+      data.topLeft !== undefined ||
+      data.topRight !== undefined ||
+      data.bottomRight !== undefined ||
+      data.bottomLeft !== undefined,
+    {
+      message: 'Must provide either radius (uniform) or at least one individual corner'
+    }
+  );
 
 export type SetCornerRadiusInput = z.infer<typeof SetCornerRadiusInputSchema>;
 
@@ -125,35 +127,30 @@ export interface SetCornerRadiusResult {
 /**
  * Implementation
  */
-export async function setCornerRadius(
-  input: SetCornerRadiusInput
-): Promise<SetCornerRadiusResult> {
+export async function setCornerRadius(input: SetCornerRadiusInput): Promise<SetCornerRadiusResult> {
   // Validate input
   const validated = SetCornerRadiusInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Determine if uniform or individual
   const isUniform = validated.radius !== undefined;
 
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_corner_radius', {
-    nodeId: validated.nodeId,
-    radius: validated.radius,
-    topLeft: validated.topLeft,
-    topRight: validated.topRight,
-    bottomRight: validated.bottomRight,
-    bottomLeft: validated.bottomLeft
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set corner radius');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_corner_radius',
+    {
+      nodeId: validated.nodeId,
+      radius: validated.radius,
+      topLeft: validated.topLeft,
+      topRight: validated.topRight,
+      bottomRight: validated.bottomRight,
+      bottomLeft: validated.bottomLeft
+    }
+  );
 
   // Build CSS equivalent
   let cssEquivalent = '';
@@ -175,10 +172,10 @@ export async function setCornerRadius(
     message = `Set uniform corner radius: ${validated.radius}px`;
   } else {
     const corners: string[] = [];
-    if (validated.topLeft) corners.push(`TL:${validated.topLeft}px`);
-    if (validated.topRight) corners.push(`TR:${validated.topRight}px`);
-    if (validated.bottomRight) corners.push(`BR:${validated.bottomRight}px`);
-    if (validated.bottomLeft) corners.push(`BL:${validated.bottomLeft}px`);
+    if (validated.topLeft) {corners.push(`TL:${validated.topLeft}px`);}
+    if (validated.topRight) {corners.push(`TR:${validated.topRight}px`);}
+    if (validated.bottomRight) {corners.push(`BR:${validated.bottomRight}px`);}
+    if (validated.bottomLeft) {corners.push(`BL:${validated.bottomLeft}px`);}
     message = `Set individual corner radii: ${corners.join(', ')}`;
   }
 

@@ -16,7 +16,10 @@ import { getFigmaBridge } from '../figma-bridge.js';
  */
 export const CreateEllipseInputSchema = z.object({
   width: z.number().positive().describe('Width of the ellipse in pixels'),
-  height: z.number().positive().describe('Height of the ellipse in pixels (use same as width for perfect circle)'),
+  height: z
+    .number()
+    .positive()
+    .describe('Height of the ellipse in pixels (use same as width for perfect circle)'),
   name: z.string().optional().default('Ellipse').describe('Name for the ellipse node'),
   parentId: z.string().optional().describe('Parent frame ID (optional)'),
   fillColor: z.string().optional().describe('Fill color in hex format (e.g., #FF0000)'),
@@ -109,33 +112,27 @@ export interface CreateEllipseResult {
 /**
  * Implementation
  */
-export async function createEllipse(
-  input: CreateEllipseInput
-): Promise<CreateEllipseResult> {
+export async function createEllipse(input: CreateEllipseInput): Promise<CreateEllipseResult> {
   // Validate input
   const validated = CreateEllipseInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; nodeId?: string; error?: string }>('create_ellipse', {
-    width: validated.width,
-    height: validated.height,
-    name: validated.name,
-    parentId: validated.parentId,
-    fillColor: validated.fillColor,
-    strokeColor: validated.strokeColor,
-    strokeWeight: validated.strokeWeight
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to create ellipse');
-  }
+  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
+    'create_ellipse',
+    {
+      width: validated.width,
+      height: validated.height,
+      name: validated.name,
+      parentId: validated.parentId,
+      fillColor: validated.fillColor,
+      strokeColor: validated.strokeColor,
+      strokeWeight: validated.strokeWeight
+    }
+  );
+  // Note: Response validated by bridge at protocol level
 
   const isCircle = validated.width === validated.height;
 

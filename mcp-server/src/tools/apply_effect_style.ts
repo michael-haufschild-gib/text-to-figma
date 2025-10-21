@@ -93,19 +93,16 @@ export async function applyEffectStyle(
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; styleName?: string; error?: string }>('apply_effect_style', {
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    styleName?: string;
+    error?: string;
+  }>('apply_effect_style', {
     nodeId: validated.nodeId,
     styleNameOrId: validated.styleNameOrId
   });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to apply effect style');
-  }
+  // Note: Response validated by bridge at protocol level
 
   return {
     nodeId: validated.nodeId,

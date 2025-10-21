@@ -83,28 +83,23 @@ export interface SetRotationResult {
 /**
  * Implementation
  */
-export async function setRotation(
-  input: SetRotationInput
-): Promise<SetRotationResult> {
+export async function setRotation(input: SetRotationInput): Promise<SetRotationResult> {
   // Validate input
   const validated = SetRotationInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_rotation', {
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_rotation',
+    {
     nodeId: validated.nodeId,
     rotation: validated.rotation
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set rotation');
   }
+  )
 
   // Normalize rotation for display
   const normalizedRotation = ((validated.rotation % 360) + 360) % 360;

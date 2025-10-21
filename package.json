@@ -1,0 +1,38 @@
+{
+  "name": "text-to-figma-monorepo",
+  "version": "1.0.0",
+  "description": "Text-to-Figma MCP Server with design constraints - monorepo root",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "type-check": "npm run type-check --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "cd tests && npm test"
+  },
+  "workspaces": [
+    "mcp-server",
+    "websocket-server",
+    "figma-plugin",
+    "tests"
+  ],
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "mcp-server/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "websocket-server/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "figma-plugin/**/*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}

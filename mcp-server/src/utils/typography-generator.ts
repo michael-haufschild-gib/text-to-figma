@@ -9,22 +9,22 @@
  * Common modular scale ratios
  */
 export const MODULAR_RATIOS = {
-  minorSecond: 1.067,    // 15:16
-  majorSecond: 1.125,    // 8:9
-  minorThird: 1.2,       // 5:6
-  majorThird: 1.25,      // 4:5
-  perfectFourth: 1.333,  // 3:4
+  minorSecond: 1.067, // 15:16
+  majorSecond: 1.125, // 8:9
+  minorThird: 1.2, // 5:6
+  majorThird: 1.25, // 4:5
+  perfectFourth: 1.333, // 3:4
   augmentedFourth: 1.414, // 1:√2
-  perfectFifth: 1.5,     // 2:3
-  goldenRatio: 1.618,    // 1:φ
-  majorSixth: 1.667,     // 3:5
-  minorSeventh: 1.778,   // 9:16
-  majorSeventh: 1.875,   // 8:15
-  octave: 2.0            // 1:2
+  perfectFifth: 1.5, // 2:3
+  goldenRatio: 1.618, // 1:φ
+  majorSixth: 1.667, // 3:5
+  minorSeventh: 1.778, // 9:16
+  majorSeventh: 1.875, // 8:15
+  octave: 2.0 // 1:2
 } as const;
 
 export type ModularRatioName = keyof typeof MODULAR_RATIOS;
-export type ModularRatio = typeof MODULAR_RATIOS[ModularRatioName];
+export type ModularRatio = (typeof MODULAR_RATIOS)[ModularRatioName];
 
 /**
  * Font size and line height pair
@@ -61,16 +61,16 @@ export interface TypographyToken {
  * Standard type scale level names
  */
 const TYPE_SCALE_NAMES = [
-  'xs',      // Extra small
-  'sm',      // Small
-  'base',    // Base/body
-  'lg',      // Large
-  'xl',      // Extra large
-  '2xl',     // 2x extra large
-  '3xl',     // 3x extra large
-  '4xl',     // 4x extra large
-  '5xl',     // 5x extra large
-  '6xl'      // 6x extra large
+  'xs', // Extra small
+  'sm', // Small
+  'base', // Base/body
+  'lg', // Large
+  'xl', // Extra large
+  '2xl', // 2x extra large
+  '3xl', // 3x extra large
+  '4xl', // 4x extra large
+  '5xl', // 5x extra large
+  '6xl' // 6x extra large
 ] as const;
 
 /**
@@ -167,7 +167,7 @@ export function generateTypographyScaleFromRatio(
  * Converts typography scale to design tokens format
  */
 export function scaleToDesignTokens(scale: TypographyScale): TypographyToken[] {
-  return scale.steps.map(step => ({
+  return scale.steps.map((step) => ({
     name: `font-size-${step.name}`,
     value: {
       fontSize: `${step.fontSize}px`,
@@ -184,7 +184,7 @@ export function scaleToCssVariables(scale: TypographyScale): string {
   css += `  /* Typography Scale: ${scale.ratioName} (${scale.ratio}) */\n`;
   css += `  /* Base size: ${scale.baseSize}px */\n\n`;
 
-  scale.steps.forEach(step => {
+  scale.steps.forEach((step) => {
     css += `  --font-size-${step.name}: ${step.fontSize}px;\n`;
     css += `  --line-height-${step.name}: ${step.lineHeight}px;\n`;
     css += `  /* Ratio: ${step.lineHeightRatio.toFixed(2)} */\n\n`;
@@ -240,10 +240,7 @@ export function generatePresetScale(preset: 'web' | 'mobile' | 'print'): Typogra
 /**
  * Finds the closest scale step to a given font size
  */
-export function findClosestScaleStep(
-  targetSize: number,
-  scale: TypographyScale
-): TypeScaleStep {
+export function findClosestScaleStep(targetSize: number, scale: TypographyScale): TypeScaleStep {
   let closest = scale.steps[0];
   let minDiff = Math.abs(targetSize - closest.fontSize);
 

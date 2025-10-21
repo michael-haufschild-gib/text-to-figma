@@ -1,0 +1,219 @@
+/**
+ * MCP Tool: distribute_nodes
+ *
+ * Distributes multiple nodes evenly along an axis with equal spacing.
+ * Essential for creating organized, evenly-spaced layouts.
+ *
+ * HELPER TOOL: Builds on absolute positioning primitives.
+ * Use for: evenly spacing elements, creating grids, organizing layouts
+ */
+
+import { z } from 'zod';
+import { getFigmaBridge } from '../figma-bridge.js';
+import { createScopedLogger } from '../utils/logger.js';
+import { createToolResult, type ToolResult } from '../utils/tool-result.js';
+
+const log = createScopedLogger('distribute_nodes');
+
+/**
+ * Distribution axis
+ */
+export const DistributionAxis = z.enum([
+  'HORIZONTAL', // Distribute along X axis
+  'VERTICAL' // Distribute along Y axis
+]);
+
+export type DistributionAxisValue = z.infer<typeof DistributionAxis>;
+
+/**
+ * Distribution method
+ */
+export const DistributionMethod = z.enum([
+  'CENTERS', // Equal spacing between centers
+  'SPACING' // Equal spacing between edges (gaps)
+]);
+
+export type DistributionMethodValue = z.infer<typeof DistributionMethod>;
+
+/**
+ * Input schema
+ */
+export const DistributeNodesInputSchema = z.object({
+  nodeIds: z.array(z.string()).min(3).describe('Array of node IDs to distribute (minimum 3)'),
+  axis: DistributionAxis.describe('Axis to distribute along'),
+  method: DistributionMethod.optional().describe('Distribution method (default: SPACING)'),
+  spacing: z.number().optional().describe('Optional custom spacing (only for SPACING method)')
+});
+
+export type DistributeNodesInput = z.infer<typeof DistributeNodesInputSchema>;
+
+/**
+ * Tool definition
+ */
+export const distributeNodesToolDefinition = {
+  name: 'distribute_nodes',
+  description: `Distributes multiple nodes evenly along an axis.
+
+HELPER TOOL: Spatial distribution helper for organized layouts.
+Use for: evenly spacing elements, creating grids, organizing layouts.
+
+Distribution Axes:
+- HORIZONTAL: Distribute along X axis (left to right)
+- VERTICAL: Distribute along Y axis (top to bottom)
+
+Distribution Methods:
+- SPACING (default): Equal gaps between node edges
+  * Keeps outer nodes in place, evenly spaces inner nodes
+  * Best for: evenly spacing legs, buttons, grid items
+- CENTERS: Equal spacing between node centers
+  * Distributes based on center points
+  * Best for: creating patterns, symmetrical layouts
+
+Custom Spacing:
+- If provided with SPACING method, uses exact spacing value
+- If not provided, calculates even spacing based on outer nodes
+
+Example - Evenly space 4 legs:
+distribute_nodes({
+  nodeIds: ["leg1", "leg2", "leg3", "leg4"],
+  axis: "HORIZONTAL",
+  method: "SPACING"
+})
+// Creates equal gaps between legs
+
+Example - Distribute with custom spacing:
+distribute_nodes({
+  nodeIds: ["item1", "item2", "item3"],
+  axis: "VERTICAL",
+  method: "SPACING",
+  spacing: 20
+})
+// 20px gap between each item
+
+Example - Distribute centers:
+distribute_nodes({
+  nodeIds: ["star1", "star2", "star3", "star4", "star5"],
+  axis: "HORIZONTAL",
+  method: "CENTERS"
+})
+// Even spacing between star centers
+
+Use Cases:
+- Space legs/arms evenly on characters
+- Create button groups with equal spacing
+- Organize grid layouts
+- Create patterns with even distribution
+- Space UI elements consistently`,
+  inputSchema: {
+    type: 'object' as const,
+    properties: {
+      nodeIds: {
+        type: 'array' as const,
+        items: { type: 'string' as const },
+        description: 'Array of node IDs to distribute (minimum 3)'
+      },
+      axis: {
+        type: 'string' as const,
+        enum: ['HORIZONTAL', 'VERTICAL'],
+        description: 'Axis to distribute along'
+      },
+      method: {
+        type: 'string' as const,
+        enum: ['CENTERS', 'SPACING'],
+        description: 'Distribution method (default: SPACING)'
+      },
+      spacing: {
+        type: 'number' as const,
+        description: 'Optional custom spacing (only for SPACING method)'
+      }
+    },
+    required: ['nodeIds', 'axis']
+  }
+};
+
+/**
+ * Result type
+ */
+export interface DistributeNodesData {
+  nodeIds: string[];
+  axis: DistributionAxisValue;
+  method: DistributionMethodValue;
+  spacing?: number;
+}
+
+export type DistributeNodesResult = ToolResult<DistributeNodesData>;
+
+/**
+ * Implementation
+ */
+export async function distributeNodes(input: DistributeNodesInput): Promise<DistributeNodesResult> {
+  const startTime = Date.now();
+
+  // Validate input
+  const validated = DistributeNodesInputSchema.parse(input);
+
+  if (validated.nodeIds.length < 3) {
+    const error = new Error('Must provide at least 3 nodes to distribute');
+    log.error('Validation failed', { error: error.message, nodeCount: validated.nodeIds.length });
+    throw error;
+  }
+
+  log.debug('Distributing nodes', {
+    nodeCount: validated.nodeIds.length,
+    axis: validated.axis
+  });
+
+  try {
+    // Get Figma bridge
+    const bridge = getFigmaBridge();
+
+    const method = validated.method || 'SPACING';
+
+    // Send command to Figma
+    // Send command to Figma
+    // Note: Bridge unwraps response, returns data on success, throws on failure
+    const response = await bridge.sendToFigmaWithRetry<{
+      spacing?: number;
+      message: string;
+    }>('distribute_nodes', {
+      nodeIds: validated.nodeIds,
+      axis: validated.axis,
+      method,
+      spacing: validated.spacing
+    });
+
+    const duration = Date.now() - startTime;
+    const actualSpacing = validated.spacing || response.spacing;
+    const message = `Distributed ${validated.nodeIds.length} nodes ${validated.axis.toLowerCase()} using ${method}${actualSpacing ? ` (spacing: ${actualSpacing}px)` : ''}`;
+
+    log.info('Nodes distributed successfully', {
+      nodeCount: validated.nodeIds.length,
+      axis: validated.axis,
+      method,
+      spacing: actualSpacing,
+      duration
+    });
+
+    return createToolResult<DistributeNodesData>(
+      {
+        nodeIds: validated.nodeIds,
+        axis: validated.axis,
+        method,
+        spacing: actualSpacing
+      },
+      message
+    );
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    log.error('Failed to distribute nodes', {
+      nodeIds: validated.nodeIds,
+      axis: validated.axis,
+      error: errorMessage,
+      duration
+    });
+
+    throw new Error(`Failed to distribute nodes: ${errorMessage}`);
+  }
+}

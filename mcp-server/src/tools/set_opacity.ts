@@ -16,7 +16,11 @@ import { getFigmaBridge } from '../figma-bridge.js';
  */
 export const SetOpacityInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node'),
-  opacity: z.number().min(0).max(1).describe('Opacity value from 0 (fully transparent) to 1 (fully opaque)')
+  opacity: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe('Opacity value from 0 (fully transparent) to 1 (fully opaque)')
 });
 
 export type SetOpacityInput = z.infer<typeof SetOpacityInputSchema>;
@@ -96,28 +100,23 @@ export interface SetOpacityResult {
 /**
  * Implementation
  */
-export async function setOpacity(
-  input: SetOpacityInput
-): Promise<SetOpacityResult> {
+export async function setOpacity(input: SetOpacityInput): Promise<SetOpacityResult> {
   // Validate input
   const validated = SetOpacityInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_opacity', {
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_opacity',
+    {
     nodeId: validated.nodeId,
     opacity: validated.opacity
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set opacity');
   }
+  )
 
   const percentage = Math.round(validated.opacity * 100);
   const cssEquivalent = `opacity: ${validated.opacity};`;

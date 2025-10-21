@@ -94,28 +94,23 @@ export interface SetStrokeJoinResult {
 /**
  * Implementation
  */
-export async function setStrokeJoin(
-  input: SetStrokeJoinInput
-): Promise<SetStrokeJoinResult> {
+export async function setStrokeJoin(input: SetStrokeJoinInput): Promise<SetStrokeJoinResult> {
   // Validate input
   const validated = SetStrokeJoinInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('set_stroke_join', {
-    nodeId: validated.nodeId,
-    strokeJoin: validated.strokeJoin
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to set stroke join');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'set_stroke_join',
+    {
+      nodeId: validated.nodeId,
+      strokeJoin: validated.strokeJoin
+    }
+  )
 
   const cssEquivalent = `stroke-linejoin: ${validated.strokeJoin.toLowerCase()};`;
 

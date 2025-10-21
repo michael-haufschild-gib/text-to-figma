@@ -12,19 +12,21 @@ import { getFigmaBridge } from '../figma-bridge.js';
 /**
  * Hex color schema with validation
  */
-const hexColorSchema = z.string().regex(/^#?[0-9A-Fa-f]{6}$/, {
-  message: 'Color must be in hex format (e.g., #FF0000 or FF0000)'
-}).transform((val) => val.startsWith('#') ? val : `#${val}`);
+const hexColorSchema = z
+  .string()
+  .regex(/^#?[0-9A-Fa-f]{6}$/, {
+    message: 'Color must be in hex format (e.g., #FF0000 or FF0000)'
+  })
+  .transform((val) => (val.startsWith('#') ? val : `#${val}`));
 
 /**
  * Input schema for set_fills tool
  */
 export const setFillsInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to set fills on'),
-  color: z.union([
-    hexColorSchema,
-    rgbSchema
-  ]).describe('Color in hex format (#FF0000) or RGB object'),
+  color: z
+    .union([hexColorSchema, rgbSchema])
+    .describe('Color in hex format (#FF0000) or RGB object'),
   opacity: z.number().min(0).max(1).default(1).describe('Fill opacity (0-1)')
 });
 
@@ -80,7 +82,45 @@ function generateCssEquivalent(hex: string, opacity: number, isText: boolean): s
 }
 
 /**
- * Sets fill color on a node in Figma
+ * Sets fill color on a node in Figma with comprehensive error handling
+ *
+ * Applies solid color fills to frames or text nodes. Similar to setting
+ * background-color or color in CSS. Supports both hex strings and RGB objects.
+ *
+ * @param input - Fill configuration parameters
+ * @param input.nodeId - ID of the node (frame or text) to set fills on
+ * @param input.color - Color in hex format (#FF0000) or RGB object {r, g, b}
+ * @param input.opacity - Fill opacity from 0 (transparent) to 1 (opaque), defaults to 1
+ * @param isText - Internal flag indicating text node vs frame (affects CSS generation)
+ * @returns Promise resolving to fill result with applied color and CSS equivalent
+ * @throws {ValidationError} When input validation fails (invalid hex, out of range values)
+ * @throws {NetworkError} When communication with Figma bridge fails
+ *
+ * @example
+ * Set frame background to solid blue:
+ * ```typescript
+ * const result = await setFills({
+ *   nodeId: 'frame-123',
+ *   color: '#0066FF',
+ *   opacity: 1
+ * });
+ * console.log(result.cssEquivalent); // "background-color: #0066FF;"
+ * ```
+ *
+ * @example
+ * Set text color with transparency:
+ * ```typescript
+ * const result = await setFills({
+ *   nodeId: 'text-456',
+ *   color: { r: 255, g: 0, b: 0 },
+ *   opacity: 0.8
+ * }, true);
+ * console.log(result.cssEquivalent); // "color: #ff0000;\n  opacity: 0.8;"
+ * ```
+ *
+ * @remarks
+ * Always validate color contrast for text using validate_contrast tool
+ * to ensure WCAG AA/AAA accessibility compliance.
  */
 export async function setFills(input: SetFillsInput, isText = false): Promise<SetFillsResult> {
   // Validate input
@@ -96,15 +136,17 @@ export async function setFills(input: SetFillsInput, isText = false): Promise<Se
   const bridge = getFigmaBridge();
   await bridge.sendToFigma('set_fills', {
     nodeId: validated.nodeId,
-    fills: [{
-      type: 'SOLID',
-      color: {
-        r: rgb.r / 255,
-        g: rgb.g / 255,
-        b: rgb.b / 255
-      },
-      opacity: validated.opacity
-    }]
+    fills: [
+      {
+        type: 'SOLID',
+        color: {
+          r: rgb.r / 255,
+          g: rgb.g / 255,
+          b: rgb.b / 255
+        },
+        opacity: validated.opacity
+      }
+    ]
   });
 
   return {
@@ -190,4 +232,25 @@ to ensure accessibility compliance (WCAG AA/AAA).`,
     },
     required: ['nodeId', 'color']
   }
+};
+
+/**
+ * Handler export for tool registration
+ */
+export const setFillsHandler: import('../routing/tool-handler.js').ToolHandler<
+  SetFillsInput,
+  SetFillsResult
+> = {
+  name: 'set_fills',
+  schema: setFillsInputSchema as any,
+  execute: (input) => setFills(input),
+  formatResponse: (result) => {
+    let text = `Fills Applied Successfully\n`;
+    text += `Node ID: ${result.nodeId}\n`;
+    text += `Applied Color: ${result.appliedColor}\n\n`;
+    text += `CSS Equivalent:\n  ${result.cssEquivalent}\n`;
+
+    return [{ type: 'text', text }];
+  },
+  definition: setFillsToolDefinition
 };

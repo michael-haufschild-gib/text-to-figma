@@ -17,7 +17,12 @@ import { getFigmaBridge } from '../figma-bridge.js';
 export const AddLayoutGridInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the frame to add grid to'),
   pattern: z.enum(['COLUMNS', 'ROWS', 'GRID']).describe('Grid pattern type'),
-  count: z.number().int().positive().optional().describe('Number of columns/rows (for COLUMNS/ROWS)'),
+  count: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe('Number of columns/rows (for COLUMNS/ROWS)'),
   gutter: z.number().min(0).optional().default(20).describe('Space between columns/rows'),
   margin: z.number().min(0).optional().default(0).describe('Margin from edges'),
   offset: z.number().optional().default(0).describe('Offset from start'),
@@ -145,34 +150,29 @@ export interface AddLayoutGridResult {
 /**
  * Implementation
  */
-export async function addLayoutGrid(
-  input: AddLayoutGridInput
-): Promise<AddLayoutGridResult> {
+export async function addLayoutGrid(input: AddLayoutGridInput): Promise<AddLayoutGridResult> {
   // Validate input
   const validated = AddLayoutGridInputSchema.parse(input);
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  if (!bridge.isConnected()) {
-    throw new Error('Not connected to Figma. Ensure the plugin is running.');
-  }
-
   // Send command to Figma
-  const response = await bridge.sendToFigma<{ success: boolean; error?: string }>('add_layout_grid', {
-    nodeId: validated.nodeId,
-    pattern: validated.pattern,
-    count: validated.count,
-    gutter: validated.gutter,
-    margin: validated.margin,
-    offset: validated.offset,
-    color: validated.color,
-    opacity: validated.opacity
-  });
-
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to add layout grid');
-  }
+  // Note: bridge.sendToFigma validates success at protocol level
+  // It only resolves if Figma returns success=true, otherwise rejects
+  await bridge.sendToFigma(
+    'add_layout_grid',
+    {
+      nodeId: validated.nodeId,
+      pattern: validated.pattern,
+      count: validated.count,
+      gutter: validated.gutter,
+      margin: validated.margin,
+      offset: validated.offset,
+      color: validated.color,
+      opacity: validated.opacity
+    }
+  )
 
   // Build CSS equivalent
   let cssEquivalent = '';
