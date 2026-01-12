@@ -23,7 +23,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "ws": "^8.16.0"
+    "ws": "^8.19.0"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
