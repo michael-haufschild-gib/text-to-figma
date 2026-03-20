@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket, RawData } from 'ws';
 import { IncomingMessage } from 'http';
 
@@ -33,11 +34,43 @@ interface ResponseMessage {
 
 type BridgeMessage = FigmaHelloMessage | RequestMessage | ResponseMessage;
 
+/**
+ * Validate and classify a parsed JSON object as a BridgeMessage.
+ * Returns null if the object does not match any known message shape.
+ */
+function validateMessage(obj: unknown): BridgeMessage | null {
+  if (!obj || typeof obj !== 'object') {
+    return null;
+  }
+
+  const msg = obj as Record<string, unknown>;
+
+  // FigmaHelloMessage: { type: 'figma_hello', source: 'figma-plugin' }
+  if (msg.type === 'figma_hello' && msg.source === 'figma-plugin') {
+    return obj as FigmaHelloMessage;
+  }
+
+  // ResponseMessage: { id: string, success: boolean }
+  if (typeof msg.id === 'string' && typeof msg.success === 'boolean') {
+    return obj as ResponseMessage;
+  }
+
+  // RequestMessage: { type: string, payload: exists }
+  if (typeof msg.type === 'string' && 'payload' in msg) {
+    return obj as RequestMessage;
+  }
+
+  return null;
+}
+
 // Store connected clients with heartbeat info
 const clients = new Map<string, ClientRecord>();
 
 // Track Figma plugin instance separately (only one allowed)
 let figmaPluginClient: string | null = null;
+
+// Track which MCP client sent each request (request ID → client ID)
+const pendingRequestOrigins = new Map<string, string>();
 
 /**
  * Handle Figma plugin registration (figma_hello message).
@@ -88,6 +121,11 @@ function routeMessage(message: BridgeMessage, clientId: string): void {
     if (client) {
       client.isMCP = true;
     }
+    // Track which MCP client originated this request for response routing
+    const requestMsg = message as RequestMessage;
+    if (requestMsg.id) {
+      pendingRequestOrigins.set(requestMsg.id, clientId);
+    }
     if (figmaPluginClient && clients.has(figmaPluginClient)) {
       const figmaClient = clients.get(figmaPluginClient);
       if (figmaClient && figmaClient.ws.readyState === WebSocket.OPEN) {
@@ -103,9 +141,23 @@ function routeMessage(message: BridgeMessage, clientId: string): void {
       console.warn(`  Ignoring response from unregistered client ${clientId}`);
       return;
     }
-    for (const [, mcpClient] of clients.entries()) {
-      if (mcpClient.isMCP && mcpClient.ws.readyState === WebSocket.OPEN) {
-        mcpClient.ws.send(JSON.stringify(message));
+    // Route response to the specific MCP client that sent the request
+    const responseMsg = message;
+    const originClientId = pendingRequestOrigins.get(responseMsg.id);
+    pendingRequestOrigins.delete(responseMsg.id);
+
+    if (originClientId) {
+      const originClient = clients.get(originClientId);
+      if (originClient && originClient.ws.readyState === WebSocket.OPEN) {
+        originClient.ws.send(JSON.stringify(message));
+        console.log(`  Routed to originating MCP client: ${originClientId}`);
+      }
+    } else {
+      // Fallback: broadcast to all MCP clients (for requests without tracked IDs)
+      for (const [, mcpClient] of clients.entries()) {
+        if (mcpClient.isMCP && mcpClient.ws.readyState === WebSocket.OPEN) {
+          mcpClient.ws.send(JSON.stringify(message));
+        }
       }
     }
   } else {
@@ -119,7 +171,7 @@ const wss = new WebSocketServer({ port: PORT });
 console.log(`WebSocket bridge server started on port ${PORT}`);
 
 wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
-  const clientId = `client-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  const clientId = `client-${randomUUID()}`;
 
   console.log(`Client connected: ${clientId}`);
 
@@ -153,9 +205,11 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
         return;
       }
 
-      const message = JSON.parse(data.toString()) as BridgeMessage;
-      if (!message || typeof message !== 'object') {
-        console.error(`Invalid message structure from ${clientId}`);
+      const parsed: unknown = JSON.parse(data.toString());
+      const message = validateMessage(parsed);
+      if (!message) {
+        console.error(`Invalid message structure from ${clientId}:`, parsed);
+        ws.send(JSON.stringify({ type: 'error', error: 'Unrecognized message format' }));
         return;
       }
 
@@ -180,6 +234,12 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
       figmaPluginClient = null;
     }
     clients.delete(clientId);
+    // Clean up any pending request origins for this client
+    for (const [reqId, originId] of pendingRequestOrigins.entries()) {
+      if (originId === clientId) {
+        pendingRequestOrigins.delete(reqId);
+      }
+    }
   });
 
   ws.on('error', (error: Error) => {
