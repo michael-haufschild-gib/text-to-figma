@@ -7,6 +7,7 @@ This playbook provides procedures for responding to production incidents in the 
 ## Severity Levels
 
 ### P0 - Critical
+
 - Complete service outage
 - Data loss or corruption
 - Security breach
@@ -14,6 +15,7 @@ This playbook provides procedures for responding to production incidents in the 
 - **Escalation**: Immediate
 
 ### P1 - High
+
 - Partial service outage
 - Significant performance degradation (> 500ms latency)
 - Elevated error rates (> 10%)
@@ -21,6 +23,7 @@ This playbook provides procedures for responding to production incidents in the 
 - **Escalation**: Within 30 minutes if not resolved
 
 ### P2 - Medium
+
 - Minor feature degradation
 - Intermittent errors
 - Single component failure with fallback
@@ -28,6 +31,7 @@ This playbook provides procedures for responding to production incidents in the 
 - **Escalation**: Within 2 hours if not resolved
 
 ### P3 - Low
+
 - Cosmetic issues
 - Performance degradation (< 500ms)
 - Non-critical warnings
@@ -41,6 +45,7 @@ This playbook provides procedures for responding to production incidents in the 
 ### 1. WebSocket Bridge Down
 
 **Symptoms:**
+
 - Health check fails for `figma_bridge`
 - All tool operations fail with "Not connected"
 - Error rate spikes to 100%
@@ -48,18 +53,22 @@ This playbook provides procedures for responding to production incidents in the 
 **Impact:** P0 - Complete service outage
 
 **Response:**
+
 1. **Verify the issue**
+
    ```bash
    curl http://localhost:8081/health | jq '.checks.figma_bridge'
    lsof -i :8080
    ```
 
 2. **Check WebSocket server logs**
+
    ```bash
    pm2 logs websocket-bridge --lines 50
    ```
 
 3. **Restart WebSocket bridge**
+
    ```bash
    pm2 restart websocket-bridge
    ```
@@ -70,6 +79,7 @@ This playbook provides procedures for responding to production incidents in the 
    - Disk space: `df -h`
 
 5. **Verify recovery**
+
    ```bash
    curl http://localhost:8081/health
    ```
@@ -84,6 +94,7 @@ This playbook provides procedures for responding to production incidents in the 
 ### 2. High Error Rate
 
 **Symptoms:**
+
 - Error tracker shows spike in errors
 - Success rate < 90%
 - Elevated response times
@@ -91,12 +102,15 @@ This playbook provides procedures for responding to production incidents in the 
 **Impact:** P1 - High
 
 **Response:**
+
 1. **Check error statistics**
+
    ```bash
    curl http://localhost:8081/health | jq '.checks'
    ```
 
 2. **Review error categories**
+
    ```javascript
    // In Node console
    const { getErrorTracker } = require('./dist/monitoring/error-tracker.js');
@@ -121,6 +135,7 @@ This playbook provides procedures for responding to production incidents in the 
 ### 3. Memory Leak
 
 **Symptoms:**
+
 - Health check shows memory > 90%
 - Process crashes periodically
 - Slow performance over time
@@ -128,13 +143,16 @@ This playbook provides procedures for responding to production incidents in the 
 **Impact:** P1 - High
 
 **Response:**
+
 1. **Check current memory**
+
    ```bash
    curl http://localhost:8081/health | jq '.checks.memory'
    ps aux | grep node
    ```
 
 2. **Immediate mitigation**
+
    ```bash
    # Restart service to free memory
    pm2 restart mcp-server
@@ -155,6 +173,7 @@ This playbook provides procedures for responding to production incidents in the 
 ### 4. Circuit Breaker Open
 
 **Symptoms:**
+
 - Errors: "Circuit breaker is OPEN"
 - Recent failures to Figma
 - Automatic recovery not happening
@@ -162,19 +181,23 @@ This playbook provides procedures for responding to production incidents in the 
 **Impact:** P2 - Medium
 
 **Response:**
+
 1. **Check circuit breaker state**
+
    ```bash
    # Review recent errors
    pm2 logs mcp-server | grep -i "circuit"
    ```
 
 2. **Verify Figma is actually down**
+
    ```bash
    # Test WebSocket connectivity
    curl http://localhost:8080
    ```
 
 3. **If Figma is up, manually reset**:
+
    ```bash
    # Restart to reset circuit breaker
    pm2 restart mcp-server
@@ -190,6 +213,7 @@ This playbook provides procedures for responding to production incidents in the 
 ### 5. Performance Degradation
 
 **Symptoms:**
+
 - Response times > 500ms
 - Health check OK but slow
 - Users reporting lag
@@ -197,7 +221,9 @@ This playbook provides procedures for responding to production incidents in the 
 **Impact:** P2 - Medium
 
 **Response:**
+
 1. **Check metrics**
+
    ```bash
    # Review duration histogram
    curl http://localhost:8081/health
@@ -209,6 +235,7 @@ This playbook provides procedures for responding to production incidents in the 
    - Slow network: Check WebSocket latency
 
 3. **Quick fixes**:
+
    ```bash
    # Restart services
    pm2 restart all
@@ -229,18 +256,21 @@ This playbook provides procedures for responding to production incidents in the 
 ## Escalation Procedures
 
 ### Level 1: On-Call Engineer
+
 - First responder
 - Basic troubleshooting
 - Service restarts
 - **Escalate if**: Unable to resolve within SLA time
 
 ### Level 2: Senior Engineer
+
 - Deep troubleshooting
 - Code fixes
 - Configuration changes
 - **Escalate if**: Requires architectural changes
 
 ### Level 3: Engineering Lead
+
 - System architecture decisions
 - Major incidents
 - Coordination with other teams
@@ -345,6 +375,7 @@ alerts:
 ## Post-Incident Procedures
 
 ### 1. Immediate Aftermath (< 1 hour after resolution)
+
 - [ ] Verify full service recovery
 - [ ] Document timeline of events
 - [ ] Gather all relevant logs
@@ -352,6 +383,7 @@ alerts:
 - [ ] Communicate resolution to stakeholders
 
 ### 2. Post-Mortem (Within 48 hours)
+
 - [ ] Schedule post-mortem meeting
 - [ ] Analyze root cause
 - [ ] Document lessons learned
@@ -359,6 +391,7 @@ alerts:
 - [ ] Update runbooks if needed
 
 ### 3. Follow-up (Within 1 week)
+
 - [ ] Implement preventive measures
 - [ ] Update monitoring/alerts
 - [ ] Share learnings with team
@@ -373,6 +406,7 @@ alerts:
 # Incident Report: [ID] - [Title]
 
 ## Summary
+
 - **Date**: YYYY-MM-DD
 - **Duration**: X hours Y minutes
 - **Severity**: PX
@@ -380,6 +414,7 @@ alerts:
 - **Impact**: [Description]
 
 ## Timeline (All times in UTC)
+
 - HH:MM - Incident detected
 - HH:MM - Investigation started
 - HH:MM - Root cause identified
@@ -388,22 +423,27 @@ alerts:
 - HH:MM - Incident resolved
 
 ## Root Cause
+
 [Detailed explanation]
 
 ## Resolution
+
 [What was done to fix it]
 
 ## Impact
+
 - Users affected: [Number/Percentage]
 - Requests failed: [Number]
 - Revenue impact: [If applicable]
 
 ## Action Items
+
 1. [ ] [Preventive measure]
 2. [ ] [Monitoring improvement]
 3. [ ] [Documentation update]
 
 ## Lessons Learned
+
 - [Key learnings]
 ```
 

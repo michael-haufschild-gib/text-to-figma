@@ -7,6 +7,7 @@ The `create_path` tool creates custom vector paths using Bezier curves and line 
 ## Command Reference
 
 ### M - Move To
+
 Moves the drawing cursor to a new position without drawing.
 
 ```typescript
@@ -14,12 +15,14 @@ Moves the drawing cursor to a new position without drawing.
 ```
 
 **Requirements:**
+
 - `x`: number (X coordinate)
 - `y`: number (Y coordinate)
 
 **Note:** **Every path MUST start with an M command.**
 
 ### L - Line To
+
 Draws a straight line from current position to the specified point.
 
 ```typescript
@@ -27,10 +30,12 @@ Draws a straight line from current position to the specified point.
 ```
 
 **Requirements:**
+
 - `x`: number (X coordinate of end point)
 - `y`: number (Y coordinate of end point)
 
 ### C - Cubic Bezier Curve
+
 Draws a smooth curve using two control points.
 
 ```typescript
@@ -43,6 +48,7 @@ Draws a smooth curve using two control points.
 ```
 
 **Requirements:**
+
 - `x1, y1`: number (First control point)
 - `x2, y2`: number (Second control point)
 - `x, y`: number (End point)
@@ -50,6 +56,7 @@ Draws a smooth curve using two control points.
 **Use for:** Smooth, flowing curves (animal bodies, waves, organic shapes)
 
 ### Q - Quadratic Bezier Curve
+
 Draws a simpler curve using one control point.
 
 ```typescript
@@ -61,16 +68,20 @@ Draws a simpler curve using one control point.
 ```
 
 **Requirements:**
+
 - `x1, y1`: number (Control point)
 - `x, y`: number (End point)
 
 **Use for:** Simple arcs and rounded corners
 
 ### Z - Close Path
+
 Closes the path by drawing a line back to the starting point.
 
 ```typescript
-{ type: 'Z' }
+{
+  type: 'Z';
+}
 ```
 
 **No coordinates required.** Automatically connects to the first M command.
@@ -81,16 +92,16 @@ Closes the path by drawing a line back to the starting point.
 
 ```typescript
 await create_path({
-  name: "Rectangle",
+  name: 'Rectangle',
   commands: [
-    { type: 'M', x: 100, y: 100 },  // Start at top-left
-    { type: 'L', x: 300, y: 100 },  // Line to top-right
-    { type: 'L', x: 300, y: 200 },  // Line to bottom-right
-    { type: 'L', x: 100, y: 200 },  // Line to bottom-left
-    { type: 'Z' }                    // Close path
+    { type: 'M', x: 100, y: 100 }, // Start at top-left
+    { type: 'L', x: 300, y: 100 }, // Line to top-right
+    { type: 'L', x: 300, y: 200 }, // Line to bottom-right
+    { type: 'L', x: 100, y: 200 }, // Line to bottom-left
+    { type: 'Z' } // Close path
   ],
-  fillColor: "#4CAF50",
-  strokeColor: "#2E7D32",
+  fillColor: '#4CAF50',
+  strokeColor: '#2E7D32',
   strokeWeight: 2
 });
 ```
@@ -99,15 +110,15 @@ await create_path({
 
 ```typescript
 await create_path({
-  name: "Wave",
+  name: 'Wave',
   commands: [
     { type: 'M', x: 0, y: 200 },
     { type: 'C', x1: 100, y1: 150, x2: 200, y2: 150, x: 300, y: 200 },
-    { type: 'C', x1: 400, y1: 250, x2: 500, y2: 250, x: 600, y: 200 },
+    { type: 'C', x1: 400, y1: 250, x2: 500, y2: 250, x: 600, y: 200 }
   ],
-  strokeColor: "#2196F3",
+  strokeColor: '#2196F3',
   strokeWeight: 3,
-  closed: false  // Open path (no fill)
+  closed: false // Open path (no fill)
 });
 ```
 
@@ -115,19 +126,19 @@ await create_path({
 
 ```typescript
 await create_path({
-  name: "Heart",
+  name: 'Heart',
   commands: [
-    { type: 'M', x: 200, y: 150 },  // Start at top center
-    { type: 'C', x1: 200, y1: 120, x2: 180, y2: 100, x: 150, y: 100 },  // Left top curve
-    { type: 'C', x1: 110, y1: 100, x2: 90, y2: 130, x: 90, y: 160 },    // Left side curve
-    { type: 'C', x1: 90, y1: 200, x2: 150, y2: 240, x: 200, y: 280 },   // Left bottom to point
-    { type: 'C', x1: 250, y1: 240, x2: 310, y2: 200, x: 310, y: 160 },  // Right bottom to point
-    { type: 'C', x1: 310, y1: 130, x2: 290, y2: 100, x: 250, y: 100 },  // Right side curve
-    { type: 'C', x1: 220, y1: 100, x2: 200, y2: 120, x: 200, y: 150 },  // Right top curve
+    { type: 'M', x: 200, y: 150 }, // Start at top center
+    { type: 'C', x1: 200, y1: 120, x2: 180, y2: 100, x: 150, y: 100 }, // Left top curve
+    { type: 'C', x1: 110, y1: 100, x2: 90, y2: 130, x: 90, y: 160 }, // Left side curve
+    { type: 'C', x1: 90, y1: 200, x2: 150, y2: 240, x: 200, y: 280 }, // Left bottom to point
+    { type: 'C', x1: 250, y1: 240, x2: 310, y2: 200, x: 310, y: 160 }, // Right bottom to point
+    { type: 'C', x1: 310, y1: 130, x2: 290, y2: 100, x: 250, y: 100 }, // Right side curve
+    { type: 'C', x1: 220, y1: 100, x2: 200, y2: 120, x: 200, y: 150 }, // Right top curve
     { type: 'Z' }
   ],
-  fillColor: "#FF1744",
-  strokeColor: "#C51162",
+  fillColor: '#FF1744',
+  strokeColor: '#C51162',
   strokeWeight: 2
 });
 ```
@@ -136,26 +147,26 @@ await create_path({
 
 ```typescript
 await create_path({
-  name: "Leaf",
+  name: 'Leaf',
   commands: [
     // Leaf outline
-    { type: 'M', x: 200, y: 100 },   // Top point
-    { type: 'C', x1: 250, y1: 130, x2: 260, y2: 180, x: 240, y: 220 },  // Right curve
-    { type: 'C', x1: 220, y1: 250, x2: 180, y2: 250, x: 160, y: 220 },  // Bottom curve
-    { type: 'C', x1: 140, y1: 180, x2: 150, y2: 130, x: 200, y: 100 },  // Left curve back to top
+    { type: 'M', x: 200, y: 100 }, // Top point
+    { type: 'C', x1: 250, y1: 130, x2: 260, y2: 180, x: 240, y: 220 }, // Right curve
+    { type: 'C', x1: 220, y1: 250, x2: 180, y2: 250, x: 160, y: 220 }, // Bottom curve
+    { type: 'C', x1: 140, y1: 180, x2: 150, y2: 130, x: 200, y: 100 }, // Left curve back to top
     { type: 'Z' }
   ],
-  fillColor: "#4CAF50"
+  fillColor: '#4CAF50'
 });
 
 // Then create stem separately
 await create_path({
-  name: "Stem",
+  name: 'Stem',
   commands: [
     { type: 'M', x: 200, y: 220 },
     { type: 'Q', x1: 195, y1: 250, x: 190, y: 280 }
   ],
-  strokeColor: "#388E3C",
+  strokeColor: '#388E3C',
   strokeWeight: 4,
   closed: false
 });
@@ -164,6 +175,7 @@ await create_path({
 ## Common Patterns
 
 ### Smooth Organic Curves
+
 Use C (cubic Bezier) commands for flowing, natural shapes:
 
 ```typescript
@@ -171,11 +183,13 @@ Use C (cubic Bezier) commands for flowing, natural shapes:
 ```
 
 **Tips:**
+
 - Control points (x1,y1 and x2,y2) determine curve shape
 - Place control points further from the line for more pronounced curves
 - Keep control points aligned for smooth S-curves
 
 ### Simple Rounded Corners
+
 Use Q (quadratic Bezier) for simple arcs:
 
 ```typescript
@@ -183,6 +197,7 @@ Use Q (quadratic Bezier) for simple arcs:
 ```
 
 ### Geometric Shapes
+
 Use M, L, and Z for straight-edged shapes:
 
 ```typescript
@@ -198,11 +213,7 @@ Use M, L, and Z for straight-edged shapes:
 
 ```typescript
 // Must start with M
-[
-  { type: 'M', x: 100, y: 100 },
-  { type: 'L', x: 200, y: 200 },
-  { type: 'Z' }
-]
+[{ type: 'M', x: 100, y: 100 }, { type: 'L', x: 200, y: 200 }, { type: 'Z' }];
 ```
 
 ```typescript
@@ -225,9 +236,9 @@ Use M, L, and Z for straight-edged shapes:
 ```typescript
 // Missing starting M command
 [
-  { type: 'L', x: 100, y: 100 },  // ✗ Must start with M
+  { type: 'L', x: 100, y: 100 }, // ✗ Must start with M
   { type: 'Z' }
-]
+];
 // Error: Path must start with M (Move) command
 ```
 
@@ -262,27 +273,31 @@ Use M, L, and Z for straight-edged shapes:
 ## Styling Options
 
 ### Fill
+
 ```typescript
-fillColor: "#FF0000"  // Hex color for filled shapes
+fillColor: '#FF0000'; // Hex color for filled shapes
 ```
 
 Use `fillColor` for closed shapes. Omit for outlines only.
 
 ### Stroke
+
 ```typescript
 strokeColor: "#000000",   // Outline color
 strokeWeight: 2           // Outline thickness in pixels
 ```
 
 ### Closed vs Open Paths
+
 ```typescript
-closed: true   // Automatically adds Z command (closed shape, can be filled)
-closed: false  // Open path (typically stroked only)
+closed: true; // Automatically adds Z command (closed shape, can be filled)
+closed: false; // Open path (typically stroked only)
 ```
 
 ## Best Practices
 
 ### 1. Start Simple
+
 Begin with basic shapes using M, L, and Z:
 
 ```typescript
@@ -292,10 +307,11 @@ Begin with basic shapes using M, L, and Z:
   { type: 'L', x: 200, y: 200 },
   { type: 'L', x: 50, y: 200 },
   { type: 'Z' }
-]
+];
 ```
 
 ### 2. Add Curves Gradually
+
 Replace straight lines with C or Q commands for smoother shapes:
 
 ```typescript
@@ -304,17 +320,20 @@ Replace straight lines with C or Q commands for smoother shapes:
 ```
 
 ### 3. Use Descriptive Names
+
 ```typescript
-name: "Horse Head Left Side"  // ✓ Clear and specific
-name: "Path 1"                 // ✗ Not descriptive
+name: 'Horse Head Left Side'; // ✓ Clear and specific
+name: 'Path 1'; // ✗ Not descriptive
 ```
 
 ### 4. Parent Shapes Properly
+
 ```typescript
-parentId: canvasFrame.frameId  // Add to existing frame
+parentId: canvasFrame.frameId; // Add to existing frame
 ```
 
 ### 5. Test Incrementally
+
 Build complex paths step by step, exporting frequently to verify:
 
 ```typescript
@@ -330,18 +349,20 @@ await export_node({ nodeId: basePath.pathId, format: "PNG" });
 ## Troubleshooting
 
 ### "Path must start with M (Move) command"
+
 **Problem:** First command is not M.
 **Solution:** Add M command at the beginning:
 
 ```typescript
 commands: [
-  { type: 'M', x: 100, y: 100 },  // Add this
-  { type: 'L', x: 200, y: 200 },
+  { type: 'M', x: 100, y: 100 }, // Add this
+  { type: 'L', x: 200, y: 200 }
   // ...
-]
+];
 ```
 
 ### "Missing x or y coordinate"
+
 **Problem:** Command missing required coordinate.
 **Solution:** Check all commands have required coordinates:
 
@@ -357,6 +378,7 @@ commands: [
 ```
 
 ### "Coordinates must be finite numbers"
+
 **Problem:** Coordinate is NaN, Infinity, or not a number.
 **Solution:** Ensure all coordinates are valid numbers:
 
@@ -369,6 +391,7 @@ commands: [
 ```
 
 ### "Figma rejected path data"
+
 **Problem:** Path format invalid for Figma.
 **Solution:** Check console logs for path preview, verify coordinates are reasonable values (not extremely large/small).
 

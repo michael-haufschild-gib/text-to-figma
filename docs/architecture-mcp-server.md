@@ -106,6 +106,7 @@ mcp-server/
 ### 1. MCP Server Instance (`index.ts`)
 
 **Initialization**:
+
 ```typescript
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -124,11 +125,13 @@ const server = new Server(
 ```
 
 **Communication**:
+
 - **Transport**: stdio (standard input/output)
 - **Protocol**: JSON-RPC 2.0
 - **Message Format**: Defined by MCP specification
 
 **Lifecycle**:
+
 ```typescript
 async function main() {
   // Connect to Figma bridge
@@ -152,6 +155,7 @@ async function main() {
 ### 2. Tool Registry
 
 **Tool Definition Structure**:
+
 ```typescript
 {
   name: 'tool_name',
@@ -258,15 +262,17 @@ async function main() {
 **Total**: 60+ tools
 
 **Tool Registration**:
+
 ```typescript
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: TOOLS  // Array of all tool definitions
+    tools: TOOLS // Array of all tool definitions
   };
 });
 ```
 
 **Tool Execution**:
+
 ```typescript
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
@@ -289,6 +295,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 **Purpose**: WebSocket client for communicating with Figma plugin
 
 **Class Structure**:
+
 ```typescript
 export class FigmaBridge {
   private ws: WebSocket | null = null;
@@ -304,6 +311,7 @@ export class FigmaBridge {
 ```
 
 **Connection Management**:
+
 ```typescript
 async connect(): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -327,6 +335,7 @@ async connect(): Promise<void> {
 ```
 
 **Request/Response Flow**:
+
 ```typescript
 async sendToFigma<T>(type: string, payload: unknown): Promise<T> {
   if (!this.connected) {
@@ -353,6 +362,7 @@ async sendToFigma<T>(type: string, payload: unknown): Promise<T> {
 ```
 
 **Auto-Reconnect**:
+
 ```typescript
 private handleDisconnect(): void {
   // Reject all pending requests
@@ -371,6 +381,7 @@ private handleDisconnect(): void {
 ```
 
 **Singleton Pattern**:
+
 ```typescript
 let bridgeInstance: FigmaBridge | null = null;
 
@@ -389,13 +400,13 @@ export function getFigmaBridge(): FigmaBridge {
 #### Spacing Constraint (`constraints/spacing.ts`)
 
 **8pt Grid System**:
+
 ```typescript
-const VALID_SPACING_VALUES = [
-  0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 128
-] as const;
+const VALID_SPACING_VALUES = [0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 128] as const;
 ```
 
 **Validation**:
+
 ```typescript
 function validateSpacing(value: number): SpacingConstraintResult {
   if (isValidSpacing(value)) {
@@ -413,6 +424,7 @@ function validateSpacing(value: number): SpacingConstraintResult {
 ```
 
 **Snap to Grid**:
+
 ```typescript
 function snapToGrid(value: number): SpacingValue {
   let closest = VALID_SPACING_VALUES[0];
@@ -431,19 +443,19 @@ function snapToGrid(value: number): SpacingValue {
 ```
 
 **Zod Schema**:
+
 ```typescript
-const spacingSchema = z.number().refine(
-  (value): value is SpacingValue =>
-    VALID_SPACING_VALUES.includes(value as SpacingValue),
-  {
+const spacingSchema = z
+  .number()
+  .refine((value): value is SpacingValue => VALID_SPACING_VALUES.includes(value as SpacingValue), {
     message: `Spacing must be one of: ${VALID_SPACING_VALUES.join(', ')}`
-  }
-);
+  });
 ```
 
 #### Typography Constraint (`constraints/typography.ts`)
 
 **Modular Type Scale**:
+
 ```typescript
 const VALID_FONT_SIZES = [12, 16, 20, 24, 32, 40, 48, 64] as const;
 ```
@@ -452,6 +464,7 @@ const VALID_FONT_SIZES = [12, 16, 20, 24, 32, 40, 48, 64] as const;
 **Ratio**: 1.25 (major third)
 
 **Font Weights**:
+
 ```typescript
 const FONT_WEIGHTS = {
   thin: 100,
@@ -467,6 +480,7 @@ const FONT_WEIGHTS = {
 ```
 
 **Line Height Calculation**:
+
 ```typescript
 function getRecommendedLineHeight(fontSize: FontSize): number {
   // Body text (≤20px): 1.5x
@@ -479,6 +493,7 @@ function getRecommendedLineHeight(fontSize: FontSize): number {
 ```
 
 **Predefined Text Styles**:
+
 ```typescript
 const TEXT_STYLES = {
   'display-large': { fontSize: 64, fontWeight: 700, lineHeight: 77 },
@@ -495,20 +510,22 @@ const TEXT_STYLES = {
 #### Color Constraint (`constraints/color.ts`)
 
 **WCAG Contrast Ratios**:
+
 ```typescript
 const WCAG_THRESHOLDS = {
   AA: {
-    normal: 4.5,   // AA Normal text
-    large: 3.0     // AA Large text (18pt+ or 14pt+ bold)
+    normal: 4.5, // AA Normal text
+    large: 3.0 // AA Large text (18pt+ or 14pt+ bold)
   },
   AAA: {
-    normal: 7.0,   // AAA Normal text
-    large: 4.5     // AAA Large text
+    normal: 7.0, // AAA Normal text
+    large: 4.5 // AAA Large text
   }
 };
 ```
 
 **Contrast Calculation**:
+
 ```typescript
 function calculateContrastRatio(rgb1: RGB, rgb2: RGB): number {
   const l1 = getRelativeLuminance(rgb1);
@@ -522,6 +539,7 @@ function calculateContrastRatio(rgb1: RGB, rgb2: RGB): number {
 ```
 
 **Validation**:
+
 ```typescript
 function validateContrast(fg: RGB, bg: RGB): ContrastValidationResult {
   const ratio = calculateContrastRatio(fg, bg);
@@ -550,6 +568,7 @@ function validateContrast(fg: RGB, bg: RGB): ContrastValidationResult {
 Each tool follows a consistent pattern. Example: `create_frame.ts`
 
 **1. Type Definitions**:
+
 ```typescript
 export const createFrameInputSchema = z.object({
   name: z.string().min(1),
@@ -571,6 +590,7 @@ export interface CreateFrameResult {
 ```
 
 **2. HTML/CSS Analogy**:
+
 ```typescript
 function generateHtmlAnalogy(input: CreateFrameInput) {
   const flexDirection = input.layoutMode === 'HORIZONTAL' ? 'row' : 'column';
@@ -589,6 +609,7 @@ function generateHtmlAnalogy(input: CreateFrameInput) {
 ```
 
 **3. Implementation**:
+
 ```typescript
 export async function createFrame(input: CreateFrameInput): Promise<CreateFrameResult> {
   // Validate input
@@ -618,6 +639,7 @@ export async function createFrame(input: CreateFrameInput): Promise<CreateFrameR
 ```
 
 **4. Tool Definition**:
+
 ```typescript
 export const createFrameToolDefinition = {
   name: 'create_frame',
@@ -661,6 +683,7 @@ Valid spacing values: ${VALID_SPACING_VALUES.join(', ')}`,
 **Purpose**: Teach LLM agent the HTML/CSS → Figma mapping without examples
 
 **Contents**:
+
 - Philosophy: Primitive-first, no pre-made components
 - HTML/CSS to Figma API mappings
 - Available primitives organized by category
@@ -668,6 +691,7 @@ Valid spacing values: ${VALID_SPACING_VALUES.join(', ')}`,
 - Composition patterns
 
 **Example Mapping**:
+
 ```
 HTML/CSS → Figma API
 
@@ -689,12 +713,14 @@ HTML/CSS → Figma API
 **Purpose**: Show complete workflow examples for common UI components
 
 **Examples Included**:
+
 1. **Button**: Frame + Text + Effects + Constraints
 2. **Card**: Frame + Image + Text + Layout
 3. **Form**: Multiple frames with validation
 4. **Navbar**: Horizontal layout with components
 
 **Example Structure**:
+
 ```typescript
 {
   name: 'Primary Button',
@@ -739,6 +765,7 @@ LLM agents have extensive HTML/CSS training data but limited Figma API knowledge
 ### Key Mappings
 
 **Layout**:
+
 ```
 HTML:                    Figma:
 <div>                 →  create_frame
@@ -750,6 +777,7 @@ padding: 24px        →  padding: 24
 ```
 
 **Typography**:
+
 ```
 HTML:                    Figma:
 <p>, <h1>            →  create_text
@@ -760,6 +788,7 @@ text-align: center   →  textAlign: CENTER
 ```
 
 **Styling**:
+
 ```
 HTML:                    Figma:
 background-color     →  set_fills
@@ -771,6 +800,7 @@ opacity: 0.8         →  set_opacity
 ```
 
 **Positioning**:
+
 ```
 HTML:                    Figma:
 position: absolute   →  set_absolute_position
@@ -827,11 +857,11 @@ This reinforces the mental model and helps agents understand the Figma API opera
 
 // 1. Zod validates type (number ✓)
 // 2. Spacing constraint checks 8pt grid
-spacingSchema.parse(15)
+spacingSchema.parse(15);
 // → Throws: "Spacing must be one of: 0, 4, 8, 16, 24, 32..."
 
 // 3. Agent sees error, adjusts to padding: 16
-create_frame({ padding: 16 })
+create_frame({ padding: 16 });
 // → Success ✓
 ```
 
@@ -841,11 +871,11 @@ create_frame({ padding: 16 })
 // Agent calls: create_text({ fontSize: 22 })
 
 // 1. Font size constraint checks modular scale
-fontSizeSchema.parse(22)
+fontSizeSchema.parse(22);
 // → Throws: "Font size must be one of: 12, 16, 20, 24, 32, 40, 48, 64"
 
 // 2. Agent adjusts to nearest valid size
-create_text({ fontSize: 24 })
+create_text({ fontSize: 24 });
 // → Success ✓
 // → Includes recommended line height: 29px
 ```
@@ -906,11 +936,13 @@ create_text({ fontSize: 24 })
 ### Scaling Considerations
 
 **Current limitations**:
+
 - Single WebSocket connection to Figma
 - No request queuing
 - No caching layer
 
 **Future improvements**:
+
 1. **Request batching** - Combine multiple operations
 2. **Caching layer** - Cache constraint validations
 3. **Multiple Figma connections** - Parallel execution
@@ -925,16 +957,19 @@ create_text({ fontSize: 24 })
 **Where**: Zod schema validation
 
 **Example**:
+
 ```typescript
 try {
   const validated = createFrameInputSchema.parse(input);
 } catch (error) {
   if (error instanceof z.ZodError) {
     return {
-      content: [{
-        type: 'text',
-        text: `Validation error: ${error.errors[0].message}`
-      }]
+      content: [
+        {
+          type: 'text',
+          text: `Validation error: ${error.errors[0].message}`
+        }
+      ]
     };
   }
 }
@@ -945,14 +980,17 @@ try {
 **Where**: Design system constraint validators
 
 **Example**:
+
 ```typescript
 const spacingResult = validateSpacing(value);
 if (!spacingResult.isValid) {
   return {
-    content: [{
-      type: 'text',
-      text: `Invalid spacing: ${spacingResult.message}\nSuggested: ${spacingResult.suggestedValue}`
-    }]
+    content: [
+      {
+        type: 'text',
+        text: `Invalid spacing: ${spacingResult.message}\nSuggested: ${spacingResult.suggestedValue}`
+      }
+    ]
   };
 }
 ```
@@ -962,6 +1000,7 @@ if (!spacingResult.isValid) {
 **Where**: WebSocket communication
 
 **Types**:
+
 - `NOT_CONNECTED` - Bridge not connected
 - `CONNECTION_FAILED` - Connection attempt failed
 - `CONNECTION_LOST` - Connection dropped
@@ -969,6 +1008,7 @@ if (!spacingResult.isValid) {
 - `REQUEST_FAILED` - Figma returned error
 
 **Handling**:
+
 ```typescript
 try {
   const result = await bridge.sendToFigma('create_frame', payload);
@@ -976,10 +1016,12 @@ try {
   if (error instanceof FigmaBridgeError) {
     if (error.code === 'NOT_CONNECTED') {
       return {
-        content: [{
-          type: 'text',
-          text: 'Error: Not connected to Figma. Start the WebSocket server and Figma plugin.'
-        }]
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Not connected to Figma. Start the WebSocket server and Figma plugin.'
+          }
+        ]
       };
     }
   }
@@ -991,6 +1033,7 @@ try {
 **Where**: Tool implementation
 
 **Example**:
+
 ```typescript
 try {
   const result = await createFrame(input);
@@ -998,10 +1041,12 @@ try {
 } catch (error) {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
   return {
-    content: [{
-      type: 'text',
-      text: `Error: ${errorMessage}`
-    }]
+    content: [
+      {
+        type: 'text',
+        text: `Error: ${errorMessage}`
+      }
+    ]
   };
 }
 ```
@@ -1013,6 +1058,7 @@ try {
 ### Unit Tests
 
 **Constraint Validators**:
+
 ```typescript
 describe('validateSpacing', () => {
   test('accepts valid spacing', () => {
@@ -1030,6 +1076,7 @@ describe('validateSpacing', () => {
 ```
 
 **Tool Input Validation**:
+
 ```typescript
 describe('createFrameInputSchema', () => {
   test('validates required fields', () => {
@@ -1037,10 +1084,12 @@ describe('createFrameInputSchema', () => {
   });
 
   test('validates spacing constraints', () => {
-    expect(() => createFrameInputSchema.parse({
-      name: 'Frame',
-      itemSpacing: 15  // Invalid
-    })).toThrow();
+    expect(() =>
+      createFrameInputSchema.parse({
+        name: 'Frame',
+        itemSpacing: 15 // Invalid
+      })
+    ).toThrow();
   });
 });
 ```
@@ -1048,6 +1097,7 @@ describe('createFrameInputSchema', () => {
 ### Integration Tests
 
 **Figma Bridge**:
+
 ```typescript
 test('sends command to Figma', async () => {
   const bridge = getFigmaBridge();
@@ -1066,6 +1116,7 @@ test('sends command to Figma', async () => {
 ```
 
 **End-to-End Tool Execution**:
+
 ```typescript
 test('creates frame with valid constraints', async () => {
   const result = await createFrame({
@@ -1084,6 +1135,7 @@ test('creates frame with valid constraints', async () => {
 ### Manual Testing
 
 **1. Test constraint validation**:
+
 ```bash
 # Start server
 cd mcp-server
@@ -1102,6 +1154,7 @@ echo '{
 ```
 
 **2. Test tool execution**:
+
 ```bash
 # Requires WebSocket server + Figma plugin running
 echo '{
@@ -1204,7 +1257,9 @@ case 'my_tool': {
 **1. Create constraint file**: `src/constraints/my_constraint.ts`
 
 ```typescript
-export const VALID_VALUES = [/* ... */] as const;
+export const VALID_VALUES = [
+  /* ... */
+] as const;
 
 export function validateMyConstraint(value: number) {
   if (VALID_VALUES.includes(value)) {
@@ -1257,6 +1312,7 @@ if (!result.isValid) {
 ```
 
 **Key Dependencies**:
+
 - `@modelcontextprotocol/sdk` - MCP server implementation
 - `ws` - WebSocket client for Figma bridge
 - `zod` - Runtime schema validation
@@ -1278,30 +1334,35 @@ npm run dev
 ### Production
 
 **Build**:
+
 ```bash
 npm run build
 # Outputs to dist/
 ```
 
 **Run**:
+
 ```bash
 node dist/index.js
 # Or: npm start
 ```
 
 **Process Management** (PM2):
+
 ```json
 {
-  "apps": [{
-    "name": "mcp-server",
-    "script": "dist/index.js",
-    "cwd": "/path/to/mcp-server",
-    "instances": 1,
-    "exec_mode": "fork",
-    "env": {
-      "NODE_ENV": "production"
+  "apps": [
+    {
+      "name": "mcp-server",
+      "script": "dist/index.js",
+      "cwd": "/path/to/mcp-server",
+      "instances": 1,
+      "exec_mode": "fork",
+      "env": {
+        "NODE_ENV": "production"
+      }
     }
-  }]
+  ]
 }
 ```
 
@@ -1312,17 +1373,20 @@ node dist/index.js
 ### MCP Server Won't Start
 
 **Check build**:
+
 ```bash
 npm run build
 # Look for TypeScript errors
 ```
 
 **Check dependencies**:
+
 ```bash
 npm install
 ```
 
 **Check Figma bridge**:
+
 ```bash
 # Server logs on startup
 [MCP Server] Starting...
@@ -1333,6 +1397,7 @@ npm install
 ### Tools Not Listed
 
 **Test tool listing**:
+
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 # Should return array of 60+ tools
@@ -1341,12 +1406,14 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node dist/index.js
 ### Bridge Connection Fails
 
 **Check WebSocket server**:
+
 ```bash
 lsof -i :8080
 # Should show node process
 ```
 
 **Check URL**:
+
 ```typescript
 // In figma-bridge.ts
 const FIGMA_WS_URL = 'ws://localhost:8080';
@@ -1359,6 +1426,7 @@ const FIGMA_WS_URL = 'ws://localhost:8080';
 The MCP server is the **intelligent orchestration layer** that:
 
 **Provides**:
+
 - ✅ 60+ design tools via MCP protocol
 - ✅ HTML/CSS mental model for LLM agents
 - ✅ Built-in design constraint validation
@@ -1366,12 +1434,14 @@ The MCP server is the **intelligent orchestration layer** that:
 - ✅ Auto-reconnecting Figma bridge
 
 **Enforces**:
+
 - ✅ 8pt grid spacing system
 - ✅ Modular typography scale
 - ✅ WCAG AA/AAA color contrast
 - ✅ Primitive-first composition philosophy
 
 **Enables**:
+
 - ✅ Natural language → Figma designs
 - ✅ Accessible, constraint-compliant designs
 - ✅ Iterative refinement workflows

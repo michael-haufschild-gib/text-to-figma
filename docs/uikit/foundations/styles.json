@@ -1,0 +1,302 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UI Kit Styles System",
+  "description": "Visual effects and styling properties: shadows, corner radius, borders, opacity",
+  "version": "1.0.0",
+  "extractedDate": "2025-10-24",
+  "shadows": {
+    "description": "Shadow elevations for depth hierarchy",
+    "elevation1": {
+      "name": "Subtle elevation",
+      "value": {
+        "x": 0,
+        "y": 2,
+        "blur": 8,
+        "spread": 0,
+        "color": "#1D092F",
+        "opacity": 0.15
+      },
+      "usage": ["Thumbnails", "Small cards", "Subtle depth"],
+      "cssEquivalent": "box-shadow: 0 2px 8px rgba(29, 9, 47, 0.15);"
+    },
+    "elevation2": {
+      "name": "Medium elevation",
+      "value": {
+        "x": 0,
+        "y": 4,
+        "blur": 16,
+        "spread": 0,
+        "color": "#1D092F",
+        "opacity": 0.2
+      },
+      "usage": ["Cards", "Dropdown menus", "Popovers"],
+      "cssEquivalent": "box-shadow: 0 4px 16px rgba(29, 9, 47, 0.2);"
+    },
+    "elevation3": {
+      "name": "High elevation",
+      "value": {
+        "x": 0,
+        "y": 8,
+        "blur": 24,
+        "spread": 0,
+        "color": "#1D092F",
+        "opacity": 0.25
+      },
+      "usage": ["Floating panels", "Sticky headers"],
+      "cssEquivalent": "box-shadow: 0 8px 24px rgba(29, 9, 47, 0.25);"
+    },
+    "elevation4": {
+      "name": "Modal elevation",
+      "value": {
+        "x": 0,
+        "y": 8,
+        "blur": 32,
+        "spread": 0,
+        "color": "#1D092F",
+        "opacity": 0.25
+      },
+      "usage": ["Modals", "Dialogs", "Full-screen overlays"],
+      "cssEquivalent": "box-shadow: 0 8px 32px rgba(29, 9, 47, 0.25);"
+    },
+    "inset": {
+      "name": "Inset shadow",
+      "value": {
+        "x": 0,
+        "y": 1,
+        "blur": 2,
+        "spread": 0,
+        "color": "#1D092F",
+        "opacity": 0.1
+      },
+      "usage": ["Pressed buttons", "Input fields", "Inner depth"],
+      "cssEquivalent": "box-shadow: inset 0 1px 2px rgba(29, 9, 47, 0.1);"
+    }
+  },
+  "cornerRadius": {
+    "description": "Border radius values for rounded corners",
+    "values": {
+      "none": {
+        "value": 0,
+        "usage": ["Sharp corners", "Default rectangles"]
+      },
+      "small": {
+        "value": 4,
+        "usage": ["Checkboxes", "Small elements"]
+      },
+      "medium": {
+        "value": 6,
+        "usage": ["XS buttons", "Compact components"]
+      },
+      "default": {
+        "value": 8,
+        "usage": ["Buttons", "Cards", "Inputs", "Standard components"]
+      },
+      "large": {
+        "value": 12,
+        "usage": ["Coin packs", "Feature cards"]
+      },
+      "xlarge": {
+        "value": 16,
+        "usage": ["Modals", "Large containers"]
+      },
+      "pill": {
+        "value": "50% or half-height",
+        "usage": ["Pills", "Tags", "Rounded buttons", "Circular avatars"],
+        "examples": ["18px for 36px height pill", "50% for circle"]
+      }
+    },
+    "commonPatterns": {
+      "buttons": "8px (6px for XS size)",
+      "cards": "8px",
+      "modals": "16px",
+      "inputs": "8px",
+      "pills": "18px (half of 36px height)",
+      "checkboxes": "4px",
+      "thumbnails": "8px"
+    }
+  },
+  "borderWidth": {
+    "description": "Border/stroke width values",
+    "values": {
+      "none": {
+        "value": 0,
+        "usage": ["No border", "Ghost buttons", "Primary buttons"]
+      },
+      "thin": {
+        "value": 1,
+        "usage": ["Default state borders", "Cards", "Dividers", "Subtle borders"]
+      },
+      "medium": {
+        "value": 2,
+        "usage": ["Focus states", "Selected states", "Secondary buttons", "Active borders"]
+      },
+      "thick": {
+        "value": 3,
+        "usage": ["Emphasis", "Error borders", "Strong focus"]
+      }
+    },
+    "statePatterns": {
+      "default": "1px",
+      "hover": "1-2px (depending on component)",
+      "focus": "2px",
+      "error": "2px",
+      "selected": "2px"
+    }
+  },
+  "opacity": {
+    "description": "Opacity values for transparency",
+    "values": {
+      "invisible": {
+        "value": 0,
+        "percentage": "0%",
+        "usage": ["Hidden elements", "Transitions"]
+      },
+      "subtle": {
+        "value": 0.1,
+        "percentage": "10%",
+        "usage": ["Very light overlays", "Subtle effects"]
+      },
+      "light": {
+        "value": 0.2,
+        "percentage": "20%",
+        "usage": ["Light overlays", "Disabled text"]
+      },
+      "medium": {
+        "value": 0.4,
+        "percentage": "40%",
+        "usage": ["Disabled states", "Subtle overlays"]
+      },
+      "semiTransparent": {
+        "value": 0.5,
+        "percentage": "50%",
+        "usage": ["Disabled buttons", "Semi-transparent overlays"]
+      },
+      "visible": {
+        "value": 0.6,
+        "percentage": "60%",
+        "usage": ["Modal overlays", "Backdrop"]
+      },
+      "mostlyVisible": {
+        "value": 0.8,
+        "percentage": "80%",
+        "usage": ["Hover states", "Light transparency"]
+      },
+      "almostOpaque": {
+        "value": 0.9,
+        "percentage": "90%",
+        "usage": ["Close button backgrounds", "Subtle transparency"]
+      },
+      "opaque": {
+        "value": 1,
+        "percentage": "100%",
+        "usage": ["Default state", "Fully visible"]
+      }
+    },
+    "commonUsage": {
+      "modalOverlay": 0.6,
+      "disabledState": 0.5,
+      "hoverEffect": 0.8,
+      "closeButtonBackground": 0.9,
+      "shadows": "0.1-0.25 depending on elevation"
+    }
+  },
+  "blendModes": {
+    "description": "Blend modes for visual effects",
+    "common": {
+      "normal": {
+        "value": "NORMAL",
+        "usage": "Default, no blending"
+      },
+      "multiply": {
+        "value": "MULTIPLY",
+        "usage": "Darkening overlays, shadows"
+      },
+      "screen": {
+        "value": "SCREEN",
+        "usage": "Lightening overlays, highlights"
+      },
+      "overlay": {
+        "value": "OVERLAY",
+        "usage": "Contrast enhancement, texture overlays"
+      }
+    }
+  },
+  "recreationGuide": {
+    "description": "How to apply styles using text-to-figma tools",
+    "shadows": {
+      "tool": "apply_effects",
+      "example": {
+        "elevation1": "apply_effects({ nodeId: 'card', effects: [{ type: 'DROP_SHADOW', x: 0, y: 2, blur: 8, spread: 0, color: '#1D092F', opacity: 0.15 }] })",
+        "elevation2": "apply_effects({ nodeId: 'card', effects: [{ type: 'DROP_SHADOW', x: 0, y: 4, blur: 16, spread: 0, color: '#1D092F', opacity: 0.2 }] })",
+        "elevation4": "apply_effects({ nodeId: 'modal', effects: [{ type: 'DROP_SHADOW', x: 0, y: 8, blur: 32, spread: 0, color: '#1D092F', opacity: 0.25 }] })",
+        "inset": "apply_effects({ nodeId: 'button', effects: [{ type: 'INNER_SHADOW', x: 0, y: 1, blur: 2, spread: 0, color: '#1D092F', opacity: 0.1 }] })"
+      }
+    },
+    "cornerRadius": {
+      "tool": "set_corner_radius",
+      "example": {
+        "uniform": "set_corner_radius({ nodeId: 'card', radius: 8 })",
+        "individual": "set_corner_radius({ nodeId: 'card', topLeft: 16, topRight: 16, bottomLeft: 0, bottomRight: 0 })",
+        "pill": "set_corner_radius({ nodeId: 'pill', radius: 18 })",
+        "circle": "set_corner_radius({ nodeId: 'avatar', radius: 999 })"
+      }
+    },
+    "borders": {
+      "tool": "set_stroke",
+      "example": {
+        "default": "set_stroke({ nodeId: 'card', strokeWeight: 1, strokeColor: '#CEB6D8', strokeAlign: 'INSIDE' })",
+        "focus": "set_stroke({ nodeId: 'input', strokeWeight: 2, strokeColor: '#25ECFF', strokeAlign: 'INSIDE' })",
+        "error": "set_stroke({ nodeId: 'input', strokeWeight: 2, strokeColor: '#DD1717', strokeAlign: 'INSIDE' })"
+      }
+    },
+    "opacity": {
+      "tool": "set_opacity",
+      "example": {
+        "disabled": "set_opacity({ nodeId: 'button', opacity: 0.5 })",
+        "overlay": "set_opacity({ nodeId: 'backdrop', opacity: 0.6 })",
+        "subtle": "set_opacity({ nodeId: 'watermark', opacity: 0.1 })"
+      }
+    }
+  },
+  "styleHierarchy": {
+    "description": "Recommended elevation and depth system",
+    "layers": {
+      "background": {
+        "elevation": "none",
+        "shadow": "none",
+        "zIndex": 0,
+        "examples": ["Page background", "Canvas"]
+      },
+      "surface": {
+        "elevation": "elevation1",
+        "shadow": "y:2, blur:8, opacity:0.15",
+        "zIndex": 1,
+        "examples": ["Cards", "Containers", "Thumbnails"]
+      },
+      "raised": {
+        "elevation": "elevation2",
+        "shadow": "y:4, blur:16, opacity:0.2",
+        "zIndex": 10,
+        "examples": ["Dropdowns", "Menus", "Tooltips"]
+      },
+      "floating": {
+        "elevation": "elevation3",
+        "shadow": "y:8, blur:24, opacity:0.25",
+        "zIndex": 100,
+        "examples": ["Sticky headers", "Floating action buttons"]
+      },
+      "overlay": {
+        "elevation": "elevation4",
+        "shadow": "y:8, blur:32, opacity:0.25",
+        "zIndex": 1000,
+        "examples": ["Modals", "Dialogs", "Full-screen overlays"]
+      }
+    }
+  },
+  "_extraction_notes": {
+    "methodology": "Styles extracted from Figma page 'Styles' (ID: 1076:1246)",
+    "sections": ["Shadows", "Border Radius", "Border Width", "Opacity"],
+    "status": "COMPLETE - All visual effect styles documented",
+    "usage": "Use these values consistently across all components for cohesive visual design. Elevation system creates depth hierarchy. Always pair shadow with appropriate z-index for correct layering."
+  }
+}

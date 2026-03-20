@@ -1,4 +1,5 @@
 # Backend Engineering Style Guide
+
 ## Text-to-Figma MCP Server
 
 **Last Updated:** October 18, 2025  
@@ -15,30 +16,35 @@ This style guide governs the Text-to-Figma MCP Server codebase—a Node.js/TypeS
 ## Core Engineering Principles
 
 ### P1: Intentional Architecture
+
 - **Single Responsibility**: Each module has one clear purpose expressed through exports
 - **Domain Logic**: Business rules live in pure functions (services, constraints)
 - **Tool Modules**: Each tool is self-contained with schema, execute function, and definition
 - **Example**: `tools/create_frame.ts` owns frame creation logic, validation, and Figma API calls
 
 ### P2: Deterministic Operations
+
 - **Input Validation**: Use Zod schemas for all tool inputs with explicit error messages
 - **Pure Functions**: Constraint validators (spacing, typography, contrast) are pure and testable
 - **Predictable Errors**: Custom error hierarchy (ValidationError, FigmaAPIError, NetworkError)
 - **Example**: `validateSpacing(16)` always returns same result for same input
 
 ### P3: Performance Awareness
+
 - **Async Patterns**: All I/O operations use async/await with proper error handling
 - **Circuit Breaker**: Prevent cascading failures with configurable circuit breaker
 - **Connection Pooling**: WebSocket connection reused across requests
 - **Retry Logic**: Exponential backoff for transient failures
 
 ### P4: Resilience & Recovery
+
 - **Error Boundaries**: Errors wrapped in typed error classes with context
 - **Graceful Degradation**: Circuit breaker opens on repeated failures
 - **Auto-reconnect**: WebSocket bridge reconnects with exponential backoff
 - **Cleanup**: Proper resource cleanup on shutdown (close connections, clear timers)
 
 ### P5: Observability & Telemetry
+
 - **Structured Logging**: Winston/Pino-style logger with severity levels
 - **Metrics**: Counters, histograms for tool invocations, errors, duration
 - **Error Tracking**: Aggregated error fingerprints with deduplication
@@ -81,6 +87,7 @@ mcp-server/src/
 ```
 
 **Key Principles:**
+
 - **Colocated Concerns**: Related files grouped by domain (tools/, constraints/, monitoring/)
 - **Flat Structure**: Avoid deep nesting (max 2 levels in src/)
 - **Explicit Exports**: Each module exports specific interfaces/types
@@ -89,6 +96,7 @@ mcp-server/src/
 ### A2: Module Patterns
 
 #### Tool Module Template
+
 Every tool in `tools/` follows this structure:
 
 ```typescript
@@ -103,7 +111,10 @@ import { getFigmaBridge } from '../figma-bridge.js';
 // 1. Input Schema (Zod)
 export const setFillsInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node'),
-  color: z.string().regex(/^#?[0-9A-Fa-f]{6}$/).describe('Hex color'),
+  color: z
+    .string()
+    .regex(/^#?[0-9A-Fa-f]{6}$/)
+    .describe('Hex color'),
   opacity: z.number().min(0).max(1).default(1).describe('Opacity 0-1')
 });
 
@@ -120,12 +131,12 @@ export interface SetFillsResult {
 export async function setFills(input: SetFillsInput): Promise<SetFillsResult> {
   const validated = setFillsInputSchema.parse(input);
   const bridge = getFigmaBridge();
-  
+
   await bridge.sendToFigma('set_fills', {
     nodeId: validated.nodeId,
     fills: [{ type: 'SOLID', color: hexToRgb(validated.color), opacity: validated.opacity }]
   });
-  
+
   return {
     nodeId: validated.nodeId,
     appliedColor: validated.color,
@@ -139,18 +150,22 @@ export const setFillsToolDefinition = {
   description: 'Sets fill colors on frames or text nodes...',
   inputSchema: {
     type: 'object' as const,
-    properties: { /* JSON Schema */ },
+    properties: {
+      /* JSON Schema */
+    },
     required: ['nodeId', 'color']
   }
 };
 ```
 
 **Benefits:**
+
 - Schema-driven validation catches errors early
 - Execute function is unit-testable
 - MCP definition separate from implementation logic
 
 #### Service Module Template
+
 Pure business logic with no I/O dependencies:
 
 ```typescript
@@ -172,7 +187,7 @@ export function validateSpacing(value: number): SpacingConstraintResult {
   if (VALID_SPACING_VALUES.includes(value)) {
     return { value, isValid: true };
   }
-  
+
   const closest = findClosestValue(value, VALID_SPACING_VALUES);
   return {
     value,
@@ -184,6 +199,7 @@ export function validateSpacing(value: number): SpacingConstraintResult {
 ```
 
 **Benefits:**
+
 - Pure functions are deterministic and easily tested
 - No external dependencies (database, network, filesystem)
 - Can be imported and reused across tools
@@ -221,6 +237,7 @@ export function getConfig(): Config {
 ```
 
 **Benefits:**
+
 - Fail fast on missing/invalid environment variables
 - Type-safe access to configuration
 - Testable with `resetConfig()` helper
@@ -237,9 +254,9 @@ export async function createFrame(input: CreateFrameInput): Promise<CreateFrameR
   try {
     const validated = createFrameInputSchema.parse(input);
     const bridge = getFigmaBridge();
-    
+
     const response = await bridge.sendToFigma('create_frame', validated);
-    
+
     return {
       frameId: response.nodeId,
       htmlAnalogy: '...',
@@ -321,6 +338,7 @@ export class NetworkError extends ToolExecutionError {
 ```
 
 **Usage Pattern:**
+
 ```typescript
 try {
   await tool.execute(input);
@@ -354,14 +372,14 @@ describe('Typography Validation', () => {
     expect(validateTypography(16)).toEqual({ fontSize: 16, isValid: true });
     expect(validateTypography(24)).toEqual({ fontSize: 24, isValid: true });
   });
-  
+
   test('rejects off-scale values with suggestions', () => {
     const result = validateTypography(18);
     expect(result.isValid).toBe(false);
     expect(result.suggestedFontSize).toBe(20);
     expect(result.message).toContain('Use 16px or 20px');
   });
-  
+
   test('calculates recommended line height', () => {
     const result = validateTypography(16);
     expect(result.recommendedLineHeight).toBe(24); // 1.5x ratio
@@ -387,7 +405,7 @@ describe('create_frame integration', () => {
     };
     (getFigmaBridge as jest.Mock).mockReturnValue(mockBridge);
   });
-  
+
   test('creates frame with valid input', async () => {
     const result = await createFrame({
       name: 'Button',
@@ -395,17 +413,19 @@ describe('create_frame integration', () => {
       itemSpacing: 16,
       padding: 24
     });
-    
+
     expect(result.frameId).toBe('frame-123');
     expect(result.cssEquivalent).toContain('flex-direction: row');
     expect(result.cssEquivalent).toContain('gap: 16px');
   });
-  
+
   test('throws ValidationError for invalid spacing', async () => {
-    await expect(createFrame({
-      name: 'Button',
-      itemSpacing: 13 // Not on 8pt grid
-    })).rejects.toThrow(ValidationError);
+    await expect(
+      createFrame({
+        name: 'Button',
+        itemSpacing: 13 // Not on 8pt grid
+      })
+    ).rejects.toThrow(ValidationError);
   });
 });
 ```
@@ -447,7 +467,7 @@ tests/
 
 All exported functions, classes, and types must have comprehensive JSDoc:
 
-```typescript
+````typescript
 /**
  * Validates WCAG contrast ratio between foreground and background colors.
  *
@@ -476,15 +496,13 @@ All exported functions, classes, and types must have comprehensive JSDoc:
  *
  * @see {@link https://www.w3.org/WAI/WCAG21/Understanding/contrast-minimum.html WCAG 2.1 SC 1.4.3}
  */
-export function validateContrast(
-  foreground: RGB,
-  background: RGB
-): ContrastValidationResult {
+export function validateContrast(foreground: RGB, background: RGB): ContrastValidationResult {
   // Implementation...
 }
-```
+````
 
 **Required JSDoc Tags:**
+
 - `@param` for every parameter with description
 - `@returns` describing return value structure
 - `@throws` listing error types that may be thrown
@@ -560,8 +578,8 @@ try {
   const errorId = trackError(
     error,
     { tool: 'create_frame', input },
-    'high',        // severity
-    'figma_api'    // category
+    'high', // severity
+    'figma_api' // category
   );
   logger.error('Tool execution failed', error, { errorId });
 }
@@ -572,31 +590,37 @@ try {
 ## Code Review Checklist
 
 ### Q1: Architecture & Domain Boundaries
+
 - [ ] Tool module follows standard structure (schema → execute → definition)
 - [ ] Business logic in pure functions, I/O in tool layer
 - [ ] No circular dependencies between modules
 
 ### Q2: Type Safety & Validation
+
 - [ ] Zod schema defined for all inputs
 - [ ] TypeScript strict mode enabled, no `any` types
 - [ ] Custom error classes used for domain errors
 
 ### Q3: Async Patterns & Error Handling
+
 - [ ] Async/await used consistently
 - [ ] Errors wrapped in typed error classes
 - [ ] Circuit breaker applied for external calls
 
 ### Q4: Observability
+
 - [ ] Structured logging at key transitions
 - [ ] Metrics tracked for tool invocations and errors
 - [ ] Error tracking for aggregation/alerting
 
 ### Q5: Testing
+
 - [ ] Unit tests for pure functions
 - [ ] Integration tests for tool end-to-end
 - [ ] Test coverage >80% for new code
 
 ### Q6: Documentation
+
 - [ ] JSDoc with @param, @returns, @example
 - [ ] README updated if architecture changed
 - [ ] ADR created for major decisions
@@ -606,7 +630,9 @@ try {
 ## Common Anti-Patterns
 
 ### M1: Unvalidated Inputs
+
 ❌ **Bad**: Accepting `any` without validation
+
 ```typescript
 export async function createFrame(input: any) {
   const bridge = getFigmaBridge();
@@ -615,6 +641,7 @@ export async function createFrame(input: any) {
 ```
 
 ✅ **Good**: Zod schema validation
+
 ```typescript
 export async function createFrame(input: CreateFrameInput) {
   const validated = createFrameInputSchema.parse(input);
@@ -624,7 +651,9 @@ export async function createFrame(input: CreateFrameInput) {
 ```
 
 ### M2: Silent Failures
+
 ❌ **Bad**: Swallowing errors
+
 ```typescript
 try {
   await riskyOperation();
@@ -635,6 +664,7 @@ try {
 ```
 
 ✅ **Good**: Explicit error handling
+
 ```typescript
 try {
   await riskyOperation();
@@ -645,18 +675,21 @@ try {
 ```
 
 ### M3: Mixing I/O and Logic
+
 ❌ **Bad**: Business logic coupled to I/O
+
 ```typescript
 export async function validateAndCreate(input: any) {
   const isValid = input.spacing % 8 === 0; // Logic
   if (!isValid) return { error: 'Invalid spacing' };
-  
+
   const bridge = getFigmaBridge(); // I/O
   return await bridge.sendToFigma('create_frame', input);
 }
 ```
 
 ✅ **Good**: Separate concerns
+
 ```typescript
 // Pure validation logic
 export function validateSpacing(value: number): SpacingResult {
@@ -669,26 +702,29 @@ export async function createFrame(input: CreateFrameInput) {
   if (!spacingCheck.isValid) {
     throw new ValidationError('Invalid spacing');
   }
-  
+
   const bridge = getFigmaBridge();
   return await bridge.sendToFigma('create_frame', input);
 }
 ```
 
 ### M4: Missing Context in Errors
+
 ❌ **Bad**: Generic error messages
+
 ```typescript
 throw new Error('Failed');
 ```
 
 ✅ **Good**: Structured error context
+
 ```typescript
 throw new FigmaAPIError(
   'Failed to create frame in Figma',
-  'create_frame',        // tool name
-  'create_frame',        // operation
+  'create_frame', // tool name
+  'create_frame', // operation
   { name: 'Button', layoutMode: 'HORIZONTAL' }, // input
-  originalError          // cause
+  originalError // cause
 );
 ```
 
@@ -697,16 +733,19 @@ throw new FigmaAPIError(
 ## Continuous Improvement
 
 ### I1: Remove Legacy Code
+
 - Audit unused exports quarterly
 - Remove deprecated function signatures after migration period
 - Document breaking changes in CHANGELOG.md
 
 ### I2: Tooling Evaluation
+
 - Review custom infrastructure vs off-the-shelf annually
 - Benchmark circuit breaker, retry logic, error tracking
 - Consider migration to established libraries if maintenance burden high
 
 ### I3: Developer Experience
+
 - Add CLI tools for common operations (test data generation, tool scaffolding)
 - Improve error messages with actionable suggestions
 - Document troubleshooting steps in runbooks
@@ -719,6 +758,7 @@ throw new FigmaAPIError(
 The original style guide was written for a React/frontend project and is not applicable to this Node.js backend codebase. It has been archived to `docs/meta/styleguide-react-archived.md`.
 
 **What Changed:**
+
 - Removed React-specific patterns (hooks, components, JSX, styling)
 - Added backend patterns (async/await, error handling, WebSocket)
 - Focused on MCP server architecture (tools, constraints, monitoring)

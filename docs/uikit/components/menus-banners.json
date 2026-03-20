@@ -1,0 +1,201 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UI Kit Menus & Banners",
+  "description": "Navigation menus and promotional banners",
+  "version": "1.0.0",
+  "extractedDate": "2025-10-24",
+  "footerNav": {
+    "name": "Footer Navigation",
+    "type": "Bottom navigation menu",
+    "componentSetId": "2975:5720",
+    "description": "Mobile bottom navigation bar with icon + label tabs",
+    "dimensions": {
+      "width": 390,
+      "height": 64
+    },
+    "structure": {
+      "layout": "HORIZONTAL",
+      "itemSpacing": 0,
+      "alignment": "space-between, center",
+      "background": "#1D092F",
+      "borderTop": "1px solid #3D1F50",
+      "shadow": "elevation3 (0 8px 24px rgba(29, 9, 47, 0.25))"
+    },
+    "navItem": {
+      "structure": {
+        "layout": "VERTICAL",
+        "itemSpacing": 4,
+        "alignment": "center, center",
+        "width": "Equal distribution (flex: 1)",
+        "height": 64,
+        "padding": "8px 4px"
+      },
+      "states": {
+        "default": {
+          "iconColor": "#CEB6D8",
+          "labelColor": "#CEB6D8",
+          "background": "transparent",
+          "fontSize": 10,
+          "fontWeight": 400
+        },
+        "active": {
+          "iconColor": "#25ECFF",
+          "labelColor": "#25ECFF",
+          "background": "transparent",
+          "fontSize": 10,
+          "fontWeight": 700
+        },
+        "hover": {
+          "iconColor": "#FFFFFF",
+          "labelColor": "#FFFFFF",
+          "background": "rgba(255, 255, 255, 0.05)",
+          "fontSize": 10,
+          "fontWeight": 400
+        }
+      },
+      "elements": {
+        "icon": {
+          "size": 24,
+          "placement": "top"
+        },
+        "label": {
+          "fontSize": 10,
+          "placement": "bottom",
+          "textAlign": "center"
+        }
+      }
+    },
+    "commonNavItems": [
+      {
+        "label": "Home",
+        "icon": "home"
+      },
+      {
+        "label": "Games",
+        "icon": "lobby/games"
+      },
+      {
+        "label": "Promotions",
+        "icon": "promotions"
+      },
+      {
+        "label": "Favorites",
+        "icon": "favorites/heart"
+      },
+      {
+        "label": "Profile",
+        "icon": "profile"
+      }
+    ]
+  },
+  "topBanners": {
+    "name": "Top Banners",
+    "type": "Promotional banner",
+    "componentSetId": "7165:966",
+    "description": "Full-width promotional banners at top of pages",
+    "dimensions": {
+      "width": "100% (responsive)",
+      "height": "Variable (120-200px typical)"
+    },
+    "structure": {
+      "layout": "HORIZONTAL or custom layout",
+      "background": "Gradient or image fill",
+      "cornerRadius": 8,
+      "padding": "24px 32px",
+      "shadow": "elevation1 (0 2px 8px rgba(29, 9, 47, 0.15))"
+    },
+    "variants": {
+      "promotional": {
+        "background": "linear-gradient(90deg, #9B4DFF 0%, #C6FF77 100%)",
+        "elements": [
+          {
+            "type": "text",
+            "role": "headline",
+            "fontSize": 24,
+            "fontWeight": 700,
+            "color": "#FFFFFF"
+          },
+          {
+            "type": "text",
+            "role": "description",
+            "fontSize": 14,
+            "fontWeight": 400,
+            "color": "#FFFFFF"
+          },
+          {
+            "type": "button",
+            "variant": "Primary or Secondary",
+            "size": "MD or LG"
+          },
+          {
+            "type": "image",
+            "role": "Visual/illustration",
+            "placement": "right side"
+          }
+        ]
+      },
+      "informational": {
+        "background": "#2A1139",
+        "border": "1px solid #3D1F50",
+        "elements": [
+          {
+            "type": "icon",
+            "size": 32,
+            "color": "#25ECFF"
+          },
+          {
+            "type": "text",
+            "role": "message",
+            "fontSize": 16,
+            "fontWeight": 600,
+            "color": "#FFFFFF"
+          },
+          {
+            "type": "button",
+            "variant": "Ghost",
+            "label": "Dismiss or action"
+          }
+        ]
+      },
+      "announcement": {
+        "background": "#FF6B00",
+        "elements": [
+          {
+            "type": "text",
+            "role": "announcement",
+            "fontSize": 14,
+            "fontWeight": 700,
+            "color": "#FFFFFF",
+            "textAlign": "center"
+          },
+          {
+            "type": "button",
+            "variant": "Ghost",
+            "icon": "close",
+            "placement": "right"
+          }
+        ]
+      }
+    }
+  },
+  "recreationGuide": {
+    "description": "How to recreate menus and banners using text-to-figma tools",
+    "footerNav": "const footer = create_frame({ name: 'Footer Nav', layoutMode: 'HORIZONTAL', itemSpacing: 0, width: 390, height: 64, horizontalSizing: 'FIXED' }); set_fills({ nodeId: footer.frameId, color: '#1D092F' }); set_stroke({ nodeId: footer.frameId, strokeWeight: 1, strokeColor: '#3D1F50', strokeAlign: 'INSIDE' }); apply_effects({ nodeId: footer.frameId, effects: [{ type: 'DROP_SHADOW', x: 0, y: 8, blur: 24, spread: 0, color: '#1D092F', opacity: 0.25 }] }); set_layout_align({ nodeId: footer.frameId, primaryAxis: 'SPACE_BETWEEN', counterAxis: 'CENTER' });",
+    "navItem": "const navItem = create_frame({ name: 'Nav Item', parentId: footer.frameId, layoutMode: 'VERTICAL', itemSpacing: 4, padding: 8, horizontalSizing: 'FILL', verticalSizing: 'FILL' }); set_layout_align({ nodeId: navItem.frameId, primaryAxis: 'CENTER', counterAxis: 'CENTER' }); // Add icon instance (24×24); const label = create_text({ content: 'Home', parentId: navItem.frameId, fontSize: 10, color: '#CEB6D8', textAlign: 'CENTER' });",
+    "activeState": "// For active state: set_fills({ nodeId: iconId, color: '#25ECFF' }); set_fills({ nodeId: label.nodeId, color: '#25ECFF' }); set_text_properties({ nodeId: label.nodeId, fontWeight: 700 });",
+    "topBanner": "const banner = create_frame({ name: 'Top Banner', layoutMode: 'HORIZONTAL', itemSpacing: 24, padding: 32, width: 1200, horizontalSizing: 'FILL', verticalSizing: 'HUG' }); add_gradient_fill({ nodeId: banner.frameId, type: 'LINEAR', angle: 90, stops: [{ position: 0, color: '#9B4DFF' }, { position: 1, color: '#C6FF77' }] }); set_corner_radius({ nodeId: banner.frameId, radius: 8 }); apply_effects({ nodeId: banner.frameId, effects: [{ type: 'DROP_SHADOW', x: 0, y: 2, blur: 8, spread: 0, color: '#1D092F', opacity: 0.15 }] }); const headline = create_text({ content: 'Limited Time Offer!', parentId: banner.frameId, fontSize: 24, fontWeight: 700, color: '#FFFFFF' });"
+  },
+  "usageExamples": {
+    "footerNav": "Mobile bottom navigation for primary app sections",
+    "topBanners": {
+      "promotional": "Welcome bonuses, special offers, tournament announcements",
+      "informational": "Maintenance notices, feature updates, help tips",
+      "announcement": "Live events, urgent messages, time-sensitive offers"
+    }
+  },
+  "_extraction_notes": {
+    "methodology": "Components extracted from Figma pages 'Menus' (ID: 66:675) and 'Banners' (ID: 268:781)",
+    "componentSets": ["Footer Nav (2975:5720)", "Top Banners (7165:966)"],
+    "status": "COMPLETE - Navigation and banner components documented"
+  }
+}

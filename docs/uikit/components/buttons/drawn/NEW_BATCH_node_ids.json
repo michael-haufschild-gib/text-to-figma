@@ -1,0 +1,44 @@
+{
+  "iteration": 1,
+  "batch": "simplified-6-components",
+  "timestamp": "2025-10-28T00:00:00.000Z",
+  "sourceFile": "/Users/Spare/Documents/code/text-to-figma/docs/uikit/components/buttons/originals/iteration_1.json",
+  "drawnNodes": [
+    {
+      "originalNodeId": "992:8851",
+      "originalName": "ghost disabled",
+      "drawnNodeId": "993:9366",
+      "drawnName": "ghost disabled_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8846",
+      "originalName": "ghost",
+      "drawnNodeId": "993:9370",
+      "drawnName": "ghost_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8833",
+      "originalName": "primary disabled",
+      "drawnNodeId": "993:9373",
+      "drawnName": "primary disabled_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8811",
+      "originalName": "primary",
+      "drawnNodeId": "993:9375",
+      "drawnName": "primary_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8797",
+      "originalName": "secondary disabled",
+      "drawnNodeId": "993:9377",
+      "drawnName": "secondary disabled_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8787",
+      "originalName": "secondary",
+      "drawnNodeId": "993:9379",
+      "drawnName": "secondary_Drawn_Iter1"
+    }
+  ]
+}

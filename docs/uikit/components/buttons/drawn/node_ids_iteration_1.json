@@ -1,0 +1,42 @@
+{
+  "iteration": 1,
+  "timestamp": "2025-10-28T00:00:00.000Z",
+  "drawnNodes": [
+    {
+      "originalNodeId": "992:8851",
+      "originalName": "ghost disabled",
+      "drawnNodeId": "993:9451",
+      "drawnName": "ghost disabled_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8846",
+      "originalName": "ghost",
+      "drawnNodeId": "993:9457",
+      "drawnName": "ghost_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8833",
+      "originalName": "primary disabled",
+      "drawnNodeId": "993:9462",
+      "drawnName": "primary disabled_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8811",
+      "originalName": "primary",
+      "drawnNodeId": "993:9464",
+      "drawnName": "primary_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8797",
+      "originalName": "secondary disabled",
+      "drawnNodeId": "993:9466",
+      "drawnName": "secondary disabled_Drawn_Iter1"
+    },
+    {
+      "originalNodeId": "992:8787",
+      "originalName": "secondary",
+      "drawnNodeId": "993:9468",
+      "drawnName": "secondary_Drawn_Iter1"
+    }
+  ]
+}

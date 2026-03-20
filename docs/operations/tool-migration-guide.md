@@ -47,7 +47,7 @@ export async function myTool(input: MyInput): Promise<MyResult> {
 
 ### After (New Pattern)
 
-```typescript
+````typescript
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
@@ -60,10 +60,21 @@ const logger = getLogger().child({ tool: 'my_tool' });
 const metrics = getMetrics();
 
 // Register metrics
-const invocationCounter = metrics.counter('tool_invocations_total', 'Total tool invocations', ['tool']);
-const successCounter = metrics.counter('tool_success_total', 'Successful tool executions', ['tool']);
-const errorCounter = metrics.counter('tool_errors_total', 'Tool execution errors', ['tool', 'error_type']);
-const durationHistogram = metrics.histogram('tool_duration_ms', 'Tool execution duration in milliseconds', [10, 50, 100, 200, 500, 1000, 2000, 5000]);
+const invocationCounter = metrics.counter('tool_invocations_total', 'Total tool invocations', [
+  'tool'
+]);
+const successCounter = metrics.counter('tool_success_total', 'Successful tool executions', [
+  'tool'
+]);
+const errorCounter = metrics.counter('tool_errors_total', 'Tool execution errors', [
+  'tool',
+  'error_type'
+]);
+const durationHistogram = metrics.histogram(
+  'tool_duration_ms',
+  'Tool execution duration in milliseconds',
+  [10, 50, 100, 200, 500, 1000, 2000, 5000]
+);
 
 /**
  * My Tool with comprehensive error handling, logging, and metrics
@@ -94,7 +105,7 @@ export async function myTool(input: MyInput): Promise<MyResult> {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationError = new ValidationError(
-          `Input validation failed: ${error.errors.map(e => e.message).join(', ')}`,
+          `Input validation failed: ${error.errors.map((e) => e.message).join(', ')}`,
           'my_tool',
           input,
           error.errors
@@ -161,10 +172,13 @@ export async function myTool(input: MyInput): Promise<MyResult> {
     logger.info('Operation successful', { duration, input: validated });
 
     return { result: response.data };
-
   } catch (error) {
     // Re-throw known errors
-    if (error instanceof ValidationError || error instanceof FigmaAPIError || error instanceof NetworkError) {
+    if (
+      error instanceof ValidationError ||
+      error instanceof FigmaAPIError ||
+      error instanceof NetworkError
+    ) {
       throw error;
     }
 
@@ -177,7 +191,7 @@ export async function myTool(input: MyInput): Promise<MyResult> {
     throw wrappedError;
   }
 }
-```
+````
 
 ## Step-by-Step Migration Checklist
 
@@ -196,15 +210,25 @@ import { ValidationError, FigmaAPIError, NetworkError, wrapError } from '../erro
 const logger = getLogger().child({ tool: 'tool_name' });
 const metrics = getMetrics();
 
-const invocationCounter = metrics.counter('tool_invocations_total', 'Total tool invocations', ['tool']);
+const invocationCounter = metrics.counter('tool_invocations_total', 'Total tool invocations', [
+  'tool'
+]);
 const successCounter = metrics.counter('tool_success_total', 'Successful executions', ['tool']);
-const errorCounter = metrics.counter('tool_errors_total', 'Execution errors', ['tool', 'error_type']);
-const durationHistogram = metrics.histogram('tool_duration_ms', 'Execution duration', [10, 50, 100, 200, 500, 1000, 2000, 5000]);
+const errorCounter = metrics.counter('tool_errors_total', 'Execution errors', [
+  'tool',
+  'error_type'
+]);
+const durationHistogram = metrics.histogram(
+  'tool_duration_ms',
+  'Execution duration',
+  [10, 50, 100, 200, 500, 1000, 2000, 5000]
+);
 ```
 
 ### 3. Add JSDoc Documentation
 
 Include comprehensive documentation with:
+
 - Description
 - `@param` for each parameter
 - `@returns` for return value
@@ -228,7 +252,7 @@ try {
 } catch (error) {
   if (error instanceof z.ZodError) {
     const validationError = new ValidationError(
-      `Input validation failed: ${error.errors.map(e => e.message).join(', ')}`,
+      `Input validation failed: ${error.errors.map((e) => e.message).join(', ')}`,
       'tool_name',
       input,
       error.errors
@@ -254,10 +278,22 @@ try {
     let toolError;
 
     if (error.message.includes('Not connected') || error.message.includes('Connection')) {
-      toolError = new NetworkError('Failed to communicate with Figma', 'tool_name', 'figma-bridge', validated, error);
+      toolError = new NetworkError(
+        'Failed to communicate with Figma',
+        'tool_name',
+        'figma-bridge',
+        validated,
+        error
+      );
       errorCounter.inc(1, { tool: 'tool_name', error_type: 'network' });
     } else {
-      toolError = new FigmaAPIError('Figma operation failed', 'tool_name', 'operation', validated, error);
+      toolError = new FigmaAPIError(
+        'Figma operation failed',
+        'tool_name',
+        'operation',
+        validated,
+        error
+      );
       errorCounter.inc(1, { tool: 'tool_name', error_type: 'figma_api' });
     }
 
@@ -344,6 +380,7 @@ Migrate tools in this order:
 ## Need Help?
 
 Refer to:
+
 - `docs/meta/styleguide.md` - Coding standards
 - `mcp-server/src/errors/index.ts` - Error class documentation
 - `mcp-server/src/tools/create_frame.ts` - Complete example

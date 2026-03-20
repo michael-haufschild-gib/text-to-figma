@@ -1,0 +1,215 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UI Kit Headers",
+  "description": "Header navigation components for different page contexts",
+  "version": "1.0.0",
+  "extractedDate": "2025-10-24",
+  "section": {
+    "name": "Section Header",
+    "type": "Section navigation",
+    "componentSetId": "83:1108",
+    "description": "Header for content sections within pages",
+    "dimensions": {
+      "width": 390,
+      "height": "Variable based on content"
+    },
+    "structure": {
+      "layout": "HORIZONTAL",
+      "alignment": "space-between, center",
+      "padding": "16px",
+      "background": "#2A1139",
+      "elements": [
+        {
+          "type": "text",
+          "content": "Section Title",
+          "fontSize": 20,
+          "fontWeight": 700,
+          "color": "#FFFFFF"
+        },
+        {
+          "type": "action",
+          "content": "Action button or icon"
+        }
+      ]
+    }
+  },
+  "main": {
+    "name": "Main Header",
+    "type": "Primary navigation",
+    "componentSetId": "1088:2433",
+    "description": "Main application header with logo and primary navigation",
+    "dimensions": {
+      "width": 1200,
+      "height": "Variable (64-80px typical)"
+    },
+    "structure": {
+      "layout": "HORIZONTAL",
+      "alignment": "space-between, center",
+      "padding": "16px 24px",
+      "background": "#1D092F",
+      "shadow": "elevation2 (0 4px 16px rgba(29, 9, 47, 0.2))",
+      "sections": {
+        "left": {
+          "elements": ["Logo", "Primary navigation links"]
+        },
+        "center": {
+          "elements": ["Search bar (optional)"]
+        },
+        "right": {
+          "elements": ["User menu", "Notifications", "Balance", "Deposit button"]
+        }
+      }
+    }
+  },
+  "innerPage": {
+    "name": "Inner Page Header",
+    "type": "Secondary header",
+    "componentSetId": "257:773",
+    "description": "Header for inner/secondary pages with back navigation",
+    "dimensions": {
+      "width": 390,
+      "height": "56-64px"
+    },
+    "structure": {
+      "layout": "HORIZONTAL",
+      "alignment": "space-between, center",
+      "padding": "12px 16px",
+      "background": "#2A1139",
+      "elements": {
+        "left": {
+          "type": "button",
+          "icon": "chevron/left",
+          "action": "Back navigation"
+        },
+        "center": {
+          "type": "text",
+          "content": "Page Title",
+          "fontSize": 16,
+          "fontWeight": 700,
+          "color": "#FFFFFF"
+        },
+        "right": {
+          "type": "button",
+          "icon": "Optional action icon",
+          "action": "Context action"
+        }
+      }
+    }
+  },
+  "overlay": {
+    "name": "Overlay Header",
+    "type": "Modal/overlay header",
+    "componentSetId": "1088:2513",
+    "description": "Header for modals and overlay panels",
+    "dimensions": {
+      "width": "100% of container",
+      "height": "56-64px"
+    },
+    "structure": {
+      "layout": "HORIZONTAL",
+      "alignment": "space-between, center",
+      "padding": "16px 24px",
+      "background": "#2A1139",
+      "borderBottom": "1px solid #3D1F50",
+      "elements": {
+        "left": {
+          "type": "text",
+          "content": "Modal Title",
+          "fontSize": 20,
+          "fontWeight": 700,
+          "color": "#FFFFFF"
+        },
+        "right": {
+          "type": "button",
+          "icon": "close",
+          "action": "Close overlay",
+          "background": "rgba(255, 255, 255, 0.1)",
+          "shape": "circle"
+        }
+      }
+    }
+  },
+  "inPlay": {
+    "name": "In-Play Header",
+    "type": "Live game header",
+    "componentSetId": "1089:827",
+    "description": "Header for live/in-play game sections with stream status",
+    "dimensions": {
+      "width": "100%",
+      "height": "Variable (includes stream status)"
+    },
+    "structure": {
+      "layout": "VERTICAL",
+      "background": "#1D092F",
+      "sections": {
+        "streamStatus": {
+          "componentSetId": "6533:11936",
+          "height": 32,
+          "background": "#DD1717 (live) / #3D1F50 (offline)",
+          "text": "LIVE / OFFLINE",
+          "fontSize": 12,
+          "fontWeight": 700,
+          "textColor": "#FFFFFF"
+        },
+        "navigation": {
+          "padding": "16px 24px",
+          "layout": "HORIZONTAL",
+          "alignment": "space-between, center",
+          "elements": ["Title", "Filters", "View toggles"]
+        }
+      }
+    }
+  },
+  "commonElements": {
+    "logo": {
+      "width": "Variable (120-160px)",
+      "height": 32,
+      "placement": "Left side of header"
+    },
+    "backButton": {
+      "size": 32,
+      "icon": "chevron/left",
+      "background": "transparent",
+      "hoverBackground": "rgba(255, 255, 255, 0.1)"
+    },
+    "closeButton": {
+      "size": 32,
+      "icon": "close",
+      "shape": "circle",
+      "background": "rgba(255, 255, 255, 0.1)",
+      "hoverBackground": "rgba(255, 255, 255, 0.2)"
+    },
+    "navigationLinks": {
+      "fontSize": 14,
+      "fontWeight": 600,
+      "color": "#CEB6D8",
+      "activeColor": "#25ECFF",
+      "hoverColor": "#FFFFFF"
+    }
+  },
+  "recreationGuide": {
+    "description": "How to recreate headers using text-to-figma tools",
+    "sectionHeader": "const header = create_frame({ name: 'Section Header', layoutMode: 'HORIZONTAL', itemSpacing: 16, padding: 16, width: 390, horizontalSizing: 'FIXED', verticalSizing: 'HUG' }); set_fills({ nodeId: header.frameId, color: '#2A1139' }); set_layout_align({ nodeId: header.frameId, primaryAxis: 'SPACE_BETWEEN', counterAxis: 'CENTER' }); const title = create_text({ content: 'Section Title', parentId: header.frameId, fontSize: 20, fontWeight: 700, color: '#FFFFFF' });",
+    "innerPageHeader": "const header = create_frame({ name: 'Inner Page Header', layoutMode: 'HORIZONTAL', padding: 16, width: 390, height: 56 }); set_fills({ nodeId: header.frameId, color: '#2A1139' }); set_layout_align({ nodeId: header.frameId, primaryAxis: 'SPACE_BETWEEN', counterAxis: 'CENTER' }); // Add back button (left), title (center), action button (right)",
+    "overlayHeader": "const header = create_frame({ name: 'Overlay Header', layoutMode: 'HORIZONTAL', padding: 24, horizontalSizing: 'FILL', height: 64 }); set_fills({ nodeId: header.frameId, color: '#2A1139' }); set_stroke({ nodeId: header.frameId, strokeWeight: 1, strokeColor: '#3D1F50', strokeAlign: 'INSIDE' }); set_layout_align({ nodeId: header.frameId, primaryAxis: 'SPACE_BETWEEN', counterAxis: 'CENTER' }); const title = create_text({ content: 'Modal Title', parentId: header.frameId, fontSize: 20, fontWeight: 700, color: '#FFFFFF' }); // Add close button (right)"
+  },
+  "usageExamples": {
+    "section": "Section titles within pages (e.g., 'Popular Games', 'Recent Transactions')",
+    "main": "Primary app navigation with logo, links, user menu",
+    "innerPage": "Secondary pages like settings, profile, game details",
+    "overlay": "Modals, side panels, dialogs",
+    "inPlay": "Live betting/game sections with real-time status"
+  },
+  "_extraction_notes": {
+    "methodology": "Components extracted from Figma page 'Headers' (ID: 82:1032)",
+    "componentSets": [
+      "Section (83:1108)",
+      "Main (1088:2433)",
+      "Inner Page (257:773)",
+      "Overlay (1088:2513)",
+      "InPlay (1089:827)",
+      "Stream status (6533:11936)"
+    ],
+    "status": "COMPLETE - Header variants documented for all page contexts"
+  }
+}

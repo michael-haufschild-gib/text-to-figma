@@ -10,10 +10,7 @@ export async function myTool(input: MyInput): Promise<MyResult> {
   const bridge = getFigmaBridge();
 
   // ✅ Use sendToFigmaWithRetry - handles reconnection automatically
-  const response = await bridge.sendToFigmaWithRetry<ResponseType>(
-    'command_name',
-    payload
-  );
+  const response = await bridge.sendToFigmaWithRetry<ResponseType>('command_name', payload);
 
   if (!response.success) {
     throw new Error(response.error || 'Operation failed');
@@ -35,10 +32,7 @@ export async function myTool(input: MyInput): Promise<MyResult> {
   }
 
   // ❌ WRONG: sendToFigma doesn't retry or reconnect
-  const response = await bridge.sendToFigma<ResponseType>(
-    'command_name',
-    payload
-  );
+  const response = await bridge.sendToFigma<ResponseType>('command_name', payload);
 
   return response.data;
 }
@@ -47,14 +41,18 @@ export async function myTool(input: MyInput): Promise<MyResult> {
 ## Why This Matters
 
 ### The Problem
+
 When you check `isConnected()` and immediately throw an error:
+
 - Tools fail during startup (before plugin ready)
 - Tools fail after idle periods
 - LLMs see false "not connected" errors
 - Users get frustrated
 
 ### The Solution
+
 `sendToFigmaWithRetry` handles:
+
 - ✅ Automatic reconnection if disconnected
 - ✅ Exponential backoff for retries
 - ✅ Circuit breaker to prevent cascading failures
@@ -133,15 +131,11 @@ const response = await bridge.sendToFigmaWithRetry(...);
 If you need custom retry behavior:
 
 ```typescript
-const response = await bridge.sendToFigmaWithRetry<ResponseType>(
-  'command_name',
-  payload,
-  {
-    maxRetries: 5,           // Override default
-    baseDelay: 500,          // Faster initial retry
-    maxDelay: 10000          // Cap at 10s
-  }
-);
+const response = await bridge.sendToFigmaWithRetry<ResponseType>('command_name', payload, {
+  maxRetries: 5, // Override default
+  baseDelay: 500, // Faster initial retry
+  maxDelay: 10000 // Cap at 10s
+});
 ```
 
 ## Testing
@@ -184,6 +178,7 @@ If updating an old tool:
 ## Common Mistakes
 
 ### Mistake 1: Checking Connection Before Calling
+
 ```typescript
 // ❌ WRONG
 if (!bridge.isConnected()) {
@@ -195,6 +190,7 @@ const result = await bridge.sendToFigmaWithRetry(...);
 **Why it's wrong:** The retry method will check and reconnect anyway. Pre-checking causes false errors.
 
 ### Mistake 2: Using sendToFigma Instead of sendToFigmaWithRetry
+
 ```typescript
 // ❌ WRONG
 const result = await bridge.sendToFigma(...);
@@ -203,6 +199,7 @@ const result = await bridge.sendToFigma(...);
 **Why it's wrong:** No retry or reconnection logic. Fails on temporary issues.
 
 ### Mistake 3: Manual Retry Logic
+
 ```typescript
 // ❌ WRONG
 let retries = 0;
@@ -227,6 +224,7 @@ node mcp-server/scripts/fix-connection-pattern.mjs
 ```
 
 This script:
+
 - Removes `if (!bridge.isConnected())` checks
 - Replaces `sendToFigma` with `sendToFigmaWithRetry`
 - Preserves all other functionality
@@ -241,6 +239,7 @@ This script:
 ## Questions?
 
 If you're unsure about connection handling:
+
 1. Check existing tools (they all use the same pattern)
 2. Refer to this guide
 3. Use `sendToFigmaWithRetry` - it's almost always the right choice

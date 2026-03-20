@@ -18,18 +18,21 @@ That's it! Wait 2-5 minutes for installation and compilation.
 ### Start the servers (in this order):
 
 **Terminal 1 - WebSocket Server:**
+
 ```bash
 cd websocket-server
 npm start
 ```
 
 **Terminal 2 - MCP Server:**
+
 ```bash
 cd mcp-server
 npm start
 ```
 
 **Figma Desktop App:**
+
 1. Open Figma Desktop
 2. Plugins → Development → Text-to-Figma Bridge
 3. See "Connected to WebSocket server"

@@ -740,11 +740,11 @@ Animation impact extends beyond user experience to technical performance:
 const observer = new PerformanceObserver((list) => {
   list.getEntries().forEach((entry) => {
     if (entry.entryType === 'measure') {
-      console.log(`Animation ${entry.name}: ${entry.duration}ms`)
+      console.log(`Animation ${entry.name}: ${entry.duration}ms`);
     }
-  })
-})
-observer.observe({ entryTypes: ['measure'] })
+  });
+});
+observer.observe({ entryTypes: ['measure'] });
 ```
 
 **Performance Optimization Workflow:**

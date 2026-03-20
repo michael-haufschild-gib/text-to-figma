@@ -7,10 +7,12 @@
 #### Issue: "No Figma clients connected"
 
 **Symptoms:**
+
 - MCP tools return "No Figma clients connected" error
 - Health check shows `figma_bridge.connected: false`
 
 **Causes:**
+
 1. Figma plugin not loaded
 2. WebSocket bridge server not running
 3. Network connectivity issues
@@ -18,6 +20,7 @@
 **Solutions:**
 
 1. **Verify WebSocket Bridge is Running**
+
    ```bash
    # Check if port 8080 is listening
    lsof -i :8080
@@ -33,6 +36,7 @@
    - Check browser console for errors (Cmd+Option+I on Mac)
 
 3. **Test WebSocket Connectivity**
+
    ```bash
    # Using wscat
    npm install -g wscat
@@ -40,6 +44,7 @@
    ```
 
 4. **Check Logs**
+
    ```bash
    # Docker
    docker-compose logs websocket-bridge
@@ -51,10 +56,12 @@
 #### Issue: "Request timeout"
 
 **Symptoms:**
+
 - Operations timeout after 30 seconds
 - No response from Figma plugin
 
 **Causes:**
+
 1. Figma plugin frozen or crashed
 2. Large operations taking too long
 3. Network latency
@@ -66,6 +73,7 @@
    - Reopen and reload plugin
 
 2. **Increase Timeout** (if needed)
+
    ```env
    # In .env file
    FIGMA_REQUEST_TIMEOUT=60000  # 60 seconds
@@ -82,10 +90,12 @@
 #### Issue: Health check returns 503 (Service Unavailable)
 
 **Symptoms:**
+
 - `/health` endpoint returns HTTP 503
 - Status shows "degraded" or "unhealthy"
 
 **Diagnosis:**
+
 ```bash
 curl -v http://localhost:8081/health
 ```
@@ -98,11 +108,13 @@ curl -v http://localhost:8081/health
    - Check network connectivity
 
 2. **If Memory High**
+
    ```bash
    # Check memory usage
    docker stats  # for Docker
    pm2 monit     # for PM2
    ```
+
    - Restart services if memory leak detected
    - Investigate memory usage patterns
 
@@ -113,10 +125,12 @@ curl -v http://localhost:8081/health
 #### Issue: "Cannot find module" errors
 
 **Symptoms:**
+
 - MCP server fails to start
 - Import errors in logs
 
 **Causes:**
+
 1. TypeScript not compiled
 2. Dependencies not installed
 3. Incorrect Node.js version
@@ -124,12 +138,14 @@ curl -v http://localhost:8081/health
 **Solutions:**
 
 1. **Rebuild TypeScript**
+
    ```bash
    cd mcp-server
    npm run build
    ```
 
 2. **Clean and Reinstall**
+
    ```bash
    rm -rf node_modules package-lock.json
    npm install
@@ -144,17 +160,20 @@ curl -v http://localhost:8081/health
 #### Issue: TypeScript compilation errors
 
 **Symptoms:**
+
 - `npm run build` fails
 - Type errors in output
 
 **Solutions:**
 
 1. **Check TypeScript Version**
+
    ```bash
    npm list typescript
    ```
 
 2. **Clear TypeScript Cache**
+
    ```bash
    rm -rf dist
    npm run build
@@ -172,12 +191,14 @@ curl -v http://localhost:8081/health
 #### Issue: "EADDRINUSE" or "Port already in use"
 
 **Symptoms:**
+
 - Server fails to start
 - Error mentions port 8080 or 8081
 
 **Solutions:**
 
 1. **Find Process Using Port**
+
    ```bash
    # On macOS/Linux
    lsof -ti :8080
@@ -187,6 +208,7 @@ curl -v http://localhost:8081/health
    ```
 
 2. **Use Different Port**
+
    ```env
    # WebSocket Bridge
    PORT=8090
@@ -202,17 +224,20 @@ curl -v http://localhost:8081/health
 #### Issue: Slow response times
 
 **Symptoms:**
+
 - Operations take longer than expected
 - Latency above 300ms consistently
 
 **Diagnosis:**
 
 1. **Check Health Metrics**
+
    ```bash
    curl http://localhost:8081/health | jq
    ```
 
 2. **Monitor Resource Usage**
+
    ```bash
    # Docker
    docker stats
@@ -251,6 +276,7 @@ Restart services to apply.
 #### View Detailed Logs
 
 **Docker:**
+
 ```bash
 # All services
 docker-compose logs -f
@@ -263,6 +289,7 @@ docker-compose logs --tail=100 mcp-server
 ```
 
 **PM2:**
+
 ```bash
 # All services
 pm2 logs
@@ -291,12 +318,14 @@ pm2 logs --raw > deployment-logs.txt
 #### Issue: Memory usage growing over time
 
 **Symptoms:**
+
 - Health check shows increasing memory usage
 - Eventually service crashes or becomes unresponsive
 
 **Diagnosis:**
 
 1. **Monitor Memory Over Time**
+
    ```bash
    # Check memory every 5 minutes
    watch -n 300 'curl -s http://localhost:8081/health | jq .checks.memory'
@@ -311,6 +340,7 @@ pm2 logs --raw > deployment-logs.txt
 **Solutions:**
 
 1. **Restart Services Regularly**
+
    ```bash
    # PM2 auto-restart based on memory
    pm2 start dist/index.js --max-memory-restart 500M
@@ -331,12 +361,14 @@ pm2 logs --raw > deployment-logs.txt
 #### Issue: Integration tests failing
 
 **Symptoms:**
+
 - Tests timeout or fail unexpectedly
 - WebSocket connection errors in tests
 
 **Solutions:**
 
 1. **Ensure Clean State**
+
    ```bash
    # Kill any running servers
    pkill -f "node.*server.js"
@@ -347,6 +379,7 @@ pm2 logs --raw > deployment-logs.txt
    ```
 
 2. **Check Port Availability**
+
    ```bash
    lsof -i :8080  # Should be empty before tests
    ```
@@ -365,11 +398,13 @@ pm2 logs --raw > deployment-logs.txt
 **Solutions:**
 
 1. **Check Logs**
+
    ```bash
    docker-compose logs <service-name>
    ```
 
 2. **Rebuild Images**
+
    ```bash
    docker-compose down
    docker-compose build --no-cache
@@ -387,6 +422,7 @@ pm2 logs --raw > deployment-logs.txt
 **Solutions:**
 
 1. **Test Health Check Manually**
+
    ```bash
    docker-compose exec mcp-server sh
    wget -q -O- http://localhost:8081/health
@@ -396,7 +432,7 @@ pm2 logs --raw > deployment-logs.txt
    ```yaml
    # In docker-compose.yml
    healthcheck:
-     start_period: 60s  # Give more time to start
+     start_period: 60s # Give more time to start
    ```
 
 ---

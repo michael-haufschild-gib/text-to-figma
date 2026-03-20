@@ -1,0 +1,445 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UI Kit Modal Components",
+  "description": "Complete modal/popup component system extracted from the Figma UI kit",
+  "version": "1.0.0",
+  "extractedDate": "2025-10-24",
+  "componentSets": {
+    "informationalPopup": {
+      "description": "Standard informational modal with header, body, footer",
+      "id": "1281:2140",
+      "dimensions": {
+        "width": 366,
+        "height": 229
+      },
+      "usage": "Alerts, confirmations, informational messages"
+    },
+    "marketingPopup": {
+      "description": "Marketing/promotional modal with rich visuals",
+      "id": "1364:3007",
+      "dimensions": {
+        "width": 383,
+        "height": 439
+      },
+      "usage": "Promotions, special offers, announcements"
+    }
+  },
+  "components": {
+    "informationalPopup": {
+      "description": "Simple modal for informational content",
+      "id": "1281:2140",
+      "dimensions": { "width": 366, "height": 229 },
+      "structure": {
+        "root": {
+          "type": "COMPONENT",
+          "layoutMode": "VERTICAL",
+          "itemSpacing": 0,
+          "horizontalSizing": "FIXED",
+          "verticalSizing": "HUG",
+          "width": 366,
+          "background": { "ref": "base100", "hex": "#FFFFFF" },
+          "cornerRadius": 16,
+          "shadow": {
+            "x": 0,
+            "y": 8,
+            "blur": 32,
+            "spread": 0,
+            "color": { "ref": "base0", "hex": "#1D092F", "opacity": 0.25 }
+          }
+        },
+        "children": [
+          {
+            "name": "Header",
+            "id": "1281:2060",
+            "type": "COMPONENT",
+            "dimensions": { "width": 366, "height": 67 },
+            "layoutMode": "HORIZONTAL",
+            "padding": { "horizontal": 24, "vertical": 20 },
+            "itemSpacing": 12,
+            "justifyContent": "space-between",
+            "children": [
+              {
+                "name": "Title",
+                "type": "FRAME",
+                "layoutMode": "VERTICAL",
+                "itemSpacing": 4,
+                "children": [
+                  {
+                    "name": "Modal title",
+                    "type": "TEXT",
+                    "content": "Modal Title",
+                    "fontSize": 20,
+                    "fontWeight": 700,
+                    "color": { "ref": "base0", "hex": "#1D092F" }
+                  },
+                  {
+                    "name": "Subtitle (optional)",
+                    "type": "TEXT",
+                    "content": "Optional subtitle",
+                    "fontSize": 14,
+                    "fontWeight": 400,
+                    "color": { "ref": "base40", "hex": "#8C6C9C" }
+                  }
+                ]
+              },
+              {
+                "name": "Close button",
+                "type": "INSTANCE",
+                "icon": "close",
+                "dimensions": { "width": 24, "height": 24 },
+                "purpose": "Close modal action"
+              }
+            ],
+            "styling": {
+              "background": "transparent",
+              "borderBottom": {
+                "color": { "ref": "base90", "hex": "#E5DBE9" },
+                "width": 1
+              }
+            }
+          },
+          {
+            "name": "Body",
+            "id": "1281:2059",
+            "type": "COMPONENT",
+            "dimensions": { "width": 366, "height": 36 },
+            "layoutMode": "VERTICAL",
+            "padding": { "horizontal": 24, "vertical": 20 },
+            "itemSpacing": 16,
+            "children": [
+              {
+                "name": "Content",
+                "type": "FRAME",
+                "layoutMode": "VERTICAL",
+                "itemSpacing": 12,
+                "children": [
+                  {
+                    "name": "Body text",
+                    "type": "TEXT",
+                    "content": "Modal body content goes here. This can include text, forms, or other components.",
+                    "fontSize": 14,
+                    "fontWeight": 400,
+                    "lineHeight": 21,
+                    "color": { "ref": "base20", "hex": "#5A3E68" }
+                  }
+                ]
+              }
+            ],
+            "styling": {
+              "background": "transparent",
+              "minHeight": 36
+            }
+          },
+          {
+            "name": "Footer",
+            "id": "1281:2058",
+            "type": "COMPONENT",
+            "dimensions": { "width": 366, "height": 128 },
+            "layoutMode": "VERTICAL",
+            "padding": { "horizontal": 24, "vertical": 20 },
+            "itemSpacing": 0,
+            "children": [
+              {
+                "name": "Actions",
+                "type": "FRAME",
+                "layoutMode": "HORIZONTAL",
+                "itemSpacing": 16,
+                "justifyContent": "flex-end",
+                "children": [
+                  {
+                    "name": "Secondary button",
+                    "type": "INSTANCE",
+                    "buttonType": "Secondary",
+                    "size": "MD",
+                    "dimensions": { "width": 120, "height": 50 }
+                  },
+                  {
+                    "name": "Primary button",
+                    "type": "INSTANCE",
+                    "buttonType": "Primary",
+                    "size": "MD",
+                    "dimensions": { "width": 120, "height": 50 }
+                  }
+                ]
+              }
+            ],
+            "styling": {
+              "background": "transparent",
+              "borderTop": {
+                "color": { "ref": "base90", "hex": "#E5DBE9" },
+                "width": 1
+              }
+            }
+          }
+        ]
+      },
+      "styling": {
+        "background": { "ref": "base100", "hex": "#FFFFFF" },
+        "cornerRadius": 16,
+        "shadow": "elevation-4",
+        "maxWidth": 600,
+        "minWidth": 320
+      }
+    },
+    "marketingPopup": {
+      "description": "Rich marketing modal with imagery",
+      "id": "1364:3007",
+      "dimensions": { "width": 383, "height": 439 },
+      "structure": {
+        "root": {
+          "type": "COMPONENT",
+          "layoutMode": "VERTICAL",
+          "itemSpacing": 0,
+          "horizontalSizing": "FIXED",
+          "verticalSizing": "HUG",
+          "width": 383,
+          "background": { "ref": "base100", "hex": "#FFFFFF" },
+          "cornerRadius": 16,
+          "shadow": {
+            "x": 0,
+            "y": 8,
+            "blur": 32,
+            "spread": 0,
+            "color": { "ref": "base0", "hex": "#1D092F", "opacity": 0.25 }
+          }
+        },
+        "children": [
+          {
+            "name": "Header",
+            "id": "1364:2986",
+            "type": "COMPONENT",
+            "dimensions": { "width": 383, "height": "variable" },
+            "layoutMode": "VERTICAL",
+            "padding": 0,
+            "children": [
+              {
+                "name": "Hero image/graphic",
+                "type": "RECTANGLE",
+                "dimensions": { "width": 383, "height": 200 },
+                "fill": "image or gradient",
+                "cornerRadius": "16 16 0 0",
+                "purpose": "Eye-catching promotional visual"
+              },
+              {
+                "name": "Close button",
+                "type": "INSTANCE",
+                "icon": "close",
+                "dimensions": { "width": 32, "height": 32 },
+                "position": "absolute top-right",
+                "styling": {
+                  "background": { "ref": "base100", "hex": "#FFFFFF", "opacity": 0.9 },
+                  "cornerRadius": "50%"
+                }
+              }
+            ]
+          },
+          {
+            "name": "Body",
+            "id": "1364:2985",
+            "type": "COMPONENT",
+            "layoutMode": "VERTICAL",
+            "padding": { "horizontal": 24, "vertical": 24 },
+            "itemSpacing": 16,
+            "children": [
+              {
+                "name": "Title",
+                "type": "TEXT",
+                "content": "Special Offer!",
+                "fontSize": 24,
+                "fontWeight": 700,
+                "textAlign": "CENTER",
+                "color": { "ref": "base0", "hex": "#1D092F" }
+              },
+              {
+                "name": "Description",
+                "type": "TEXT",
+                "content": "Don't miss out on this limited time offer!",
+                "fontSize": 16,
+                "fontWeight": 400,
+                "lineHeight": 24,
+                "textAlign": "CENTER",
+                "color": { "ref": "base20", "hex": "#5A3E68" }
+              }
+            ]
+          },
+          {
+            "name": "Footer",
+            "id": "1364:2984",
+            "type": "COMPONENT",
+            "layoutMode": "VERTICAL",
+            "padding": { "horizontal": 24, "vertical": 24 },
+            "itemSpacing": 12,
+            "children": [
+              {
+                "name": "Primary CTA",
+                "type": "INSTANCE",
+                "buttonType": "Primary",
+                "size": "LG",
+                "dimensions": { "width": 335, "height": 58 }
+              },
+              {
+                "name": "Secondary CTA (optional)",
+                "type": "INSTANCE",
+                "buttonType": "Ghost",
+                "size": "MD",
+                "dimensions": { "width": 335, "height": 50 }
+              }
+            ]
+          }
+        ]
+      },
+      "styling": {
+        "background": { "ref": "base100", "hex": "#FFFFFF" },
+        "cornerRadius": 16,
+        "shadow": "elevation-4"
+      }
+    }
+  },
+  "modalPatterns": {
+    "standardModal": {
+      "description": "Three-section modal structure",
+      "structure": [
+        "1. Header: Title, optional subtitle, close button",
+        "2. Body: Main content area (scrollable if needed)",
+        "3. Footer: Action buttons (typically Primary + Secondary)"
+      ],
+      "spacing": {
+        "padding": 24,
+        "itemSpacing": 16,
+        "buttonSpacing": 16
+      },
+      "sizing": {
+        "minWidth": 320,
+        "maxWidth": 600,
+        "mobile": 343,
+        "tablet": 400,
+        "desktop": 480
+      }
+    },
+    "confirmationModal": {
+      "description": "Simple confirmation dialog",
+      "structure": [
+        "1. Header with warning/info icon",
+        "2. Body with question/confirmation text",
+        "3. Footer with Cancel + Confirm buttons"
+      ],
+      "sizing": {
+        "width": 400,
+        "compact": true
+      }
+    },
+    "formModal": {
+      "description": "Modal containing a form",
+      "structure": [
+        "1. Header with form title",
+        "2. Body with form fields (from forms.json)",
+        "3. Footer with Cancel + Submit buttons"
+      ],
+      "bodySpacing": {
+        "fieldSpacing": 24,
+        "sectionSpacing": 32
+      }
+    }
+  },
+  "modalOverlay": {
+    "description": "Background overlay/backdrop for modals",
+    "styling": {
+      "background": { "ref": "base0", "hex": "#1D092F", "opacity": 0.6 },
+      "blur": "optional backdrop-filter: blur(4px)",
+      "position": "fixed",
+      "dimensions": "full viewport (100vw x 100vh)",
+      "zIndex": 1000
+    },
+    "interaction": {
+      "clickOutside": "Close modal when clicking overlay",
+      "escapeKey": "Close modal on ESC key press"
+    }
+  },
+  "recreationGuide": {
+    "description": "Step-by-step guide to recreate modal components using text-to-figma tools",
+    "informationalModal": {
+      "steps": [
+        "1. Create overlay frame: width=100% viewport, height=100% viewport, fill=base0 (#1D092F, opacity=0.6)",
+        "2. Create modal root frame: layoutMode=VERTICAL, width=366, cornerRadius=16, background=base100 (#FFFFFF)",
+        "3. Apply shadow: apply_effects with DROP_SHADOW (y=8, blur=32, opacity=0.25)",
+        "4. CREATE HEADER SECTION:",
+        "   a. Create header frame: layoutMode=HORIZONTAL, padding(h=24, v=20), itemSpacing=12, justifyContent=space-between",
+        "   b. Add title frame: layoutMode=VERTICAL, itemSpacing=4",
+        "   c. Add title text: fontSize=20, fontWeight=700, color=base0 (#1D092F)",
+        "   d. Add subtitle text (optional): fontSize=14, fontWeight=400, color=base40 (#8C6C9C)",
+        "   e. Add close button icon: 24x24, position=absolute top-right",
+        "   f. Add border-bottom: base90 (#E5DBE9), width=1",
+        "5. CREATE BODY SECTION:",
+        "   a. Create body frame: layoutMode=VERTICAL, padding(h=24, v=20), itemSpacing=16",
+        "   b. Add content frame: layoutMode=VERTICAL, itemSpacing=12",
+        "   c. Add body text: fontSize=14, fontWeight=400, lineHeight=21, color=base20 (#5A3E68)",
+        "   d. Add any form fields or additional content from forms.json",
+        "6. CREATE FOOTER SECTION:",
+        "   a. Create footer frame: layoutMode=VERTICAL, padding(h=24, v=20)",
+        "   b. Add actions frame: layoutMode=HORIZONTAL, itemSpacing=16, justifyContent=flex-end",
+        "   c. Add secondary button: Type=Secondary, Size=MD",
+        "   d. Add primary button: Type=Primary, Size=MD",
+        "   e. Add border-top: base90 (#E5DBE9), width=1",
+        "7. Position modal: center horizontally and vertically in viewport"
+      ],
+      "example": "create_frame (overlay) + create_frame (modal) + set_corner_radius + apply_effects + create_frame (header/body/footer) + create_text + create_instance (buttons)"
+    },
+    "marketingModal": {
+      "steps": [
+        "1. Create overlay frame (same as informational)",
+        "2. Create modal root frame: layoutMode=VERTICAL, width=383, cornerRadius=16, background=base100 (#FFFFFF)",
+        "3. Apply shadow: apply_effects with DROP_SHADOW (y=8, blur=32, opacity=0.25)",
+        "4. CREATE HEADER SECTION:",
+        "   a. Add hero image: width=383, height=200, cornerRadius=16 16 0 0",
+        "   b. Apply image fill: set_image_fill with promotional image",
+        "   c. Add close button: 32x32 circle, background=base100 (opacity=0.9), position=absolute top-right",
+        "5. CREATE BODY SECTION:",
+        "   a. Create body frame: layoutMode=VERTICAL, padding=24, itemSpacing=16",
+        "   b. Add title text: fontSize=24, fontWeight=700, textAlign=CENTER, color=base0",
+        "   c. Add description text: fontSize=16, fontWeight=400, lineHeight=24, textAlign=CENTER, color=base20",
+        "6. CREATE FOOTER SECTION:",
+        "   a. Create footer frame: layoutMode=VERTICAL, padding=24, itemSpacing=12",
+        "   b. Add primary CTA button: Type=Primary, Size=LG, full-width",
+        "   c. Add secondary CTA (optional): Type=Ghost, Size=MD, full-width",
+        "7. Position modal: center in viewport"
+      ]
+    },
+    "modalWithForm": {
+      "steps": [
+        "1. Follow informational modal structure (steps 1-4)",
+        "2. In body section, add form fields:",
+        "   a. For each input field, use input structure from forms.json",
+        "   b. Add label: fontSize=12, fontWeight=400, color=base60 (#A88FB6)",
+        "   c. Add input field: width=318 (full width with padding), height=48",
+        "   d. Add help text: fontSize=12, fontWeight=400, color=base60",
+        "   e. Space between fields: 24px",
+        "3. In footer, change button labels:",
+        "   a. Secondary button: 'Cancel'",
+        "   b. Primary button: 'Submit' or specific action",
+        "4. Example: Login modal with 2 inputs (email + password) + checkbox ('Remember me') + 2 buttons"
+      ]
+    },
+    "quickExample": {
+      "simpleConfirmation": [
+        "create_frame(overlay) → create_frame(modal, width=400, cornerRadius=16) → apply_effects(shadow) →",
+        "create_frame(header, padding=24) → create_text('Are you sure?', h3) → create_instance(close_button) →",
+        "create_frame(body, padding=24) → create_text('This action cannot be undone', p) →",
+        "create_frame(footer, padding=24) → create_instance(button, 'Cancel', Secondary) → create_instance(button, 'Confirm', Primary)"
+      ]
+    }
+  },
+  "_extraction_notes": {
+    "methodology": "Modals extracted from Figma page 'Modals' (ID: 77:668)",
+    "componentSets": {
+      "informationalPopup": "1281:2140 - Standard modal with header/body/footer",
+      "marketingPopup": "1364:3007 - Rich promotional modal with hero image",
+      "headerComponent": "1281:2060 - Reusable modal header",
+      "bodyComponent": "1281:2059 - Reusable modal body",
+      "footerComponent": "1281:2058 - Reusable modal footer"
+    },
+    "status": "COMPLETE - Core modal components documented with structure and patterns",
+    "usage": "Modals are overlay components that interrupt the user flow. Use informational for alerts/confirmations, marketing for promotions. Always include overlay backdrop, center positioning, and close mechanisms (X button + ESC key + click outside).",
+    "integration": "Modals can contain any combination of components: forms (forms.json), buttons (buttons.json), cards (cards.json). Body section is flexible and can be customized based on content needs.",
+    "patterns": "Standard 3-section structure (Header/Body/Footer) with consistent spacing (24px padding, 16px itemSpacing). Header and footer have borders for visual separation. Shadow elevation-4 for prominence."
+  }
+}

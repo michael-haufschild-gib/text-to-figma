@@ -1,0 +1,7008 @@
+{
+  "timestamp": "2025-10-28T13:21:44.516Z",
+  "iteration": 1,
+  "totalComponents": 36,
+  "components": [
+    {
+      "index": 0,
+      "nodeId": "992:8787",
+      "name": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 27,
+        "width": 180,
+        "height": 70
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.27916666865348816,
+                "g": 1,
+                "b": 0.9567499756813049,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.6235294342041016,
+            "g": 1,
+            "b": 0.9725490212440491
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8788",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 53,
+            "y": 26,
+            "width": 74,
+            "height": 18
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 18,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "nodeId": "992:8789",
+      "name": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 236,
+        "width": 160,
+        "height": 64
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.27916666865348816,
+                "g": 1,
+                "b": 0.9567499756813049,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.6235294342041016,
+            "g": 1,
+            "b": 0.9725490212440491
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8790",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 47,
+            "y": 24,
+            "width": 66,
+            "height": 16
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 16,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "nodeId": "992:8791",
+      "name": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 438,
+        "width": 140,
+        "height": 58
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.27916666865348816,
+                "g": 1,
+                "b": 0.9567499756813049,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.6235294342041016,
+            "g": 1,
+            "b": 0.9725490212440491
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8792",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 41,
+            "y": 22,
+            "width": 58,
+            "height": 14
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 14,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "nodeId": "992:8793",
+      "name": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 626,
+        "width": 120,
+        "height": 50
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.27916666865348816,
+                "g": 1,
+                "b": 0.9567499756813049,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.6235294342041016,
+            "g": 1,
+            "b": 0.9725490212440491
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8794",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 34.5,
+            "y": 19,
+            "width": 51,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "nodeId": "992:8795",
+      "name": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 784,
+        "width": 100,
+        "height": 42
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.27916666865348816,
+                "g": 1,
+                "b": 0.9567499756813049,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.6235294342041016,
+            "g": 1,
+            "b": 0.9725490212440491
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8796",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 24.5,
+            "y": 15,
+            "width": 51,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "nodeId": "992:8797",
+      "name": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 113,
+        "width": 180,
+        "height": 70
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.019607843831181526,
+                "g": 0.5254902243614197,
+                "b": 0.6823529601097107,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.16819791495800018,
+            "g": 0.6785262227058411,
+            "b": 0.8367675542831421
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8798",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 53,
+            "y": 26,
+            "width": 74,
+            "height": 18
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.800000011920929,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 18,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON",
+          "opacity": 0.4000000059604645
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "nodeId": "992:8799",
+      "name": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 316,
+        "width": 160,
+        "height": 64
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "color": {
+            "r": 0.11764705926179886,
+            "g": 0.7529411911964417,
+            "b": 0.8156862854957581
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.11764705926179886,
+            "g": 0.7529411911964417,
+            "b": 0.8156862854957581
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8800",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 46.5,
+            "y": 24,
+            "width": 67,
+            "height": 16
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.800000011920929,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 16,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON",
+          "opacity": 0.4000000059604645
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "nodeId": "992:8801",
+      "name": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 512,
+        "width": 140,
+        "height": 58
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.019607843831181526,
+                "g": 0.5254902243614197,
+                "b": 0.6823529601097107,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.16819791495800018,
+            "g": 0.6785262227058411,
+            "b": 0.8367675542831421
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8802",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 40.5,
+            "y": 22,
+            "width": 59,
+            "height": 14
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.800000011920929,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 14,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON",
+          "opacity": 0.4000000059604645
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "nodeId": "992:8803",
+      "name": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 692,
+        "width": 120,
+        "height": 50
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.019607843831181526,
+                "g": 0.5254902243614197,
+                "b": 0.6823529601097107,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.16819791495800018,
+            "g": 0.6785262227058411,
+            "b": 0.8367675542831421
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8804",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 34.5,
+            "y": 19,
+            "width": 51,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.800000011920929,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON",
+          "opacity": 0.4000000059604645
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "nodeId": "992:8805",
+      "name": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 24,
+        "y": 838,
+        "width": 100,
+        "height": 42
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.019607843831181526,
+                "g": 0.5254902243614197,
+                "b": 0.6823529601097107,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.16819791495800018,
+            "g": 0.6785262227058411,
+            "b": 0.8367675542831421
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8806",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 24.5,
+            "y": 15,
+            "width": 51,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.800000011920929,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON",
+          "opacity": 0.4000000059604645
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "nodeId": "992:8807",
+      "name": "📏 Size=XS, 🔷 Type=Secondary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 33,
+        "y": 913.5999755859375,
+        "width": 80,
+        "height": 33.599998474121094
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.27916666865348816,
+                "g": 1,
+                "b": 0.9567499756813049,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.6235294342041016,
+            "g": 1,
+            "b": 0.9725490212440491
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 1.600000023841858,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 40,
+        "topRight": 40,
+        "bottomLeft": 40,
+        "bottomRight": 40
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 8,
+        "paddingRight": 8,
+        "paddingTop": 8,
+        "paddingBottom": 8,
+        "itemSpacing": 8,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8808",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 17,
+            "y": 11.299999237060547,
+            "width": 46,
+            "height": 11
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.800000011920929,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 11.199999809265137,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "nodeId": "992:8809",
+      "name": "📏 Size=XS, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 33,
+        "y": 956.800048828125,
+        "width": 80,
+        "height": 33.599998474121094
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.019607843831181526,
+                "g": 0.5254902243614197,
+                "b": 0.6823529601097107,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.019930556416511536,
+                "g": 0.524116575717926,
+                "b": 0.6833333373069763,
+                "a": 1
+              },
+              "position": 0.9322916865348816,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [0.3039807081222534, 0.988178551197052, -0.14016887545585632],
+            [-0.988178551197052, 0.03842916339635849, 0.9556601047515869]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.16819791495800018,
+            "g": 0.6785262227058411,
+            "b": 0.8367675542831421
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 1.600000023841858,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 40,
+        "topRight": 40,
+        "bottomLeft": 40,
+        "bottomRight": 40
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 8,
+        "paddingRight": 8,
+        "paddingTop": 8,
+        "paddingBottom": 8,
+        "itemSpacing": 8,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8810",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 17,
+            "y": 11.299999237060547,
+            "width": 46,
+            "height": 11
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.800000011920929,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.800000011920929,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 11.199999809265137,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON",
+          "opacity": 0.4000000059604645
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "nodeId": "992:8811",
+      "name": "📏 Size=2XL, 🔷 Type=Primary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 291,
+        "y": 27,
+        "width": 180,
+        "height": 70
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8812",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 53,
+            "y": 26,
+            "width": 74,
+            "height": 18
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 18,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "nodeId": "992:8813",
+      "name": "📏 Size=XL, 🔷 Type=Primary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 291,
+        "y": 236,
+        "width": 160,
+        "height": 64
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8814",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 47,
+            "y": 24,
+            "width": 66,
+            "height": 16
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 16,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "nodeId": "992:8815",
+      "name": "📏 Size=LG, 🔷 Type=Primary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 293,
+        "y": 438,
+        "width": 140,
+        "height": 58
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8816",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 41,
+            "y": 22,
+            "width": 58,
+            "height": 14
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 14,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "nodeId": "992:8817",
+      "name": "📏 Size=MD, 🔷 Type=Primary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 293,
+        "y": 626,
+        "width": 120,
+        "height": 50
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8818",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 34.5,
+            "y": 19,
+            "width": 51,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "nodeId": "992:8819",
+      "name": "📏 Size=SM, 🔷 Type=Primary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 293,
+        "y": 784,
+        "width": 100,
+        "height": 42
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8820",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 24.5,
+            "y": 15,
+            "width": 51,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "nodeId": "992:8821",
+      "name": "📏 Size=XS, 🔷 Type=Primary, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 293,
+        "y": 904,
+        "width": 80,
+        "height": 32
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 1,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8822",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 15,
+            "y": 10,
+            "width": 50,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Bold"
+            },
+            "fontWeight": 700,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "UPPER",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "nodeId": "992:8823",
+      "name": "📏 Size=XS, 🔷 Type=Primary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 293,
+        "y": 946,
+        "width": 80,
+        "height": 32
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.15000000596046448,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8824",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 15,
+            "y": 10,
+            "width": 50,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.4000000059604645,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Bold"
+            },
+            "fontWeight": 700,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "UPPER",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "nodeId": "992:8825",
+      "name": "📏 Size=SM, 🔷 Type=Primary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 293,
+        "y": 838,
+        "width": 100,
+        "height": 42
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.15000000596046448,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8826",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 24.5,
+            "y": 15,
+            "width": 51,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.4000000059604645,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "nodeId": "992:8827",
+      "name": "📏 Size=MD, 🔷 Type=Primary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 293,
+        "y": 692,
+        "width": 120,
+        "height": 50
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.15000000596046448,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8828",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 34.5,
+            "y": 19,
+            "width": 51,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.4000000059604645,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "nodeId": "992:8829",
+      "name": "📏 Size=LG, 🔷 Type=Primary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 293,
+        "y": 512,
+        "width": 140,
+        "height": 58
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.15000000596046448,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8830",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 40.5,
+            "y": 22,
+            "width": 59,
+            "height": 14
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.4000000059604645,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 14,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "nodeId": "992:8831",
+      "name": "📏 Size=XL, 🔷 Type=Primary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 291,
+        "y": 316,
+        "width": 160,
+        "height": 64
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.15000000596046448,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8832",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 46.5,
+            "y": 24,
+            "width": 67,
+            "height": 16
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.4000000059604645,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 16,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "nodeId": "992:8833",
+      "name": "📏 Size=2XL, 🔷 Type=Primary, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 291,
+        "y": 113,
+        "width": 180,
+        "height": 70
+      },
+      "fills": [
+        {
+          "type": "GRADIENT_LINEAR",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "gradientStops": [
+            {
+              "color": {
+                "r": 1,
+                "g": 0.3499999940395355,
+                "b": 0.5059999823570251,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {}
+            },
+            {
+              "color": {
+                "r": 0.7833333611488342,
+                "g": 0.20888888835906982,
+                "b": 0.3467555642127991,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {}
+            }
+          ],
+          "gradientTransform": [
+            [6.123234262925839e-17, 1, 0],
+            [-1, 6.123234262925839e-17, 1]
+          ]
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.15000000596046448,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 1,
+            "g": 0.4541666805744171,
+            "b": 0.5851667523384094
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8834",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 52,
+            "y": 26,
+            "width": 76,
+            "height": 18
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.4000000059604645,
+              "color": {
+                "r": 1,
+                "g": 1,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 18,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "nodeId": "992:8835",
+      "name": "📏 Size=XL, 🔷 Type=Ghost, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 563,
+        "y": 236,
+        "width": 160,
+        "height": 64
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.1455078125,
+            "g": 0.9251538515090942,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 60,
+        "topRight": 60,
+        "bottomLeft": 60,
+        "bottomRight": 60
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8836",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 3,
+            "y": 20,
+            "width": 24,
+            "height": 24
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.6875,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8836;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 2.25,
+                "y": 5.25,
+                "width": 19.499998092651367,
+                "height": 13.500001907348633
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.6875,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8836;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 8.5625,
+                "y": 5.8125,
+                "width": 6.875,
+                "height": 12.24665355682373
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.018333332613110542,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8837",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 20,
+            "y": 7,
+            "width": 120,
+            "height": 50
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 2,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 60,
+            "topRight": 60,
+            "bottomLeft": 60,
+            "bottomRight": 60
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8838",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 10,
+            "y": 24,
+            "width": 140,
+            "height": 16
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 16,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8839",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 97,
+            "y": 20,
+            "width": 24,
+            "height": 24
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.6875,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8839;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 2.25,
+                "y": 5.25,
+                "width": 19.500001907348633,
+                "height": 13.499998092651367
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.6875,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8839;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 15.4375,
+                "y": 18.1875,
+                "width": 6.875,
+                "height": 12.24665355682373
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.018333332613110542,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "nodeId": "992:8840",
+      "name": "📏 Size=XL, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 563,
+        "y": 317,
+        "width": 160,
+        "height": 64
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.4627451002597809,
+            "g": 0.9529411792755127,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 60,
+        "topRight": 60,
+        "bottomLeft": 60,
+        "bottomRight": 60
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 20,
+        "paddingRight": 20,
+        "paddingTop": 24,
+        "paddingBottom": 24,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8841",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 23,
+            "y": 8,
+            "width": 113,
+            "height": 48
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 2,
+          "strokeAlign": "OUTSIDE",
+          "cornerRadius": {
+            "topLeft": 60,
+            "topRight": 60,
+            "bottomLeft": 60,
+            "bottomRight": 60
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8842",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 20,
+            "y": 24,
+            "width": 120,
+            "height": 16
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 16,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8843",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 219,
+            "y": 24,
+            "width": 74,
+            "height": 18
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 18,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8844",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 24,
+            "y": 20,
+            "width": 24,
+            "height": 24
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.6875,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8844;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 2.25,
+                "y": 5.25,
+                "width": 19.499998092651367,
+                "height": 13.500001907348633
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.2823529541492462,
+                    "g": 0.4470588266849518,
+                    "b": 0.5803921818733215
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.6875,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8844;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 8.5625,
+                "y": 5.8125,
+                "width": 6.875,
+                "height": 12.24665355682373
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.018333332613110542,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8845",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 98,
+            "y": 20,
+            "width": 24,
+            "height": 24
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.6875,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8845;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 2.25,
+                "y": 5.25,
+                "width": 19.500001907348633,
+                "height": 13.499998092651367
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.2823529541492462,
+                    "g": 0.4470588266849518,
+                    "b": 0.5803921818733215
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.6875,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8845;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 15.4375,
+                "y": 18.1875,
+                "width": 6.875,
+                "height": 12.24665355682373
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.018333332613110542,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "nodeId": "992:8846",
+      "name": "📏 Size=2XL, 🔷 Type=Ghost, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 561,
+        "y": 27,
+        "width": 180,
+        "height": 70
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.1455078125,
+            "g": 0.9251538515090942,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 3.1858408451080322,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 33,
+        "paddingRight": 33,
+        "paddingTop": 26,
+        "paddingBottom": 26,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8847",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 33,
+            "y": 26,
+            "width": 114,
+            "height": 18
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 18,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8848",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 16.653244018554688,
+            "y": 31.858417510986328,
+            "width": 38.2300910949707,
+            "height": 38.2300910949707
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 1.095132827758789,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8848;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 3.584070920944214,
+                "y": 8.362826347351074,
+                "width": 31.06194496154785,
+                "height": 21.50442886352539
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 1.095132827758789,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8848;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 13.524365425109863,
+                "y": 9.143803596496582,
+                "width": 10.95132827758789,
+                "height": 19.507944107055664
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.029203539714217186,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8849",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 165,
+            "height": 70
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 2,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 95.57523345947266,
+            "topRight": 95.57523345947266,
+            "bottomLeft": 95.57523345947266,
+            "bottomRight": 95.57523345947266
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8850",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 154.5132598876953,
+            "y": 31.858417510986328,
+            "width": 38.2300910949707,
+            "height": 38.2300910949707
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 1.095132827758789,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8850;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 3.584070920944214,
+                "y": 8.362826347351074,
+                "width": 31.06195068359375,
+                "height": 21.504423141479492
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 1.095132827758789,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8850;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 24.475692749023438,
+                "y": 28.85619354248047,
+                "width": 10.95132827758789,
+                "height": 19.507944107055664
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.029203539714217186,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "nodeId": "992:8851",
+      "name": "📏 Size=2XL, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 561,
+        "y": 115,
+        "width": 180,
+        "height": 70
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.4627451002597809,
+            "g": 0.9529411792755127,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8852",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 9,
+            "y": 2,
+            "width": 163,
+            "height": 67
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 2,
+          "strokeAlign": "OUTSIDE",
+          "cornerRadius": {
+            "topLeft": 60,
+            "topRight": 60,
+            "bottomLeft": 60,
+            "bottomRight": 60
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8853",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 219,
+            "y": 24,
+            "width": 74,
+            "height": 18
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 18,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8854",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 33,
+            "y": 26,
+            "width": 113,
+            "height": 18
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 1,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 18,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8855",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 24,
+            "y": 20,
+            "width": 24,
+            "height": 24
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.6875,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8855;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 2.25,
+                "y": 5.25,
+                "width": 19.499998092651367,
+                "height": 13.500001907348633
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.2823529541492462,
+                    "g": 0.4470588266849518,
+                    "b": 0.5803921818733215
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.6875,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8855;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 8.5625,
+                "y": 5.8125,
+                "width": 6.875,
+                "height": 12.24665355682373
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.018333332613110542,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8856",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 98,
+            "y": 20,
+            "width": 24,
+            "height": 24
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.6875,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8856;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 2.25,
+                "y": 5.25,
+                "width": 19.500001907348633,
+                "height": 13.499998092651367
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.2823529541492462,
+                    "g": 0.4470588266849518,
+                    "b": 0.5803921818733215
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.6875,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8856;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 15.4375,
+                "y": 18.1875,
+                "width": 6.875,
+                "height": 12.24665355682373
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.018333332613110542,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "nodeId": "992:8857",
+      "name": "📏 Size=LG, 🔷 Type=Ghost, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 561,
+        "y": 438,
+        "width": 140,
+        "height": 58
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.1455078125,
+            "g": 0.9251538515090942,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8858",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 119,
+            "height": 42
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 1.6814165115356445,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 50.4424934387207,
+            "topRight": 50.4424934387207,
+            "bottomLeft": 50.4424934387207,
+            "bottomRight": 50.4424934387207
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8859",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 8.78921890258789,
+            "y": 16.814102172851562,
+            "width": 20.176998138427734,
+            "height": 20.176998138427734
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5779869556427002,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8859;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.8915935754776,
+                "y": 4.413718223571777,
+                "width": 16.393810272216797,
+                "height": 11.349562644958496
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5779869556427002,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8859;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 7.110049724578857,
+                "y": 4.7981276512146,
+                "width": 5.779869079589844,
+                "height": 10.295863151550293
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015412984415888786,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8860",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 22.5,
+            "y": 22,
+            "width": 95,
+            "height": 14
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.8407082557678223,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 14,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8861",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 81.54867553710938,
+            "y": 16.814102172851562,
+            "width": 20.176998138427734,
+            "height": 20.176998138427734
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5779869556427002,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8861;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.8915935754776,
+                "y": 4.413718223571777,
+                "width": 16.39381217956543,
+                "height": 11.349559783935547
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5779869556427002,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8861;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 12.88991928100586,
+                "y": 15.201892852783203,
+                "width": 5.779869079589844,
+                "height": 10.295863151550293
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015412984415888786,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "nodeId": "992:8862",
+      "name": "📏 Size=LG, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 561,
+        "y": 508.619384765625,
+        "width": 140,
+        "height": 58
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.4627451002597809,
+            "g": 0.9529411792755127,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "MIN",
+        "counterAxisAlignItems": "MIN"
+      },
+      "children": [
+        {
+          "nodeId": "992:8863",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 10,
+            "y": 6.380615234375,
+            "width": 119,
+            "height": 42
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 1.6814165115356445,
+          "strokeAlign": "OUTSIDE",
+          "cornerRadius": {
+            "topLeft": 50.4424934387207,
+            "topRight": 50.4424934387207,
+            "bottomLeft": 50.4424934387207,
+            "bottomRight": 50.4424934387207
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8864",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 184.1150360107422,
+            "y": 20.176944732666016,
+            "width": 63,
+            "height": 15
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.8407082557678223,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 15.132749557495117,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8865",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 22,
+            "y": 22.38058853149414,
+            "width": 95,
+            "height": 14
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.8407082557678223,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 14,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8866",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 20.176990509033203,
+            "y": 16.814109802246094,
+            "width": 20.176998138427734,
+            "height": 20.176998138427734
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5779869556427002,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8866;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.8915935754776,
+                "y": 4.413718223571777,
+                "width": 16.393810272216797,
+                "height": 11.349562644958496
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.2823529541492462,
+                    "g": 0.4470588266849518,
+                    "b": 0.5803921818733215
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5779869556427002,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8866;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 7.110049724578857,
+                "y": 4.798102378845215,
+                "width": 5.779869079589844,
+                "height": 10.295863151550293
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015412984415888786,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8867",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 82.38937377929688,
+            "y": 16.814109802246094,
+            "width": 20.176998138427734,
+            "height": 20.176998138427734
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5779869556427002,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8867;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.8915935754776,
+                "y": 4.413718223571777,
+                "width": 16.39381217956543,
+                "height": 11.349559783935547
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.2823529541492462,
+                    "g": 0.4470588266849518,
+                    "b": 0.5803921818733215
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5779869556427002,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8867;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 12.88991928100586,
+                "y": 15.20186710357666,
+                "width": 5.779869079589844,
+                "height": 10.295863151550293
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015412984415888786,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "nodeId": "992:8868",
+      "name": "📏 Size=MD, 🔷 Type=Ghost, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 561.5,
+        "y": 626,
+        "width": 120,
+        "height": 48
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.1455078125,
+            "g": 0.9251538515090942,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 20,
+        "paddingRight": 20,
+        "paddingTop": 18,
+        "paddingBottom": 18,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8869",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 0.5,
+            "y": 0.2388916015625,
+            "width": 88,
+            "height": 40
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 1.415929913520813,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 42.4778938293457,
+            "topRight": 42.4778938293457,
+            "bottomLeft": 42.4778938293457,
+            "bottomRight": 42.4778938293457
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8870",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 20,
+            "y": 18,
+            "width": 80,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.7079649567604065,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8871",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 7.401447296142578,
+            "y": 14.159177780151367,
+            "width": 16.991159439086914,
+            "height": 16.991159439086914
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.48672589659690857,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8871;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.5929211378097534,
+                "y": 3.716815948486328,
+                "width": 13.805315017700195,
+                "height": 9.557528495788574
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.48672589659690857,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8871;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 5.566365718841553,
+                "y": 3.619462251663208,
+                "width": 4.8672590255737305,
+                "height": 8.670201301574707
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.012979356572031975,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8872",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 68.67257690429688,
+            "y": 14.159177780151367,
+            "width": 16.991159439086914,
+            "height": 16.991159439086914
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.48672589659690857,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8872;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.5929211378097534,
+                "y": 3.716815948486328,
+                "width": 13.805317878723145,
+                "height": 9.557525634765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.48672589659690857,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8872;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 10.433625221252441,
+                "y": 12.380528450012207,
+                "width": 4.8672590255737305,
+                "height": 8.670201301574707
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.012979356572031975,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "nodeId": "992:8873",
+      "name": "📏 Size=MD, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 561,
+        "y": 685.2388916015625,
+        "width": 120,
+        "height": 50
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.4627451002597809,
+            "g": 0.9529411792755127,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 10,
+        "paddingBottom": 10,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8874",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 15,
+            "y": 5,
+            "width": 90,
+            "height": 40
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 1.415929913520813,
+          "strokeAlign": "OUTSIDE",
+          "cornerRadius": {
+            "topLeft": 42.4778938293457,
+            "topRight": 42.4778938293457,
+            "bottomLeft": 42.4778938293457,
+            "bottomRight": 42.4778938293457
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8875",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 155.0442657470703,
+            "y": 16.991153717041016,
+            "width": 53,
+            "height": 13
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.7079649567604065,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12.743370056152344,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8876",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 20,
+            "y": 17.76112937927246,
+            "width": 80,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.7079649567604065,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "TOP",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8877",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 16.991151809692383,
+            "y": 14.159292221069336,
+            "width": 16.991159439086914,
+            "height": 16.991159439086914
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.48672589659690857,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8877;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.5929211378097534,
+                "y": 3.716815948486328,
+                "width": 13.805315017700195,
+                "height": 9.557528495788574
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.2823529541492462,
+                    "g": 0.4470588266849518,
+                    "b": 0.5803921818733215
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.48672589659690857,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8877;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 5.566365718841553,
+                "y": 3.619462251663208,
+                "width": 4.8672590255737305,
+                "height": 8.670201301574707
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.012979356572031975,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8878",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 69.38052368164062,
+            "y": 14.159292221069336,
+            "width": 16.991159439086914,
+            "height": 16.991159439086914
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.48672589659690857,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8878;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.5929211378097534,
+                "y": 3.716815948486328,
+                "width": 13.805317878723145,
+                "height": 9.557525634765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.2823529541492462,
+                    "g": 0.4470588266849518,
+                    "b": 0.5803921818733215
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.48672589659690857,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8878;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 10.433625221252441,
+                "y": 12.380528450012207,
+                "width": 4.8672590255737305,
+                "height": 8.670201301574707
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.012979356572031975,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "nodeId": "992:8892",
+      "name": "📏 Size=SM, 🔷 Type=Ghost, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 563,
+        "y": 784,
+        "width": 100,
+        "height": 42
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.1455078125,
+            "g": 0.9251538515090942,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 15,
+        "paddingBottom": 15,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8893",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 4.714285850524902,
+            "y": 15,
+            "width": 20.571428298950195,
+            "height": 20.571428298950195
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5892857313156128,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8893;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.9285714626312256,
+                "y": 4.5,
+                "width": 16.714284896850586,
+                "height": 11.571430206298828
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5892857313156128,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8893;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 7.0535888671875,
+                "y": 4.696445941925049,
+                "width": 5.892857074737549,
+                "height": 10.49713134765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015714285895228386,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8894",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 80,
+            "height": 35
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 1.7142857313156128,
+          "strokeAlign": "OUTSIDE",
+          "cornerRadius": {
+            "topLeft": 51.42857360839844,
+            "topRight": 51.42857360839844,
+            "bottomLeft": 51.42857360839844,
+            "bottomRight": 51.42857360839844
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8895",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 83.14286041259766,
+            "y": 17.142822265625,
+            "width": 20.571428298950195,
+            "height": 20.571428298950195
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5892857313156128,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8895;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.9285714626312256,
+                "y": 4.5,
+                "width": 16.71428680419922,
+                "height": 11.571427345275879
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5892857313156128,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8895;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 12.946446418762207,
+                "y": 15.3035888671875,
+                "width": 5.892857074737549,
+                "height": 10.49713134765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015714285895228386,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8896",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 10,
+            "y": 15,
+            "width": 80,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.8571428656578064,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "nodeId": "992:8897",
+      "name": "📏 Size=XS, 🔷 Type=Ghost, 🔴 State=Default",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 563,
+        "y": 917,
+        "width": 80,
+        "height": 32
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.1455078125,
+            "g": 0.9251538515090942,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 1.5,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 15,
+        "paddingBottom": 15,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8898",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 10,
+            "y": 6,
+            "width": 12,
+            "height": 12
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5892857313156128,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8898;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.125,
+                "y": 2.625,
+                "width": 9.749999046325684,
+                "height": 6.750000953674316
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5892857313156128,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8898;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 3.0535714626312256,
+                "y": 0.6964285969734192,
+                "width": 5.892857074737549,
+                "height": 10.49713134765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015714285895228386,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8899",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 80,
+            "height": 35
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 1.7142857313156128,
+          "strokeAlign": "OUTSIDE",
+          "cornerRadius": {
+            "topLeft": 51.42857360839844,
+            "topRight": 51.42857360839844,
+            "bottomLeft": 51.42857360839844,
+            "bottomRight": 51.42857360839844
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8900",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 83.14286041259766,
+            "y": 17.142822265625,
+            "width": 20.571428298950195,
+            "height": 20.571428298950195
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5892857313156128,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8900;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.9285714626312256,
+                "y": 4.5,
+                "width": 16.71428680419922,
+                "height": 11.571427345275879
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5892857313156128,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8900;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 12.946446418762207,
+                "y": 15.3035888671875,
+                "width": 5.892857074737549,
+                "height": 10.49713134765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015714285895228386,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8901",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 15,
+            "y": 10,
+            "width": 50,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.8571428656578064,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Bold"
+            },
+            "fontWeight": 700,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "UPPER",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "nodeId": "992:8902",
+      "name": "📏 Size=XS, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 563,
+        "y": 957,
+        "width": 80,
+        "height": 32
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.4627451002597809,
+            "g": 0.9529411792755127,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 1.5,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 10,
+        "paddingRight": 10,
+        "paddingTop": 15,
+        "paddingBottom": 15,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8903",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 10,
+            "y": 6,
+            "width": 12,
+            "height": 12
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5892857313156128,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8903;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.125,
+                "y": 2.625,
+                "width": 9.749999046325684,
+                "height": 6.750000953674316
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5892857313156128,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8903;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 3.0535714626312256,
+                "y": 0.6964285969734192,
+                "width": 5.892857074737549,
+                "height": 10.49713134765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015714285895228386,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8904",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 80,
+            "height": 35
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 1.7142857313156128,
+          "strokeAlign": "OUTSIDE",
+          "cornerRadius": {
+            "topLeft": 51.42857360839844,
+            "topRight": 51.42857360839844,
+            "bottomLeft": 51.42857360839844,
+            "bottomRight": 51.42857360839844
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8905",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 83.14286041259766,
+            "y": 17.142822265625,
+            "width": 20.571428298950195,
+            "height": 20.571428298950195
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5892857313156128,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8905;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.9285714626312256,
+                "y": 4.5,
+                "width": 16.71428680419922,
+                "height": 11.571427345275879
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5892857313156128,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8905;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 12.946446418762207,
+                "y": 15.3035888671875,
+                "width": 5.892857074737549,
+                "height": 10.49713134765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015714285895228386,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8906",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": 15,
+            "y": 10,
+            "width": 50,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "color": {
+                "r": 0.2823529541492462,
+                "g": 0.4470588266849518,
+                "b": 0.5803921818733215
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.8571428656578064,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Bold"
+            },
+            "fontWeight": 700,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "UPPER",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "nodeId": "992:8907",
+      "name": "📏 Size=SM, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "type": "COMPONENT",
+      "bounds": {
+        "x": 563,
+        "y": 840,
+        "width": 100,
+        "height": 42
+      },
+      "fills": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0,
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1
+          }
+        }
+      ],
+      "strokes": [
+        {
+          "type": "SOLID",
+          "visible": true,
+          "opacity": 0.4000000059604645,
+          "blendMode": "NORMAL",
+          "color": {
+            "r": 0.4627451002597809,
+            "g": 0.9529411792755127,
+            "b": 1
+          },
+          "boundVariables": {}
+        }
+      ],
+      "strokeWeight": 2,
+      "strokeAlign": "INSIDE",
+      "cornerRadius": {
+        "topLeft": 50,
+        "topRight": 50,
+        "bottomLeft": 50,
+        "bottomRight": 50
+      },
+      "effects": [],
+      "layout": {
+        "layoutMode": "HORIZONTAL",
+        "paddingLeft": 20,
+        "paddingRight": 20,
+        "paddingTop": 14,
+        "paddingBottom": 14,
+        "itemSpacing": 10,
+        "primaryAxisAlignItems": "CENTER",
+        "counterAxisAlignItems": "CENTER"
+      },
+      "children": [
+        {
+          "nodeId": "992:8908",
+          "name": "arrow/left",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 20,
+            "y": 10.714285850524902,
+            "width": 20.571428298950195,
+            "height": 20.571428298950195
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5892857313156128,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8908;1088:2701",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.9285714626312256,
+                "y": 4.5,
+                "width": 16.714284896850586,
+                "height": 11.571430206298828
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5892857313156128,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8908;2891:5018",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 7.0535888671875,
+                "y": 4.696445941925049,
+                "width": 5.892857074737549,
+                "height": 10.49713134765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015714285895228386,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        },
+        {
+          "nodeId": "992:8909",
+          "name": "BUTTON",
+          "type": "TEXT",
+          "bounds": {
+            "x": -4,
+            "y": 15,
+            "width": 108,
+            "height": 12
+          },
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.4000000059604645,
+              "color": {
+                "r": 0.4627451002597809,
+                "g": 0.9529411792755127,
+                "b": 1
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0.8571428656578064,
+          "strokeAlign": "OUTSIDE",
+          "typography": {
+            "fontSize": 12,
+            "fontName": {
+              "family": "Lato",
+              "style": "Black"
+            },
+            "fontWeight": 900,
+            "textAlignHorizontal": "CENTER",
+            "textAlignVertical": "CENTER",
+            "lineHeight": {
+              "unit": "PERCENT",
+              "value": 100
+            },
+            "letterSpacing": {
+              "unit": "PERCENT",
+              "value": 0
+            },
+            "textCase": "ORIGINAL",
+            "textDecoration": "NONE"
+          },
+          "characters": "BUTTON"
+        },
+        {
+          "nodeId": "992:8910",
+          "name": "Shadow",
+          "type": "RECTANGLE",
+          "bounds": {
+            "x": 0,
+            "y": 0,
+            "width": 80,
+            "height": 35
+          },
+          "fills": [],
+          "strokes": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 1,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.1455078125,
+                "g": 0.9251538515090942,
+                "b": 1
+              },
+              "boundVariables": {}
+            }
+          ],
+          "strokeWeight": 1.7142857313156128,
+          "strokeAlign": "OUTSIDE",
+          "cornerRadius": {
+            "topLeft": 51.42857360839844,
+            "topRight": 51.42857360839844,
+            "bottomLeft": 51.42857360839844,
+            "bottomRight": 51.42857360839844
+          },
+          "opacity": 0.5
+        },
+        {
+          "nodeId": "992:8911",
+          "name": "arrow/right",
+          "type": "INSTANCE",
+          "bounds": {
+            "x": 83.14286041259766,
+            "y": 17.142892837524414,
+            "width": 20.571428298950195,
+            "height": 20.571428298950195
+          },
+          "fills": [],
+          "strokes": [],
+          "strokeWeight": 0.5892857313156128,
+          "strokeAlign": "INSIDE",
+          "cornerRadius": {
+            "topLeft": 0,
+            "topRight": 0,
+            "bottomLeft": 0,
+            "bottomRight": 0
+          },
+          "children": [
+            {
+              "nodeId": "I992:8911;1088:2822",
+              "name": "vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 1.9285714626312256,
+                "y": 4.5,
+                "width": 16.71428680419922,
+                "height": 11.571427345275879
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 1,
+                    "g": 1,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.5892857313156128,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            },
+            {
+              "nodeId": "I992:8911;2891:5452",
+              "name": "Vector",
+              "type": "VECTOR",
+              "bounds": {
+                "x": 12.946446418762207,
+                "y": 15.3035888671875,
+                "width": 5.892857074737549,
+                "height": 10.49713134765625
+              },
+              "fills": [
+                {
+                  "type": "SOLID",
+                  "visible": true,
+                  "opacity": 1,
+                  "color": {
+                    "r": 0.9254902005195618,
+                    "g": 0.7647058963775635,
+                    "b": 1
+                  }
+                }
+              ],
+              "strokes": [],
+              "strokeWeight": 0.015714285895228386,
+              "strokeAlign": "INSIDE",
+              "cornerRadius": {
+                "topLeft": 0,
+                "topRight": 0,
+                "bottomLeft": 0,
+                "bottomRight": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

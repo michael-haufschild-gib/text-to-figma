@@ -1,0 +1,599 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UI Kit Component Index",
+  "description": "Master catalog of all documented UI components with quick reference and usage examples",
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-24",
+  "overview": {
+    "purpose": "Complete UI kit documentation for recreating components in new Figma files without access to original design system",
+    "structure": "Foundations (7) + Molecules (6) + Organisms (4) + Templates (11+)",
+    "totalComponents": 21,
+    "totalFoundations": 7,
+    "totalPages": 35,
+    "completeness": "100% - All pages documented"
+  },
+  "foundations": {
+    "colors": {
+      "file": "foundations/colors.json",
+      "description": "Complete brand color palette with hex values",
+      "categories": ["base", "brandAccent", "systemColors", "gradients"],
+      "totalColors": 34,
+      "usage": "Reference by 'ref' property (e.g., 'brandAccentPrimary') or direct hex value",
+      "keyColors": {
+        "primary": "#25ECFF",
+        "secondary": "#C6FF77",
+        "background": "#1D092F",
+        "text": "#1D092F",
+        "error": "#DD1717",
+        "success": "#11DF16"
+      }
+    },
+    "typography": {
+      "file": "foundations/typography.json",
+      "description": "Complete type system with font families, sizes, weights, and line heights",
+      "fontFamily": "Lato",
+      "scales": {
+        "fontSizes": [
+          "8px",
+          "10px",
+          "12px",
+          "14px",
+          "16px",
+          "18px",
+          "20px",
+          "24px",
+          "32px",
+          "48px"
+        ],
+        "fontWeights": [400, 500, 700],
+        "lineHeights": ["100%", "120%", "140%"]
+      },
+      "textStyles": [
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p2XS",
+        "pXS",
+        "pSM",
+        "pMD",
+        "pLG",
+        "button",
+        "textLink",
+        "tag"
+      ],
+      "usage": "Reference by style name (e.g., 'h1', 'button') or direct fontSize/fontWeight values"
+    },
+    "spacing": {
+      "file": "foundations/spacing.json",
+      "description": "Spacing scale based on 16px base unit (8pt grid system)",
+      "baseUnit": 16,
+      "scale": [
+        "2px",
+        "4px",
+        "8px",
+        "12px",
+        "16px",
+        "20px",
+        "24px",
+        "28px",
+        "32px",
+        "40px",
+        "48px",
+        "56px",
+        "64px",
+        "72px",
+        "80px"
+      ],
+      "commonUsages": {
+        "buttonPadding": "12-32px horizontal, 6-16px vertical",
+        "cardPadding": "16-24px",
+        "sectionMargin": "32-64px",
+        "fieldSpacing": "24px"
+      },
+      "usage": "Use spacing tokens for padding, margins, gaps. Always align to 8pt grid."
+    },
+    "icons": {
+      "file": "foundations/icons.json",
+      "description": "Complete icon library with 150+ vector icons",
+      "totalIcons": 150,
+      "categories": [
+        "navigation",
+        "actions",
+        "feedback",
+        "form-controls",
+        "social",
+        "payment",
+        "currency",
+        "gamification",
+        "loyalty",
+        "features",
+        "game-types",
+        "utility",
+        "media",
+        "discounts"
+      ],
+      "standardSize": "24×24px (with variants for payment 40×24, loyalty 32×32)",
+      "usage": "Reference by category and icon name"
+    },
+    "styles": {
+      "file": "foundations/styles.json",
+      "description": "Visual effects: shadows, corner radius, borders, opacity",
+      "categories": [
+        "shadows (5 elevations)",
+        "cornerRadius (7 values)",
+        "borderWidth (4 values)",
+        "opacity (9 levels)"
+      ],
+      "elevationSystem": [
+        "elevation1 (subtle)",
+        "elevation2 (medium)",
+        "elevation3 (high)",
+        "elevation4 (modal)"
+      ],
+      "usage": "Apply consistent depth and styling across components"
+    },
+    "brandingAndGrids": {
+      "file": "foundations/branding-grids.json",
+      "description": "Brand assets (logos) and layout grid systems",
+      "logos": ["Full horizontal", "Short icon", "Vertical", "Multiple formats"],
+      "gridSystem": {
+        "desktop": "12 columns, 24px gutter, 64px margin",
+        "tablet": "8 columns, 20px gutter, 32px margin",
+        "mobile": "4 columns, 16px gutter, 16px margin"
+      },
+      "breakpoints": [
+        "xs (0-479)",
+        "sm (480-767)",
+        "md (768-1023)",
+        "lg (1024-1439)",
+        "xl (1440+)"
+      ],
+      "usage": "Logo variations for different contexts, responsive grid layouts"
+    }
+  },
+  "components": {
+    "buttons": {
+      "file": "components/buttons.json",
+      "description": "Complete button system with 3 types and 6 sizes",
+      "types": ["Primary", "Secondary", "Ghost"],
+      "sizes": ["XS", "SM", "MD", "LG", "XL", "2XL"],
+      "states": ["Default", "Disabled"],
+      "totalVariants": 38,
+      "quickReference": {
+        "primary": {
+          "background": "#25ECFF",
+          "text": "#1D092F",
+          "usage": "Main CTAs, form submissions"
+        },
+        "secondary": {
+          "background": "transparent",
+          "border": "#25ECFF (2px)",
+          "text": "#25ECFF",
+          "usage": "Secondary actions, cancel buttons"
+        },
+        "ghost": {
+          "background": "transparent",
+          "border": "none",
+          "text": "#25ECFF",
+          "usage": "Tertiary actions, text links"
+        }
+      },
+      "sizing": {
+        "XS": "80x36px",
+        "SM": "100x42px",
+        "MD": "120x50px",
+        "LG": "140x58px",
+        "XL": "150x62px",
+        "2XL": "160x66px"
+      },
+      "recreation": "create_frame + set_fills + set_corner_radius + create_text (for primary) OR add set_stroke (for secondary) OR text only (for ghost)"
+    },
+    "forms": {
+      "file": "components/forms.json",
+      "description": "Complete form component system including inputs, checkboxes, radios, pills, selectors",
+      "componentTypes": ["input", "checkbox", "radio", "pill", "selector"],
+      "quickReference": {
+        "input": {
+          "structure": "Help text (top) → Field (input) → Help text (bottom)",
+          "dimensions": "320x62px",
+          "states": ["Default", "Filled", "Hover", "Focus", "Error", "Success", "Disabled"],
+          "usage": "Text input fields with labels and validation"
+        },
+        "checkbox": {
+          "dimensions": "20x20px",
+          "states": ["Unchecked", "Checked", "Disabled"],
+          "usage": "Multi-select options"
+        },
+        "radio": {
+          "dimensions": "20x20px (circular)",
+          "states": ["Unselected", "Selected", "Disabled"],
+          "usage": "Single-select options"
+        },
+        "pill": {
+          "dimensions": "variable x 36px",
+          "states": ["Default", "Selected"],
+          "usage": "Tag-like selectors, filter chips"
+        },
+        "selector": {
+          "dimensions": "320x48px",
+          "states": ["Default", "Open", "Selected"],
+          "usage": "Dropdown menus, select inputs"
+        }
+      },
+      "formPatterns": {
+        "standardForm": "Title → Description → Input fields (24px spacing) → Buttons (Primary + Secondary, 16px spacing)",
+        "inlineForm": "Horizontal layout with 16px spacing between fields"
+      },
+      "recreation": "Input: create_frame (vertical, 320px) + create_text (label) + create_frame (field) + create_text (input) + create_text (help)"
+    },
+    "accordions": {
+      "file": "components/accordions.json",
+      "description": "Collapsible panels for organizing content",
+      "sizes": ["MD (390×48/140)", "LG (390×56/148)"],
+      "states": ["Default (collapsed)", "Expanded"],
+      "structure": "Header (title + chevron icon) + Body (hidden/visible)",
+      "usage": "FAQs, settings groups, filters, documentation sections"
+    },
+    "dropdowns": {
+      "file": "components/dropdowns.json",
+      "description": "Dropdown selectors and menus",
+      "components": ["Selector (trigger)", "Items (options)", "Menu (container)"],
+      "sizes": ["SM (40px)", "MD (48px)"],
+      "states": ["Default", "Hover", "Expanded", "Selected"],
+      "specializedTypes": ["Payment selector", "State selector", "Address selector"],
+      "usage": "Form inputs, filters, navigation menus"
+    },
+    "switches": {
+      "file": "components/switches.json",
+      "description": "Toggle switches for binary on/off states",
+      "sizes": ["SM (40×20)", "MD (48×24)", "LG (56×28)"],
+      "states": ["No (off)", "Yes (on)"],
+      "colors": {
+        "off": "Track #3D1F50, Knob #CEB6D8",
+        "on": "Track #C6FF77, Knob #1D092F"
+      },
+      "usage": "Settings toggles, feature enable/disable, preferences"
+    },
+    "tags": {
+      "file": "components/tags.json",
+      "description": "Labels and badges for status and categories",
+      "types": ["Notification badge (numeric)", "Label tags (text)"],
+      "variants": ["New", "Tournament", "Exclusive", "Spins&Wins", "Active", "Combined"],
+      "colors": {
+        "new": "Gradient #C6FF77 → #25ECFF",
+        "tournament": "#FF6B00",
+        "exclusive": "#C6FF77",
+        "spinsAndWins": "#9B4DFF",
+        "active": "#18D918",
+        "error": "#DD1717"
+      },
+      "usage": "Game thumbnails, status indicators, promotional badges"
+    },
+    "headers": {
+      "file": "components/headers.json",
+      "description": "Navigation headers for different page contexts",
+      "types": [
+        "Section header",
+        "Main header",
+        "Inner page header",
+        "Overlay header",
+        "In-play header"
+      ],
+      "commonElements": ["Logo", "Navigation links", "Back button", "Close button", "User menu"],
+      "usage": "Primary navigation, page titles, modal headers, live sections"
+    },
+    "menusAndBanners": {
+      "file": "components/menus-banners.json",
+      "description": "Navigation menus and promotional banners",
+      "components": ["Footer nav (bottom tabs)", "Top banners (promotional)"],
+      "footerNav": {
+        "dimensions": "390×64",
+        "items": ["Home", "Games", "Promotions", "Favorites", "Profile"],
+        "usage": "Mobile bottom navigation"
+      },
+      "topBanners": {
+        "variants": ["Promotional", "Informational", "Announcement"],
+        "usage": "Welcome bonuses, maintenance notices, live events"
+      }
+    },
+    "cards": {
+      "file": "components/cards.json",
+      "description": "Card components for various content types",
+      "cardTypes": ["thumbnail", "paymentCard", "coinPack", "providerCard"],
+      "quickReference": {
+        "thumbnail": {
+          "dimensions": "112x149px",
+          "usage": "Game thumbnails, media cards",
+          "structure": "Image with cornerRadius=8 and shadow"
+        },
+        "paymentCard": {
+          "dimensions": "370x66px",
+          "usage": "Payment method selection",
+          "structure": "Radio + Logo + Info (card number, expiry) + Actions (edit, delete)",
+          "states": ["default", "selected"]
+        },
+        "coinPack": {
+          "dimensions": "176x264px",
+          "usage": "In-app purchase cards",
+          "structure": "Background gradient + Coin amount + Divider + Offer title + Icon + Button"
+        }
+      },
+      "cardPatterns": {
+        "standard": "cornerRadius=8, shadow=elevation-1/2, border=1px base70, padding=16px",
+        "selection": "default border=base70, selected border=brandAccentPrimary (2px)"
+      },
+      "recreation": "create_frame + set_corner_radius + set_image_fill + apply_effects (shadow) + add content"
+    },
+    "modals": {
+      "file": "components/modals.json",
+      "description": "Modal/popup components for overlays and dialogs",
+      "modalTypes": ["informationalPopup", "marketingPopup"],
+      "quickReference": {
+        "informationalPopup": {
+          "dimensions": "366x229px (variable height)",
+          "usage": "Alerts, confirmations, simple forms",
+          "structure": "Header (title + close) → Body (content) → Footer (buttons)",
+          "sections": {
+            "header": "67px height, padding=24px, border-bottom",
+            "body": "variable height, padding=24px, itemSpacing=16px",
+            "footer": "128px height, padding=24px, border-top"
+          }
+        },
+        "marketingPopup": {
+          "dimensions": "383x439px",
+          "usage": "Promotions, special offers, announcements",
+          "structure": "Header (hero image + close) → Body (title + description) → Footer (CTA buttons)",
+          "heroImage": "383x200px, cornerRadius=16 16 0 0"
+        }
+      },
+      "modalOverlay": {
+        "background": "#1D092F (opacity=0.6)",
+        "blur": "optional 4px",
+        "dimensions": "full viewport"
+      },
+      "recreation": "create_frame (overlay) + create_frame (modal) + apply_effects (shadow) + 3 sections (header/body/footer)"
+    }
+  },
+  "templates": {
+    "burgerMenu": {
+      "file": "templates/specialized-components.json",
+      "description": "Slide-out navigation menu for mobile",
+      "sections": ["Header (logo + close)", "Navigation items", "Account module", "Footer"],
+      "usage": "Mobile primary navigation"
+    },
+    "footer": {
+      "file": "templates/specialized-components.json",
+      "description": "Site footer with links and newsletter",
+      "layout": "4-column grid (desktop) / stacked (mobile)",
+      "sections": ["About", "Support", "Games", "Newsletter", "Bottom bar"],
+      "usage": "Page footer with legal, links, social"
+    },
+    "specializedFlows": {
+      "file": "templates/specialized-components.json",
+      "description": "Complex user flow components",
+      "flows": [
+        "Redemption (bonus codes, free spins)",
+        "Quick Purchase (coin packs)",
+        "Loyalty Program (tier system, rewards)",
+        "Low Funds (balance warnings, deposit prompts)",
+        "Refer a Friend (referral program)",
+        "Recently Played & Favorites (game history)",
+        "Purchase Flow (checkout)",
+        "Pick'em (game components)"
+      ],
+      "note": "These build on base components (buttons, forms, cards) customized for specific contexts"
+    }
+  },
+  "usageExamples": {
+    "example1_primaryButton": {
+      "description": "Create a primary CTA button (medium size)",
+      "components": ["buttons.json"],
+      "foundations": ["colors.json", "typography.json", "spacing.json"],
+      "steps": [
+        "1. Reference buttons.json → variants.primary.sizes.MD",
+        "2. Create frame: layoutMode=HORIZONTAL, padding(h=20, v=10), itemSpacing=8",
+        "3. Set fill: brandAccentPrimary (#25ECFF) from colors.json",
+        "4. Set cornerRadius: 8",
+        "5. Add text: 'BUTTON', fontSize=14 (fontMD from typography.json), fontWeight=500, color=base0 (#1D092F)",
+        "6. Set textCase: UPPER",
+        "7. Result: 120x50px button with cyan background and dark text"
+      ]
+    },
+    "example2_modalWithForm": {
+      "description": "Create a modal with a login form (2 inputs + 1 checkbox + 2 buttons)",
+      "components": ["modals.json", "forms.json", "buttons.json"],
+      "foundations": ["colors.json", "typography.json", "spacing.json"],
+      "steps": [
+        "1. Create overlay: full viewport, fill=base0 (#1D092F, opacity=0.6)",
+        "2. Create modal frame: width=400, layoutMode=VERTICAL, cornerRadius=16, background=base100 (#FFFFFF), shadow=elevation-4",
+        "3. CREATE HEADER: padding=24, borderBottom=1px base90",
+        "   - Add title: 'Login', fontSize=20, fontWeight=700",
+        "   - Add close button: 24x24 icon",
+        "4. CREATE BODY: padding=24, itemSpacing=24",
+        "   - Add email input: Use input structure from forms.json, width=352 (400-48 for padding)",
+        "     * Label: 'Email', fontSize=12",
+        "     * Field: height=48, placeholder='Enter your email'",
+        "   - Add password input: Same structure, placeholder='Enter your password'",
+        "   - Add checkbox: 20x20, label='Remember me'",
+        "5. CREATE FOOTER: padding=24, borderTop=1px base90",
+        "   - Add actions frame: layoutMode=HORIZONTAL, itemSpacing=16, justifyContent=flex-end",
+        "   - Add secondary button: 'Cancel', size=MD from buttons.json",
+        "   - Add primary button: 'Login', size=MD from buttons.json",
+        "6. Center modal in viewport",
+        "7. Result: Complete login modal with form validation states"
+      ]
+    },
+    "example3_cardWithSelection": {
+      "description": "Create a payment method card (default state)",
+      "components": ["cards.json", "forms.json (radio)"],
+      "foundations": ["colors.json", "typography.json"],
+      "steps": [
+        "1. Reference cards.json → components.paymentCard.default",
+        "2. Create frame: layoutMode=HORIZONTAL, width=370, height=66, padding(h=16, v=12), itemSpacing=12",
+        "3. Set background: base100 (#FFFFFF), cornerRadius=8, border(base70 #CEB6D8, 1px)",
+        "4. Add radio button: 20x20, unselected state from forms.json",
+        "5. Add card logo: 40x24 image (Mastercard/Visa)",
+        "6. Add info frame: layoutMode=VERTICAL, itemSpacing=4",
+        "   - Card number: '**** 1234', fontSize=14, fontWeight=500",
+        "   - Expiry: 'Exp: 12/25', fontSize=12, color=base40",
+        "7. Add actions frame: layoutMode=HORIZONTAL, itemSpacing=8",
+        "   - Edit button: 32x32 icon",
+        "   - Delete button: 32x32 trash icon",
+        "8. Result: Payment card ready for selection"
+      ]
+    },
+    "example4_formWithValidation": {
+      "description": "Create an input field with error state",
+      "components": ["forms.json"],
+      "foundations": ["colors.json", "typography.json"],
+      "steps": [
+        "1. Reference forms.json → components.input.error.filled",
+        "2. Create root frame: layoutMode=VERTICAL, itemSpacing=4, width=320",
+        "3. Add top label: 'Email address', fontSize=12, color=base60 (#A88FB6)",
+        "4. Add field frame: layoutMode=HORIZONTAL, itemSpacing=8, height=48",
+        "   - Set border: systemError (#DD1717), width=2",
+        "   - Add icon (optional): 16x16 leading icon",
+        "   - Add input text: 'invalid@email', fontSize=16, color=base0",
+        "   - Add error icon: 16x16 trailing icon",
+        "5. Add bottom help text: 'Please enter a valid email address', fontSize=12, color=systemError (#DD1717)",
+        "6. Result: Input field showing validation error"
+      ]
+    },
+    "example5_coinPackCard": {
+      "description": "Create a promotional coin pack card",
+      "components": ["cards.json", "buttons.json"],
+      "foundations": ["colors.json", "typography.json"],
+      "steps": [
+        "1. Reference cards.json → components.coinPack.firstPurchase",
+        "2. Create frame: width=176, height=264, layoutMode=VERTICAL, cornerRadius=12",
+        "3. Add gradient background: LINEAR gradient gold to orange (#FFD700 → #FFA500)",
+        "4. Add coin amount: '50,000 GOLD COINS', fontSize=16, fontWeight=700, UPPER, center-aligned",
+        "5. Add divider line: stroke=base70, width=1",
+        "6. Add offer title: 'MEGA 1ST PURCHASE OFFER', fontSize=12, fontWeight=700, UPPER",
+        "7. Add coin icon: 60x60 image",
+        "8. Add discount button: width=144, height=40 from buttons.json",
+        "9. Apply shadow: y=4, blur=16, opacity=0.2",
+        "10. Result: Eye-catching promotional card"
+      ]
+    }
+  },
+  "recreationWorkflow": {
+    "description": "Recommended workflow for recreating UI from this documentation",
+    "steps": [
+      "1. IDENTIFY COMPONENTS: Break down desired UI into components (button, input, modal, card, etc.)",
+      "2. REFERENCE FOUNDATIONS: Check colors.json, typography.json, spacing.json for values",
+      "3. FIND COMPONENT SPECS: Look up component in appropriate .json file (buttons, forms, cards, modals)",
+      "4. FOLLOW STRUCTURE: Use the 'structure' section to understand component hierarchy",
+      "5. APPLY STYLING: Use the 'styling' section for colors, borders, shadows, etc.",
+      "6. USE RECREATION GUIDE: Follow step-by-step instructions in 'recreationGuide' section",
+      "7. REFERENCE EXAMPLES: Check usageExamples in this index for complete workflows",
+      "8. TEST STATES: For interactive components, test all states (default, hover, focus, error, etc.)"
+    ],
+    "tips": [
+      "- Always start with foundations (colors, typography, spacing)",
+      "- Use exact hex values from colors.json, not token references",
+      "- Follow 8pt grid for all spacing (use spacing.json values)",
+      "- Check component states (hover, focus, error) for interactive elements",
+      "- Combine components: modals contain forms, forms contain inputs and buttons",
+      "- Use auto-layout (HORIZONTAL/VERTICAL) for responsive components",
+      "- Apply shadows (elevation) for depth and hierarchy",
+      "- Test accessibility with WCAG contrast ratios for text"
+    ]
+  },
+  "componentCombinations": {
+    "modalWithForm": {
+      "components": ["modals", "forms", "buttons"],
+      "description": "Modal containing a form with multiple inputs and action buttons"
+    },
+    "cardWithButton": {
+      "components": ["cards", "buttons"],
+      "description": "Card with embedded CTA button (e.g., coin pack with purchase button)"
+    },
+    "formWithValidation": {
+      "components": ["forms"],
+      "description": "Form with multiple input types and error states"
+    },
+    "selectionList": {
+      "components": ["cards", "forms (radio/checkbox)"],
+      "description": "List of selectable cards (e.g., payment methods)"
+    }
+  },
+  "crossReferences": {
+    "buttons": {
+      "usedIn": ["modals (footer actions)", "forms (submit buttons)", "cards (CTA buttons)"],
+      "references": ["colors (fill, text)", "typography (button text style)", "spacing (padding)"]
+    },
+    "forms": {
+      "usedIn": ["modals (body content)", "standalone forms"],
+      "references": [
+        "colors (borders, text, validation)",
+        "typography (labels, input text, help text)",
+        "spacing (padding, itemSpacing)"
+      ]
+    },
+    "cards": {
+      "usedIn": ["grids/lists", "selection interfaces"],
+      "references": ["colors (background, border)", "spacing (padding)", "buttons (embedded CTAs)"]
+    },
+    "modals": {
+      "contains": [
+        "buttons (header close, footer actions)",
+        "forms (body content)",
+        "text (title, description)"
+      ],
+      "references": [
+        "colors (background, overlay, borders)",
+        "typography (title, body text)",
+        "spacing (padding, itemSpacing)"
+      ]
+    }
+  },
+  "fileStructure": {
+    "foundations/": {
+      "colors.json": "34 colors with hex values",
+      "typography.json": "Font families, sizes, weights, line heights, text styles",
+      "spacing.json": "15 spacing values based on 8pt grid",
+      "icons.json": "150+ vector icons across 14 categories",
+      "styles.json": "Visual effects (shadows, corner radius, borders, opacity)",
+      "branding-grids.json": "Brand assets (logos) and responsive grid systems"
+    },
+    "components/": {
+      "buttons.json": "38 button variants (3 types × 6 sizes)",
+      "forms.json": "5 form component types with validation states",
+      "accordions.json": "Collapsible panels (2 sizes × 2 states)",
+      "dropdowns.json": "Dropdown selectors, items, menus (12 variants)",
+      "switches.json": "Toggle switches (3 sizes × 2 states)",
+      "tags.json": "Labels and badges (7 tag types)",
+      "headers.json": "Navigation headers (5 types)",
+      "menus-banners.json": "Footer navigation and promotional banners",
+      "cards.json": "4 card types (thumbnail, payment, coin pack, provider)",
+      "modals.json": "2 modal types (informational, marketing)"
+    },
+    "templates/": {
+      "specialized-components.json": "Complex templates (burger menu, footer, specialized flows)"
+    },
+    "index.json": "This file - master catalog and quick reference",
+    "README.md": "Complete user guide",
+    "QUICK_REFERENCE.md": "One-page cheat sheet"
+  },
+  "_metadata": {
+    "extractionSource": "Figma UI kit with 35 pages",
+    "methodology": "Manual extraction using text-to-figma MCP tools",
+    "completeness": "100% - ALL 35 pages documented",
+    "status": "PRODUCTION READY - Complete UI kit documentation",
+    "version": "2.0.0",
+    "lastUpdated": "2025-10-24",
+    "pagesDocumented": [
+      "✅ Foundations (7): Colors, Typography, Spacing, Icons, Styles, Branding, Spacing & Grids",
+      "✅ Molecules (6): Buttons, Forms, Accordions, Dropdowns, Switches, Tags",
+      "✅ Organisms (4): Headers, Menus, Banners, Cards, Modals",
+      "✅ Templates (11+): Burger Menu, Footer, iOS/Android, Specialized flows (Redemption, Purchase, Loyalty, etc.)"
+    ],
+    "totalFiles": 17,
+    "totalComponents": "200+ component variants documented",
+    "usage": "Start with this index for component discovery, then reference specific .json files for detailed specs and recreation guides. All components include exact hex colors (not tokens), complete dimensions, and step-by-step recreation instructions."
+  }
+}

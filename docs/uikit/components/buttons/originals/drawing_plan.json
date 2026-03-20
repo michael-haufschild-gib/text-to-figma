@@ -1,0 +1,2966 @@
+{
+  "totalComponents": 36,
+  "components": [
+    {
+      "index": 0,
+      "originalNodeId": "992:8787",
+      "originalName": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Default",
+      "drawnName": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Default",
+        "props": {
+          "width": 180,
+          "height": 70,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 74,
+              "height": 18,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 18,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#47FFF4",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#9FFFF8",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "originalNodeId": "992:8789",
+      "originalName": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Default",
+      "drawnName": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Default",
+        "props": {
+          "width": 160,
+          "height": 64,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 66,
+              "height": 16,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 16,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#47FFF4",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#9FFFF8",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "originalNodeId": "992:8791",
+      "originalName": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Default",
+      "drawnName": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Default",
+        "props": {
+          "width": 140,
+          "height": 58,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 58,
+              "height": 14,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 14,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#47FFF4",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#9FFFF8",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "originalNodeId": "992:8793",
+      "originalName": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Default",
+      "drawnName": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Default",
+        "props": {
+          "width": 120,
+          "height": 50,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 51,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#47FFF4",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#9FFFF8",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "originalNodeId": "992:8795",
+      "originalName": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Default",
+      "drawnName": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Default",
+        "props": {
+          "width": 100,
+          "height": 42,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 51,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#47FFF4",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#9FFFF8",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "originalNodeId": "992:8797",
+      "originalName": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Disabled",
+        "props": {
+          "width": 180,
+          "height": 70,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 74,
+              "height": 18,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 18,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#0586AE",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#2BADD5",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "originalNodeId": "992:8799",
+      "originalName": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Disabled",
+        "props": {
+          "width": 160,
+          "height": 64,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50,
+          "fillColor": "#1EC0D0"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 67,
+              "height": 16,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 16,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#1EC0D0",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "originalNodeId": "992:8801",
+      "originalName": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Disabled",
+        "props": {
+          "width": 140,
+          "height": 58,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 59,
+              "height": 14,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 14,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#0586AE",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#2BADD5",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "originalNodeId": "992:8803",
+      "originalName": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Disabled",
+        "props": {
+          "width": 120,
+          "height": 50,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 51,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#0586AE",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#2BADD5",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "originalNodeId": "992:8805",
+      "originalName": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Disabled",
+        "props": {
+          "width": 100,
+          "height": 42,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 51,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#0586AE",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#2BADD5",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "originalNodeId": "992:8807",
+      "originalName": "📏 Size=XS, 🔷 Type=Secondary, 🔴 State=Default",
+      "drawnName": "📏 Size=XS, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XS, 🔷 Type=Secondary, 🔴 State=Default",
+        "props": {
+          "width": 80,
+          "height": 33.599998474121094,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 8,
+          "padding": 8,
+          "cornerRadius": 40
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 46,
+              "height": 11,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 11.199999809265137,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#47FFF4",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 1.600000023841858,
+            "strokeColor": "#9FFFF8",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "originalNodeId": "992:8809",
+      "originalName": "📏 Size=XS, 🔷 Type=Secondary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=XS, 🔷 Type=Secondary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XS, 🔷 Type=Secondary, 🔴 State=Disabled",
+        "props": {
+          "width": 80,
+          "height": 33.599998474121094,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 8,
+          "padding": 8,
+          "cornerRadius": 40
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 46,
+              "height": 11,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 11.199999809265137,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 73,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#0586AE",
+                "opacity": 1
+              },
+              {
+                "position": 0.9322916865348816,
+                "color": "#0586AE",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 1.600000023841858,
+            "strokeColor": "#2BADD5",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 12,
+      "originalNodeId": "992:8811",
+      "originalName": "📏 Size=2XL, 🔷 Type=Primary, 🔴 State=Default",
+      "drawnName": "📏 Size=2XL, 🔷 Type=Primary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=2XL, 🔷 Type=Primary, 🔴 State=Default",
+        "props": {
+          "width": 180,
+          "height": 70,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 74,
+              "height": 18,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 18,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "originalNodeId": "992:8813",
+      "originalName": "📏 Size=XL, 🔷 Type=Primary, 🔴 State=Default",
+      "drawnName": "📏 Size=XL, 🔷 Type=Primary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XL, 🔷 Type=Primary, 🔴 State=Default",
+        "props": {
+          "width": 160,
+          "height": 64,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 66,
+              "height": 16,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 16,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "originalNodeId": "992:8815",
+      "originalName": "📏 Size=LG, 🔷 Type=Primary, 🔴 State=Default",
+      "drawnName": "📏 Size=LG, 🔷 Type=Primary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=LG, 🔷 Type=Primary, 🔴 State=Default",
+        "props": {
+          "width": 140,
+          "height": 58,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 58,
+              "height": 14,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 14,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "originalNodeId": "992:8817",
+      "originalName": "📏 Size=MD, 🔷 Type=Primary, 🔴 State=Default",
+      "drawnName": "📏 Size=MD, 🔷 Type=Primary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=MD, 🔷 Type=Primary, 🔴 State=Default",
+        "props": {
+          "width": 120,
+          "height": 50,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 51,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "originalNodeId": "992:8819",
+      "originalName": "📏 Size=SM, 🔷 Type=Primary, 🔴 State=Default",
+      "drawnName": "📏 Size=SM, 🔷 Type=Primary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=SM, 🔷 Type=Primary, 🔴 State=Default",
+        "props": {
+          "width": 100,
+          "height": 42,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 51,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "originalNodeId": "992:8821",
+      "originalName": "📏 Size=XS, 🔷 Type=Primary, 🔴 State=Default",
+      "drawnName": "📏 Size=XS, 🔷 Type=Primary, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XS, 🔷 Type=Primary, 🔴 State=Default",
+        "props": {
+          "width": 80,
+          "height": 32,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 50,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 700,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 1
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 18,
+      "originalNodeId": "992:8823",
+      "originalName": "📏 Size=XS, 🔷 Type=Primary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=XS, 🔷 Type=Primary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XS, 🔷 Type=Primary, 🔴 State=Disabled",
+        "props": {
+          "width": 80,
+          "height": 32,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 50,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 700,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 0.4000000059604645
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.15000000596046448
+          }
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "originalNodeId": "992:8825",
+      "originalName": "📏 Size=SM, 🔷 Type=Primary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=SM, 🔷 Type=Primary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=SM, 🔷 Type=Primary, 🔴 State=Disabled",
+        "props": {
+          "width": 100,
+          "height": 42,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 51,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 0.4000000059604645
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.15000000596046448
+          }
+        }
+      ]
+    },
+    {
+      "index": 20,
+      "originalNodeId": "992:8827",
+      "originalName": "📏 Size=MD, 🔷 Type=Primary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=MD, 🔷 Type=Primary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=MD, 🔷 Type=Primary, 🔴 State=Disabled",
+        "props": {
+          "width": 120,
+          "height": 50,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 51,
+              "height": 12,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 0.4000000059604645
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.15000000596046448
+          }
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "originalNodeId": "992:8829",
+      "originalName": "📏 Size=LG, 🔷 Type=Primary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=LG, 🔷 Type=Primary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=LG, 🔷 Type=Primary, 🔴 State=Disabled",
+        "props": {
+          "width": 140,
+          "height": 58,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 59,
+              "height": 14,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 14,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 0.4000000059604645
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.15000000596046448
+          }
+        }
+      ]
+    },
+    {
+      "index": 22,
+      "originalNodeId": "992:8831",
+      "originalName": "📏 Size=XL, 🔷 Type=Primary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=XL, 🔷 Type=Primary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XL, 🔷 Type=Primary, 🔴 State=Disabled",
+        "props": {
+          "width": 160,
+          "height": 64,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 67,
+              "height": 16,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 16,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 0.4000000059604645
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.15000000596046448
+          }
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "originalNodeId": "992:8833",
+      "originalName": "📏 Size=2XL, 🔷 Type=Primary, 🔴 State=Disabled",
+      "drawnName": "📏 Size=2XL, 🔷 Type=Primary, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=2XL, 🔷 Type=Primary, 🔴 State=Disabled",
+        "props": {
+          "width": 180,
+          "height": 70,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 76,
+              "height": 18,
+              "color": "#FFFFFF",
+              "content": "BUTTON",
+              "fontSize": 18,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "add_gradient_fill",
+          "params": {
+            "type": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "position": 0,
+                "color": "#FF5981",
+                "opacity": 1
+              },
+              {
+                "position": 1,
+                "color": "#C83558",
+                "opacity": 1
+              }
+            ],
+            "opacity": 0.4000000059604645
+          }
+        },
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#FF7495",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.15000000596046448
+          }
+        }
+      ]
+    },
+    {
+      "index": 24,
+      "originalNodeId": "992:8835",
+      "originalName": "📏 Size=XL, 🔷 Type=Ghost, 🔴 State=Default",
+      "drawnName": "📏 Size=XL, 🔷 Type=Ghost, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XL, 🔷 Type=Ghost, 🔴 State=Default",
+        "props": {
+          "width": 160,
+          "height": 64,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 60,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 24,
+              "height": 24,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 19.499998092651367,
+                  "height": 13.500001907348633,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 6.875,
+                  "height": 12.24665355682373,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 120,
+              "height": 50,
+              "cornerRadius": 60
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 140,
+              "height": 16,
+              "color": "#25ECFF",
+              "content": "BUTTON",
+              "fontSize": 16,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 24,
+              "height": 24,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 19.500001907348633,
+                  "height": 13.499998092651367,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 6.875,
+                  "height": 12.24665355682373,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#25ECFF",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "originalNodeId": "992:8840",
+      "originalName": "📏 Size=XL, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "drawnName": "📏 Size=XL, 🔷 Type=Ghost, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XL, 🔷 Type=Ghost, 🔴 State=Disabled",
+        "props": {
+          "width": 160,
+          "height": 64,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 20,
+          "cornerRadius": 60,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 113,
+              "height": 48,
+              "cornerRadius": 60
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 120,
+              "height": 16,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 16,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 74,
+              "height": 18,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 18,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 24,
+              "height": 24,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 19.499998092651367,
+                  "height": 13.500001907348633,
+                  "cornerRadius": 0,
+                  "fillColor": "#487294"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 6.875,
+                  "height": 12.24665355682373,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 24,
+              "height": 24,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 19.500001907348633,
+                  "height": 13.499998092651367,
+                  "cornerRadius": 0,
+                  "fillColor": "#487294"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 6.875,
+                  "height": 12.24665355682373,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#76F3FF",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.4000000059604645
+          }
+        }
+      ]
+    },
+    {
+      "index": 26,
+      "originalNodeId": "992:8846",
+      "originalName": "📏 Size=2XL, 🔷 Type=Ghost, 🔴 State=Default",
+      "drawnName": "📏 Size=2XL, 🔷 Type=Ghost, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=2XL, 🔷 Type=Ghost, 🔴 State=Default",
+        "props": {
+          "width": 180,
+          "height": 70,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 33,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 114,
+              "height": 18,
+              "color": "#25ECFF",
+              "content": "BUTTON",
+              "fontSize": 18,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 38.2300910949707,
+              "height": 38.2300910949707,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 31.06194496154785,
+                  "height": 21.50442886352539,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 10.95132827758789,
+                  "height": 19.507944107055664,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 165,
+              "height": 70,
+              "cornerRadius": 95.57523345947266
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 38.2300910949707,
+              "height": 38.2300910949707,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 31.06195068359375,
+                  "height": 21.504423141479492,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 10.95132827758789,
+                  "height": 19.507944107055664,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 3.1858408451080322,
+            "strokeColor": "#25ECFF",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 27,
+      "originalNodeId": "992:8851",
+      "originalName": "📏 Size=2XL, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "drawnName": "📏 Size=2XL, 🔷 Type=Ghost, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=2XL, 🔷 Type=Ghost, 🔴 State=Disabled",
+        "props": {
+          "width": 180,
+          "height": 70,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 163,
+              "height": 67,
+              "cornerRadius": 60
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 74,
+              "height": 18,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 18,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 113,
+              "height": 18,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 18,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 24,
+              "height": 24,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 19.499998092651367,
+                  "height": 13.500001907348633,
+                  "cornerRadius": 0,
+                  "fillColor": "#487294"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 6.875,
+                  "height": 12.24665355682373,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 24,
+              "height": 24,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 19.500001907348633,
+                  "height": 13.499998092651367,
+                  "cornerRadius": 0,
+                  "fillColor": "#487294"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 6.875,
+                  "height": 12.24665355682373,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#76F3FF",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.4000000059604645
+          }
+        }
+      ]
+    },
+    {
+      "index": 28,
+      "originalNodeId": "992:8857",
+      "originalName": "📏 Size=LG, 🔷 Type=Ghost, 🔴 State=Default",
+      "drawnName": "📏 Size=LG, 🔷 Type=Ghost, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=LG, 🔷 Type=Ghost, 🔴 State=Default",
+        "props": {
+          "width": 140,
+          "height": 58,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 119,
+              "height": 42,
+              "cornerRadius": 50.4424934387207
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 20.176998138427734,
+              "height": 20.176998138427734,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.393810272216797,
+                  "height": 11.349562644958496,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.779869079589844,
+                  "height": 10.295863151550293,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 95,
+              "height": 14,
+              "color": "#25ECFF",
+              "content": "BUTTON",
+              "fontSize": 14,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 20.176998138427734,
+              "height": 20.176998138427734,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.39381217956543,
+                  "height": 11.349559783935547,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.779869079589844,
+                  "height": 10.295863151550293,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#25ECFF",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 29,
+      "originalNodeId": "992:8862",
+      "originalName": "📏 Size=LG, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "drawnName": "📏 Size=LG, 🔷 Type=Ghost, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=LG, 🔷 Type=Ghost, 🔴 State=Disabled",
+        "props": {
+          "width": 140,
+          "height": 58,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 119,
+              "height": 42,
+              "cornerRadius": 50.4424934387207
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 63,
+              "height": 15,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 15.132749557495117,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 95,
+              "height": 14,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 14,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 20.176998138427734,
+              "height": 20.176998138427734,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.393810272216797,
+                  "height": 11.349562644958496,
+                  "cornerRadius": 0,
+                  "fillColor": "#487294"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.779869079589844,
+                  "height": 10.295863151550293,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 20.176998138427734,
+              "height": 20.176998138427734,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.39381217956543,
+                  "height": 11.349559783935547,
+                  "cornerRadius": 0,
+                  "fillColor": "#487294"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.779869079589844,
+                  "height": 10.295863151550293,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#76F3FF",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.4000000059604645
+          }
+        }
+      ]
+    },
+    {
+      "index": 30,
+      "originalNodeId": "992:8868",
+      "originalName": "📏 Size=MD, 🔷 Type=Ghost, 🔴 State=Default",
+      "drawnName": "📏 Size=MD, 🔷 Type=Ghost, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=MD, 🔷 Type=Ghost, 🔴 State=Default",
+        "props": {
+          "width": 120,
+          "height": 48,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 20,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 88,
+              "height": 40,
+              "cornerRadius": 42.4778938293457
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 80,
+              "height": 12,
+              "color": "#25ECFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 16.991159439086914,
+              "height": 16.991159439086914,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 13.805315017700195,
+                  "height": 9.557528495788574,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 4.8672590255737305,
+                  "height": 8.670201301574707,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 16.991159439086914,
+              "height": 16.991159439086914,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 13.805317878723145,
+                  "height": 9.557525634765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 4.8672590255737305,
+                  "height": 8.670201301574707,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#25ECFF",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "originalNodeId": "992:8873",
+      "originalName": "📏 Size=MD, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "drawnName": "📏 Size=MD, 🔷 Type=Ghost, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=MD, 🔷 Type=Ghost, 🔴 State=Disabled",
+        "props": {
+          "width": 120,
+          "height": 50,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 90,
+              "height": 40,
+              "cornerRadius": 42.4778938293457
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 53,
+              "height": 13,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 12.743370056152344,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 80,
+              "height": 12,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 16.991159439086914,
+              "height": 16.991159439086914,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 13.805315017700195,
+                  "height": 9.557528495788574,
+                  "cornerRadius": 0,
+                  "fillColor": "#487294"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 4.8672590255737305,
+                  "height": 8.670201301574707,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 16.991159439086914,
+              "height": 16.991159439086914,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 13.805317878723145,
+                  "height": 9.557525634765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#487294"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 4.8672590255737305,
+                  "height": 8.670201301574707,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#76F3FF",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.4000000059604645
+          }
+        }
+      ]
+    },
+    {
+      "index": 32,
+      "originalNodeId": "992:8892",
+      "originalName": "📏 Size=SM, 🔷 Type=Ghost, 🔴 State=Default",
+      "drawnName": "📏 Size=SM, 🔷 Type=Ghost, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=SM, 🔷 Type=Ghost, 🔴 State=Default",
+        "props": {
+          "width": 100,
+          "height": 42,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 20.571428298950195,
+              "height": 20.571428298950195,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.714284896850586,
+                  "height": 11.571430206298828,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.892857074737549,
+                  "height": 10.49713134765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 80,
+              "height": 35,
+              "cornerRadius": 51.42857360839844
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 20.571428298950195,
+              "height": 20.571428298950195,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.71428680419922,
+                  "height": 11.571427345275879,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.892857074737549,
+                  "height": 10.49713134765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 80,
+              "height": 12,
+              "color": "#25ECFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#25ECFF",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "originalNodeId": "992:8897",
+      "originalName": "📏 Size=XS, 🔷 Type=Ghost, 🔴 State=Default",
+      "drawnName": "📏 Size=XS, 🔷 Type=Ghost, 🔴 State=Default_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XS, 🔷 Type=Ghost, 🔴 State=Default",
+        "props": {
+          "width": 80,
+          "height": 32,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 12,
+              "height": 12,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 9.749999046325684,
+                  "height": 6.750000953674316,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.892857074737549,
+                  "height": 10.49713134765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 80,
+              "height": 35,
+              "cornerRadius": 51.42857360839844
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 20.571428298950195,
+              "height": 20.571428298950195,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.71428680419922,
+                  "height": 11.571427345275879,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.892857074737549,
+                  "height": 10.49713134765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 50,
+              "height": 12,
+              "color": "#25ECFF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 700,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 1.5,
+            "strokeColor": "#25ECFF",
+            "strokeAlign": "INSIDE",
+            "opacity": 1
+          }
+        }
+      ]
+    },
+    {
+      "index": 34,
+      "originalNodeId": "992:8902",
+      "originalName": "📏 Size=XS, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "drawnName": "📏 Size=XS, 🔷 Type=Ghost, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=XS, 🔷 Type=Ghost, 🔴 State=Disabled",
+        "props": {
+          "width": 80,
+          "height": 32,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 10,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 12,
+              "height": 12,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 9.749999046325684,
+                  "height": 6.750000953674316,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.892857074737549,
+                  "height": 10.49713134765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 80,
+              "height": 35,
+              "cornerRadius": 51.42857360839844
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 20.571428298950195,
+              "height": 20.571428298950195,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.71428680419922,
+                  "height": 11.571427345275879,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.892857074737549,
+                  "height": 10.49713134765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 50,
+              "height": 12,
+              "color": "#487294",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 700,
+              "fontFamily": "Lato"
+            }
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 1.5,
+            "strokeColor": "#76F3FF",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.4000000059604645
+          }
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "originalNodeId": "992:8907",
+      "originalName": "📏 Size=SM, 🔷 Type=Ghost, 🔴 State=Disabled",
+      "drawnName": "📏 Size=SM, 🔷 Type=Ghost, 🔴 State=Disabled_Drawn_Iter1",
+      "spec": {
+        "type": "frame",
+        "name": "📏 Size=SM, 🔷 Type=Ghost, 🔴 State=Disabled",
+        "props": {
+          "width": 100,
+          "height": 42,
+          "layoutMode": "HORIZONTAL",
+          "itemSpacing": 10,
+          "padding": 20,
+          "cornerRadius": 50,
+          "fillColor": "#FFFFFF"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "arrow/left",
+            "props": {
+              "width": 20.571428298950195,
+              "height": 20.571428298950195,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.714284896850586,
+                  "height": 11.571430206298828,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.892857074737549,
+                  "height": 10.49713134765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "BUTTON",
+            "props": {
+              "width": 108,
+              "height": 12,
+              "color": "#76F3FF",
+              "content": "BUTTON",
+              "fontSize": 12,
+              "fontWeight": 900,
+              "fontFamily": "Lato"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "Shadow",
+            "props": {
+              "width": 80,
+              "height": 35,
+              "cornerRadius": 51.42857360839844
+            }
+          },
+          {
+            "type": "frame",
+            "name": "arrow/right",
+            "props": {
+              "width": 20.571428298950195,
+              "height": 20.571428298950195,
+              "cornerRadius": 0
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "vector",
+                "props": {
+                  "width": 16.71428680419922,
+                  "height": 11.571427345275879,
+                  "cornerRadius": 0,
+                  "fillColor": "#FFFFFF"
+                }
+              },
+              {
+                "type": "frame",
+                "name": "Vector",
+                "props": {
+                  "width": 5.892857074737549,
+                  "height": 10.49713134765625,
+                  "cornerRadius": 0,
+                  "fillColor": "#ECC3FF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "postProcessing": [
+        {
+          "tool": "set_stroke",
+          "params": {
+            "strokeWeight": 2,
+            "strokeColor": "#76F3FF",
+            "strokeAlign": "INSIDE",
+            "opacity": 0.4000000059604645
+          }
+        }
+      ]
+    }
+  ]
+}

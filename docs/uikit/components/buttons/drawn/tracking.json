@@ -1,0 +1,41 @@
+{
+  "completed": [
+    {
+      "index": 0,
+      "originalNodeId": "992:8787",
+      "drawnNodeId": "993:9205",
+      "drawnName": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1"
+    },
+    {
+      "index": 1,
+      "originalNodeId": "992:8789",
+      "drawnNodeId": "993:9207",
+      "drawnName": "📏 Size=XL, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1"
+    },
+    {
+      "index": 2,
+      "originalNodeId": "992:8791",
+      "drawnNodeId": "993:9209",
+      "drawnName": "📏 Size=LG, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1"
+    },
+    {
+      "index": 3,
+      "originalNodeId": "992:8793",
+      "drawnNodeId": "993:9211",
+      "drawnName": "📏 Size=MD, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1"
+    },
+    {
+      "index": 4,
+      "originalNodeId": "992:8795",
+      "drawnNodeId": "993:9213",
+      "drawnName": "📏 Size=SM, 🔷 Type=Secondary, 🔴 State=Default_Drawn_Iter1"
+    },
+    {
+      "index": 5,
+      "originalNodeId": "992:8797",
+      "drawnNodeId": "993:9215",
+      "drawnName": "📏 Size=2XL, 🔷 Type=Secondary, 🔴 State=Disabled_Drawn_Iter1"
+    }
+  ],
+  "nextToProcess": 6
+}

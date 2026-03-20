@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UI Kit Accordions",
+  "description": "Collapsible panels for organizing content sections",
+  "version": "1.0.0",
+  "extractedDate": "2025-10-24",
+  "accordion": {
+    "name": "Accordion",
+    "type": "Interactive panel",
+    "componentSetId": "1088:1384",
+    "description": "Collapsible content panel with title and expandable body",
+    "sizes": {
+      "medium": {
+        "collapsed": {
+          "width": 390,
+          "height": 48
+        },
+        "expanded": {
+          "width": 390,
+          "height": 140
+        }
+      },
+      "large": {
+        "collapsed": {
+          "width": 390,
+          "height": 56
+        },
+        "expanded": {
+          "width": 390,
+          "height": 148
+        }
+      }
+    },
+    "states": {
+      "default": {
+        "description": "Collapsed state, not interacted with",
+        "background": "#2A1139",
+        "border": "1px solid #3D1F50",
+        "titleColor": "#FFFFFF",
+        "iconRotation": 0,
+        "componentId": "1088:1383"
+      },
+      "expanded": {
+        "description": "Open state showing body content",
+        "background": "#2A1139",
+        "border": "1px solid #3D1F50",
+        "titleColor": "#FFFFFF",
+        "iconRotation": 180,
+        "bodyVisible": true,
+        "componentId": "1088:1381"
+      }
+    },
+    "structure": {
+      "header": {
+        "padding": "12px 16px (MD) / 16px (LG)",
+        "layout": "HORIZONTAL",
+        "alignment": "space-between, center",
+        "elements": [
+          {
+            "type": "text",
+            "content": "Title of the accordion",
+            "fontSize": 14,
+            "fontWeight": 600,
+            "color": "#FFFFFF"
+          },
+          {
+            "type": "icon",
+            "name": "chevron/down",
+            "size": 24,
+            "color": "#FFFFFF",
+            "rotation": "0° (collapsed) / 180° (expanded)"
+          }
+        ]
+      },
+      "body": {
+        "padding": "16px",
+        "backgroundColor": "#221134",
+        "textColor": "#CEB6D8",
+        "fontSize": 14,
+        "lineHeight": 20,
+        "display": "none (collapsed) / block (expanded)"
+      }
+    },
+    "styling": {
+      "cornerRadius": 8,
+      "background": "#2A1139",
+      "border": "1px solid #3D1F50",
+      "transition": "height 0.3s ease, icon rotation 0.3s ease"
+    }
+  },
+  "recreationGuide": {
+    "description": "How to recreate accordions using text-to-figma tools",
+    "step1_createFrame": "const accordion = create_frame({ name: 'Accordion', layoutMode: 'VERTICAL', itemSpacing: 0, width: 390, horizontalSizing: 'FIXED' });",
+    "step2_createHeader": "const header = create_frame({ name: 'Header', parentId: accordion.frameId, layoutMode: 'HORIZONTAL', itemSpacing: 0, padding: 12, horizontalSizing: 'FILL', verticalSizing: 'HUG' }); set_fills({ nodeId: header.frameId, color: '#2A1139' }); set_stroke({ nodeId: header.frameId, strokeWeight: 1, strokeColor: '#3D1F50', strokeAlign: 'INSIDE' }); set_corner_radius({ nodeId: header.frameId, radius: 8 });",
+    "step3_addTitle": "const title = create_text({ content: 'Title of the accordion', parentId: header.frameId, fontSize: 14, fontWeight: 600, color: '#FFFFFF' }); set_layout_align({ nodeId: header.frameId, primaryAxis: 'SPACE_BETWEEN', counterAxis: 'CENTER' });",
+    "step4_addIcon": "// Icon instance with chevron/down - rotates 180° when expanded",
+    "step5_createBody": "const body = create_frame({ name: 'Body', parentId: accordion.frameId, layoutMode: 'VERTICAL', padding: 16, horizontalSizing: 'FILL', verticalSizing: 'HUG' }); set_fills({ nodeId: body.frameId, color: '#221134' }); const bodyText = create_text({ content: 'Body content goes here...', parentId: body.frameId, fontSize: 14, color: '#CEB6D8' }); set_visible({ nodeId: body.frameId, visible: false }); // Hidden by default",
+    "step6_forExpanded": "// For expanded state: set_visible({ nodeId: body.frameId, visible: true }); set_rotation({ nodeId: iconId, rotation: 180 });"
+  },
+  "variants": [
+    {
+      "name": "Medium Default",
+      "size": "MD",
+      "state": "Default",
+      "height": 48,
+      "expanded": false
+    },
+    {
+      "name": "Large Default",
+      "size": "LG",
+      "state": "Default",
+      "height": 56,
+      "expanded": false
+    },
+    {
+      "name": "Medium Expanded",
+      "size": "MD",
+      "state": "Expanded",
+      "height": 140,
+      "expanded": true
+    },
+    {
+      "name": "Large Expanded",
+      "size": "LG",
+      "state": "Expanded",
+      "height": 148,
+      "expanded": true
+    }
+  ],
+  "usageExamples": {
+    "faq": "Frequently Asked Questions with collapsible answers",
+    "settings": "Settings sections grouped by category",
+    "filters": "Filter groups in search/browse interfaces",
+    "documentation": "Documentation sections with expandable content"
+  },
+  "_extraction_notes": {
+    "methodology": "Components extracted from Figma page 'Accordions' (ID: 1088:1338)",
+    "componentSetId": "1088:1384",
+    "variantProperties": ["Size (MD/LG)", "State (Default/Expanded)"],
+    "status": "COMPLETE - Accordion component documented with all states and sizes"
+  }
+}

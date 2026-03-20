@@ -73,6 +73,7 @@ figma-plugin/
 **Purpose**: Executes Figma API operations with strict type safety
 
 **Responsibilities**:
+
 - Handle commands from UI thread
 - Create and modify Figma nodes (frames, text, etc.)
 - Validate payloads before execution
@@ -82,9 +83,11 @@ figma-plugin/
 **Key Functions**:
 
 #### `createFrame(payload: CreateFramePayload): Promise<PluginResponse>`
+
 Creates a Figma frame with specified properties.
 
 **Inputs**:
+
 ```typescript
 {
   x: number;           // X position
@@ -101,12 +104,14 @@ Creates a Figma frame with specified properties.
 ```
 
 **Figma API Calls**:
+
 - `figma.createFrame()` - Creates frame node
 - `frame.resize()` - Sets dimensions
 - `frame.fills` - Sets background color
 - `figma.viewport.scrollAndZoomIntoView()` - Scrolls to frame
 
 **Returns**:
+
 ```typescript
 {
   status: 'success' | 'error';
@@ -117,9 +122,11 @@ Creates a Figma frame with specified properties.
 ```
 
 #### `createText(payload: CreateTextPayload): Promise<PluginResponse>`
+
 Creates a text node with font loading and fallback handling.
 
 **Inputs**:
+
 ```typescript
 {
   x: number;           // X position
@@ -134,6 +141,7 @@ Creates a text node with font loading and fallback handling.
 ```
 
 **Figma API Calls**:
+
 - `figma.loadFontAsync()` - Loads font (with fallback to Inter Regular)
 - `figma.createText()` - Creates text node
 - `textNode.fontName` - Sets font
@@ -141,28 +149,34 @@ Creates a text node with font loading and fallback handling.
 - `textNode.characters` - Sets text content
 
 **Error Handling**:
+
 - Font not available → Falls back to Inter Regular
 - Invalid payload → Returns error response
 - API error → Catches and returns formatted error
 
 #### `handleCommand(command: FigmaCommand): Promise<PluginResponse>`
+
 Routes commands to appropriate handlers with payload validation.
 
 **Flow**:
+
 1. Check command type using type guards
 2. Validate payload structure
 3. Call appropriate handler (createFrame/createText)
 4. Return response
 
 **Type Safety**:
+
 - Uses discriminated unions (`FigmaCommand`)
 - Runtime validation with `validate*Payload()` functions
 - TypeScript ensures exhaustive handling
 
 #### Message Handler (`figma.ui.onmessage`)
+
 Receives messages from UI thread and processes commands.
 
 **Flow**:
+
 ```typescript
 UI Thread              Main Thread
     │                      │
@@ -178,6 +192,7 @@ UI Thread              Main Thread
 ```
 
 **Error Handling**:
+
 - Invalid message format → Error response
 - Missing type/payload → Error response
 - Unknown command type → Error response
@@ -190,6 +205,7 @@ UI Thread              Main Thread
 **Purpose**: WebSocket client and user interface
 
 **Responsibilities**:
+
 - Connect to WebSocket server (ws://localhost:8080)
 - Receive commands from server
 - Forward commands to main thread
@@ -200,6 +216,7 @@ UI Thread              Main Thread
 **Key Features**:
 
 #### WebSocket Connection Management
+
 ```javascript
 const WS_URL = 'ws://localhost:8080';
 const RECONNECT_DELAY = 5000; // 5 seconds
@@ -220,6 +237,7 @@ function connect() {
 ```
 
 **Auto-Reconnect Strategy**:
+
 - Detects disconnection immediately
 - Attempts reconnection every 5 seconds
 - Shows reconnect status in UI
@@ -228,6 +246,7 @@ function connect() {
 #### Message Flow
 
 **Incoming (WebSocket → Main Thread)**:
+
 ```javascript
 ws.onmessage = (event) => {
   const command = JSON.parse(event.data);
@@ -239,13 +258,17 @@ ws.onmessage = (event) => {
   }
 
   // Forward to main thread
-  parent.postMessage({
-    pluginMessage: command
-  }, '*');
+  parent.postMessage(
+    {
+      pluginMessage: command
+    },
+    '*'
+  );
 };
 ```
 
 **Outgoing (Main Thread → WebSocket)**:
+
 ```javascript
 window.onmessage = (event) => {
   const message = event.data;
@@ -265,12 +288,14 @@ window.onmessage = (event) => {
 #### User Interface Components
 
 **Status Indicator**:
+
 - Green dot + "Connected" when active
 - Red dot + "Disconnected" when offline
 - Orange dot + "Connecting..." during reconnect
 - Animated pulse effect for visual feedback
 
 **Activity Log**:
+
 - Color-coded entries (info, success, error, warning)
 - Auto-scroll to latest entry
 - Maximum 50 entries (auto-prune oldest)
@@ -278,6 +303,7 @@ window.onmessage = (event) => {
 - Fixed height with scroll overflow
 
 **Connection Info**:
+
 - Displays WebSocket URL
 - Shows auto-reconnect status
 - Provides visual feedback for all state changes
@@ -291,6 +317,7 @@ window.onmessage = (event) => {
 **Key Types**:
 
 #### Command Types
+
 ```typescript
 type CommandType = 'create_frame' | 'create_text';
 
@@ -310,6 +337,7 @@ type FigmaCommand = CreateFrameCommand | CreateTextCommand;
 **Design Pattern**: Discriminated union for type-safe command handling
 
 #### Response Types
+
 ```typescript
 interface SuccessResponse {
   readonly status: 'success';
@@ -327,6 +355,7 @@ type PluginResponse = SuccessResponse | ErrorResponse;
 ```
 
 #### Type Guards
+
 ```typescript
 function isCreateFrameCommand(cmd: FigmaCommand): cmd is CreateFrameCommand {
   return cmd.type === 'create_frame';
@@ -340,6 +369,7 @@ function isSuccessResponse(response: PluginResponse): response is SuccessRespons
 **Purpose**: Runtime type narrowing for TypeScript type safety
 
 #### Validation Functions
+
 ```typescript
 function validateCreateFramePayload(payload: unknown): payload is CreateFramePayload {
   if (!payload || typeof payload !== 'object') return false;
@@ -378,6 +408,7 @@ function validateCreateFramePayload(payload: unknown): payload is CreateFramePay
 ```
 
 **Key Configuration**:
+
 - `api: "1.0.0"` - Figma Plugin API version
 - `main: "code.js"` - Main thread entry point (must be compiled JS)
 - `ui: "ui.html"` - UI thread HTML file
@@ -393,6 +424,7 @@ The main thread cannot make network requests. This is why the UI thread handles 
 ### UI Thread ↔ Main Thread
 
 **Direction**: UI → Main (Command)
+
 ```typescript
 {
   pluginMessage: {
@@ -403,6 +435,7 @@ The main thread cannot make network requests. This is why the UI thread handles 
 ```
 
 **Direction**: Main → UI (Response)
+
 ```typescript
 {
   type: 'response',
@@ -418,6 +451,7 @@ The main thread cannot make network requests. This is why the UI thread handles 
 ### WebSocket ↔ UI Thread
 
 **Direction**: Server → UI (Command)
+
 ```typescript
 {
   type: 'create_frame' | 'create_text',
@@ -426,6 +460,7 @@ The main thread cannot make network requests. This is why the UI thread handles 
 ```
 
 **Direction**: UI → Server (Response)
+
 ```typescript
 {
   status: 'success' | 'error',
@@ -490,11 +525,13 @@ The main thread cannot make network requests. This is why the UI thread handles 
 ## Error Handling Strategy
 
 ### Validation Errors
+
 - **Where**: Main thread, before Figma API calls
 - **How**: Runtime validation functions
 - **Response**: Error status with descriptive message
 
 Example:
+
 ```typescript
 if (!validateCreateFramePayload(command.payload)) {
   return {
@@ -506,11 +543,13 @@ if (!validateCreateFramePayload(command.payload)) {
 ```
 
 ### Figma API Errors
+
 - **Where**: During Figma API execution
 - **How**: Try-catch blocks around all API calls
 - **Response**: Error status with error message
 
 Example:
+
 ```typescript
 try {
   await figma.loadFontAsync(fontName);
@@ -521,11 +560,13 @@ try {
 ```
 
 ### WebSocket Errors
+
 - **Where**: UI thread connection handling
 - **How**: Event listeners for error/close
 - **Response**: Update UI status, trigger auto-reconnect
 
 Example:
+
 ```typescript
 ws.onerror = (error) => {
   log('WebSocket error occurred', 'error');
@@ -539,11 +580,13 @@ ws.onclose = () => {
 ```
 
 ### Message Format Errors
+
 - **Where**: UI thread message handler
 - **How**: Structure validation before forwarding
 - **Response**: Log warning, don't forward invalid messages
 
 Example:
+
 ```typescript
 if (!isValidCommand(data)) {
   log('Invalid message format received', 'warning');
@@ -556,24 +599,28 @@ if (!isValidCommand(data)) {
 ## Security Considerations
 
 ### Sandboxing
+
 - Main thread runs in restricted Figma sandbox
 - No network access from main thread
 - No file system access
 - Limited to Figma API only
 
 ### Type Safety
+
 - All payloads validated at runtime
 - TypeScript provides compile-time safety
 - No `any` types in codebase
 - Discriminated unions for exhaustive checking
 
 ### Input Validation
+
 - All numeric values checked for type
 - Optional fields validated when present
 - Colors validated for RGB range (0-1)
 - Strings validated for minimum length
 
 ### Error Isolation
+
 - Try-catch blocks prevent crashes
 - Errors don't propagate to Figma
 - Failed operations return error responses
@@ -586,6 +633,7 @@ if (!isValidCommand(data)) {
 ### Adding New Commands
 
 **1. Define types in `types.ts`**:
+
 ```typescript
 // Payload interface
 export interface CreateEllipsePayload {
@@ -602,10 +650,7 @@ export interface CreateEllipseCommand {
 }
 
 // Add to union
-export type FigmaCommand =
-  | CreateFrameCommand
-  | CreateTextCommand
-  | CreateEllipseCommand;
+export type FigmaCommand = CreateFrameCommand | CreateTextCommand | CreateEllipseCommand;
 
 // Type guard
 export function isCreateEllipseCommand(cmd: FigmaCommand): cmd is CreateEllipseCommand {
@@ -626,6 +671,7 @@ export function validateCreateEllipsePayload(payload: unknown): payload is Creat
 ```
 
 **2. Implement handler in `code.ts`**:
+
 ```typescript
 async function createEllipse(payload: CreateEllipsePayload): Promise<PluginResponse> {
   try {
@@ -651,6 +697,7 @@ async function createEllipse(payload: CreateEllipsePayload): Promise<PluginRespo
 ```
 
 **3. Add to handleCommand**:
+
 ```typescript
 if (isCreateEllipseCommand(command)) {
   if (!validateCreateEllipsePayload(command.payload)) {
@@ -665,15 +712,14 @@ if (isCreateEllipseCommand(command)) {
 ```
 
 **4. Update UI validation**:
+
 ```typescript
 function isValidCommand(data) {
   if (!data || typeof data !== 'object') return false;
   const cmd = data;
   return (
     typeof cmd.type === 'string' &&
-    (cmd.type === 'create_frame' ||
-     cmd.type === 'create_text' ||
-     cmd.type === 'create_ellipse') &&  // Add new type
+    (cmd.type === 'create_frame' || cmd.type === 'create_text' || cmd.type === 'create_ellipse') && // Add new type
     typeof cmd.payload === 'object' &&
     cmd.payload !== null
   );
@@ -685,6 +731,7 @@ function isValidCommand(data) {
 ## Build Process
 
 **TypeScript Compilation**:
+
 ```bash
 cd figma-plugin
 npm install
@@ -692,6 +739,7 @@ npm run build  # Compiles code.ts → code.js
 ```
 
 **Configuration** (`tsconfig.json`):
+
 ```json
 {
   "compilerOptions": {
@@ -709,6 +757,7 @@ npm run build  # Compiles code.ts → code.js
 ```
 
 **Key Settings**:
+
 - `strict: true` - Maximum type safety
 - `noImplicitAny: true` - No implicit any types
 - `target: ES2020` - Modern JavaScript features
@@ -719,6 +768,7 @@ npm run build  # Compiles code.ts → code.js
 ## Testing Strategy
 
 ### Manual Testing
+
 1. Load plugin in Figma
 2. Check UI shows "Disconnected" (if WebSocket server not running)
 3. Start WebSocket server
@@ -728,12 +778,14 @@ npm run build  # Compiles code.ts → code.js
 7. Check activity log shows command execution
 
 ### Integration Testing
+
 - Test command flow: WebSocket → UI → Main → Figma API → Response
 - Verify error handling for invalid payloads
 - Test reconnection logic on disconnect
 - Validate type guards and validators
 
 ### Type Testing
+
 - Compile with `npm run build` - no TypeScript errors
 - Use strict mode to catch type issues
 - Verify discriminated unions work correctly
@@ -743,17 +795,20 @@ npm run build  # Compiles code.ts → code.js
 ## Performance Characteristics
 
 **Latency**:
+
 - WebSocket message receive: ~1-5ms
 - UI → Main thread postMessage: ~1ms
 - Figma API call (createFrame): ~10-50ms
 - Total command execution: ~15-60ms
 
 **Memory**:
+
 - Plugin UI thread: ~10-20MB
 - Main thread: ~5-10MB
 - Minimal memory footprint
 
 **Concurrency**:
+
 - Handles commands sequentially (one at a time)
 - No command queuing implemented
 - WebSocket ensures ordered delivery
@@ -764,23 +819,27 @@ npm run build  # Compiles code.ts → code.js
 ## Troubleshooting
 
 ### Plugin Won't Load
+
 - Check `code.js` exists (run `npm run build`)
 - Verify manifest.json is valid JSON
 - Check Figma console for TypeScript errors
 
 ### WebSocket Won't Connect
+
 - Verify WebSocket server running on port 8080
 - Check browser console in plugin UI (right-click → Inspect)
 - Verify URL is `ws://localhost:8080`
 - Check firewall not blocking port
 
 ### Commands Not Executing
+
 - Check activity log for error messages
 - Verify command format matches types
 - Check main thread console for validation errors
 - Ensure payload validation passes
 
 ### Type Errors
+
 - Run `npm run build` to see TypeScript errors
 - Check all types imported correctly
 - Verify no `any` types used
@@ -801,6 +860,7 @@ npm run build  # Compiles code.ts → code.js
 ```
 
 **Minimal Dependencies**:
+
 - Only Figma types for development
 - No runtime dependencies
 - TypeScript for type safety
@@ -811,6 +871,7 @@ npm run build  # Compiles code.ts → code.js
 ## Future Enhancements
 
 ### Potential Additions
+
 1. **Command Queue** - Handle multiple commands concurrently
 2. **Batch Operations** - Execute multiple Figma operations atomically
 3. **Undo/Redo** - Track operations for rollback
@@ -821,6 +882,7 @@ npm run build  # Compiles code.ts → code.js
 8. **Offline Mode** - Queue commands when disconnected
 
 ### Architecture Improvements
+
 1. **State Management** - Centralized state for UI thread
 2. **Message Queue** - Buffer commands during processing
 3. **Streaming Responses** - Progress updates for long operations
@@ -837,6 +899,7 @@ The Figma plugin is a **production-ready**, **type-safe** bridge between externa
 - **Main Thread**: Figma API access, command execution, validation
 
 **Key Strengths**:
+
 - Zero `any` types - complete type safety
 - Comprehensive error handling at all layers
 - Auto-reconnect for resilient connections
@@ -844,6 +907,7 @@ The Figma plugin is a **production-ready**, **type-safe** bridge between externa
 - Clear separation of concerns
 
 **Use Cases**:
+
 - LLM-driven design generation
 - Design automation workflows
 - External tool integration

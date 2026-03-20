@@ -31,40 +31,49 @@ npm run dev
 ### Manual Step-by-Step
 
 1. **Install WebSocket Bridge dependencies**
+
    ```bash
    cd websocket-server
    npm install
    ```
 
 2. **Install MCP Server dependencies**
+
    ```bash
    cd ../mcp-server
    npm install
    ```
 
 3. **Build MCP Server**
+
    ```bash
    npm run build
    ```
 
 4. **Start WebSocket Bridge** (in separate terminal)
+
    ```bash
    cd websocket-server
    npm start
    ```
+
    - Verify: Should see "WebSocket bridge server started on port 8080"
 
 5. **Start MCP Server** (in separate terminal)
+
    ```bash
    cd mcp-server
    npm start
    ```
+
    - Verify: Should see MCP server startup messages
 
 6. **Verify Health**
+
    ```bash
    curl http://localhost:8081/health
    ```
+
    - Should return HTTP 200 with health status JSON
 
 ## Docker Compose Deployment
@@ -92,6 +101,7 @@ docker-compose down --timeout 5
 
 1. **Set Environment Variables**
    Create `.env` file:
+
    ```env
    NODE_ENV=production
    LOG_LEVEL=warn
@@ -106,16 +116,19 @@ docker-compose down --timeout 5
    ```
 
 2. **Build Production Images**
+
    ```bash
    docker-compose -f docker-compose.yml -f docker-compose.prod.yml build
    ```
 
 3. **Deploy**
+
    ```bash
    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
    ```
 
 4. **Verify Deployment**
+
    ```bash
    # Check health
    curl http://localhost:8081/health
@@ -158,6 +171,7 @@ npm prune --production
 ### 3. Configure Environment
 
 Create `/opt/text-to-figma/mcp-server/.env`:
+
 ```env
 NODE_ENV=production
 LOG_LEVEL=warn
@@ -210,27 +224,34 @@ pm2 logs websocket-bridge
 ### Health Checks
 
 1. **Liveness Check** (Is the service alive?)
+
    ```bash
    curl http://localhost:8081/live
    ```
+
    Expected: HTTP 200, `{"alive": true, "timestamp": <timestamp>}`
    - Returns 200 if service is running (even if degraded)
    - Use this for Kubernetes liveness probes
 
 2. **Readiness Check** (Is the service ready for traffic?)
+
    ```bash
    curl http://localhost:8081/ready
    ```
+
    Expected: HTTP 200, `{"ready": true, "timestamp": <timestamp>}`
    - Returns 200 only if fully operational
    - Returns 503 if Figma bridge disconnected or unhealthy
    - Use this for Kubernetes readiness probes and load balancer health checks
 
 3. **Full Health Check** (Detailed status)
+
    ```bash
    curl http://localhost:8081/health
    ```
+
    Expected: HTTP 200 with detailed health status:
+
    ```json
    {
      "status": "healthy",
@@ -259,6 +280,7 @@ pm2 logs websocket-bridge
 ### Functional Tests
 
 1. **WebSocket Connection**
+
    ```bash
    # Test WebSocket connectivity
    cd tests
@@ -368,6 +390,7 @@ See [troubleshooting.md](./troubleshooting.md) for common issues and solutions.
 ## Support
 
 For deployment issues:
+
 1. Check [troubleshooting.md](./troubleshooting.md)
 2. Review logs in detail
 3. Check health check endpoints

@@ -37,6 +37,7 @@
 To reduce inline style verbosity and improve consistency, use the new **style pattern tokens** and **utility functions**:
 
 **Style Pattern Tokens** (`stylePatternTokens` from `theme/tokens.ts`):
+
 ```tsx
 import { stylePatternTokens } from '../theme/tokens';
 
@@ -56,6 +57,7 @@ import { stylePatternTokens } from '../theme/tokens';
 ```
 
 **Utility Functions** (`theme/themeUtils.tsx`):
+
 ```tsx
 import {
   createOverlayBackground,
@@ -108,6 +110,7 @@ import {
 ```
 
 **Benefits:**
+
 - Reduces inline style duplication across components
 - Maintains consistency with theme tokens
 - Cross-platform compatible (React Native ready)
@@ -166,7 +169,7 @@ import {
 
 All exported components and hooks should include comprehensive JSDoc documentation:
 
-```tsx
+````tsx
 /**
  * Brief one-line description of the component's purpose.
  *
@@ -212,11 +215,11 @@ All exported components and hooks should include comprehensive JSDoc documentati
 export function MyComponent({ propName, onEvent }: MyComponentProps) {
   // Implementation
 }
-```
+````
 
 ### JSDoc Template for Hooks
 
-```tsx
+````tsx
 /**
  * Brief one-line description of the hook's purpose.
  *
@@ -257,11 +260,11 @@ export function MyComponent({ propName, onEvent }: MyComponentProps) {
 export function useMyHook(config: HookConfig) {
   // Implementation
 }
-```
+````
 
 ### JSDoc Template for Utility Functions
 
-```tsx
+````tsx
 /**
  * Brief one-line description of the function's purpose.
  *
@@ -286,7 +289,7 @@ export function useMyHook(config: HookConfig) {
 export function myUtility(input: string, options?: Options): Result {
   // Implementation
 }
-```
+````
 
 ### Documentation Coverage Goals
 
@@ -303,15 +306,18 @@ Configure ESLint to require JSDoc for exported declarations:
 ```json
 {
   "rules": {
-    "jsdoc/require-jsdoc": ["warn", {
-      "publicOnly": true,
-      "require": {
-        "FunctionDeclaration": true,
-        "ClassDeclaration": true,
-        "ArrowFunctionExpression": false,
-        "FunctionExpression": false
+    "jsdoc/require-jsdoc": [
+      "warn",
+      {
+        "publicOnly": true,
+        "require": {
+          "FunctionDeclaration": true,
+          "ClassDeclaration": true,
+          "ArrowFunctionExpression": false,
+          "FunctionExpression": false
+        }
       }
-    }],
+    ],
     "jsdoc/require-param": "warn",
     "jsdoc/require-returns": "warn",
     "jsdoc/require-example": "off"

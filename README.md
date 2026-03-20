@@ -45,6 +45,7 @@ You should see the plugin UI connect to WebSocket.
 ### 5. Configure Claude Desktop
 
 Edit Claude config:
+
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
@@ -71,6 +72,7 @@ Completely quit and restart Claude Desktop.
 ### 7. Test It
 
 In Claude, type:
+
 ```
 Use the text-to-figma server to create a red frame at position 100,100 with size 200x200
 ```
@@ -98,8 +100,8 @@ The MCP server exposes 60+ tools. Key ones:
 - `create_frame` - Create frames
 - `create_text` - Create text nodes
 - `set_fills` - Set node fills/colors
-- `set_size` - Resize nodes
-- `set_absolute_position` - Move nodes
+- `set_transform` - Move, resize, rotate, and scale nodes
+- `set_appearance` - Set opacity, blend mode, visibility
 - `apply_effects` - Add shadows, blurs
 - `check_wcag_contrast` - Validate color contrast
 - `validate_design_tokens` - Check design system compliance
@@ -111,6 +113,7 @@ See full list: `mcp-server/src/tools/`
 ### MCP Server
 
 Environment variables:
+
 - `WEBSOCKET_URL` - WebSocket server URL (default: `ws://localhost:8080`)
 - `NODE_ENV` - Environment (`development`|`production`)
 - `LOG_LEVEL` - Log level (`debug`|`info`|`warn`|`error`)
@@ -137,7 +140,9 @@ text-to-figma/
 ├── websocket-server/    # Bridge (JavaScript)
 │   └── server.js
 ├── figma-plugin/        # Figma plugin (TypeScript)
-│   ├── code.ts          # Main thread
+│   ├── src/
+│   │   ├── main.ts      # Entry point
+│   │   └── handlers/    # Command handlers by domain
 │   ├── ui.html          # Plugin UI
 │   └── manifest.json
 └── tests/               # Test suite

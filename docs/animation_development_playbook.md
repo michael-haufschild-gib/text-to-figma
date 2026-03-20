@@ -120,25 +120,25 @@ export function BadAnimation() {
 #### Option B: State-Driven Styles
 
 ```tsx
-const [progress, setProgress] = useState(0)
+const [progress, setProgress] = useState(0);
 
 useEffect(() => {
   const interval = setInterval(() => {
-    setProgress((prev) => Math.min(prev + 1, 100))
-  }, 16)
+    setProgress((prev) => Math.min(prev + 1, 100));
+  }, 16);
 
-  return () => clearInterval(interval)
-}, [])
+  return () => clearInterval(interval);
+}, []);
 
 return (
   <div
     style={{
       transform: `scaleX(${progress / 100})`,
       opacity: progress / 100,
-      transition: 'all 0.3s ease-out',
+      transition: 'all 0.3s ease-out'
     }}
   />
-)
+);
 ```
 
 ### Step 4: Handle Decorative Elements
@@ -207,14 +207,14 @@ style={{ opacity: isHighlighted ? 1 : 0.7 }}
 ```tsx
 // ✅ GOOD: State-based particles
 interface Particle {
-  id: number
-  x: number
-  y: number
-  delay: number
+  id: number;
+  x: number;
+  y: number;
+  delay: number;
 }
 
 function ParticleSystem() {
-  const [particles, setParticles] = useState<Particle[]>([])
+  const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
     // Generate particles
@@ -222,11 +222,11 @@ function ParticleSystem() {
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      delay: i * 50,
-    }))
+      delay: i * 50
+    }));
 
-    setParticles(newParticles)
-  }, [])
+    setParticles(newParticles);
+  }, []);
 
   return (
     <>
@@ -237,12 +237,12 @@ function ParticleSystem() {
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
-            animation: `particle-float 1s ${particle.delay}ms ease-out forwards`,
+            animation: `particle-float 1s ${particle.delay}ms ease-out forwards`
           }}
         />
       ))}
     </>
-  )
+  );
 }
 ```
 
@@ -261,11 +261,11 @@ function ProgressBar({ value }: { value: number }) {
         style={{
           transform: `scaleX(${value / 100})`,
           transformOrigin: 'left',
-          transition: 'transform 0.3s ease-out',
+          transition: 'transform 0.3s ease-out'
         }}
       />
     </div>
-  )
+  );
 }
 ```
 
@@ -273,24 +273,24 @@ function ProgressBar({ value }: { value: number }) {
 
 ```tsx
 function FloatingElement({ children, delay = 0 }) {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), delay)
-    return () => clearTimeout(timer)
-  }, [delay])
+    const timer = setTimeout(() => setIsVisible(true), delay);
+    return () => clearTimeout(timer);
+  }, [delay]);
 
   return (
     <div
       className="floating-element"
       style={{
         animation: isVisible ? 'float-up 1s ease-out forwards' : 'none',
-        opacity: 0,
+        opacity: 0
       }}
     >
       {children}
     </div>
-  )
+  );
 }
 ```
 
@@ -305,12 +305,12 @@ function AnimatedModal({ isOpen, children }) {
         animation: isOpen
           ? 'modal-enter 0.3s ease-out forwards'
           : 'modal-exit 0.2s ease-in forwards',
-        transformOrigin: 'center',
+        transformOrigin: 'center'
       }}
     >
       {children}
     </div>
-  )
+  );
 }
 ```
 
@@ -318,7 +318,7 @@ function AnimatedModal({ isOpen, children }) {
 
 ```tsx
 function AnimatedText({ text, letterDelay = 50 }) {
-  const letters = text.split('')
+  const letters = text.split('');
 
   return (
     <span className="animated-text">
@@ -328,14 +328,14 @@ function AnimatedText({ text, letterDelay = 50 }) {
           className="animated-letter"
           style={{
             animation: `letter-appear 0.3s ${i * letterDelay}ms ease-out forwards`,
-            opacity: 0,
+            opacity: 0
           }}
         >
           {letter}
         </span>
       ))}
     </span>
-  )
+  );
 }
 ```
 
@@ -389,18 +389,18 @@ If yes, you're good! If no, refactor using the patterns above.
 **React Native (Future Translation):**
 
 ```tsx
-import { Animated } from 'react-native'
+import { Animated } from 'react-native';
 
-const fadeAnim = useRef(new Animated.Value(0)).current
+const fadeAnim = useRef(new Animated.Value(0)).current;
 
 useEffect(() => {
   Animated.timing(fadeAnim, {
     toValue: 1,
     duration: 500,
-    useNativeDriver: true,
-  }).start()
-}, [])
-;<Animated.View style={{ opacity: fadeAnim }} />
+    useNativeDriver: true
+  }).start();
+}, []);
+<Animated.View style={{ opacity: fadeAnim }} />;
 ```
 
 #### Example 2: Scale Bounce
@@ -422,16 +422,16 @@ useEffect(() => {
 **React Native (Future Translation):**
 
 ```tsx
-import { MotiView } from 'moti'
-;<MotiView
+import { MotiView } from 'moti';
+<MotiView
   from={{ scale: 0 }}
   animate={{ scale: 1 }}
   transition={{
     type: 'spring',
     damping: 10,
-    stiffness: 100,
+    stiffness: 100
   }}
-/>
+/>;
 ```
 
 ---
@@ -445,16 +445,16 @@ import { MotiView } from 'moti'
 ```tsx
 useEffect(() => {
   for (let i = 0; i < 10; i++) {
-    const div = document.createElement('div')
-    container.appendChild(div)
+    const div = document.createElement('div');
+    container.appendChild(div);
   }
-}, [])
+}, []);
 ```
 
 ✅ **Right:**
 
 ```tsx
-const [elements] = useState(() => Array.from({ length: 10 }, (_, i) => ({ id: i })))
+const [elements] = useState(() => Array.from({ length: 10 }, (_, i) => ({ id: i })));
 
 return (
   <>
@@ -462,7 +462,7 @@ return (
       <div key={el.id} />
     ))}
   </>
-)
+);
 ```
 
 ### Mistake 2: Using Complex Selectors
@@ -470,17 +470,17 @@ return (
 ❌ **Wrong:**
 
 ```tsx
-const element = document.querySelector('.container > .item:first-child')
-element.style.transform = 'scale(1.2)'
+const element = document.querySelector('.container > .item:first-child');
+element.style.transform = 'scale(1.2)';
 ```
 
 ✅ **Right:**
 
 ```tsx
-const [firstItemScale, setFirstItemScale] = useState(1)
+const [firstItemScale, setFirstItemScale] = useState(1);
 
 // In your JSX
-;<div style={{ transform: `scale(${firstItemScale})` }} />
+<div style={{ transform: `scale(${firstItemScale})` }} />;
 ```
 
 ### Mistake 3: Forgetting Cleanup
@@ -489,18 +489,18 @@ const [firstItemScale, setFirstItemScale] = useState(1)
 
 ```tsx
 useEffect(() => {
-  const interval = setInterval(animate, 100)
+  const interval = setInterval(animate, 100);
   // No cleanup!
-}, [])
+}, []);
 ```
 
 ✅ **Right:**
 
 ```tsx
 useEffect(() => {
-  const interval = setInterval(animate, 100)
-  return () => clearInterval(interval) // Always cleanup!
-}, [])
+  const interval = setInterval(animate, 100);
+  return () => clearInterval(interval); // Always cleanup!
+}, []);
 ```
 
 ---

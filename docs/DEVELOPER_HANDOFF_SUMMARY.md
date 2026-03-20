@@ -16,12 +16,14 @@ This research project has produced a comprehensive, production-ready requirement
 **HTML/SVG Mental Model Layer**: Rather than having LLMs generate Figma API calls directly (which achieves only 30-40% accuracy), we enable them to "think" in HTML/CSS/SVG terms—a domain with extensive training data—then translate to Figma primitives.
 
 **Implementation via Prompt Engineering** (No fine-tuning required):
+
 - Works with **Claude Code CLI out-of-the-box** using system prompts and MCP tool descriptions
 - Leverages Claude's existing HTML/CSS/SVG training data through carefully designed prompts
 - Zero-shot and few-shot prompt strategies (Section 7.3 in main requirements)
 - All HTML/CSS → Figma API mappings embedded in system context
 
 **Validated Performance**:
+
 - **Builder.io Production Benchmark**: 80-90% HTML→Figma conversion accuracy
 - **LLM4SVG Research**: 2x accuracy improvement validates semantic approach (we apply similar principles via prompts)
 - **Prompt Strategies**: Zero-shot (26 tokens) vs Few-shot (88 tokens) optimized for Claude Code CLI
@@ -32,6 +34,7 @@ This research project has produced a comprehensive, production-ready requirement
 ## Key Documents
 
 ### 1. Main Requirements Specification
+
 **File**: `docs/synthesis-main.md`
 
 **Contents** (8 sections, 2,500+ lines):
@@ -46,9 +49,11 @@ This research project has produced a comprehensive, production-ready requirement
 8. **Quality Constraints for LLM Prompts** - System prompts and few-shot examples
 
 ### 2. HTML/SVG Mental Model Research
+
 **File**: `docs/synthesis.md`
 
 **Contents**: Deep-dive research on HTML/SVG approach including:
+
 - Complete HTML/CSS → Figma API mapping tables (11 documented mappings)
 - System prompt templates (zero-shot, few-shot, chain-of-thought)
 - Translation layer architecture analysis (3 approaches)
@@ -61,9 +66,11 @@ This research project has produced a comprehensive, production-ready requirement
 ## Implementation Approach: Progressive Enhancement
 
 ### Phase 1: Foundation + HTML Mental Model MVP (Weeks 1-2)
+
 **Target**: 70-75% accuracy with prompt-based translation
 
 **Deliverables**:
+
 - Figma plugin scaffold (two-thread architecture)
 - MCP server with 5 essential tools
 - WebSocket bridge
@@ -71,34 +78,42 @@ This research project has produced a comprehensive, production-ready requirement
 - Design constraint system (8pt grid, modular type scale)
 
 **Key Innovation**: Add HTML/CSS analogies to MCP tool descriptions
+
 ```typescript
 server.registerTool({
   name: 'create_frame',
-  description: 'Create a frame with auto-layout. Think of this as creating a <div> with display: flex in HTML/CSS.',
+  description:
+    'Create a frame with auto-layout. Think of this as creating a <div> with display: flex in HTML/CSS.'
   // ...
 });
 ```
 
 ### Phase 2: Design Quality + Few-Shot Prompting (Weeks 3-4)
+
 **Target**: 75-80% accuracy with few-shot examples
 
 **Deliverables**:
+
 - Color system (LCh, WCAG validation)
 - Typography system (modular scale, 4pt baseline)
 - Component system (variants, swapping)
 - **Few-Shot HTML Analogy Prompt** with 10 canonical examples
 
 ### Phase 3: Testing Infrastructure (Weeks 5-6)
+
 **Deliverables**:
+
 - Design token validation
 - Visual regression testing (VRT)
 - Agentic design review (15 principles)
 - CI/CD integration
 
 ### Phase 4: Advanced Features + Optional Runtime Translation (Weeks 7-8)
+
 **Target**: 80-90% accuracy if runtime translation implemented
 
 **Deliverables**:
+
 - Iterative refinement loop
 - Grid-based layout algorithm
 - Production patterns (caching, monitoring)
@@ -107,9 +122,11 @@ server.registerTool({
 **Decision Point**: Evaluate if 70-75% prompt-based accuracy meets requirements. If not, implement runtime translation for 80-90% accuracy.
 
 ### Phase 5: Polish & Optimization + Optional Hybrid (Weeks 9-12)
+
 **Target**: 90-95% accuracy if hybrid approach implemented
 
 **Deliverables**:
+
 - Performance optimization
 - Documentation (with HTML/CSS analogies)
 - Production monitoring
@@ -143,7 +160,9 @@ START: Text-to-Figma Design System
 ## Key Technical Decisions Made
 
 ### 1. HTML/CSS Mental Model as Core Strategy
+
 **Evidence**:
+
 - LLM4SVG: 2x accuracy improvement with semantic tokens [C020, C021]
 - Builder.io: 80-90% HTML→Figma conversion in production [C015]
 - Domain Adaptation: 18-19% improvement with fine-tuning [C026]
@@ -151,7 +170,9 @@ START: Text-to-Figma Design System
 **Implementation**: All LLM prompts include HTML/CSS → Figma API mappings. All MCP tool descriptions include HTML/CSS analogies.
 
 ### 2. Three Translation Architectures (Progressive)
+
 **Options**:
+
 1. **Prompt-Based** (1-2 weeks, 70-75%, simplest)
 2. **Runtime Two-Stage** (6-8 weeks, 80-90%, production-proven)
 3. **Hybrid LLM-Assisted** (10-12 weeks, 90-95%, most complex)
@@ -159,7 +180,9 @@ START: Text-to-Figma Design System
 **Decision**: Implement progressively based on accuracy requirements. Start simple, enhance if needed.
 
 ### 3. Design Constraint System
+
 **7 Parameterization Patterns**:
+
 1. 8pt grid system with 4pt baseline
 2. Modular typography scale (ratio-based)
 3. Perceptually uniform color (LCh color space)
@@ -171,7 +194,9 @@ START: Text-to-Figma Design System
 **Why**: Reduces LLM decision space from infinite to constrained, improving quality and consistency.
 
 ### 4. MCP (Model Context Protocol) as Integration Layer
+
 **Technology**: Official Anthropic MCP SDK
+
 - **Transport**: Streamable HTTP (bidirectional)
 - **Validation**: Zod schemas (TypeScript) or Pydantic (Python)
 - **Tools**: 15 core Figma operations exposed as callable functions
@@ -183,6 +208,7 @@ START: Text-to-Figma Design System
 ## Success Metrics (Validated)
 
 ### Quality Metrics
+
 - **HTML→Figma accuracy**: 80-90% (Builder.io benchmark) ✅
 - **WCAG AA compliance**: 100% (4.5:1 normal text, 3:1 large text)
 - **Token conformance**: 100% (8pt grid, modular type scale)
@@ -190,11 +216,13 @@ START: Text-to-Figma Design System
 - **Visual regression test pass rate**: >95%
 
 ### Performance Metrics
+
 - **Generation time**: <10 seconds (95th percentile)
 - **Refinement convergence**: ≤3 iterations
 - **Production uptime**: >99.5%
 
 ### Cost Metrics
+
 - **Token efficiency**: Zero-shot 26 tokens, Few-shot 88 tokens (3.4x)
 - **Cost reduction**: 51-57% with hybrid approach vs full LLM generation
 
@@ -203,11 +231,13 @@ START: Text-to-Figma Design System
 ## Evidence Quality
 
 ### Research Methodology
+
 - **Zero Hallucinations**: 100% URL verification, 68/68 claims verified
 - **Anti-Hallucination Protocol**: Verification-first workflow enforced
 - **Quality Score**: 1.0/1.0 (perfect) across all evidence
 
 ### Coverage Metrics
+
 - **Overall Coverage**: 62% in iteration 1, identified critical gaps
 - **Critical Gaps Addressed**: Prompt engineering templates, HTML/CSS mappings, translation architectures
 - **Sources**: 47 unique sources, 61.7% fully verified, 25.5% inaccessible (documented honestly)
@@ -277,6 +307,7 @@ START: Text-to-Figma Design System
 ## Reference Architecture Diagrams
 
 ### System Architecture (Three-Tier)
+
 ```
 ┌─────────────┐         ┌──────────────┐         ┌──────────────┐
 │  LLM Agent  │ ◄─────► │  MCP Server  │ ◄─────► │ WebSocket    │
@@ -293,18 +324,21 @@ START: Text-to-Figma Design System
 ### Translation Layer Options
 
 **Option 1: Prompt-Based** (Start Here)
+
 ```
 User Prompt → LLM (HTML mental model) → Figma API Calls → Figma Plugin → Design
               (Zero-Shot/Few-Shot)
 ```
 
 **Option 2: Runtime Two-Stage** (If 70-75% Insufficient)
+
 ```
 HTML/CSS → Browser DOM → layersMeta JSON → Figma Plugin → Figma Nodes
            (extract)     (intermediate)     (render)
 ```
 
 **Option 3: Hybrid** (If 80-90% Insufficient)
+
 ```
 HTML/CSS → Deterministic Parser → Ambiguous? → LLM Decision → Figma API
            (70% of cases)          (30%)        (context-aware)
@@ -317,6 +351,7 @@ HTML/CSS → Deterministic Parser → Ambiguous? → LLM Decision → Figma API
 All claims in the requirements document are traced to verified sources using citation codes [C001]-[C067]:
 
 **Example Citations**:
+
 - [C015]: Builder.io 80-90% accuracy benchmark
 - [C020]: LLM4SVG 55 semantic tokens research
 - [C021]: LLM4SVG FID score 64.11 vs 127.78
@@ -324,10 +359,12 @@ All claims in the requirements document are traced to verified sources using cit
 - [C032]: Best LLMs only 30-40% correct on direct API calls
 
 **Verification Status**:
+
 - 68 claims extracted
 - 68 claims verified (100%)
 - 0 hallucinations
 - Quality score: 1.0/1.0
+
 ---
 
 ## Conclusion
@@ -335,6 +372,7 @@ All claims in the requirements document are traced to verified sources using cit
 This research has produced a production-ready, evidence-based requirements specification for a text-to-Figma design system. The **HTML/SVG Mental Model Layer** is a validated innovation that improves LLM design generation accuracy from 30-40% to 80-90% by leveraging familiar web development patterns.
 
 **Key Differentiators**:
+
 1. **Research-Backed**: Every claim traced to verified sources
 2. **Production-Validated**: Builder.io benchmark proves 80-90% accuracy achievable
 3. **Progressive Implementation**: Can start simple (70-75%) and enhance if needed (80-90%, 90-95%)
@@ -348,5 +386,6 @@ This research has produced a production-ready, evidence-based requirements speci
 ---
 
 **Contact**: For questions about this research, refer to:
+
 - `docs/synthesis-main.md` - Main requirements document
 - `docs/synthesis.md` - HTML/SVG Mental Model deep-dive

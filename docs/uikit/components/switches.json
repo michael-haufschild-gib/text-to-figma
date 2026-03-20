@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UI Kit Switches",
+  "description": "Toggle switches for binary on/off states",
+  "version": "1.0.0",
+  "extractedDate": "2025-10-24",
+  "switch": {
+    "name": "Switch",
+    "type": "Toggle control",
+    "componentSetId": "1088:1440",
+    "description": "Binary toggle switch for on/off settings",
+    "sizes": {
+      "small": {
+        "width": 40,
+        "height": 20,
+        "knobSize": 16,
+        "padding": 2
+      },
+      "medium": {
+        "width": 48,
+        "height": 24,
+        "knobSize": 20,
+        "padding": 2
+      },
+      "large": {
+        "width": 56,
+        "height": 28,
+        "knobSize": 24,
+        "padding": 2
+      }
+    },
+    "states": {
+      "no": {
+        "description": "Off/inactive state",
+        "trackColor": "#3D1F50",
+        "knobColor": "#CEB6D8",
+        "knobPosition": "left",
+        "componentIds": {
+          "SM": "1088:1449",
+          "MD": "1088:1441",
+          "LG": "1088:1443"
+        }
+      },
+      "yes": {
+        "description": "On/active state",
+        "trackColor": "#C6FF77",
+        "knobColor": "#1D092F",
+        "knobPosition": "right",
+        "componentIds": {
+          "SM": "1088:1451",
+          "MD": "1088:1447",
+          "LG": "1088:1445"
+        }
+      }
+    },
+    "structure": {
+      "track": {
+        "description": "Background pill shape",
+        "cornerRadius": "50% (pill shape)",
+        "offColor": "#3D1F50",
+        "onColor": "#C6FF77",
+        "transition": "background-color 0.2s ease"
+      },
+      "knob": {
+        "description": "Circular toggle element",
+        "shape": "circle",
+        "offColor": "#CEB6D8",
+        "onColor": "#1D092F",
+        "offPosition": "2px from left",
+        "onPosition": "2px from right",
+        "transition": "transform 0.2s ease, background-color 0.2s ease"
+      }
+    },
+    "styling": {
+      "cornerRadius": "50% (pill shape)",
+      "transition": "0.2s ease for all properties"
+    }
+  },
+  "recreationGuide": {
+    "description": "How to recreate switches using text-to-figma tools",
+    "step1_createTrack": "const track = create_frame({ name: 'Switch Track', width: 48, height: 24, layoutMode: 'HORIZONTAL', padding: 2, horizontalSizing: 'FIXED', verticalSizing: 'FIXED' }); set_fills({ nodeId: track.frameId, color: '#3D1F50' }); // Off state set_corner_radius({ nodeId: track.frameId, radius: 12 }); // Pill shape",
+    "step2_createKnob": "const knob = create_ellipse({ width: 20, height: 20, fillColor: '#CEB6D8', parentId: track.frameId }); // Off state",
+    "step3_alignKnob": "set_layout_align({ nodeId: track.frameId, primaryAxis: 'MIN', counterAxis: 'CENTER' }); // Knob on left for off state",
+    "step4_forOnState": "// For on state: set_fills({ nodeId: track.frameId, color: '#C6FF77' }); set_fills({ nodeId: knob.nodeId, color: '#1D092F' }); set_layout_align({ nodeId: track.frameId, primaryAxis: 'MAX', counterAxis: 'CENTER' }); // Knob on right",
+    "step5_sizing": "// SM: 40×20 (knob 16×16), MD: 48×24 (knob 20×20), LG: 56×28 (knob 24×24)"
+  },
+  "variants": [
+    {
+      "size": "SM",
+      "state": "No",
+      "dimensions": "40×20",
+      "trackColor": "#3D1F50",
+      "knobColor": "#CEB6D8"
+    },
+    {
+      "size": "MD",
+      "state": "No",
+      "dimensions": "48×24",
+      "trackColor": "#3D1F50",
+      "knobColor": "#CEB6D8"
+    },
+    {
+      "size": "LG",
+      "state": "No",
+      "dimensions": "56×28",
+      "trackColor": "#3D1F50",
+      "knobColor": "#CEB6D8"
+    },
+    {
+      "size": "SM",
+      "state": "Yes",
+      "dimensions": "40×20",
+      "trackColor": "#C6FF77",
+      "knobColor": "#1D092F"
+    },
+    {
+      "size": "MD",
+      "state": "Yes",
+      "dimensions": "48×24",
+      "trackColor": "#C6FF77",
+      "knobColor": "#1D092F"
+    },
+    {
+      "size": "LG",
+      "state": "Yes",
+      "dimensions": "56×28",
+      "trackColor": "#C6FF77",
+      "knobColor": "#1D092F"
+    }
+  ],
+  "usageExamples": {
+    "settings": "Enable/disable features in settings panels",
+    "preferences": "User preference toggles (notifications, auto-play, etc.)",
+    "filters": "Binary filter toggles (show archived, include drafts, etc.)",
+    "forms": "Yes/no questions in forms"
+  },
+  "accessibility": {
+    "label": "Always provide a visible label next to the switch",
+    "ariaLabel": "Use descriptive labels (e.g., 'Enable notifications')",
+    "keyboardShortcut": "Space or Enter to toggle",
+    "focusIndicator": "Add 2px #25ECFF border on focus"
+  },
+  "_extraction_notes": {
+    "methodology": "Components extracted from Figma page 'Switches' (ID: 1088:1430)",
+    "componentSetId": "1088:1440",
+    "variantProperties": ["Size (SM/MD/LG)", "State (No/Yes)"],
+    "status": "COMPLETE - Switch component documented with all sizes and states"
+  }
+}
