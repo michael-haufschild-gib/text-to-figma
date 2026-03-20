@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "description": "WebSocket bridge server for Text-to-Figma MCP integration",
   "type": "module",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "lint": "eslint *.js",
-    "lint:fix": "eslint *.js --fix",
-    "format": "prettier --check \"*.js\"",
-    "format:fix": "prettier --write \"*.js\"",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "node --watch dist/server.js",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check \"src/**/*.ts\"",
+    "format:fix": "prettier --write \"src/**/*.ts\"",
     "audit:check": "npm audit --audit-level=moderate",
     "audit:fix": "npm audit fix"
   },
@@ -23,10 +25,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "ws": "^8.16.0"
+    "ws": "^8.19.0"
   },
   "devDependencies": {
-    "eslint": "^8.56.0",
-    "prettier": "^3.2.4"
+    "@types/ws": "^8.18.1"
   }
 }
