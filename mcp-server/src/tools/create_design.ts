@@ -133,7 +133,7 @@ interface FigmaCreateDesignResponse {
  * @param response
  */
 function isValidCreateDesignResponse(response: unknown): response is FigmaCreateDesignResponse {
-  if (!response || typeof response !== 'object') {
+  if (response === null || response === undefined || typeof response !== 'object') {
     return false;
   }
   const r = response as Record<string, unknown>;
@@ -183,13 +183,12 @@ export async function createDesign(params: CreateDesignParams): Promise<CreateDe
 
     // Register all created nodes in the node registry
     const registry = getNodeRegistry();
-    if (response.nodes && Array.isArray(response.nodes)) {
+    if (Array.isArray(response.nodes)) {
       for (const nodeInfo of response.nodes) {
-        // Validate each node info before registering
-        if (nodeInfo && typeof nodeInfo.nodeId === 'string') {
+        if (typeof nodeInfo.nodeId === 'string') {
           registry.register(nodeInfo.nodeId, {
-            type: nodeInfo.type || 'UNKNOWN',
-            name: nodeInfo.name || 'Unnamed',
+            type: typeof nodeInfo.type === 'string' ? nodeInfo.type : 'UNKNOWN',
+            name: typeof nodeInfo.name === 'string' ? nodeInfo.name : 'Unnamed',
             parentId: nodeInfo.parentId,
             children: [], // Will be populated as we register children
             bounds: nodeInfo.bounds
@@ -204,7 +203,8 @@ export async function createDesign(params: CreateDesignParams): Promise<CreateDe
       rootNodeId: response.rootNodeId,
       nodeIds: response.nodeIds,
       totalNodes: response.totalNodes,
-      message: response.message || 'Design created successfully',
+      message:
+        typeof response.message === 'string' ? response.message : 'Design created successfully',
       autoCorrections: corrections.length > 0 ? corrections : undefined
     };
   } catch (error) {

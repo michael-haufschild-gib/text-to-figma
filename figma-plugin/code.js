@@ -57,7 +57,7 @@
     }
   }
   function resolveParent(parentId) {
-    if (parentId) {
+    if (parentId !== void 0) {
       const parent = getNode(parentId);
       if (parent && "appendChild" in parent) {
         return parent;
@@ -87,27 +87,29 @@
   }
   function convertEffects(effects) {
     return effects.map((effect) => {
-      var _a;
       const type = effect.type;
       if (type === "DROP_SHADOW" || type === "INNER_SHADOW") {
-        const rgb = hexToRgb(effect.color || "#000000");
-        const opacity = (_a = effect.opacity) != null ? _a : 1;
+        const colorStr = typeof effect.color === "string" ? effect.color : "#000000";
+        const rgb = hexToRgb(colorStr);
+        const opacity = typeof effect.opacity === "number" ? effect.opacity : 1;
+        const ox = typeof effect.x === "number" ? effect.x : 0;
+        const oy = typeof effect.y === "number" ? effect.y : 0;
+        const offsetX = typeof effect.offsetX === "number" ? effect.offsetX : ox;
+        const offsetY = typeof effect.offsetY === "number" ? effect.offsetY : oy;
         return {
           type,
           color: __spreadProps(__spreadValues({}, rgb), { a: opacity }),
-          offset: {
-            x: effect.x || effect.offsetX || 0,
-            y: effect.y || effect.offsetY || 0
-          },
-          radius: effect.blur || 0,
-          spread: effect.spread || 0,
+          offset: { x: offsetX, y: offsetY },
+          radius: typeof effect.blur === "number" ? effect.blur : 0,
+          spread: typeof effect.spread === "number" ? effect.spread : 0,
           visible: true,
           blendMode: "NORMAL"
         };
       } else if (type === "LAYER_BLUR" || type === "BACKGROUND_BLUR") {
+        const radius = typeof effect.radius === "number" ? effect.radius : typeof effect.blur === "number" ? effect.blur : 0;
         return {
           type,
-          radius: effect.radius || effect.blur || 0,
+          radius,
           visible: true
         };
       }
@@ -124,10 +126,9 @@
   // src/handlers/components.ts
   function handleCreateComponent(payload) {
     const node = getNode(payload.frameId);
-    if (!node || node.type !== "FRAME")
-      throw new Error("Node must be a frame to convert to component");
+    if ((node == null ? void 0 : node.type) !== "FRAME") throw new Error("Node must be a frame to convert to component");
     const component = figma.createComponent();
-    component.name = payload.name || "Component";
+    component.name = typeof payload.name === "string" ? payload.name : "Component";
     component.resize(node.width, node.height);
     component.x = node.x;
     component.y = node.y;
@@ -136,7 +137,9 @@
       component.appendChild(child);
     }
     node.remove();
-    if (payload.description) component.description = payload.description;
+    if (typeof payload.description === "string") {
+      component.description = payload.description;
+    }
     figma.viewport.scrollAndZoomIntoView([component]);
     return {
       componentId: component.id,
@@ -146,11 +149,13 @@
   }
   function handleCreateInstance(payload) {
     const component = getNode(payload.componentId);
-    if (!component || component.type !== "COMPONENT") throw new Error("Node is not a component");
+    if ((component == null ? void 0 : component.type) !== "COMPONENT") throw new Error("Node is not a component");
     const instance = component.createInstance();
-    instance.x = payload.x || 0;
-    instance.y = payload.y || 0;
-    if (payload.name) instance.name = payload.name;
+    instance.x = typeof payload.x === "number" ? payload.x : 0;
+    instance.y = typeof payload.y === "number" ? payload.y : 0;
+    if (typeof payload.name === "string") {
+      instance.name = payload.name;
+    }
     const parent = resolveParent(payload.parentId);
     parent.appendChild(instance);
     cacheNode(instance);
@@ -162,18 +167,20 @@
   }
   function handleCreateComponentSet(payload) {
     const variantIds = payload.variantIds;
-    if (!variantIds || variantIds.length === 0)
+    if (!Array.isArray(variantIds) || variantIds.length === 0)
       throw new Error("Component set requires at least one component");
     const components = variantIds.map((id) => getNode(id)).filter((n) => n !== null && n.type === "COMPONENT");
     if (components.length === 0) throw new Error("No valid components found");
     const frame = figma.createFrame();
-    frame.name = payload.name || "Component Set";
+    frame.name = typeof payload.name === "string" ? payload.name : "Component Set";
     frame.layoutMode = "HORIZONTAL";
     frame.itemSpacing = 16;
     for (const comp of components) {
       frame.appendChild(comp);
     }
-    if (payload.description) frame.setPluginData("description", payload.description);
+    if (typeof payload.description === "string") {
+      frame.setPluginData("description", payload.description);
+    }
     figma.viewport.scrollAndZoomIntoView([frame]);
     return {
       componentSetId: frame.id,
@@ -184,7 +191,7 @@
   }
   function handleSetComponentProperties(payload) {
     const node = getNode(payload.componentId);
-    if (!node || node.type !== "COMPONENT") throw new Error("Node is not a component");
+    if ((node == null ? void 0 : node.type) !== "COMPONENT") throw new Error("Node is not a component");
     const component = node;
     const updated = [];
     if (payload.description !== void 0) {
@@ -203,21 +210,20 @@
   }
   function handleAddVariantProperty(payload) {
     const node = getNode(payload.componentSetId);
-    if (!node || node.type !== "COMPONENT_SET") throw new Error("Node is not a component set");
-    const values = payload.values || [];
+    if ((node == null ? void 0 : node.type) !== "COMPONENT_SET") throw new Error("Node is not a component set");
+    const values = Array.isArray(payload.values) ? payload.values : [];
     return {
       componentSetId: payload.componentSetId,
       propertyName: payload.propertyName,
       valueCount: values.length,
-      message: `Variant property added: ${payload.propertyName}`
+      message: `Variant property added: ${String(payload.propertyName)}`
     };
   }
   async function handleSetInstanceSwap(payload) {
     const instance = getNode(payload.instanceId);
-    if (!instance || instance.type !== "INSTANCE") throw new Error("Node is not an instance");
+    if ((instance == null ? void 0 : instance.type) !== "INSTANCE") throw new Error("Node is not an instance");
     const newComponent = getNode(payload.newComponentId);
-    if (!newComponent || newComponent.type !== "COMPONENT")
-      throw new Error("New component not found");
+    if ((newComponent == null ? void 0 : newComponent.type) !== "COMPONENT") throw new Error("New component not found");
     const mainComponent = await instance.getMainComponentAsync();
     const oldComponentId = mainComponent == null ? void 0 : mainComponent.id;
     instance.swapComponent(newComponent);
@@ -230,16 +236,31 @@
   }
 
   // src/handlers/creation.ts
+  function applyLayoutSizing(frame, payload) {
+    if (typeof payload.layoutMode !== "string" || payload.layoutMode === "NONE" || payload.parentId === void 0) {
+      return;
+    }
+    if (payload.horizontalSizing !== void 0) {
+      frame.layoutSizingHorizontal = payload.horizontalSizing;
+    } else if (payload.width === void 0) {
+      frame.layoutSizingHorizontal = "FILL";
+    }
+    if (payload.verticalSizing !== void 0) {
+      frame.layoutSizingVertical = payload.verticalSizing;
+    } else if (payload.height === void 0) {
+      frame.layoutSizingVertical = "HUG";
+    }
+  }
   function handleCreateFrame(payload) {
     const frame = figma.createFrame();
-    frame.name = payload.name || "Frame";
-    frame.x = payload.x || 0;
-    frame.y = payload.y || 0;
+    frame.name = typeof payload.name === "string" ? payload.name : "Frame";
+    frame.x = typeof payload.x === "number" ? payload.x : 0;
+    frame.y = typeof payload.y === "number" ? payload.y : 0;
     frame.fills = [];
-    if (payload.width && payload.height) {
+    if (typeof payload.width === "number" && typeof payload.height === "number") {
       frame.resize(payload.width, payload.height);
     }
-    if (payload.layoutMode && payload.layoutMode !== "NONE") {
+    if (typeof payload.layoutMode === "string" && payload.layoutMode !== "NONE") {
       frame.layoutMode = payload.layoutMode;
     }
     if (payload.itemSpacing !== void 0) {
@@ -251,42 +272,36 @@
     }
     const parent = resolveParent(payload.parentId);
     parent.appendChild(frame);
-    if (payload.layoutMode && payload.layoutMode !== "NONE" && payload.parentId) {
-      if (payload.horizontalSizing) {
-        frame.layoutSizingHorizontal = payload.horizontalSizing;
-      } else if (!payload.width) {
-        frame.layoutSizingHorizontal = "FILL";
-      }
-      if (payload.verticalSizing) {
-        frame.layoutSizingVertical = payload.verticalSizing;
-      } else if (!payload.height) {
-        frame.layoutSizingVertical = "HUG";
-      }
-    }
+    applyLayoutSizing(frame, payload);
     cacheNode(frame);
     figma.viewport.scrollAndZoomIntoView([frame]);
     return { nodeId: frame.id, message: `Frame created: ${frame.name}` };
   }
   async function handleCreateText(payload) {
-    const fontFamily = payload.fontFamily || "Inter";
-    const fontWeight = payload.fontWeight || 400;
+    const fontFamily = typeof payload.fontFamily === "string" ? payload.fontFamily : "Inter";
+    const fontWeight = typeof payload.fontWeight === "number" ? payload.fontWeight : 400;
     const fontName = await loadFont(fontFamily, fontWeight);
     const textNode = figma.createText();
     textNode.fontName = fontName;
-    textNode.characters = payload.content || "";
-    textNode.name = payload.name || "Text";
-    textNode.x = payload.x || 0;
-    textNode.y = payload.y || 0;
-    if (payload.fontSize) textNode.fontSize = payload.fontSize;
-    if (payload.color) {
+    textNode.characters = typeof payload.content === "string" ? payload.content : "";
+    textNode.name = typeof payload.name === "string" ? payload.name : "Text";
+    textNode.x = typeof payload.x === "number" ? payload.x : 0;
+    textNode.y = typeof payload.y === "number" ? payload.y : 0;
+    if (typeof payload.fontSize === "number") {
+      textNode.fontSize = payload.fontSize;
+    }
+    if (typeof payload.color === "string") {
       textNode.fills = [{ type: "SOLID", color: hexToRgb(payload.color) }];
     }
-    if (payload.textAlign)
+    if (typeof payload.textAlign === "string") {
       textNode.textAlignHorizontal = payload.textAlign;
-    if (payload.lineHeight)
+    }
+    if (typeof payload.lineHeight === "number") {
       textNode.lineHeight = { value: payload.lineHeight, unit: "PIXELS" };
-    if (payload.letterSpacing)
+    }
+    if (typeof payload.letterSpacing === "number") {
       textNode.letterSpacing = { value: payload.letterSpacing, unit: "PIXELS" };
+    }
     const parent = resolveParent(payload.parentId);
     parent.appendChild(textNode);
     cacheNode(textNode);
@@ -295,14 +310,16 @@
   }
   function handleCreateEllipse(payload) {
     const ellipse = figma.createEllipse();
-    ellipse.name = payload.name || "Ellipse";
-    ellipse.x = payload.x || 0;
-    ellipse.y = payload.y || 0;
-    ellipse.resize(payload.width || 100, payload.height || 100);
-    if (payload.fillColor) {
+    ellipse.name = typeof payload.name === "string" ? payload.name : "Ellipse";
+    ellipse.x = typeof payload.x === "number" ? payload.x : 0;
+    ellipse.y = typeof payload.y === "number" ? payload.y : 0;
+    const w = typeof payload.width === "number" ? payload.width : 100;
+    const h = typeof payload.height === "number" ? payload.height : 100;
+    ellipse.resize(w, h);
+    if (typeof payload.fillColor === "string") {
       ellipse.fills = [{ type: "SOLID", color: hexToRgb(payload.fillColor) }];
     }
-    if (payload.strokeColor && payload.strokeWeight) {
+    if (typeof payload.strokeColor === "string" && typeof payload.strokeWeight === "number") {
       ellipse.strokes = [{ type: "SOLID", color: hexToRgb(payload.strokeColor) }];
       ellipse.strokeWeight = payload.strokeWeight;
     }
@@ -314,20 +331,26 @@
   }
   function handleCreateLine(payload) {
     const line = figma.createLine();
-    line.name = payload.name || "Line";
-    const x1 = payload.x1 || 0;
-    const y1 = payload.y1 || 0;
-    const x2 = payload.x2 || 100;
-    const y2 = payload.y2 || 0;
+    line.name = typeof payload.name === "string" ? payload.name : "Line";
+    const x1 = typeof payload.x1 === "number" ? payload.x1 : 0;
+    const y1 = typeof payload.y1 === "number" ? payload.y1 : 0;
+    const x2 = typeof payload.x2 === "number" ? payload.x2 : 100;
+    const y2 = typeof payload.y2 === "number" ? payload.y2 : 0;
     line.x = Math.min(x1, x2);
     line.y = Math.min(y1, y2);
     line.resize(Math.max(Math.abs(x2 - x1), 0.01), Math.max(Math.abs(y2 - y1), 0.01));
-    if (payload.strokeColor) {
+    if (typeof payload.strokeColor === "string") {
       line.strokes = [{ type: "SOLID", color: hexToRgb(payload.strokeColor) }];
     }
-    if (payload.strokeWeight) line.strokeWeight = payload.strokeWeight;
-    if (payload.strokeCap) line.strokeCap = payload.strokeCap;
-    if (payload.dashPattern) line.dashPattern = payload.dashPattern;
+    if (typeof payload.strokeWeight === "number") {
+      line.strokeWeight = payload.strokeWeight;
+    }
+    if (typeof payload.strokeCap === "string") {
+      line.strokeCap = payload.strokeCap;
+    }
+    if (Array.isArray(payload.dashPattern)) {
+      line.dashPattern = payload.dashPattern;
+    }
     const parent = resolveParent(payload.parentId);
     parent.appendChild(line);
     cacheNode(line);
@@ -336,16 +359,16 @@
   }
   function handleCreatePolygon(payload) {
     const polygon = figma.createPolygon();
-    polygon.name = payload.name || "Polygon";
-    polygon.x = payload.x || 0;
-    polygon.y = payload.y || 0;
-    polygon.pointCount = payload.sideCount || 3;
-    const r = payload.radius || 50;
+    polygon.name = typeof payload.name === "string" ? payload.name : "Polygon";
+    polygon.x = typeof payload.x === "number" ? payload.x : 0;
+    polygon.y = typeof payload.y === "number" ? payload.y : 0;
+    polygon.pointCount = typeof payload.sideCount === "number" ? payload.sideCount : 3;
+    const r = typeof payload.radius === "number" ? payload.radius : 50;
     polygon.resize(r * 2, r * 2);
-    if (payload.fillColor) {
+    if (typeof payload.fillColor === "string") {
       polygon.fills = [{ type: "SOLID", color: hexToRgb(payload.fillColor) }];
     }
-    if (payload.strokeColor && payload.strokeWeight) {
+    if (typeof payload.strokeColor === "string" && typeof payload.strokeWeight === "number") {
       polygon.strokes = [{ type: "SOLID", color: hexToRgb(payload.strokeColor) }];
       polygon.strokeWeight = payload.strokeWeight;
     }
@@ -356,19 +379,19 @@
   }
   function handleCreateStar(payload) {
     const star = figma.createStar();
-    star.name = payload.name || "Star";
-    star.x = payload.x || 0;
-    star.y = payload.y || 0;
-    star.pointCount = payload.pointCount || 5;
-    const r = payload.radius || 50;
+    star.name = typeof payload.name === "string" ? payload.name : "Star";
+    star.x = typeof payload.x === "number" ? payload.x : 0;
+    star.y = typeof payload.y === "number" ? payload.y : 0;
+    star.pointCount = typeof payload.pointCount === "number" ? payload.pointCount : 5;
+    const r = typeof payload.radius === "number" ? payload.radius : 50;
     star.resize(r * 2, r * 2);
-    if (payload.innerRadius) {
+    if (typeof payload.innerRadius === "number") {
       star.innerRadius = payload.innerRadius / r;
     }
-    if (payload.fillColor) {
+    if (typeof payload.fillColor === "string") {
       star.fills = [{ type: "SOLID", color: hexToRgb(payload.fillColor) }];
     }
-    if (payload.strokeColor && payload.strokeWeight) {
+    if (typeof payload.strokeColor === "string" && typeof payload.strokeWeight === "number") {
       star.strokes = [{ type: "SOLID", color: hexToRgb(payload.strokeColor) }];
       star.strokeWeight = payload.strokeWeight;
     }
@@ -379,10 +402,12 @@
   }
   function handleCreateRectangleWithImageFill(payload) {
     const rect = figma.createRectangle();
-    rect.name = payload.name || "Image";
-    rect.x = payload.x || 0;
-    rect.y = payload.y || 0;
-    rect.resize(payload.width || 100, payload.height || 100);
+    rect.name = typeof payload.name === "string" ? payload.name : "Image";
+    rect.x = typeof payload.x === "number" ? payload.x : 0;
+    rect.y = typeof payload.y === "number" ? payload.y : 0;
+    const w = typeof payload.width === "number" ? payload.width : 100;
+    const h = typeof payload.height === "number" ? payload.height : 100;
+    rect.resize(w, h);
     rect.fills = [{ type: "SOLID", color: { r: 0.9, g: 0.9, b: 0.9 } }];
     const parent = resolveParent(payload.parentId);
     parent.appendChild(rect);
@@ -395,74 +420,58 @@
   }
 
   // src/handlers/design.ts
-  async function handleCreateDesign(payload) {
-    const spec = payload.spec;
-    const nodeMap = /* @__PURE__ */ new Map();
-    let nodeCounter = 0;
-    async function createNode(nodeSpec, parent) {
-      const props = nodeSpec.props || {};
-      const name = nodeSpec.name || `${nodeSpec.type}_${nodeCounter++}`;
-      let node;
-      switch (nodeSpec.type) {
-        case "frame":
-          node = createFrameNode(name, props);
-          break;
-        case "text":
-          node = await createTextNode(name, props);
-          break;
-        case "ellipse":
-          node = createEllipseNode(name, props);
-          break;
-        case "rectangle":
-          node = createRectangleNode(name, props);
-          break;
-        case "line":
-          node = createLineNode(name, props);
-          break;
-        default:
-          throw new Error(`Unsupported node type: ${nodeSpec.type}`);
-      }
-      if (parent && "appendChild" in parent) {
-        parent.appendChild(node);
-      } else {
-        figma.currentPage.appendChild(node);
-      }
-      if (props.horizontalSizing && "layoutSizingHorizontal" in node) {
-        node.layoutSizingHorizontal = props.horizontalSizing;
-      }
-      if (props.verticalSizing && "layoutSizingVertical" in node) {
-        node.layoutSizingVertical = props.verticalSizing;
-      }
-      cacheNode(node);
-      nodeMap.set(name, node);
-      if (nodeSpec.children && nodeSpec.children.length > 0 && "appendChild" in node) {
-        for (const childSpec of nodeSpec.children) {
-          await createNode(childSpec, node);
-        }
-      }
-      return node;
+  function instantiateNode(name, props, type) {
+    switch (type) {
+      case "frame":
+        return createFrameNode(name, props);
+      case "ellipse":
+        return createEllipseNode(name, props);
+      case "rectangle":
+        return createRectangleNode(name, props);
+      case "line":
+        return createLineNode(name, props);
+      default:
+        throw new Error(`Unsupported node type: ${type}`);
     }
-    let rootParent;
-    if (payload.parentId) {
-      const parentNode = await figma.getNodeByIdAsync(payload.parentId);
-      if (parentNode && "appendChild" in parentNode) {
-        rootParent = parentNode;
-      } else {
-        throw new Error(`Parent node not found or cannot contain children: ${payload.parentId}`);
+  }
+  async function buildNodeTree(nodeSpec, nodeMap, counter, parent) {
+    var _a, _b;
+    const props = (_a = nodeSpec.props) != null ? _a : {};
+    const name = (_b = nodeSpec.name) != null ? _b : `${nodeSpec.type}_${counter.value++}`;
+    const node = nodeSpec.type === "text" ? await createTextNode(name, props) : instantiateNode(name, props, nodeSpec.type);
+    if (parent && "appendChild" in parent) {
+      parent.appendChild(node);
+    } else {
+      figma.currentPage.appendChild(node);
+    }
+    if (props.horizontalSizing !== void 0 && "layoutSizingHorizontal" in node) {
+      node.layoutSizingHorizontal = props.horizontalSizing;
+    }
+    if (props.verticalSizing !== void 0 && "layoutSizingVertical" in node) {
+      node.layoutSizingVertical = props.verticalSizing;
+    }
+    cacheNode(node);
+    nodeMap.set(name, node);
+    if (nodeSpec.children !== void 0 && nodeSpec.children.length > 0 && "appendChild" in node) {
+      for (const childSpec of nodeSpec.children) {
+        await buildNodeTree(childSpec, nodeMap, counter, node);
       }
     }
-    const rootNode = await createNode(spec, rootParent);
-    figma.viewport.scrollAndZoomIntoView([rootNode]);
+    return node;
+  }
+  function buildDesignResponse(rootNode, nodeMap) {
     const nodeIds = {};
     const nodes = [];
-    nodeMap.forEach((n, nodeName) => {
+    for (const [nodeName, n] of nodeMap) {
       nodeIds[nodeName] = n.id;
       let parentId = null;
       if (n.parent) {
-        nodeMap.forEach((potentialParent) => {
-          if (potentialParent === n.parent) parentId = potentialParent.id;
-        });
-        if (!parentId && n.parent.id !== figma.currentPage.id) {
+        for (const potentialParent of nodeMap.values()) {
+          if (potentialParent === n.parent) {
+            parentId = potentialParent.id;
+          }
+        }
+        if (parentId === null && n.parent.id !== figma.currentPage.id) {
           parentId = n.parent.id;
         }
       }
@@ -473,28 +482,61 @@
         parentId,
         bounds: { x: n.x, y: n.y, width: n.width, height: n.height }
       });
-    });
-    return {
-      rootNodeId: rootNode.id,
-      nodeIds,
-      nodes,
-      totalNodes: nodeMap.size,
-      message: `Design created successfully with ${nodeMap.size} nodes`
-    };
+    }
+    return { rootNodeId: rootNode.id, nodeIds, nodes, totalNodes: nodeMap.size };
   }
-  function createFrameNode(name, props) {
-    var _a;
-    const frame = figma.createFrame();
-    frame.name = name;
-    frame.x = props.x || 0;
-    frame.y = props.y || 0;
-    frame.fills = [];
-    if (props.width) frame.resize(props.width, frame.height);
-    if (props.height) frame.resize(frame.width, props.height);
-    if (props.layoutMode && props.layoutMode !== "NONE") {
+  async function handleCreateDesign(payload) {
+    const spec = payload.spec;
+    const nodeMap = /* @__PURE__ */ new Map();
+    let rootParent;
+    if (typeof payload.parentId === "string") {
+      const parentNode = await figma.getNodeByIdAsync(payload.parentId);
+      if (parentNode !== null && "appendChild" in parentNode) {
+        rootParent = parentNode;
+      } else {
+        throw new Error(`Parent node not found or cannot contain children: ${payload.parentId}`);
+      }
+    }
+    const rootNode = await buildNodeTree(spec, nodeMap, { value: 0 }, rootParent);
+    figma.viewport.scrollAndZoomIntoView([rootNode]);
+    const response = buildDesignResponse(rootNode, nodeMap);
+    return __spreadProps(__spreadValues({}, response), { message: `Design created successfully with ${String(nodeMap.size)} nodes` });
+  }
+  function applyFrameFills(frame, props) {
+    if (Array.isArray(props.fills)) {
+      frame.fills = props.fills;
+    } else if (typeof props.fillColor === "string") {
+      const rgb = hexToRgb(props.fillColor);
+      const opacity = typeof props.fillOpacity === "number" ? props.fillOpacity : 1;
+      frame.fills = [{ type: "SOLID", color: rgb, opacity }];
+    }
+  }
+  function applyFrameStroke(frame, props) {
+    if (typeof props.strokeColor === "string") {
+      frame.strokes = [{ type: "SOLID", color: hexToRgb(props.strokeColor) }];
+      if (typeof props.strokeWeight === "number") {
+        frame.strokeWeight = props.strokeWeight;
+      }
+      if (typeof props.strokeAlign === "string") {
+        frame.strokeAlign = props.strokeAlign;
+      }
+    }
+  }
+  function applyFrameLayout(frame, props) {
+    if (typeof props.layoutMode === "string" && props.layoutMode !== "NONE") {
       frame.layoutMode = props.layoutMode;
     }
-    if (props.itemSpacing !== void 0) frame.itemSpacing = props.itemSpacing;
+    if (props.itemSpacing !== void 0) {
+      frame.itemSpacing = props.itemSpacing;
+    }
+    if (props.primaryAxisAlignItems !== void 0) {
+      frame.primaryAxisAlignItems = props.primaryAxisAlignItems;
+    }
+    if (props.counterAxisAlignItems !== void 0) {
+      frame.counterAxisAlignItems = props.counterAxisAlignItems;
+    }
+  }
+  function applyFramePadding(frame, props) {
     if (props.padding !== void 0) {
       const p = props.padding;
       frame.paddingLeft = frame.paddingRight = frame.paddingTop = frame.paddingBottom = p;
@@ -503,75 +545,98 @@
     if (props.paddingRight !== void 0) frame.paddingRight = props.paddingRight;
     if (props.paddingTop !== void 0) frame.paddingTop = props.paddingTop;
     if (props.paddingBottom !== void 0) frame.paddingBottom = props.paddingBottom;
-    if (props.primaryAxisAlignItems !== void 0)
-      frame.primaryAxisAlignItems = props.primaryAxisAlignItems;
-    if (props.counterAxisAlignItems !== void 0)
-      frame.counterAxisAlignItems = props.counterAxisAlignItems;
-    if (props.fills) {
-      frame.fills = props.fills;
-    } else if (props.fillColor) {
-      const rgb = hexToRgb(props.fillColor);
-      const opacity = (_a = props.fillOpacity) != null ? _a : 1;
-      frame.fills = [{ type: "SOLID", color: rgb, opacity }];
-    }
+  }
+  function createFrameNode(name, props) {
+    const frame = figma.createFrame();
+    frame.name = name;
+    frame.x = typeof props.x === "number" ? props.x : 0;
+    frame.y = typeof props.y === "number" ? props.y : 0;
+    frame.fills = [];
+    if (typeof props.width === "number") frame.resize(props.width, frame.height);
+    if (typeof props.height === "number") frame.resize(frame.width, props.height);
+    applyFrameLayout(frame, props);
+    applyFramePadding(frame, props);
+    applyFrameFills(frame, props);
     if (props.cornerRadius !== void 0) frame.cornerRadius = props.cornerRadius;
-    if (props.strokeColor) {
-      frame.strokes = [{ type: "SOLID", color: hexToRgb(props.strokeColor) }];
-      if (props.strokeWeight) frame.strokeWeight = props.strokeWeight;
-      if (props.strokeAlign) frame.strokeAlign = props.strokeAlign;
-    }
-    if (props.effects)
+    applyFrameStroke(frame, props);
+    if (Array.isArray(props.effects)) {
       frame.effects = convertEffects(props.effects);
+    }
     return frame;
   }
   async function createTextNode(name, props) {
-    const fontFamily = props.fontFamily || "Inter";
-    const fontWeight = props.fontWeight || 400;
+    var _a;
+    const fontFamily = typeof props.fontFamily === "string" ? props.fontFamily : "Inter";
+    const fontWeight = typeof props.fontWeight === "number" ? props.fontWeight : 400;
     const fontName = await loadFont(fontFamily, fontWeight);
     const text = figma.createText();
     text.name = name;
     text.fontName = fontName;
-    text.characters = props.content || props.text || "";
-    text.fontSize = props.fontSize || 16;
-    if (props.color) text.fills = [{ type: "SOLID", color: hexToRgb(props.color) }];
-    if (props.textAlign)
+    const content = typeof props.content === "string" ? props.content : void 0;
+    const textProp = typeof props.text === "string" ? props.text : void 0;
+    text.characters = (_a = content != null ? content : textProp) != null ? _a : "";
+    text.fontSize = typeof props.fontSize === "number" ? props.fontSize : 16;
+    if (typeof props.color === "string") {
+      text.fills = [{ type: "SOLID", color: hexToRgb(props.color) }];
+    }
+    if (typeof props.textAlign === "string") {
       text.textAlignHorizontal = props.textAlign;
-    if (props.lineHeight) text.lineHeight = { value: props.lineHeight, unit: "PIXELS" };
-    if (props.letterSpacing)
+    }
+    if (typeof props.lineHeight === "number") {
+      text.lineHeight = { value: props.lineHeight, unit: "PIXELS" };
+    }
+    if (typeof props.letterSpacing === "number") {
       text.letterSpacing = { value: props.letterSpacing, unit: "PIXELS" };
+    }
     return text;
   }
   function createEllipseNode(name, props) {
     const ellipse = figma.createEllipse();
     ellipse.name = name;
-    ellipse.resize(props.width || 100, props.height || 100);
-    if (props.fillColor)
+    const w = typeof props.width === "number" ? props.width : 100;
+    const h = typeof props.height === "number" ? props.height : 100;
+    ellipse.resize(w, h);
+    if (typeof props.fillColor === "string") {
       ellipse.fills = [{ type: "SOLID", color: hexToRgb(props.fillColor) }];
-    if (props.strokeColor) {
+    }
+    if (typeof props.strokeColor === "string") {
       ellipse.strokes = [{ type: "SOLID", color: hexToRgb(props.strokeColor) }];
-      if (props.strokeWeight) ellipse.strokeWeight = props.strokeWeight;
+      if (typeof props.strokeWeight === "number") {
+        ellipse.strokeWeight = props.strokeWeight;
+      }
     }
     return ellipse;
   }
   function createRectangleNode(name, props) {
     const rect = figma.createRectangle();
     rect.name = name;
-    rect.resize(props.width || 100, props.height || 100);
-    if (props.fillColor) rect.fills = [{ type: "SOLID", color: hexToRgb(props.fillColor) }];
-    if (props.cornerRadius !== void 0) rect.cornerRadius = props.cornerRadius;
-    if (props.strokeColor) {
+    const w = typeof props.width === "number" ? props.width : 100;
+    const h = typeof props.height === "number" ? props.height : 100;
+    rect.resize(w, h);
+    if (typeof props.fillColor === "string") {
+      rect.fills = [{ type: "SOLID", color: hexToRgb(props.fillColor) }];
+    }
+    if (props.cornerRadius !== void 0) {
+      rect.cornerRadius = props.cornerRadius;
+    }
+    if (typeof props.strokeColor === "string") {
       rect.strokes = [{ type: "SOLID", color: hexToRgb(props.strokeColor) }];
-      if (props.strokeWeight) rect.strokeWeight = props.strokeWeight;
+      if (typeof props.strokeWeight === "number") {
+        rect.strokeWeight = props.strokeWeight;
+      }
     }
     return rect;
   }
   function createLineNode(name, props) {
     const line = figma.createLine();
     line.name = name;
-    line.resize(props.width || 100, 0);
-    if (props.strokeColor) {
+    const w = typeof props.width === "number" ? props.width : 100;
+    line.resize(w, 0);
+    if (typeof props.strokeColor === "string") {
       line.strokes = [{ type: "SOLID", color: hexToRgb(props.strokeColor) }];
-      if (props.strokeWeight) line.strokeWeight = props.strokeWeight;
+      if (typeof props.strokeWeight === "number") {
+        line.strokeWeight = props.strokeWeight;
+      }
     }
     return line;
   }
@@ -581,7 +646,9 @@
     const node = getNode(payload.nodeId);
     if (!node || !("layoutMode" in node)) throw new Error("Node does not support auto-layout");
     const frame = node;
-    if (payload.layoutMode) frame.layoutMode = payload.layoutMode;
+    if (typeof payload.layoutMode === "string") {
+      frame.layoutMode = payload.layoutMode;
+    }
     if (payload.itemSpacing !== void 0) frame.itemSpacing = payload.itemSpacing;
     if (payload.padding !== void 0) {
       const p = payload.padding;
@@ -594,10 +661,12 @@
     if (!node || !("primaryAxisAlignItems" in node))
       throw new Error("Node does not support layout alignment");
     const frame = node;
-    if (payload.primaryAxis)
+    if (typeof payload.primaryAxis === "string") {
       frame.primaryAxisAlignItems = payload.primaryAxis;
-    if (payload.counterAxis)
+    }
+    if (typeof payload.counterAxis === "string") {
       frame.counterAxisAlignItems = payload.counterAxis;
+    }
     return { nodeId: payload.nodeId, message: "Layout alignment set successfully" };
   }
   function handleSetLayoutSizing(payload) {
@@ -605,24 +674,29 @@
     if (!node || !("layoutSizingHorizontal" in node))
       throw new Error("Node does not support layout sizing");
     const frame = node;
-    if (payload.horizontal)
+    if (typeof payload.horizontal === "string") {
       frame.layoutSizingHorizontal = payload.horizontal;
-    if (payload.vertical) frame.layoutSizingVertical = payload.vertical;
+    }
+    if (typeof payload.vertical === "string") {
+      frame.layoutSizingVertical = payload.vertical;
+    }
     return { nodeId: payload.nodeId, message: "Layout sizing set successfully" };
   }
   function handleSetConstraints(payload) {
     const node = getNode(payload.nodeId);
     if (!node || !("constraints" in node)) throw new Error("Node does not support constraints");
+    const h = typeof payload.horizontal === "string" ? payload.horizontal : "MIN";
+    const v = typeof payload.vertical === "string" ? payload.vertical : "MIN";
     node.constraints = {
-      horizontal: payload.horizontal || "MIN",
-      vertical: payload.vertical || "MIN"
+      horizontal: h,
+      vertical: v
     };
     return {
       nodeId: payload.nodeId,
       applied: [
-        payload.horizontal ? `horizontal: ${payload.horizontal}` : "",
-        payload.vertical ? `vertical: ${payload.vertical}` : ""
-      ].filter(Boolean),
+        typeof payload.horizontal === "string" ? `horizontal: ${payload.horizontal}` : "",
+        typeof payload.vertical === "string" ? `vertical: ${payload.vertical}` : ""
+      ].filter((s) => s !== ""),
       message: "Constraints applied successfully"
     };
   }
@@ -667,7 +741,7 @@
     const nodes = nodeIds.map((id) => getNode(id)).filter((n) => n !== null);
     if (nodes.length < 2) throw new Error("At least 2 valid nodes required for alignment");
     const alignment = payload.alignment;
-    const alignTo = payload.alignTo || "SELECTION_BOUNDS";
+    const alignTo = typeof payload.alignTo === "string" ? payload.alignTo : "SELECTION_BOUNDS";
     const referenceValue = computeAlignmentReference(nodes, alignment, alignTo);
     for (const node of nodes) {
       const { width, height } = getNodeDimensions(node);
@@ -692,28 +766,12 @@
           break;
       }
     }
-    return { message: `Aligned ${nodes.length} nodes to ${alignment}` };
+    return { message: `Aligned ${String(nodes.length)} nodes to ${alignment}` };
   }
   function computeAlignmentReference(nodes, alignment, alignTo) {
-    const refNode = alignTo === "LAST" ? nodes[nodes.length - 1] : nodes[0];
     if (alignTo === "FIRST" || alignTo === "LAST") {
-      const { width, height } = getNodeDimensions(refNode);
-      switch (alignment) {
-        case "LEFT":
-          return refNode.x;
-        case "CENTER_H":
-          return refNode.x + width / 2;
-        case "RIGHT":
-          return refNode.x + width;
-        case "TOP":
-          return refNode.y;
-        case "CENTER_V":
-          return refNode.y + height / 2;
-        case "BOTTOM":
-          return refNode.y + height;
-        default:
-          return 0;
-      }
+      const refNode = alignTo === "LAST" ? nodes[nodes.length - 1] : nodes[0];
+      return computeRefFromNode(refNode, alignment);
     }
     const bounds = nodes.map((n) => __spreadValues({ x: n.x, y: n.y }, getNodeDimensions(n)));
     const minX = Math.min(...bounds.map((b) => b.x));
@@ -737,12 +795,31 @@
         return 0;
     }
   }
+  function computeRefFromNode(refNode, alignment) {
+    const { width, height } = getNodeDimensions(refNode);
+    switch (alignment) {
+      case "LEFT":
+        return refNode.x;
+      case "CENTER_H":
+        return refNode.x + width / 2;
+      case "RIGHT":
+        return refNode.x + width;
+      case "TOP":
+        return refNode.y;
+      case "CENTER_V":
+        return refNode.y + height / 2;
+      case "BOTTOM":
+        return refNode.y + height;
+      default:
+        return 0;
+    }
+  }
   function handleDistributeNodes(payload) {
     const nodeIds = payload.nodeIds;
     const nodes = nodeIds.map((id) => getNode(id)).filter((n) => n !== null);
     if (nodes.length < 3) throw new Error("At least 3 valid nodes required for distribution");
     const axis = payload.axis;
-    const method = payload.method || "SPACING";
+    const method = typeof payload.method === "string" ? payload.method : "SPACING";
     nodes.sort((a, b) => axis === "HORIZONTAL" ? a.x - b.x : a.y - b.y);
     const first = nodes[0];
     const last = nodes[nodes.length - 1];
@@ -765,7 +842,7 @@
     }
     return {
       spacing,
-      message: `Distributed ${nodes.length} nodes ${axis === "HORIZONTAL" ? "horizontally" : "vertically"} with ${spacing.toFixed(1)}px spacing`
+      message: `Distributed ${String(nodes.length)} nodes ${axis === "HORIZONTAL" ? "horizontally" : "vertically"} with ${spacing.toFixed(1)}px spacing`
     };
   }
   function distributeByCenters(nodes, first, last, axis) {
@@ -778,16 +855,33 @@
       const targetCenter = firstCenter + spacing * i;
       nodes[i][pos] = targetCenter - getNodeDimensions(nodes[i])[dim] / 2;
     }
-    return { spacing, message: `Distributed ${nodes.length} nodes by centers` };
+    return { spacing, message: `Distributed ${String(nodes.length)} nodes by centers` };
+  }
+  function applyOverlapOffset(pos, overlap, targetAnchor, sourceAnchor) {
+    let { x, y } = pos;
+    if (targetAnchor.includes("TOP") && sourceAnchor.includes("BOTTOM")) y += overlap;
+    else if (targetAnchor.includes("BOTTOM") && sourceAnchor.includes("TOP")) y -= overlap;
+    else if (targetAnchor.includes("LEFT") && sourceAnchor.includes("RIGHT")) x += overlap;
+    else if (targetAnchor.includes("RIGHT") && sourceAnchor.includes("LEFT")) x -= overlap;
+    return { x, y };
+  }
+  function tryUnion(source, target) {
+    try {
+      const booleanNode = figma.union([source, target], figma.currentPage);
+      return { merged: true, newNodeId: booleanNode.id };
+    } catch (e) {
+      console.warn("Union operation failed:", e);
+      return { merged: false };
+    }
   }
   function handleConnectShapes(payload) {
     const sourceNode = getNode(payload.sourceNodeId);
     const targetNode = getNode(payload.targetNodeId);
     if (!sourceNode || !targetNode) throw new Error("Source or target node not found");
-    const method = payload.method || "POSITION_OVERLAP";
-    const overlap = payload.overlap || 5;
-    const targetAnchor = payload.targetAnchor || "CENTER";
-    const sourceAnchor = payload.sourceAnchor || "CENTER";
+    const method = typeof payload.method === "string" ? payload.method : "POSITION_OVERLAP";
+    const overlap = typeof payload.overlap === "number" ? payload.overlap : 5;
+    const targetAnchor = typeof payload.targetAnchor === "string" ? payload.targetAnchor : "CENTER";
+    const sourceAnchor = typeof payload.sourceAnchor === "string" ? payload.sourceAnchor : "CENTER";
     const targetDims = getNodeDimensions(targetNode);
     const sourceDims = getNodeDimensions(sourceNode);
     const targetPos = anchorPosition(
@@ -797,7 +891,7 @@
       targetDims.height,
       targetAnchor
     );
-    let { x: sx, y: sy } = anchorOffset(
+    let sourcePos = anchorOffset(
       targetPos.x,
       targetPos.y,
       sourceDims.width,
@@ -805,23 +899,14 @@
       sourceAnchor
     );
     if (method === "POSITION_OVERLAP" || method === "UNION") {
-      if (targetAnchor.includes("TOP") && sourceAnchor.includes("BOTTOM")) sy += overlap;
-      else if (targetAnchor.includes("BOTTOM") && sourceAnchor.includes("TOP")) sy -= overlap;
-      else if (targetAnchor.includes("LEFT") && sourceAnchor.includes("RIGHT")) sx += overlap;
-      else if (targetAnchor.includes("RIGHT") && sourceAnchor.includes("LEFT")) sx -= overlap;
+      sourcePos = applyOverlapOffset(sourcePos, overlap, targetAnchor, sourceAnchor);
     }
-    sourceNode.x = sx;
-    sourceNode.y = sy;
+    sourceNode.x = sourcePos.x;
+    sourceNode.y = sourcePos.y;
     let merged = false;
     let newNodeId;
     if (method === "UNION" && payload.unionResult !== false) {
-      try {
-        const booleanNode = figma.union([sourceNode, targetNode], figma.currentPage);
-        newNodeId = booleanNode.id;
-        merged = true;
-      } catch (e) {
-        console.warn("Union operation failed:", e);
-      }
+      ({ merged, newNodeId } = tryUnion(sourceNode, targetNode));
     }
     return {
       merged,
@@ -830,6 +915,7 @@
     };
   }
   function anchorPosition(x, y, w, h, anchor) {
+    var _a;
     const positions = {
       TOP_LEFT: { x, y },
       TOP: { x: x + w / 2, y },
@@ -841,9 +927,10 @@
       BOTTOM: { x: x + w / 2, y: y + h },
       BOTTOM_RIGHT: { x: x + w, y: y + h }
     };
-    return positions[anchor] || positions.CENTER;
+    return (_a = positions[anchor]) != null ? _a : positions.CENTER;
   }
   function anchorOffset(tx, ty, sw, sh, anchor) {
+    var _a;
     const offsets = {
       TOP_LEFT: { x: tx, y: ty },
       TOP: { x: tx - sw / 2, y: ty },
@@ -855,14 +942,14 @@
       BOTTOM: { x: tx - sw / 2, y: ty - sh },
       BOTTOM_RIGHT: { x: tx - sw, y: ty - sh }
     };
-    return offsets[anchor] || offsets.CENTER;
+    return (_a = offsets[anchor]) != null ? _a : offsets.CENTER;
   }
   function handleAddLayoutGrid(payload) {
     const node = getNode(payload.nodeId);
     if (!node || !("layoutGrids" in node)) throw new Error("Node does not support layout grids");
     const frame = node;
-    const pattern = payload.pattern || "COLUMNS";
-    const gridColor = payload.color ? __spreadProps(__spreadValues({}, hexToRgb(payload.color)), { a: 0.1 }) : { r: 1, g: 0, b: 0, a: 0.1 };
+    const pattern = typeof payload.pattern === "string" ? payload.pattern : "COLUMNS";
+    const gridColor = typeof payload.color === "string" ? __spreadProps(__spreadValues({}, hexToRgb(payload.color)), { a: 0.1 }) : { r: 1, g: 0, b: 0, a: 0.1 };
     let grid;
     let responseCount;
     let responseGutter;
@@ -870,18 +957,18 @@
     if (pattern === "GRID") {
       grid = {
         pattern: "GRID",
-        sectionSize: payload.sectionSize || 64,
+        sectionSize: typeof payload.sectionSize === "number" ? payload.sectionSize : 64,
         visible: payload.visible !== false,
         color: gridColor
       };
     } else {
-      const count = payload.count || 12;
-      const gutterSize = payload.gutter || 16;
-      const offset = payload.margin || 0;
-      const alignment = payload.alignment || "MIN";
+      const count = typeof payload.count === "number" ? payload.count : 12;
+      const gutterSize = typeof payload.gutter === "number" ? payload.gutter : 16;
+      const offset = typeof payload.margin === "number" ? payload.margin : 0;
+      const alignment = typeof payload.alignment === "string" ? payload.alignment : "MIN";
       grid = {
         pattern,
-        sectionSize: payload.sectionSize || 64,
+        sectionSize: typeof payload.sectionSize === "number" ? payload.sectionSize : 64,
         visible: payload.visible !== false,
         color: gridColor,
         alignment,
@@ -1093,7 +1180,9 @@
     const paintStyle = figma.createPaintStyle();
     paintStyle.name = payload.name;
     paintStyle.paints = [{ type: "SOLID", color: hexToRgb(payload.color) }];
-    if (payload.description) paintStyle.description = payload.description;
+    if (typeof payload.description === "string") {
+      paintStyle.description = payload.description;
+    }
     return {
       styleId: paintStyle.id,
       name: paintStyle.name,
@@ -1104,18 +1193,26 @@
   async function handleCreateTextStyle(payload) {
     const textStyle = figma.createTextStyle();
     textStyle.name = payload.name;
-    const fontFamily = payload.fontFamily || "Inter";
-    const fontWeight = payload.fontWeight || 400;
+    const fontFamily = typeof payload.fontFamily === "string" ? payload.fontFamily : "Inter";
+    const fontWeight = typeof payload.fontWeight === "number" ? payload.fontWeight : 400;
     const fontName = await loadFont(fontFamily, fontWeight);
     textStyle.fontName = fontName;
     textStyle.fontSize = payload.fontSize;
-    if (payload.lineHeight)
+    if (typeof payload.lineHeight === "number") {
       textStyle.lineHeight = { value: payload.lineHeight, unit: "PIXELS" };
-    if (payload.letterSpacing)
+    }
+    if (typeof payload.letterSpacing === "number") {
       textStyle.letterSpacing = { value: payload.letterSpacing, unit: "PIXELS" };
-    if (payload.textCase) textStyle.textCase = payload.textCase;
-    if (payload.textDecoration) textStyle.textDecoration = payload.textDecoration;
-    if (payload.description) textStyle.description = payload.description;
+    }
+    if (typeof payload.textCase === "string") {
+      textStyle.textCase = payload.textCase;
+    }
+    if (typeof payload.textDecoration === "string") {
+      textStyle.textDecoration = payload.textDecoration;
+    }
+    if (typeof payload.description === "string") {
+      textStyle.description = payload.description;
+    }
     return {
       styleId: textStyle.id,
       name: textStyle.name,
@@ -1129,7 +1226,9 @@
     effectStyle.name = payload.name;
     const effects = convertEffects(payload.effects);
     effectStyle.effects = effects;
-    if (payload.description) effectStyle.description = payload.description;
+    if (typeof payload.description === "string") {
+      effectStyle.description = payload.description;
+    }
     return {
       styleId: effectStyle.id,
       name: effectStyle.name,
@@ -1142,25 +1241,25 @@
     if (!node || !("fillStyleId" in node)) throw new Error("Node does not support fill styles");
     const styles = await figma.getLocalPaintStylesAsync();
     const style = styles.find((s) => s.name === payload.styleName);
-    if (!style) throw new Error(`Fill style not found: ${payload.styleName}`);
+    if (!style) throw new Error(`Fill style not found: ${String(payload.styleName)}`);
     await node.setFillStyleIdAsync(style.id);
     return {
       nodeId: payload.nodeId,
       styleName: payload.styleName,
-      message: `Fill style applied: ${payload.styleName}`
+      message: `Fill style applied: ${String(payload.styleName)}`
     };
   }
   async function handleApplyTextStyle(payload) {
     const node = getNode(payload.nodeId);
-    if (!node || node.type !== "TEXT") throw new Error("Node is not a text node");
+    if ((node == null ? void 0 : node.type) !== "TEXT") throw new Error("Node is not a text node");
     const styles = await figma.getLocalTextStylesAsync();
     const style = styles.find((s) => s.name === payload.styleName);
-    if (!style) throw new Error(`Text style not found: ${payload.styleName}`);
+    if (!style) throw new Error(`Text style not found: ${String(payload.styleName)}`);
     await node.setTextStyleIdAsync(style.id);
     return {
       nodeId: payload.nodeId,
       styleName: payload.styleName,
-      message: `Text style applied: ${payload.styleName}`
+      message: `Text style applied: ${String(payload.styleName)}`
     };
   }
   async function handleApplyEffectStyle(payload) {
@@ -1168,32 +1267,31 @@
     if (!node || !("effectStyleId" in node)) throw new Error("Node does not support effect styles");
     const styles = await figma.getLocalEffectStylesAsync();
     const style = styles.find((s) => s.name === payload.styleName);
-    if (!style) throw new Error(`Effect style not found: ${payload.styleName}`);
+    if (!style) throw new Error(`Effect style not found: ${String(payload.styleName)}`);
     await node.setEffectStyleIdAsync(style.id);
     return {
       nodeId: payload.nodeId,
       styleName: payload.styleName,
-      message: `Effect style applied: ${payload.styleName}`
+      message: `Effect style applied: ${String(payload.styleName)}`
     };
   }
 
   // src/handlers/styling.ts
   function handleSetFills(payload) {
-    var _a;
     const node = getNode(payload.nodeId);
     if (!node || !("fills" in node)) throw new Error("Node not found or does not support fills");
-    if (payload.color) {
+    if (typeof payload.color === "string") {
       const rgb = hexToRgb(payload.color);
-      const opacity = (_a = payload.opacity) != null ? _a : 1;
+      const opacity = typeof payload.opacity === "number" ? payload.opacity : 1;
       node.fills = [{ type: "SOLID", color: rgb, opacity }];
-    } else if (payload.fills) {
+    } else if (Array.isArray(payload.fills)) {
       node.fills = payload.fills;
     }
     return { nodeId: payload.nodeId, message: "Fills applied successfully" };
   }
   function handleSetCornerRadius(payload) {
     const node = getNode(payload.nodeId);
-    if (!node) throw new Error(`Node not found: ${payload.nodeId}`);
+    if (!node) throw new Error(`Node not found: ${String(payload.nodeId)}`);
     if (!("cornerRadius" in node))
       throw new Error(`Node does not support corner radius (type: ${node.type})`);
     const rectNode = node;
@@ -1209,35 +1307,37 @@
     return { nodeId: payload.nodeId, message: "Corner radius applied successfully" };
   }
   function handleSetStroke(payload) {
-    var _a;
     const node = getNode(payload.nodeId);
-    if (!node) throw new Error(`Node not found: ${payload.nodeId}`);
+    if (!node) throw new Error(`Node not found: ${String(payload.nodeId)}`);
     if (!("strokes" in node)) throw new Error(`Node does not support strokes (type: ${node.type})`);
     const geoNode = node;
-    if (payload.strokeColor) {
+    if (typeof payload.strokeColor === "string") {
       const rgb = hexToRgb(payload.strokeColor);
-      const opacity = (_a = payload.opacity) != null ? _a : 1;
+      const opacity = typeof payload.opacity === "number" ? payload.opacity : 1;
       geoNode.strokes = [{ type: "SOLID", color: rgb, opacity }];
     }
     if (payload.strokeWeight !== void 0) geoNode.strokeWeight = payload.strokeWeight;
-    if (payload.strokeAlign)
+    if (typeof payload.strokeAlign === "string") {
       geoNode.strokeAlign = payload.strokeAlign;
-    if (payload.dashPattern) geoNode.dashPattern = payload.dashPattern;
+    }
+    if (Array.isArray(payload.dashPattern)) {
+      geoNode.dashPattern = payload.dashPattern;
+    }
     return { nodeId: payload.nodeId, message: "Stroke applied successfully" };
   }
   function handleSetAppearance(payload) {
     const node = getNode(payload.nodeId);
     if (!node) throw new Error("Node not found");
-    if (payload.blendMode && "blendMode" in node) {
+    if (typeof payload.blendMode === "string" && "blendMode" in node) {
       node.blendMode = payload.blendMode;
     }
     if (payload.opacity !== void 0 && "opacity" in node) {
       node.opacity = payload.opacity;
     }
-    if (payload.clipping && "clipsContent" in node) {
+    if (payload.clipping !== void 0 && "clipsContent" in node) {
       const clipping = payload.clipping;
       const frameNode = node;
-      if (clipping.useMask) {
+      if (clipping.useMask === true) {
         frameNode.clipsContent = true;
         if ("children" in node && node.children.length > 0) {
           node.children[0].isMask = true;
@@ -1281,15 +1381,17 @@
   }
   function handleAddGradientFill(payload) {
     const node = getNode(payload.nodeId);
-    if (!node) throw new Error(`Node not found: ${payload.nodeId}`);
+    if (!node) throw new Error(`Node not found: ${String(payload.nodeId)}`);
     if (!("fills" in node)) throw new Error(`Node type ${node.type} does not support fills`);
     const gradientType = payload.type === "RADIAL" ? "GRADIENT_RADIAL" : "GRADIENT_LINEAR";
     const stops = payload.stops.map((stop) => ({
       position: stop.position,
-      color: __spreadProps(__spreadValues({}, hexToRgb(stop.color)), { a: stop.opacity || 1 })
+      color: __spreadProps(__spreadValues({}, hexToRgb(stop.color)), {
+        a: typeof stop.opacity === "number" ? stop.opacity : 1
+      })
     }));
     let gradientTransform;
-    if (payload.gradientTransform) {
+    if (Array.isArray(payload.gradientTransform)) {
       gradientTransform = payload.gradientTransform;
     } else if (gradientType === "GRADIENT_LINEAR" && payload.angle !== void 0) {
       const angleRad = payload.angle * Math.PI / 180;
@@ -1320,40 +1422,38 @@
     };
   }
   function handleSetImageFill(payload) {
-    var _a;
     const node = getNode(payload.nodeId);
     if (!node || !("fills" in node)) throw new Error("Node does not support fills");
-    if (payload.imageBytes) {
-      let bytes;
-      if (Array.isArray(payload.imageBytes)) {
-        bytes = new Uint8Array(payload.imageBytes);
-      } else if (typeof payload.imageBytes === "string") {
-        throw new Error(
-          "Base64 strings not supported in plugin main thread. Please send image data as a byte array."
-        );
-      } else {
-        throw new Error("imageBytes must be an array of numbers or Uint8Array");
-      }
+    if (Array.isArray(payload.imageBytes)) {
+      const bytes = new Uint8Array(payload.imageBytes);
       const imageHash = figma.createImage(bytes).hash;
+      const scaleMode = typeof payload.scaleMode === "string" ? payload.scaleMode : "FILL";
+      const opacity = typeof payload.opacity === "number" ? payload.opacity : 1;
       const imageFill = {
         type: "IMAGE",
         imageHash,
-        scaleMode: payload.scaleMode || "FILL",
-        opacity: (_a = payload.opacity) != null ? _a : 1
+        scaleMode,
+        opacity
       };
       node.fills = [imageFill];
       return {
         nodeId: payload.nodeId,
-        scaleMode: payload.scaleMode || "FILL",
-        opacity: payload.opacity || 1,
+        scaleMode,
+        opacity,
         message: "Image fill applied successfully from byte array"
       };
-    } else if (payload.imageUrl) {
+    } else if (typeof payload.imageBytes === "string") {
+      throw new Error(
+        "Base64 strings not supported in plugin main thread. Please send image data as a byte array."
+      );
+    } else if (typeof payload.imageUrl === "string") {
+      const scaleMode = typeof payload.scaleMode === "string" ? payload.scaleMode : "FILL";
+      const opacity = typeof payload.opacity === "number" ? payload.opacity : 1;
       return {
         nodeId: payload.nodeId,
         imageUrl: payload.imageUrl,
-        scaleMode: payload.scaleMode || "FILL",
-        opacity: payload.opacity || 1,
+        scaleMode,
+        opacity,
         message: "Image URL received. To load: fetch image in UI thread, convert to byte array, then call set_image_fill with imageBytes.",
         requiresUiFetch: true
       };
@@ -1364,14 +1464,18 @@
   // src/handlers/text.ts
   async function handleSetTextProperties(payload) {
     const node = getNode(payload.nodeId);
-    if (!node || node.type !== "TEXT") throw new Error("Node is not a text node");
+    if ((node == null ? void 0 : node.type) !== "TEXT") throw new Error("Node is not a text node");
     await figma.loadFontAsync(node.fontName);
-    if (payload.decoration) node.textDecoration = payload.decoration;
-    if (payload.letterSpacing) {
+    if (typeof payload.decoration === "string") {
+      node.textDecoration = payload.decoration;
+    }
+    if (payload.letterSpacing !== void 0) {
       const ls = payload.letterSpacing;
       node.letterSpacing = { value: ls.value, unit: ls.unit };
     }
-    if (payload.textCase) node.textCase = payload.textCase;
+    if (typeof payload.textCase === "string") {
+      node.textCase = payload.textCase;
+    }
     if (payload.paragraphSpacing !== void 0)
       node.paragraphSpacing = payload.paragraphSpacing;
     if (payload.paragraphIndent !== void 0)
@@ -1380,7 +1484,7 @@
   }
   function handleSetTextDecoration(payload) {
     const node = getNode(payload.nodeId);
-    if (!node || node.type !== "TEXT") throw new Error("Node is not a text node");
+    if ((node == null ? void 0 : node.type) !== "TEXT") throw new Error("Node is not a text node");
     node.textDecoration = payload.decoration;
     return {
       nodeId: payload.nodeId,
@@ -1390,7 +1494,7 @@
   }
   function handleSetTextCase(payload) {
     const node = getNode(payload.nodeId);
-    if (!node || node.type !== "TEXT") throw new Error("Node is not a text node");
+    if ((node == null ? void 0 : node.type) !== "TEXT") throw new Error("Node is not a text node");
     node.textCase = payload.textCase;
     return {
       nodeId: payload.nodeId,
@@ -1400,8 +1504,8 @@
   }
   function handleSetLetterSpacing(payload) {
     const node = getNode(payload.nodeId);
-    if (!node || node.type !== "TEXT") throw new Error("Node is not a text node");
-    const unit = payload.unit || "PERCENT";
+    if ((node == null ? void 0 : node.type) !== "TEXT") throw new Error("Node is not a text node");
+    const unit = typeof payload.unit === "string" ? payload.unit : "PERCENT";
     node.letterSpacing = { value: payload.value, unit };
     return {
       nodeId: payload.nodeId,
@@ -1412,7 +1516,7 @@
   }
   function handleSetParagraphSpacing(payload) {
     const node = getNode(payload.nodeId);
-    if (!node || node.type !== "TEXT") throw new Error("Node is not a text node");
+    if ((node == null ? void 0 : node.type) !== "TEXT") throw new Error("Node is not a text node");
     if (payload.paragraphSpacing !== void 0)
       node.paragraphSpacing = payload.paragraphSpacing;
     if (payload.paragraphIndent !== void 0)
@@ -1424,23 +1528,23 @@
   function handleSetTransform(payload) {
     const node = getNode(payload.nodeId);
     if (!node) throw new Error("Node not found");
-    if (payload.position) {
+    if (payload.position !== void 0) {
       const pos = payload.position;
       node.x = pos.x;
       node.y = pos.y;
     }
-    if (payload.size && "resize" in node) {
+    if (payload.size !== void 0 && "resize" in node) {
       const size = payload.size;
       node.resize(size.width, size.height);
     }
     if (payload.rotation !== void 0 && "rotation" in node) {
       node.rotation = payload.rotation;
     }
-    if (payload.scale && "resize" in node) {
+    if (payload.scale !== void 0 && "resize" in node) {
       const scale = payload.scale;
       node.resize(node.width * scale.x, node.height * scale.y);
     }
-    if (payload.flip && "resize" in node) {
+    if (typeof payload.flip === "string" && "resize" in node) {
       const direction = payload.flip;
       if (direction === "HORIZONTAL" || direction === "BOTH") {
         node.resize(-node.width, node.height);
@@ -1474,9 +1578,9 @@
     if (!node) throw new Error("Node not found");
     const settings = payload.settings.map(
       (s) => ({
-        format: s.format || "PNG",
-        constraint: s.constraint || { type: "SCALE", value: 1 },
-        suffix: s.suffix || ""
+        format: typeof s.format === "string" ? s.format : "PNG",
+        constraint: s.constraint !== void 0 ? s.constraint : { type: "SCALE", value: 1 },
+        suffix: typeof s.suffix === "string" ? s.suffix : ""
       })
     );
     node.exportSettings = settings;
@@ -1489,8 +1593,8 @@
   async function handleExportNode(payload) {
     const node = getNode(payload.nodeId);
     if (!node) throw new Error("Node not found");
-    const format = payload.format || "PNG";
-    const scale = payload.scale || 1;
+    const format = typeof payload.format === "string" ? payload.format : "PNG";
+    const scale = typeof payload.scale === "number" ? payload.scale : 1;
     const exportFormat = format === "JPG" ? "JPG" : format === "SVG" ? "SVG" : "PNG";
     const bytes = await node.exportAsync({
       format: exportFormat,
@@ -1527,7 +1631,7 @@
   }
   function handleCreatePageWithPayload(payload) {
     const page = figma.createPage();
-    page.name = payload.name || "Page";
+    page.name = typeof payload.name === "string" ? payload.name : "Page";
     return { pageId: page.id, name: page.name, message: "Page created successfully" };
   }
   function handleListPages() {
@@ -1536,7 +1640,7 @@
       name: page.name,
       isCurrent: page === figma.currentPage
     }));
-    return { pages, message: `Found ${pages.length} page(s)` };
+    return { pages, message: `Found ${String(pages.length)} page(s)` };
   }
   async function handleSetCurrentPage(payload) {
     const page = figma.root.children.find((p) => p.id === payload.pageId);
@@ -1577,10 +1681,35 @@
   }
   function handleCreatePath(payload) {
     const vectorNode = figma.createVector();
-    vectorNode.name = payload.name || "Path";
+    vectorNode.name = typeof payload.name === "string" ? payload.name : "Path";
     const commands = payload.commands;
-    if (!commands || commands.length === 0) throw new Error("Path requires at least one command");
+    if (!Array.isArray(commands) || commands.length === 0) {
+      throw new Error("Path requires at least one command");
+    }
     if (commands[0].type !== "M") throw new Error("Path must start with M (Move) command");
+    const pathData = buildPathData(commands);
+    const finalPath = payload.closed === true && !pathData.includes("Z") ? pathData + " Z" : pathData;
+    const trimmedPath = finalPath.trim();
+    if (trimmedPath === "") throw new Error("Generated path data is empty");
+    vectorNode.vectorPaths = [{ windingRule: "NONZERO", data: trimmedPath }];
+    if (typeof payload.fillColor === "string") {
+      vectorNode.fills = [{ type: "SOLID", color: hexToRgb(payload.fillColor) }];
+    } else {
+      vectorNode.fills = [];
+    }
+    if (typeof payload.strokeColor === "string") {
+      vectorNode.strokes = [{ type: "SOLID", color: hexToRgb(payload.strokeColor) }];
+      vectorNode.strokeWeight = typeof payload.strokeWeight === "number" ? payload.strokeWeight : 1;
+    }
+    const parent = resolveParent(payload.parentId);
+    parent.appendChild(vectorNode);
+    figma.viewport.scrollAndZoomIntoView([vectorNode]);
+    return {
+      pathId: vectorNode.id,
+      message: `Path created successfully with ${String(commands.length)} commands`
+    };
+  }
+  function buildPathData(commands) {
     let pathData = "";
     for (let i = 0; i < commands.length; i++) {
       const cmd = commands[i];
@@ -1588,65 +1717,50 @@
         case "M":
           validateCoord(cmd, "x", i);
           validateCoord(cmd, "y", i);
-          pathData += `M ${cmd.x} ${cmd.y} `;
+          pathData += `M ${String(cmd.x)} ${String(cmd.y)} `;
           break;
         case "L":
           validateCoord(cmd, "x", i);
           validateCoord(cmd, "y", i);
-          pathData += `L ${cmd.x} ${cmd.y} `;
+          pathData += `L ${String(cmd.x)} ${String(cmd.y)} `;
           break;
         case "C":
           for (const k of ["x1", "y1", "x2", "y2", "x", "y"]) validateCoord(cmd, k, i);
-          pathData += `C ${cmd.x1} ${cmd.y1} ${cmd.x2} ${cmd.y2} ${cmd.x} ${cmd.y} `;
+          pathData += `C ${String(cmd.x1)} ${String(cmd.y1)} ${String(cmd.x2)} ${String(cmd.y2)} ${String(cmd.x)} ${String(cmd.y)} `;
           break;
         case "Q":
           for (const k of ["x1", "y1", "x", "y"]) validateCoord(cmd, k, i);
-          pathData += `Q ${cmd.x1} ${cmd.y1} ${cmd.x} ${cmd.y} `;
+          pathData += `Q ${String(cmd.x1)} ${String(cmd.y1)} ${String(cmd.x)} ${String(cmd.y)} `;
           break;
         case "Z":
           pathData += "Z ";
           break;
         default:
-          throw new Error(`Unknown path command type '${cmd.type}' at index ${i}`);
+          throw new Error(`Unknown path command type '${String(cmd.type)}' at index ${String(i)}`);
       }
     }
-    if (payload.closed && !pathData.includes("Z")) pathData += "Z";
-    const trimmedPath = pathData.trim();
-    if (!trimmedPath) throw new Error("Generated path data is empty");
-    vectorNode.vectorPaths = [{ windingRule: "NONZERO", data: trimmedPath }];
-    if (payload.fillColor) {
-      vectorNode.fills = [{ type: "SOLID", color: hexToRgb(payload.fillColor) }];
-    } else {
-      vectorNode.fills = [];
-    }
-    if (payload.strokeColor) {
-      vectorNode.strokes = [{ type: "SOLID", color: hexToRgb(payload.strokeColor) }];
-      vectorNode.strokeWeight = payload.strokeWeight || 1;
-    }
-    const parent = resolveParent(payload.parentId);
-    parent.appendChild(vectorNode);
-    figma.viewport.scrollAndZoomIntoView([vectorNode]);
-    return {
-      pathId: vectorNode.id,
-      message: `Path created successfully with ${commands.length} commands`
-    };
+    return pathData;
   }
   function validateCoord(cmd, key, index) {
     const val = cmd[key];
     if (typeof val !== "number")
-      throw new Error(`Command ${index} (${cmd.type}): Property '${key}' must be a number`);
+      throw new Error(
+        `Command ${String(index)} (${String(cmd.type)}): Property '${key}' must be a number`
+      );
     if (!isFinite(val))
-      throw new Error(`Command ${index} (${cmd.type}): Property '${key}' must be a finite number`);
+      throw new Error(
+        `Command ${String(index)} (${String(cmd.type)}): Property '${key}' must be a finite number`
+      );
   }
   function handleCreateBooleanOperation(payload) {
     const nodeIds = payload.nodeIds;
-    if (!nodeIds || nodeIds.length < 2)
+    if (!Array.isArray(nodeIds) || nodeIds.length < 2)
       throw new Error("Boolean operation requires at least 2 nodes");
     const nodes = nodeIds.map((id) => getNode(id)).filter((n) => n !== null);
     if (nodes.length < 2) throw new Error("Could not find all nodes for boolean operation");
     const booleanNode = figma.createBooleanOperation();
-    booleanNode.name = payload.name || "Boolean";
-    booleanNode.booleanOperation = payload.operation || "UNION";
+    booleanNode.name = typeof payload.name === "string" ? payload.name : "Boolean";
+    booleanNode.booleanOperation = typeof payload.operation === "string" ? payload.operation : "UNION";
     for (const node of nodes) {
       booleanNode.appendChild(node);
     }
@@ -1759,37 +1873,20 @@
     void handleMessage(msg);
   };
   async function handleMessage(msg) {
-    if (!msg || typeof msg !== "object") {
-      figma.ui.postMessage({
-        id: null,
-        success: false,
-        error: "Invalid message format: expected object"
-      });
-      return;
-    }
     const { type, payload, requestId } = msg;
-    if (!type || typeof type !== "string") {
+    if (typeof type !== "string" || type === "") {
       figma.ui.postMessage({
-        id: requestId || null,
+        id: requestId != null ? requestId : null,
         success: false,
         error: "Missing or invalid message type"
       });
       return;
     }
-    if (payload !== void 0 && typeof payload !== "object") {
-      figma.ui.postMessage({
-        id: requestId,
-        success: false,
-        error: "Invalid payload: expected object or undefined"
-      });
-      return;
-    }
     try {
-      const handler = handlers[type];
-      if (!handler) {
+      if (!(type in handlers)) {
         throw new Error(`Unknown command type: ${type}`);
       }
-      const result = await handler(payload || {});
+      const result = await handlers[type](payload != null ? payload : {});
       figma.ui.postMessage({ id: requestId, success: true, data: result });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

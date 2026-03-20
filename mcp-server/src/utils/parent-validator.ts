@@ -250,7 +250,7 @@ export async function validateParentRelationship(
   }
 
   // If parent exists and we should check it
-  if (checkExists && parentId) {
+  if (checkExists) {
     const existenceValidation = await validateParentExists(parentId);
     if (!existenceValidation.isValid) {
       return existenceValidation;

@@ -95,8 +95,9 @@ function generateCssEquivalent(effects: Effect[]): string {
       );
     } else if (effect.type === 'LAYER_BLUR') {
       layerBlur = `blur(${effect.radius}px)`;
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- needed for TypeScript type narrowing
     } else if (effect.type === 'BACKGROUND_BLUR') {
-      backgroundBlur = `blur(${effect.radius}px)`;
+      backgroundBlur = `blur(${String(effect.radius)}px)`;
     }
   }
 

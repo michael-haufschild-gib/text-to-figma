@@ -188,7 +188,7 @@ export function createErrorWithSuggestion(
  * @param error
  */
 export function isStructuredError(error: unknown): error is StructuredError {
-  if (!error || typeof error !== 'object') {
+  if (error === null || error === undefined || typeof error !== 'object') {
     return false;
   }
   const e = error as Record<string, unknown>;

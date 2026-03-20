@@ -147,7 +147,7 @@ export const navigationHandlers: ToolHandler<any, any>[] = [
     execute: getNodeById,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\nName: ${r.name}\nType: ${r.type}\n`;
-      if (r.width && r.height) {
+      if (r.width !== undefined && r.height !== undefined) {
         text += `Dimensions: ${r.width}x${r.height}\n`;
       }
       if (r.x !== undefined && r.y !== undefined) {
@@ -232,7 +232,7 @@ export const navigationHandlers: ToolHandler<any, any>[] = [
     execute: getPluginData,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\nKey: ${r.key}\n`;
-      if (r.value) {
+      if (r.value !== '') {
         text += `Value: ${r.value}\n`;
       }
       return textResponse(text);

@@ -55,11 +55,11 @@ export async function routeToolCall(toolName: string, args: unknown): Promise<Re
   logger.info('Routing tool call', { tool: toolName });
 
   try {
-    // Validate input using tool's schema
-    const validatedInput = handler.schema.parse(args);
+    // Validate input using tool's schema — parse returns the inferred type
+    const validatedInput: unknown = handler.schema.parse(args);
 
     // Execute tool
-    const result = await handler.execute(validatedInput);
+    const result: unknown = await handler.execute(validatedInput);
 
     // Record success
     const duration = Date.now() - startTime;
@@ -74,7 +74,7 @@ export async function routeToolCall(toolName: string, args: unknown): Promise<Re
     durations.observe(duration);
 
     const errorObj = error instanceof Error ? error : new Error(String(error));
-    const errorType = errorObj.name || 'unknown';
+    const errorType = errorObj.name !== '' ? errorObj.name : 'unknown';
 
     errors.inc(1, { tool: toolName, error_type: errorType });
     logger.error('Tool execution failed', errorObj, { tool: toolName, duration });

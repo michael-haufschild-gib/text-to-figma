@@ -37,9 +37,9 @@ export function formatHierarchyTree(data: unknown): string {
   if (typeof data === 'string') {
     return data;
   }
-  if (data && typeof data === 'object') {
+  if (data !== null && data !== undefined && typeof data === 'object') {
     const obj = data as Record<string, unknown>;
-    if (obj.hierarchy && typeof obj.hierarchy === 'string') {
+    if (typeof obj.hierarchy === 'string' && obj.hierarchy !== '') {
       return obj.hierarchy;
     }
     return JSON.stringify(data, null, 2);

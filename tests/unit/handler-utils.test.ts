@@ -32,7 +32,7 @@ describe('Handler Utilities', () => {
       const opts = {
         name: 'test',
         schema,
-        execute: async (input: { n: number }) => ({ result: input.n }),
+        execute: (input: { n: number }) => ({ result: input.n }),
         formatResponse: (r: { result: number }) => textResponse(String(r.result)),
         definition: {
           name: 'test',

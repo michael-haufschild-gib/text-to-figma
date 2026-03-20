@@ -174,17 +174,18 @@ export async function addLayoutGrid(input: AddLayoutGridInput): Promise<AddLayou
 
   // Build CSS equivalent
   let cssEquivalent = '';
-  if (validated.pattern === 'COLUMNS' && validated.count) {
-    cssEquivalent = `.container {\n  display: grid;\n  grid-template-columns: repeat(${validated.count}, 1fr);\n  gap: ${validated.gutter}px;\n  padding: 0 ${validated.margin}px;\n}`;
-  } else if (validated.pattern === 'ROWS' && validated.count) {
-    cssEquivalent = `.container {\n  display: grid;\n  grid-template-rows: repeat(${validated.count}, 1fr);\n  gap: ${validated.gutter}px;\n  padding: ${validated.margin}px 0;\n}`;
+  if (validated.pattern === 'COLUMNS' && validated.count !== undefined) {
+    cssEquivalent = `.container {\n  display: grid;\n  grid-template-columns: repeat(${String(validated.count)}, 1fr);\n  gap: ${String(validated.gutter)}px;\n  padding: 0 ${String(validated.margin)}px;\n}`;
+  } else if (validated.pattern === 'ROWS' && validated.count !== undefined) {
+    cssEquivalent = `.container {\n  display: grid;\n  grid-template-rows: repeat(${String(validated.count)}, 1fr);\n  gap: ${String(validated.gutter)}px;\n  padding: ${String(validated.margin)}px 0;\n}`;
   } else {
     cssEquivalent = `/* Grid layout for alignment reference */\n.container {\n  background-image: linear-gradient(...);\n  background-size: ${validated.gutter}px ${validated.gutter}px;\n}`;
   }
 
-  const gridLabel = validated.count
-    ? `${validated.count}-${validated.pattern.toLowerCase().slice(0, -1)}`
-    : validated.pattern.toLowerCase();
+  const gridLabel =
+    validated.count !== undefined
+      ? `${String(validated.count)}-${validated.pattern.toLowerCase().slice(0, -1)}`
+      : validated.pattern.toLowerCase();
 
   return {
     nodeId: validated.nodeId,

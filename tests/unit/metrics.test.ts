@@ -229,7 +229,7 @@ describe('MetricsRegistry', () => {
         const timer = registry.timer('test');
 
         await expect(
-          timer.timeAsync(async () => {
+          timer.timeAsync(() => {
             throw new Error('async boom');
           })
         ).rejects.toThrow('async boom');
@@ -322,7 +322,7 @@ describe('MetricsRegistry', () => {
         const timer = registry.timer('async_error_timer');
 
         await expect(
-          timer.timeAsync(async () => {
+          timer.timeAsync(() => {
             throw new Error('async boom');
           })
         ).rejects.toThrow('async boom');

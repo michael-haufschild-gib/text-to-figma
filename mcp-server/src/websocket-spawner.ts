@@ -257,10 +257,8 @@ export async function ensureWebSocketServer(): Promise<SpawnResult> {
         `[WebSocket Spawner] ✗ WebSocket server failed to start within ${STARTUP_TIMEOUT / 1000} seconds`
       );
       // Kill the process if it's still running but not responding
-      if (spawnedProcess) {
-        spawnedProcess.kill();
-        spawnedProcess = null;
-      }
+      spawnedProcess.kill();
+      spawnedProcess = null;
       return {
         success: false,
         alreadyRunning: false,

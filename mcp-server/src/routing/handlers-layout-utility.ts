@@ -233,7 +233,7 @@ export const layoutUtilityHandlers: ToolHandler<any, any>[] = [
     execute: addLayoutGrid,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\nPattern: ${r.pattern}\n`;
-      if (r.count) {
+      if (r.count !== undefined) {
         text += `Count: ${r.count}\n`;
       }
       text += `Gutter: ${r.gutter}px\nMargin: ${r.margin}px\n\nCSS Equivalent:\n${r.cssEquivalent}\n`;

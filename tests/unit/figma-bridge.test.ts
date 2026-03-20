@@ -17,6 +17,7 @@ import { loadConfig, resetConfig } from '../../mcp-server/src/config.js';
 
 // Mock WebSocket to prevent real connections
 vi.mock('ws', () => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const EventEmitter = require('events');
 
   class MockWebSocket extends EventEmitter {

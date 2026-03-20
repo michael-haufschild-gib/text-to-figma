@@ -402,7 +402,7 @@ describe('NodeRegistry JSON serialization', () => {
     registry.register('n1', { type: 'FRAME', name: 'F', parentId: null, children: [] });
 
     const json = registry.toJSON();
-    expect(() => JSON.parse(json)).not.toThrow();
+    expect(() => JSON.parse(json) as unknown).not.toThrow();
   });
 
   it('empty registry serializes and deserializes', () => {
