@@ -197,4 +197,89 @@ describe('routeToolCall', () => {
     getToolRegistry().register(stringThrowHandler);
     await expect(routeToolCall('string_throw_tool', { value: 1 })).rejects.toBe('raw string error');
   });
+
+  it('increments invocation counter by 1 per call', async () => {
+    getToolRegistry().register(testHandler);
+    resetMetrics();
+    const metrics = getMetrics();
+    const invocations = metrics.counter('tool_invocations_total');
+
+    await routeToolCall('test_tool', { value: 1 });
+    await routeToolCall('test_tool', { value: 2 });
+
+    expect(invocations.get({ tool: 'test_tool' })).toBe(2);
+  });
+
+  it('increments success counter only on success', async () => {
+    const failHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'sometimes_fails',
+      execute: (input) => {
+        if (input.value === 0) throw new Error('zero not allowed');
+        return { result: input.value };
+      },
+      definition: { ...testHandler.definition, name: 'sometimes_fails' }
+    };
+    getToolRegistry().register(failHandler);
+    resetMetrics();
+    const metrics = getMetrics();
+    const successes = metrics.counter('tool_success_total');
+
+    await routeToolCall('sometimes_fails', { value: 5 });
+    await routeToolCall('sometimes_fails', { value: 3 }).catch(() => {});
+    await expect(routeToolCall('sometimes_fails', { value: 0 })).rejects.toThrow();
+
+    expect(successes.get({ tool: 'sometimes_fails' })).toBe(2);
+  });
+
+  it('records error_type label from error name', async () => {
+    const typedErrorHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'typed_error_tool',
+      execute: () => {
+        const err = new Error('custom');
+        err.name = 'CustomError';
+        throw err;
+      },
+      definition: { ...testHandler.definition, name: 'typed_error_tool' }
+    };
+    getToolRegistry().register(typedErrorHandler);
+    resetMetrics();
+    const metrics = getMetrics();
+    const errors = metrics.counter('tool_errors_total');
+
+    await routeToolCall('typed_error_tool', { value: 1 }).catch(() => {});
+
+    expect(errors.get({ tool: 'typed_error_tool', error_type: 'CustomError' })).toBe(1);
+  });
+
+  it('handles async execute function returning a promise', async () => {
+    const asyncHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'async_tool',
+      execute: async (input) => {
+        await new Promise((r) => setTimeout(r, 1));
+        return { result: input.value * 3 };
+      },
+      definition: { ...testHandler.definition, name: 'async_tool' }
+    };
+
+    getToolRegistry().register(asyncHandler);
+    const result = await routeToolCall('async_tool', { value: 7 });
+    expect(result[0].text).toBe('Result: 21');
+  });
+
+  it('propagates error when formatResponse throws', async () => {
+    const badFormatHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'bad_format_tool',
+      formatResponse: () => {
+        throw new Error('format exploded');
+      },
+      definition: { ...testHandler.definition, name: 'bad_format_tool' }
+    };
+
+    getToolRegistry().register(badFormatHandler);
+    await expect(routeToolCall('bad_format_tool', { value: 1 })).rejects.toThrow('format exploded');
+  });
 });

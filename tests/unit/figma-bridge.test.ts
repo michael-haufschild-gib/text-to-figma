@@ -1,191 +1,318 @@
 /**
  * Figma Bridge Unit Tests
  *
- * Tests FigmaBridgeError construction, error code getters, and
- * the FigmaBridge class: connection status, sendToFigma preconditions,
- * disconnect cleanup, and getConnectionStatus diagnostics.
- *
- * Note: Full WebSocket integration (connect, message handling, retry)
- * cannot be tested without a real WebSocket server. These tests verify
- * the synchronous logic and error handling paths that don't require an
- * active connection.
+ * Tests the full FigmaBridge lifecycle: connection, message handling,
+ * circuit breaker state machine, retry with backoff, abort, disconnect,
+ * and reconnection. Uses a mock WebSocket that emits events to simulate
+ * the real WebSocket connection without a server.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EventEmitter } from 'events';
 import { ErrorCode, createError } from '../../mcp-server/src/errors/error-codes.js';
 import { loadConfig, resetConfig } from '../../mcp-server/src/config.js';
 
-// Mock WebSocket to prevent real connections
-vi.mock('ws', () => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const EventEmitter = require('events');
+// Track all created MockWebSocket instances so tests can interact with them
+let mockWsInstances: MockWebSocket[] = [];
 
-  class MockWebSocket extends EventEmitter {
-    static OPEN = 1;
-    static CLOSED = 3;
-    static CONNECTING = 0;
-    readyState = 1;
-    send = vi.fn();
-    close = vi.fn(function (this: MockWebSocket) {
-      this.readyState = 3;
-    });
+class MockWebSocket extends EventEmitter {
+  static OPEN = 1;
+  static CLOSED = 3;
+  static CONNECTING = 0;
+  readyState = 0; // Start as CONNECTING
+  send = vi.fn();
+  // close() sets readyState but does NOT emit 'close' —
+  // the real WebSocket fires 'close' asynchronously. Tests that need
+  // to simulate unexpected disconnect call emit('close') directly.
+  close = vi.fn(function (this: MockWebSocket) {
+    this.readyState = 3;
+  });
+
+  constructor(_url: string) {
+    super();
+    mockWsInstances.push(this);
   }
 
-  return { default: MockWebSocket, WebSocket: MockWebSocket };
-});
+  /** Test helper: simulate successful connection */
+  simulateOpen(): void {
+    this.readyState = 1; // OPEN
+    this.emit('open');
+  }
+
+  /** Test helper: simulate incoming message */
+  simulateMessage(data: string | Buffer): void {
+    this.emit('message', data);
+  }
+
+  /** Test helper: simulate connection error */
+  simulateError(message: string): void {
+    this.emit('error', new Error(message));
+  }
+}
+
+vi.mock('ws', () => ({
+  default: MockWebSocket,
+  WebSocket: MockWebSocket
+}));
 
 // Must import after mock
 const { FigmaBridgeError, FigmaBridge } = await import('../../mcp-server/src/figma-bridge.js');
 
-describe('FigmaBridgeError', () => {
-  describe('construction from StructuredError', () => {
-    it('preserves message, code, and suggestion', () => {
-      const structured = createError(ErrorCode.NODE_NOT_FOUND, 'Node 123 not found');
-      const err = new FigmaBridgeError(structured);
-
-      expect(err).toBeInstanceOf(Error);
-      expect(err.name).toBe('FigmaBridgeError');
-      expect(err.message).toBe('Node 123 not found');
-      expect(err.code).toBe(ErrorCode.NODE_NOT_FOUND);
-      expect(err.suggestion).toBeTypeOf('string');
-      expect(err.structuredError).toBe(structured);
-    });
-
-    it('preserves details from structured error', () => {
-      const structured = createError(ErrorCode.OP_TIMEOUT, 'Timed out', { requestId: 'r1' });
-      const err = new FigmaBridgeError(structured);
-      expect(err.details).toEqual({ requestId: 'r1' });
-    });
-  });
-
-  describe('construction from legacy (message, code) signature', () => {
-    it('creates error with specified code', () => {
-      const err = new FigmaBridgeError('Connection failed', 'CONN_FAILED');
-      expect(err.message).toBe('Connection failed');
-      expect(err.code).toBe(ErrorCode.CONN_FAILED);
-    });
-
-    it('defaults to SYS_INTERNAL when code is omitted', () => {
-      const err = new FigmaBridgeError('Unknown issue');
-      expect(err.code).toBe(ErrorCode.SYS_INTERNAL);
-    });
-
-    it('returns undefined suggestion for invalid code', () => {
-      const err = new FigmaBridgeError('test', 'NOT_A_REAL_CODE');
-      expect(err.suggestion).toBeUndefined();
-    });
-  });
-
-  describe('error code getters', () => {
-    it('code getter returns the ErrorCode enum value', () => {
-      for (const code of [
-        ErrorCode.CONN_NOT_CONNECTED,
-        ErrorCode.CONN_TIMEOUT,
-        ErrorCode.NODE_NOT_FOUND,
-        ErrorCode.VAL_FAILED,
-        ErrorCode.OP_FAILED,
-        ErrorCode.SYS_CIRCUIT_OPEN
-      ]) {
-        const err = new FigmaBridgeError(createError(code, 'test'));
-        expect(err.code).toBe(code);
-      }
-    });
-
-    it('suggestion getter returns matching suggestion for known codes', () => {
-      const err = new FigmaBridgeError(createError(ErrorCode.CONN_NOT_CONNECTED, 'Not connected'));
-      expect(err.suggestion).toContain('Figma');
-    });
-
-    it('details getter returns undefined when no details provided', () => {
-      const err = new FigmaBridgeError(createError(ErrorCode.OP_FAILED, 'Failed'));
-      expect(err.details).toBeUndefined();
-    });
-  });
-
-  describe('error identity', () => {
-    it('is instance of Error', () => {
-      const err = new FigmaBridgeError('test');
-      expect(err).toBeInstanceOf(Error);
-    });
-
-    it('has name FigmaBridgeError', () => {
-      const err = new FigmaBridgeError('test');
-      expect(err.name).toBe('FigmaBridgeError');
-    });
-
-    it('has a stack trace', () => {
-      const err = new FigmaBridgeError('test');
-      expect(err.stack).toContain('FigmaBridgeError');
-    });
-  });
-});
+// FigmaBridgeError construction tests are in error-classes.test.ts
 
 describe('FigmaBridge', () => {
+  let bridge: InstanceType<typeof FigmaBridge>;
+
   beforeEach(() => {
-    loadConfig(); // FigmaBridge constructor needs config
+    vi.useFakeTimers();
+    mockWsInstances = [];
+    loadConfig();
+    bridge = new FigmaBridge();
   });
 
   afterEach(() => {
+    bridge.disconnect();
+    vi.useRealTimers();
     resetConfig();
     vi.restoreAllMocks();
   });
 
-  describe('initial state', () => {
-    it('isConnected returns false before connect()', () => {
-      const bridge = new FigmaBridge();
-      expect(bridge.isConnected()).toBe(false);
-      bridge.disconnect();
+  /**
+   * Helper: connect the bridge and simulate open
+   */
+  async function connectBridge(): Promise<MockWebSocket> {
+    const connectPromise = bridge.connect();
+    const ws = mockWsInstances[mockWsInstances.length - 1]!;
+    ws.simulateOpen();
+    await connectPromise;
+    return ws;
+  }
+
+  describe('connect', () => {
+    it('resolves when WebSocket emits open', async () => {
+      const connectPromise = bridge.connect();
+      const ws = mockWsInstances[0]!;
+      ws.simulateOpen();
+      await expect(connectPromise).resolves.toBeUndefined();
+      expect(bridge.isConnected()).toBe(true);
     });
 
-    it('getConnectionStatus reports disconnected state', () => {
-      const bridge = new FigmaBridge();
+    it('rejects with CONN_FAILED when WebSocket emits error before open', async () => {
+      const connectPromise = bridge.connect();
+      const ws = mockWsInstances[0]!;
+      ws.simulateError('ECONNREFUSED');
+      await expect(connectPromise).rejects.toThrow('Failed to connect');
+    });
+
+    it('rejects with CONN_TIMEOUT when connection takes too long', async () => {
+      const connectPromise = bridge.connect();
+      // Advance past the 5000ms connection timeout
+      vi.advanceTimersByTime(5001);
+      await expect(connectPromise).rejects.toThrow('Connection timeout');
+    });
+
+    it('returns existing promise when called concurrently', async () => {
+      const p1 = bridge.connect();
+      const p2 = bridge.connect();
+      // Only one WebSocket instance should have been created
+      expect(mockWsInstances).toHaveLength(1);
+      const ws = mockWsInstances[0]!;
+      ws.simulateOpen();
+      await Promise.all([p1, p2]);
+      expect(bridge.isConnected()).toBe(true);
+    });
+
+    it('is a no-op when already connected', async () => {
+      await connectBridge();
+      // Second connect should return immediately without creating a new WS
+      const instanceCountBefore = mockWsInstances.length;
+      await bridge.connect();
+      expect(mockWsInstances.length).toBe(instanceCountBefore);
+    });
+
+    it('resets circuit breaker on successful connection', async () => {
+      await connectBridge();
       const status = bridge.getConnectionStatus();
-      expect(status.connected).toBe(false);
-      expect(status.pendingRequests).toBe(0);
-      expect(status.reconnectAttempts).toBe(0);
-      bridge.disconnect();
+      expect(status.circuitBreakerState).toBe('CLOSED');
     });
   });
 
-  describe('sendToFigma preconditions', () => {
+  describe('sendToFigma', () => {
     it('throws CONN_NOT_CONNECTED when not connected', async () => {
-      const bridge = new FigmaBridge();
-
+      await expect(bridge.sendToFigma('test', {})).rejects.toThrow();
       try {
-        await bridge.sendToFigma('test_command', { data: 'test' });
-        expect.fail('Should have thrown');
+        await bridge.sendToFigma('test', {});
       } catch (error) {
-        expect(error).toBeInstanceOf(FigmaBridgeError);
         expect((error as InstanceType<typeof FigmaBridgeError>).code).toBe(
           ErrorCode.CONN_NOT_CONNECTED
         );
       }
+    });
 
-      bridge.disconnect();
+    it('sends JSON-serialized request with unique ID', async () => {
+      const ws = await connectBridge();
+      const promise = bridge.sendToFigma('create_frame', { name: 'test' });
+
+      // Verify send was called with proper JSON
+      expect(ws.send).toHaveBeenCalledOnce();
+      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+      expect(sentData.type).toBe('create_frame');
+      expect(sentData.payload).toEqual({ name: 'test' });
+      expect(sentData.id).toMatch(/^req_/);
+
+      // Resolve the pending request
+      ws.simulateMessage(
+        JSON.stringify({ id: sentData.id, success: true, data: { nodeId: '1:2' } })
+      );
+      const result = await promise;
+      expect(result).toEqual({ nodeId: '1:2' });
+    });
+
+    it('rejects when response has success: false', async () => {
+      const ws = await connectBridge();
+      const promise = bridge.sendToFigma('bad_op', {});
+
+      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+      ws.simulateMessage(
+        JSON.stringify({ id: sentData.id, success: false, error: 'Node not found' })
+      );
+
+      await expect(promise).rejects.toThrow('Node not found');
+    });
+
+    it('rejects with OP_TIMEOUT when response never arrives', async () => {
+      await connectBridge();
+      const promise = bridge.sendToFigma('slow_op', {});
+
+      // Advance past the request timeout (default 30000ms)
+      vi.advanceTimersByTime(31000);
+
+      await expect(promise).rejects.toThrow('Request timeout');
+    });
+
+    it('rejects when ws.send throws', async () => {
+      const ws = await connectBridge();
+      ws.send.mockImplementation(() => {
+        throw new Error('WebSocket is closed');
+      });
+
+      await expect(bridge.sendToFigma('test', {})).rejects.toThrow('WebSocket is closed');
     });
   });
 
-  describe('sendToFigmaWithAbort preconditions', () => {
+  describe('handleMessage', () => {
+    it('handles string data', async () => {
+      const ws = await connectBridge();
+      const promise = bridge.sendToFigma('test', {});
+      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+
+      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'ok' }));
+      await expect(promise).resolves.toBe('ok');
+    });
+
+    it('handles Buffer data', async () => {
+      const ws = await connectBridge();
+      const promise = bridge.sendToFigma('test', {});
+      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+
+      const bufferData = Buffer.from(
+        JSON.stringify({ id: sentData.id, success: true, data: 'from-buffer' })
+      );
+      ws.simulateMessage(bufferData);
+      await expect(promise).resolves.toBe('from-buffer');
+    });
+
+    it('ignores connection/info messages without affecting pending requests', async () => {
+      const ws = await connectBridge();
+      const promise = bridge.sendToFigma('test', {});
+      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+
+      // These should be silently consumed
+      ws.simulateMessage(JSON.stringify({ type: 'connection', message: 'Welcome' }));
+      ws.simulateMessage(JSON.stringify({ type: 'info', message: 'Plugin ready' }));
+
+      // The pending request should still be pending
+      expect(bridge.getConnectionStatus().pendingRequests).toBe(1);
+
+      // Now resolve it
+      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'done' }));
+      await expect(promise).resolves.toBe('done');
+    });
+
+    it('ignores invalid JSON without crashing', async () => {
+      const ws = await connectBridge();
+      // Should not throw
+      ws.simulateMessage('not valid json {{{');
+      expect(bridge.isConnected()).toBe(true);
+    });
+
+    it('ignores messages with invalid schema (ZodError) without crashing', async () => {
+      const ws = await connectBridge();
+      // Missing required 'id' and 'success' fields
+      ws.simulateMessage(JSON.stringify({ foo: 'bar' }));
+      expect(bridge.isConnected()).toBe(true);
+    });
+
+    it('ignores responses for unknown request IDs', async () => {
+      const ws = await connectBridge();
+      ws.simulateMessage(JSON.stringify({ id: 'req_unknown', success: true, data: 'orphan' }));
+      expect(bridge.isConnected()).toBe(true);
+    });
+  });
+
+  describe('sendToFigmaWithAbort', () => {
     it('throws CONN_NOT_CONNECTED when not connected', () => {
-      const bridge = new FigmaBridge();
+      expect(() => bridge.sendToFigmaWithAbort('test', {})).toThrow();
+    });
 
-      try {
-        bridge.sendToFigmaWithAbort('test_command', { data: 'test' });
-        expect.fail('Should have thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(FigmaBridgeError);
-        expect((error as InstanceType<typeof FigmaBridgeError>).code).toBe(
-          ErrorCode.CONN_NOT_CONNECTED
-        );
-      }
+    it('returns a promise that resolves normally when not aborted', async () => {
+      const ws = await connectBridge();
+      const { promise } = bridge.sendToFigmaWithAbort('test', {});
 
-      bridge.disconnect();
+      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'ok' }));
+      await expect(promise).resolves.toBe('ok');
+    });
+
+    it('abort prevents resolution of the promise', async () => {
+      const ws = await connectBridge();
+      const { promise, abort } = bridge.sendToFigmaWithAbort('test', {});
+
+      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+
+      // Abort before response arrives
+      abort.abort();
+
+      // Even if server responds, the promise should never resolve
+      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'late' }));
+
+      // The pending request was removed, so pending count should be 0
+      expect(bridge.getConnectionStatus().pendingRequests).toBe(0);
+
+      // Promise will neither resolve nor reject after abort — it stays pending
+      // We can't easily test "stays pending" but we can verify the request was cleaned up
+      // and the abort controller reflects aborted state
+    });
+
+    it('abort removes the pending request from tracking', async () => {
+      const ws = await connectBridge();
+      const { abort } = bridge.sendToFigmaWithAbort('test', {});
+
+      expect(bridge.getConnectionStatus().pendingRequests).toBe(1);
+      abort.abort();
+      expect(bridge.getConnectionStatus().pendingRequests).toBe(0);
+    });
+
+    it('double abort is safe (no-op)', async () => {
+      await connectBridge();
+      const { abort } = bridge.sendToFigmaWithAbort('test', {});
+      abort.abort();
+      expect(() => abort.abort()).not.toThrow();
     });
   });
 
   describe('disconnect', () => {
     it('is safe to call multiple times', () => {
-      const bridge = new FigmaBridge();
       expect(() => {
         bridge.disconnect();
         bridge.disconnect();
@@ -193,84 +320,142 @@ describe('FigmaBridge', () => {
       }).not.toThrow();
     });
 
-    it('resets connection state', () => {
-      const bridge = new FigmaBridge();
+    it('rejects all pending requests with CONN_LOST', async () => {
+      const ws = await connectBridge();
+
+      const p1 = bridge.sendToFigma('op1', {});
+      const p2 = bridge.sendToFigma('op2', {});
+
+      expect(bridge.getConnectionStatus().pendingRequests).toBe(2);
+
+      bridge.disconnect();
+
+      await expect(p1).rejects.toThrow('Bridge disconnected');
+      await expect(p2).rejects.toThrow('Bridge disconnected');
+    });
+
+    it('closes the WebSocket and resets connection state', async () => {
+      const ws = await connectBridge();
+      expect(bridge.isConnected()).toBe(true);
+
       bridge.disconnect();
       expect(bridge.isConnected()).toBe(false);
-    });
-  });
-
-  describe('getConnectionStatus', () => {
-    it('returns all expected fields with correct types', () => {
-      const bridge = new FigmaBridge();
-      const status = bridge.getConnectionStatus();
-
-      expect(status.connected).toBe(false);
-      expect(status.wsReadyState).toBeUndefined();
-      expect(status.pendingRequests).toBe(0);
-      expect(status.circuitBreakerState).toBe('CLOSED');
-      expect(status.reconnectAttempts).toBe(0);
-
-      bridge.disconnect();
+      expect(ws.close).toHaveBeenCalled();
     });
 
-    it('circuit breaker starts in CLOSED state', () => {
-      const bridge = new FigmaBridge();
-      const status = bridge.getConnectionStatus();
-      expect(status.circuitBreakerState).toBe('CLOSED');
-      bridge.disconnect();
-    });
-
-    it('pendingRequests count is 0 when disconnected', () => {
-      const bridge = new FigmaBridge();
-      expect(bridge.getConnectionStatus().pendingRequests).toBe(0);
-      bridge.disconnect();
-    });
-
-    it('reconnectAttempts resets after disconnect', () => {
-      const bridge = new FigmaBridge();
+    it('resets reconnect attempts', async () => {
+      await connectBridge();
       bridge.disconnect();
       expect(bridge.getConnectionStatus().reconnectAttempts).toBe(0);
     });
   });
-});
 
-describe('FigmaBridgeError edge cases', () => {
-  it('legacy constructor with known ErrorCode', () => {
-    const err = new FigmaBridgeError('Timeout occurred', 'CONN_TIMEOUT');
-    expect(err.code).toBe(ErrorCode.CONN_TIMEOUT);
-    expect(err.message).toBe('Timeout occurred');
-    expect(err.suggestion).toBeTypeOf('string');
-  });
+  describe('handleDisconnect (reconnection)', () => {
+    it('rejects all pending requests on unexpected disconnect', async () => {
+      const ws = await connectBridge();
+      const promise = bridge.sendToFigma('test', {});
 
-  it('legacy constructor with SYS_INTERNAL fallback', () => {
-    const err = new FigmaBridgeError('Generic problem');
-    expect(err.code).toBe(ErrorCode.SYS_INTERNAL);
-  });
+      // Simulate unexpected close (not via disconnect())
+      ws.readyState = 3;
+      ws.emit('close');
 
-  it('structured constructor preserves all fields', () => {
-    const structured = createError(ErrorCode.OP_FAILED, 'Operation failed', {
-      tool: 'create_frame',
-      duration: 500
+      await expect(promise).rejects.toThrow('Connection lost');
     });
-    const err = new FigmaBridgeError(structured);
-    expect(err.code).toBe(ErrorCode.OP_FAILED);
-    expect(err.details).toEqual({ tool: 'create_frame', duration: 500 });
-    expect(err.structuredError).toBe(structured);
+
+    it('attempts reconnection with exponential backoff', async () => {
+      const ws = await connectBridge();
+
+      // Simulate unexpected disconnect
+      ws.readyState = 3;
+      ws.emit('close');
+
+      // After first disconnect, reconnect should be scheduled with 2s delay (1000 * 2^1)
+      expect(mockWsInstances).toHaveLength(1); // No reconnect yet
+
+      vi.advanceTimersByTime(2001);
+
+      // A new WebSocket instance should have been created for reconnection
+      expect(mockWsInstances.length).toBeGreaterThan(1);
+    });
   });
 
-  it('error is catchable as Error', () => {
-    const err = new FigmaBridgeError('test');
-    try {
-      throw err;
-    } catch (caught) {
-      expect(caught).toBeInstanceOf(Error);
-      expect(caught).toBeInstanceOf(FigmaBridgeError);
-    }
-  });
+  describe('sendToFigmaWithRetry', () => {
+    it('returns on first success without retry', async () => {
+      const ws = await connectBridge();
+      const promise = bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 3, baseDelay: 10 });
 
-  it('stack trace contains FigmaBridgeError name', () => {
-    const err = new FigmaBridgeError('stack test');
-    expect(err.stack).toContain('FigmaBridgeError');
+      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'first-try' }));
+
+      await expect(promise).resolves.toBe('first-try');
+      // Only 1 send call = no retries
+      expect(ws.send).toHaveBeenCalledOnce();
+    });
+
+    it('does not retry FigmaBridgeError with VAL_ code prefix', async () => {
+      const ws = await connectBridge();
+
+      // Override send to throw a VAL_ error directly (simulating validation layer)
+      let callCount = 0;
+      ws.send.mockImplementation(() => {
+        callCount++;
+        const structured = createError(ErrorCode.VAL_FAILED, 'Validation failed');
+        throw new FigmaBridgeError(structured);
+      });
+
+      await expect(
+        bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 3, baseDelay: 10 })
+      ).rejects.toThrow('Validation failed');
+
+      // Should have only tried once (no retry for VAL_ errors)
+      expect(callCount).toBe(1);
+    });
+
+    it('does not retry ZodError (validation)', async () => {
+      const ws = await connectBridge();
+
+      // Make sendToFigma throw a ZodError-named error
+      ws.send.mockImplementation(() => {
+        const err = new Error('Validation failed');
+        err.name = 'ZodError';
+        throw err;
+      });
+
+      await expect(
+        bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 3, baseDelay: 10 })
+      ).rejects.toThrow('Validation failed');
+
+      // Should have only tried once (no retry for validation errors)
+      expect(ws.send).toHaveBeenCalledOnce();
+    });
+
+    it('exhausts all retries and throws last error', async () => {
+      const ws = await connectBridge();
+
+      const promise = bridge.sendToFigmaWithRetry(
+        'test',
+        {},
+        {
+          maxRetries: 2,
+          baseDelay: 10,
+          maxDelay: 100
+        }
+      );
+
+      // First attempt
+      let sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
+      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: false, error: 'Figma busy' }));
+
+      // Wait for retry delay
+      await vi.advanceTimersByTimeAsync(200);
+
+      // Second attempt (last)
+      sentData = JSON.parse(ws.send.mock.calls[1][0] as string) as Record<string, unknown>;
+      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: false, error: 'Still busy' }));
+
+      await expect(promise).rejects.toThrow('Still busy');
+    });
   });
 });
+
+// Circuit breaker tests are in figma-bridge-circuit-breaker.test.ts

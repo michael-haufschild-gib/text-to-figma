@@ -274,6 +274,51 @@ describe('HealthCheckRegistry advanced', () => {
     });
   });
 
+  describe('createCacheHealthChecker threshold edge cases', () => {
+    it('exactly 95% memory usage triggers degraded', () => {
+      const checker = createCacheHealthChecker({
+        getStatistics: () => ({ hitRate: 90, memoryUsage: 95, maxMemoryUsage: 100 })
+      });
+      const result = checker();
+      expect(result.status).toBe('degraded');
+    });
+
+    it('94.9% memory usage stays healthy (below 0.95 threshold)', () => {
+      const checker = createCacheHealthChecker({
+        getStatistics: () => ({ hitRate: 90, memoryUsage: 94.9, maxMemoryUsage: 100 })
+      });
+      const result = checker();
+      expect(result.status).toBe('healthy');
+    });
+
+    it('exactly 50% hit rate stays healthy', () => {
+      const checker = createCacheHealthChecker({
+        getStatistics: () => ({ hitRate: 50, memoryUsage: 50, maxMemoryUsage: 100 })
+      });
+      const result = checker();
+      expect(result.status).toBe('healthy');
+    });
+
+    it('49.9% hit rate triggers degraded', () => {
+      const checker = createCacheHealthChecker({
+        getStatistics: () => ({ hitRate: 49.9, memoryUsage: 50, maxMemoryUsage: 100 })
+      });
+      const result = checker();
+      expect(result.status).toBe('degraded');
+    });
+
+    it('low hit rate message overrides high memory message', () => {
+      // Both conditions true: high memory AND low hit rate
+      // The low hit rate check runs second and overwrites the message
+      const checker = createCacheHealthChecker({
+        getStatistics: () => ({ hitRate: 30, memoryUsage: 96, maxMemoryUsage: 100 })
+      });
+      const result = checker();
+      expect(result.status).toBe('degraded');
+      expect(result.message).toContain('hit rate');
+    });
+  });
+
   describe('status aggregation priority', () => {
     it('unhealthy takes priority over degraded', async () => {
       const registry = new HealthCheckRegistry();

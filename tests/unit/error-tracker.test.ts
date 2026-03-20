@@ -269,6 +269,14 @@ describe('ErrorTracker', () => {
       expect(tracker.getStatistics().total).toBe(0);
     });
   });
+});
+
+describe('ErrorTracker pruning and advanced', () => {
+  let tracker: ErrorTracker;
+
+  afterEach(() => {
+    tracker?.destroy();
+  });
 
   describe('pruning', () => {
     it('prunes errors outside aggregation window when maxErrors exceeded', () => {
@@ -377,6 +385,115 @@ describe('ErrorTracker', () => {
     it('returns empty array for untracked severity', () => {
       tracker = new ErrorTracker();
       expect(tracker.getBySeverity('critical')).toHaveLength(0);
+    });
+  });
+
+  describe('toJSON', () => {
+    it('serializes statistics and error entries', () => {
+      tracker = new ErrorTracker();
+      tracker.track(new Error('serializable'), { tool: 'test' });
+
+      const json = tracker.toJSON() as Record<string, unknown>;
+      const stats = json.statistics as Record<string, unknown>;
+      expect(stats.total).toBe(1);
+
+      const errors = json.errors as Array<Record<string, unknown>>;
+      expect(errors).toHaveLength(1);
+      expect(errors[0].message).toBe('serializable');
+      expect(errors[0].context).toEqual({ tool: 'test' });
+      expect(errors[0].count).toBe(1);
+      expect(errors[0].severity).toBeTypeOf('string');
+      expect(errors[0].category).toBeTypeOf('string');
+    });
+
+    it('serializes empty tracker', () => {
+      tracker = new ErrorTracker();
+      const json = tracker.toJSON() as Record<string, unknown>;
+      const errors = json.errors as unknown[];
+      expect(errors).toHaveLength(0);
+    });
+  });
+
+  describe('fingerprint with operation context', () => {
+    it('includes operation in fingerprint for differentiation', () => {
+      tracker = new ErrorTracker();
+      const err = new Error('op error');
+      tracker.track(err, { operation: 'create_frame' });
+      tracker.track(err, { operation: 'set_fills' });
+
+      // These should be tracked as separate errors because operation differs
+      expect(tracker.getAll()).toHaveLength(2);
+    });
+
+    it('same operation deduplicates normally', () => {
+      tracker = new ErrorTracker();
+      const err = new Error('op error');
+      tracker.track(err, { operation: 'create_frame' });
+      tracker.track(err, { operation: 'create_frame' });
+
+      expect(tracker.getAll()).toHaveLength(1);
+      expect(tracker.getAll()[0].count).toBe(2);
+    });
+  });
+
+  describe('destroy', () => {
+    it('clears all errors and stops prune timer', () => {
+      tracker = new ErrorTracker();
+      tracker.track(new Error('before destroy'));
+      tracker.destroy();
+
+      expect(tracker.getAll()).toHaveLength(0);
+    });
+
+    it('is safe to call multiple times', () => {
+      tracker = new ErrorTracker();
+      expect(() => {
+        tracker.destroy();
+        tracker.destroy();
+      }).not.toThrow();
+    });
+  });
+
+  describe('time-based pruning via maxErrors trigger', () => {
+    it('prunes old errors when new error exceeds maxErrors', () => {
+      vi.useFakeTimers();
+
+      tracker = new ErrorTracker({
+        maxErrors: 2,
+        aggregationWindow: 100,
+        pruneInterval: 999999 // disable automatic timer for this test
+      });
+
+      tracker.track(new Error('old-error'));
+      vi.advanceTimersByTime(200); // move past aggregation window
+
+      tracker.track(new Error('newer-1'));
+      // Adding a 3rd error (size > maxErrors=2) triggers pruneOldErrors
+      tracker.track(new Error('newer-2'));
+
+      const remaining = tracker.getAll();
+      const messages = remaining.map((e) => e.error.message);
+      // old-error has lastSeen < cutoff, so it should be pruned
+      expect(messages).not.toContain('old-error');
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('statistics bySeverity and byCategory sum correctly with dedup', () => {
+    it('total reflects sum of all error counts including deduplication', () => {
+      tracker = new ErrorTracker();
+      const err1 = new Error('repeated validation invalid');
+      tracker.track(err1); // validation, count=1
+      tracker.track(err1); // validation, count=2
+      tracker.track(err1); // validation, count=3
+      tracker.track(new Error('connection lost')); // network, count=1
+
+      const stats = tracker.getStatistics();
+      expect(stats.total).toBe(4); // 3 + 1
+      expect(stats.uniqueErrors).toBe(2);
+      expect(stats.byCategory.validation).toBe(3);
+      expect(stats.byCategory.network).toBe(1);
     });
   });
 });

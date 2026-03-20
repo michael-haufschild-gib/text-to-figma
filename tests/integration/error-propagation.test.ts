@@ -139,4 +139,84 @@ describe('Error Propagation', () => {
       expect(stats.uniqueErrors).toBe(2);
     });
   });
+
+  describe('error class hierarchy', () => {
+    it('ToolExecutionError toJSON includes all fields', () => {
+      const cause = new Error('root cause');
+      const err = new ToolExecutionError('Op failed', 'create_frame', { width: 100 }, cause);
+      const json = err.toJSON();
+
+      expect(json.name).toBe('ToolExecutionError');
+      expect(json.message).toBe('Op failed');
+      expect(json.tool).toBe('create_frame');
+      expect(json.input).toEqual({ width: 100 });
+      expect((json.cause as Record<string, unknown>).message).toBe('root cause');
+      expect(json.code).toBe(ErrorCode.OP_FAILED);
+    });
+
+    it('ValidationError toJSON includes validationErrors', () => {
+      const err = new ValidationError(
+        'Bad input',
+        'set_fills',
+        { color: 'red' },
+        [{ field: 'color' }],
+        ErrorCode.VAL_INVALID_COLOR
+      );
+      const json = err.toJSON();
+
+      expect(json.name).toBe('ValidationError');
+      expect(json.code).toBe(ErrorCode.VAL_INVALID_COLOR);
+      expect(json.validationErrors).toHaveLength(1);
+    });
+
+    it('wrapError with non-Error value creates ToolExecutionError from string', () => {
+      const wrapped = wrapError('string error', 'test_tool');
+      expect(isToolExecutionError(wrapped)).toBe(true);
+      expect(wrapped.message).toBe('string error');
+      expect(wrapped.tool).toBe('test_tool');
+    });
+  });
+
+  describe('isStructuredError edge cases', () => {
+    it('returns false for null', () => {
+      expect(isStructuredError(null)).toBe(false);
+    });
+
+    it('returns false for undefined', () => {
+      expect(isStructuredError(undefined)).toBe(false);
+    });
+
+    it('returns false for non-object', () => {
+      expect(isStructuredError('string')).toBe(false);
+      expect(isStructuredError(42)).toBe(false);
+    });
+
+    it('returns false for object missing code', () => {
+      expect(isStructuredError({ message: 'test' })).toBe(false);
+    });
+
+    it('returns false for object with invalid code', () => {
+      expect(isStructuredError({ code: 'NOT_REAL', message: 'test' })).toBe(false);
+    });
+
+    it('returns true for valid StructuredError', () => {
+      const err = createError(ErrorCode.OP_FAILED, 'test');
+      expect(isStructuredError(err)).toBe(true);
+    });
+  });
+
+  describe('formatStructuredError formatting', () => {
+    it('includes details when present', () => {
+      const err = createError(ErrorCode.OP_TIMEOUT, 'Timed out', { requestId: 'r1' });
+      const formatted = formatStructuredError(err);
+      expect(formatted).toContain('requestId');
+      expect(formatted).toContain('r1');
+    });
+
+    it('omits details section when no details', () => {
+      const err = createError(ErrorCode.OP_FAILED, 'Failed');
+      const formatted = formatStructuredError(err);
+      expect(formatted).not.toContain('Details:');
+    });
+  });
 });

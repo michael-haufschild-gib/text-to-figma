@@ -3,7 +3,12 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Logger, resetLogger, getLogger } from '../../mcp-server/src/monitoring/logger.js';
+import {
+  Logger,
+  resetLogger,
+  getLogger,
+  createLogger
+} from '../../mcp-server/src/monitoring/logger.js';
 
 describe('Logger', () => {
   afterEach(() => {
@@ -261,6 +266,101 @@ describe('Logger', () => {
       logger.fatal('f');
 
       expect(spy).toHaveBeenCalledTimes(5);
+    });
+  });
+
+  describe('pretty output', () => {
+    it('outputs human-readable format with level and message', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const logger = new Logger({ level: 'info', pretty: true });
+
+      logger.info('Pretty message');
+
+      const output = spy.mock.calls[0][0] as string;
+      expect(output).toContain('INFO');
+      expect(output).toContain('Pretty message');
+    });
+
+    it('includes ANSI color codes in pretty output', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const logger = new Logger({ level: 'error', pretty: true });
+
+      logger.error('Red error');
+      const output = spy.mock.calls[0][0] as string;
+      // Should contain ANSI escape sequence for red (\x1b[31m)
+      expect(output).toContain('\x1b[');
+    });
+
+    it('includes error details in pretty format', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const logger = new Logger({ level: 'error', pretty: true });
+
+      logger.error('Crashed', new Error('segfault'));
+      const output = spy.mock.calls[0][0] as string;
+      expect(output).toContain('Error: segfault');
+    });
+  });
+
+  describe('setConfig and getConfig', () => {
+    it('setConfig updates the logger level dynamically', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const logger = new Logger({ level: 'error' });
+
+      logger.info('suppressed');
+      expect(spy).not.toHaveBeenCalled();
+
+      logger.setConfig({ level: 'debug' });
+      logger.info('now visible');
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('getConfig returns current configuration', () => {
+      const logger = new Logger({ level: 'warn', pretty: true });
+      const config = logger.getConfig();
+      expect(config.level).toBe('warn');
+      expect(config.pretty).toBe(true);
+    });
+  });
+
+  describe('createLogger factory', () => {
+    it('creates a logger with a scope context', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const logger = createLogger('my-module');
+
+      logger.info('scoped message');
+      const logged = spy.mock.calls[0][0] as string;
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
+      expect(parsed.context.scope).toBe('my-module');
+    });
+  });
+
+  describe('call-site context merging', () => {
+    it('merges call-site context with logger context', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const logger = new Logger({ level: 'info', pretty: false }, { component: 'router' });
+
+      logger.info('request', { method: 'GET', path: '/api' });
+
+      const logged = spy.mock.calls[0][0] as string;
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
+      expect(parsed.context.component).toBe('router');
+      expect(parsed.context.method).toBe('GET');
+      expect(parsed.context.path).toBe('/api');
+    });
+  });
+
+  describe('includeContext=false strips context', () => {
+    it('omits context from output when includeContext is false', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const logger = new Logger(
+        { level: 'info', pretty: false, includeContext: false },
+        { component: 'test' }
+      );
+
+      logger.info('no context');
+      const logged = spy.mock.calls[0][0] as string;
+      const parsed = JSON.parse(logged) as Record<string, unknown>;
+      expect(parsed.context).toBeUndefined();
     });
   });
 
