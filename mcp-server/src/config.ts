@@ -7,12 +7,7 @@
 
 import { z } from 'zod';
 import { ConfigurationError } from './errors/index.js';
-
-/**
- * Log level enum
- */
-export const logLevelSchema = z.enum(['debug', 'info', 'warn', 'error', 'fatal']);
-export type LogLevel = z.infer<typeof logLevelSchema>;
+import { logLevelSchema } from './monitoring/logger.js';
 
 /**
  * Environment enum
@@ -82,12 +77,14 @@ export function loadConfig(): Config {
     loadedConfig = configSchema.parse(process.env);
     return loadedConfig;
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z.ZodError && error.errors.length > 0) {
       const firstError = error.errors[0];
       throw new ConfigurationError(
-        `Configuration validation failed: ${firstError.message}`,
-        firstError.path.join('.'),
-        process.env[firstError.path[0] as string]
+        `Configuration validation failed: ${firstError?.message ?? 'unknown'}`,
+        firstError?.path.join('.') ?? 'unknown',
+        firstError?.path[0] !== undefined && firstError?.path[0] !== null
+          ? process.env[String(firstError.path[0])]
+          : undefined
       );
     }
     throw error;

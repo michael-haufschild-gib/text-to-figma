@@ -370,39 +370,5 @@ export function getHierarchyPatternExamples(nodeType: string): string {
    })`
   };
 
-  return patterns[nodeType] || patterns.text;
-}
-
-/**
- * Get a quick reference for hierarchy rules
- */
-export function getHierarchyQuickReference(): string {
-  return `
-📖 HIERARCHY QUICK REFERENCE:
-
-🌟 TIER 1 - BEST PRACTICE:
-   Use create_design for ANY design with 2+ elements
-   ✅ Atomic operation - all or nothing
-   ✅ Automatic hierarchy management
-   ✅ No coordination issues
-
-⭐ TIER 2 - STEP-BY-STEP:
-   1. Create parent frame first: create_frame({ name: "Container" })
-   2. Save the frameId from response
-   3. Create children with parentId: create_text({ ..., parentId: frameId })
-
-❌ COMMON MISTAKES:
-   ❌ Creating text/shapes without parentId
-   ❌ Using wrong node ID as parent
-   ❌ Trying to nest inside non-container nodes (text, shapes)
-   ❌ Creating multiple root-level nodes (poor organization)
-
-💡 HTML ANALOGY:
-   Frames = <div> containers
-   Text = text content
-   Shapes = <img>, <svg> elements
-
-   Just like you wouldn't put <p> tags directly in <body> without a wrapper,
-   don't create design elements without a frame container!
-`;
+  return patterns[nodeType] ?? patterns.text ?? '';
 }

@@ -260,7 +260,11 @@ export function repairPathCommands(commands: RawPathCommand[]): CommandRepairRep
 
   for (let i = 0; i < commands.length; i++) {
     try {
-      const result = repairCommand(commands[i], i);
+      const cmd = commands[i];
+      if (!cmd) {
+        continue;
+      }
+      const result = repairCommand(cmd, i);
       repairedCommands.push(result.command);
 
       if (result.fixed) {
@@ -275,9 +279,10 @@ export function repairPathCommands(commands: RawPathCommand[]): CommandRepairRep
     }
   }
 
-  if (repairedCommands[0].type !== 'M') {
+  const firstCommand = repairedCommands[0];
+  if (!firstCommand || firstCommand.type !== 'M') {
     throw new Error(
-      `Path must start with M (Move) command, but started with ${repairedCommands[0].type}.\n` +
+      `Path must start with M (Move) command, but started with ${firstCommand?.type ?? 'nothing'}.\n` +
         `The first command sets the starting point of the path.\n` +
         `Example: [{ type: "M", x: 100, y: 200 }, { type: "L", x: 150, y: 250 }]`
     );

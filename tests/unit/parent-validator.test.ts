@@ -10,7 +10,6 @@ import {
   validateParentId,
   formatValidationError,
   getHierarchyPatternExamples,
-  getHierarchyQuickReference,
   type ParentValidationResult
 } from '../../mcp-server/src/utils/parent-validator.js';
 
@@ -138,27 +137,6 @@ describe('Parent Validator', () => {
     it('falls back to text patterns for unknown types', () => {
       const examples = getHierarchyPatternExamples('unknown');
       expect(examples).toContain('TEXT PATTERNS');
-    });
-  });
-
-  describe('getHierarchyQuickReference', () => {
-    it('includes tier 1 and tier 2 approaches', () => {
-      const ref = getHierarchyQuickReference();
-      expect(ref).toContain('TIER 1');
-      expect(ref).toContain('TIER 2');
-      expect(ref).toContain('create_design');
-    });
-
-    it('lists common mistakes', () => {
-      const ref = getHierarchyQuickReference();
-      expect(ref).toContain('COMMON MISTAKES');
-      expect(ref).toContain('without parentId');
-    });
-
-    it('includes HTML analogy', () => {
-      const ref = getHierarchyQuickReference();
-      expect(ref).toContain('HTML ANALOGY');
-      expect(ref).toContain('<div>');
     });
   });
 
