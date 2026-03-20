@@ -2,7 +2,7 @@
 
 **Purpose**: Instructions for writing and running tests in the Text-to-Figma project.
 
-**Test Stack**: Node.js built-in `assert` module | Node.js `--test` runner | WebSocket (`ws`)
+**Test Stack**: Vitest | TypeScript | WebSocket (`ws`)
 
 ---
 
@@ -176,7 +176,7 @@ const SERVER_START_DELAY = 2000;
  */
 function startWebSocketServer() {
   return new Promise((resolve, reject) => {
-    const serverPath = join(__dirname, '../../websocket-server/server.js');
+    const serverPath = join(__dirname, '../../websocket-server/dist/server.js');
 
     const serverProcess = spawn('node', [serverPath], {
       stdio: ['ignore', 'pipe', 'pipe'],

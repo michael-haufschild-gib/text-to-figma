@@ -106,8 +106,10 @@ cd "$PROJECT_ROOT/figma-plugin"
 npm run build
 print_success "Figma plugin built → code.js"
 
-print_step "WebSocket server (pure JavaScript, no build needed)"
-print_success "WebSocket server ready"
+print_step "Building WebSocket server..."
+cd "$PROJECT_ROOT/websocket-server"
+npm run build
+print_success "WebSocket server built → dist/"
 
 ###############################################################################
 # Step 3: Verify builds
@@ -131,11 +133,11 @@ else
     exit 1
 fi
 
-# Check WebSocket server
-if [ -f "$PROJECT_ROOT/websocket-server/server.js" ]; then
-    print_success "WebSocket server verified"
+# Check WebSocket server build
+if [ -f "$PROJECT_ROOT/websocket-server/dist/server.js" ]; then
+    print_success "WebSocket server build verified"
 else
-    print_error "WebSocket server missing - server.js not found"
+    print_error "WebSocket server build failed - dist/server.js not found"
     exit 1
 fi
 
@@ -165,9 +167,9 @@ print_header "Build Complete! 🎉"
 
 echo -e "${GREEN}All components built successfully:${NC}"
 echo ""
-echo "  📦 MCP Server       → mcp-server/dist/"
-echo "  🔌 Figma Plugin     → figma-plugin/code.js"
-echo "  🌐 WebSocket Server → websocket-server/server.js"
+echo "  MCP Server       → mcp-server/dist/"
+echo "  Figma Plugin     → figma-plugin/code.js"
+echo "  WebSocket Server → websocket-server/dist/"
 echo ""
 echo -e "${BLUE}Next steps:${NC}"
 echo ""

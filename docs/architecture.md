@@ -11,7 +11,7 @@
 ```
 ┌─────────────────┐     WebSocket      ┌─────────────────┐     Plugin UI     ┌─────────────────┐
 │   MCP Server    │◄──────────────────►│ WebSocket Server │◄────────────────►│  Figma Plugin   │
-│  (TypeScript)   │    Port 8080       │   (JavaScript)   │                  │  (TypeScript)   │
+│  (TypeScript)   │    Port 8080       │   (TypeScript)   │                  │  (TypeScript)   │
 └─────────────────┘                    └─────────────────┘                  └─────────────────┘
       ▲                                                                            │
       │ MCP Protocol (stdio)                                                       │
@@ -41,7 +41,7 @@ text-to-figma/
 │   └── node-registry.ts    # Hierarchy tracking (rarely modify)
 │
 ├── websocket-server/
-│   └── server.js           # WebSocket bridge (rarely modify)
+│   └── src/server.ts       # WebSocket bridge (rarely modify)
 │
 ├── figma-plugin/
 │   ├── code.ts             # Plugin logic - ADD message handlers HERE

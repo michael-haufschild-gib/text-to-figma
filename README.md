@@ -4,7 +4,7 @@ Design automation for Figma using Claude via Model Context Protocol.
 
 ## What Actually Works
 
-- ✅ MCP Server with 60+ Figma tools
+- ✅ MCP Server with 61 Figma tools
 - ✅ WebSocket bridge server
 - ✅ Figma plugin (basic - create frames, text)
 - ✅ Type-safe tool definitions with Zod
@@ -56,7 +56,7 @@ Edit Claude config:
       "command": "node",
       "args": ["/FULL/PATH/TO/text-to-figma/mcp-server/dist/index.js"],
       "env": {
-        "WEBSOCKET_URL": "ws://localhost:8080"
+        "FIGMA_WS_URL": "ws://localhost:8080"
       }
     }
   }
@@ -95,7 +95,7 @@ Figma Document
 
 ## Available Tools
 
-The MCP server exposes 60+ tools. Key ones:
+The MCP server exposes 61 tools. Key ones:
 
 - `create_frame` - Create frames
 - `create_text` - Create text nodes
@@ -114,13 +114,13 @@ See full list: `mcp-server/src/tools/`
 
 Environment variables:
 
-- `WEBSOCKET_URL` - WebSocket server URL (default: `ws://localhost:8080`)
+- `FIGMA_WS_URL` - WebSocket server URL (default: `ws://localhost:8080`)
 - `NODE_ENV` - Environment (`development`|`production`)
 - `LOG_LEVEL` - Log level (`debug`|`info`|`warn`|`error`)
 
 ### WebSocket Server
 
-- Port: `8080` (hardcoded in `websocket-server/server.js`)
+- Port: `8080` (configurable via `PORT` env var)
 - Max message size: `10MB`
 - Request timeout: `30s`
 
@@ -137,8 +137,8 @@ text-to-figma/
 │   │   ├── monitoring/  # Logging, metrics
 │   │   └── index.ts     # Main entry
 │   └── dist/            # Compiled JS
-├── websocket-server/    # Bridge (JavaScript)
-│   └── server.js
+├── websocket-server/    # Bridge (TypeScript → compiled JS)
+│   └── src/server.ts    # Source; builds to dist/server.js
 ├── figma-plugin/        # Figma plugin (TypeScript)
 │   ├── src/
 │   │   ├── main.ts      # Entry point
@@ -169,10 +169,13 @@ npm run lint
 
 ```bash
 # Run all tests
-./tests/run-all-tests.sh
+npm test
+
+# Unit tests only
+npm run test:unit
 
 # Integration tests only
-./tests/run-integration-tests.sh
+npm run test:integration
 ```
 
 ## Troubleshooting
@@ -199,7 +202,7 @@ npm run lint
 ### MCP server crashes
 
 - Check WebSocket server is running first
-- Check `WEBSOCKET_URL` environment variable
+- Check `FIGMA_WS_URL` environment variable
 - Look at logs for errors
 
 ## Known Issues
@@ -207,7 +210,6 @@ npm run lint
 - Plugin UI is minimal (just shows connection status)
 - No authentication on WebSocket (localhost only)
 - Circuit breaker may trigger under heavy load
-- JSDoc warnings in MCP server (cosmetic only)
 
 ## License
 

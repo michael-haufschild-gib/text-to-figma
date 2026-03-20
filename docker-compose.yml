@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # WebSocket Bridge Server
   websocket-bridge:

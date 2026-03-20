@@ -13,7 +13,13 @@ export default defineConfig({
       provider: 'v8',
       include: ['mcp-server/src/**/*.ts'],
       exclude: ['mcp-server/src/**/*.d.ts', 'mcp-server/src/**/index.ts'],
-      reporter: ['text', 'lcov', 'html']
+      reporter: ['text', 'lcov', 'html'],
+      thresholds: {
+        lines: 60,
+        functions: 70,
+        branches: 45,
+        statements: 60
+      }
     }
   }
 });

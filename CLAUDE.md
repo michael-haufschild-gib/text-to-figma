@@ -1,13 +1,13 @@
 ## Project Purpose
 
-Text-to-Figma is a **three-tier MCP server** that gives LLM agents 45+ tools to create and manipulate Figma designs.
+Text-to-Figma is a **three-tier MCP server** that gives LLM agents 61 tools to create and manipulate Figma designs.
 
 ## Architecture
 
 ```
 ┌──────────────┐     WebSocket     ┌─────────────────┐     stdio      ┌──────────────┐
 │ Figma Plugin │ ◄──────────────── │ WebSocket Bridge │ ◄──────────── │  MCP Server  │
-│ (TypeScript) │     port 8080     │   (JavaScript)   │    JSON-RPC   │ (TypeScript)  │
+│ (TypeScript) │     port 8080     │   (TypeScript)   │    JSON-RPC   │ (TypeScript)  │
 └──────────────┘                   └─────────────────┘               └──────────────┘
 ```
 
@@ -20,7 +20,7 @@ Text-to-Figma is a **three-tier MCP server** that gives LLM agents 45+ tools to 
 ### 2. WEBSOCKET SERVER (`websocket-server/`)
 
 - Routes messages between MCP server and Figma plugin
-- Single-file JS server (`server.js`), port 8080
+- Single-file TypeScript server (`src/server.ts` → `dist/server.js`), port 8080
 - Enforces single Figma plugin instance, heartbeat-based dead connection detection
 
 ### 3. MCP SERVER (`mcp-server/`)

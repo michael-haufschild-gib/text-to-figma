@@ -118,6 +118,15 @@ void (async () => {
 type Handler = (payload: Record<string, unknown>) => unknown | Promise<unknown>;
 
 const handlers: Record<string, Handler> = {
+  // Diagnostic
+  ping: () => ({
+    pong: true,
+    timestamp: Date.now(),
+    pluginVersion: '1.0.0',
+    fileName: figma.root.name,
+    currentPage: figma.currentPage.name
+  }),
+
   // Creation
   create_frame: handleCreateFrame,
   create_text: handleCreateText,

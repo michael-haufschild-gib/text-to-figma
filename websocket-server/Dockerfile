@@ -21,9 +21,9 @@ RUN npm prune --omit=dev
 # Expose port
 EXPOSE 8080
 
-# Health check
+# Health check — TCP connection to verify WebSocket server is listening
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
+  CMD node -e "const s = require('net').connect(8080, '127.0.0.1', () => { s.destroy(); process.exit(0); }); s.on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 3000);"
 
 # Start server
 CMD ["node", "dist/server.js"]

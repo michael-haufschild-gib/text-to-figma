@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { WebSocketServer, WebSocket, RawData } from 'ws';
 import { IncomingMessage } from 'http';
 
-const PORT = parseInt(process.env.PORT ?? '8080', 10);
-const MAX_MESSAGE_SIZE = 10 * 1024 * 1024; // 10MB - prevent DoS via large payloads
-const HEARTBEAT_INTERVAL = 30000; // 30 seconds - ping interval
-const HEARTBEAT_TIMEOUT = 60000; // 60 seconds - connection timeout
+export const MAX_MESSAGE_SIZE = 10 * 1024 * 1024; // 10MB - prevent DoS via large payloads
+export const HEARTBEAT_INTERVAL = 30000; // 30 seconds - ping interval
+export const HEARTBEAT_TIMEOUT = 60000; // 60 seconds - connection timeout
 
-interface ClientRecord {
+export interface ClientRecord {
   ws: WebSocket;
   isAlive: boolean;
   lastPong: number;
@@ -15,30 +15,47 @@ interface ClientRecord {
   isMCP?: boolean;
 }
 
-interface FigmaHelloMessage {
+export interface FigmaHelloMessage {
   type: 'figma_hello';
   source: 'figma-plugin';
 }
 
-interface RequestMessage {
+export interface RequestMessage {
   type: string;
   payload: unknown;
   id?: string;
 }
 
-interface ResponseMessage {
+export interface ResponseMessage {
   id: string;
   success: boolean;
   [key: string]: unknown;
 }
 
-type BridgeMessage = FigmaHelloMessage | RequestMessage | ResponseMessage;
+export type BridgeMessage = FigmaHelloMessage | RequestMessage | ResponseMessage;
+
+/**
+ * Mutable server state — isolated per createServer() call for testability.
+ */
+export interface ServerState {
+  clients: Map<string, ClientRecord>;
+  figmaPluginClient: string | null;
+  pendingRequestOrigins: Map<string, string>;
+}
+
+export function createServerState(): ServerState {
+  return {
+    clients: new Map(),
+    figmaPluginClient: null,
+    pendingRequestOrigins: new Map()
+  };
+}
 
 /**
  * Validate and classify a parsed JSON object as a BridgeMessage.
  * Returns null if the object does not match any known message shape.
  */
-function validateMessage(obj: unknown): BridgeMessage | null {
+export function validateMessage(obj: unknown): BridgeMessage | null {
   if (obj === null || obj === undefined || typeof obj !== 'object') {
     return null;
   }
@@ -63,20 +80,16 @@ function validateMessage(obj: unknown): BridgeMessage | null {
   return null;
 }
 
-// Store connected clients with heartbeat info
-const clients = new Map<string, ClientRecord>();
-
-// Track Figma plugin instance separately (only one allowed)
-let figmaPluginClient: string | null = null;
-
-// Track which MCP client sent each request (request ID → client ID)
-const pendingRequestOrigins = new Map<string, string>();
-
 /**
  * Handle Figma plugin registration (figma_hello message).
  * Returns true if the message was handled as a registration, false otherwise.
  */
-function handleFigmaRegistration(message: BridgeMessage, clientId: string, ws: WebSocket): boolean {
+export function handleFigmaRegistration(
+  state: ServerState,
+  message: BridgeMessage,
+  clientId: string,
+  ws: WebSocket
+): boolean {
   if (
     message.type !== 'figma_hello' ||
     !('source' in message) ||
@@ -86,15 +99,15 @@ function handleFigmaRegistration(message: BridgeMessage, clientId: string, ws: W
   }
 
   console.log(`[REGISTRATION] Figma plugin registering: ${clientId}`);
-  const client = clients.get(clientId);
+  const client = state.clients.get(clientId);
   if (client) {
     client.isFigma = true;
-    if (!figmaPluginClient) {
-      figmaPluginClient = clientId;
+    if (!state.figmaPluginClient) {
+      state.figmaPluginClient = clientId;
       console.log(`  Registered as primary Figma plugin: ${clientId}`);
-    } else if (figmaPluginClient !== clientId) {
+    } else if (state.figmaPluginClient !== clientId) {
       console.warn(
-        `  Multiple Figma instances detected! Primary: ${figmaPluginClient}, Duplicate: ${clientId}`
+        `  Multiple Figma instances detected! Primary: ${state.figmaPluginClient}, Duplicate: ${clientId}`
       );
       ws.send(
         JSON.stringify({
@@ -109,48 +122,55 @@ function handleFigmaRegistration(message: BridgeMessage, clientId: string, ws: W
 }
 
 /**
- * Route a parsed message to the appropriate destination.
+ * Route a request message from an MCP client to the Figma plugin.
  */
-function routeRequest(message: BridgeMessage, clientId: string): void {
+export function routeRequest(state: ServerState, message: BridgeMessage, clientId: string): void {
   console.log(`[REQUEST] MCP -> Figma (${clientId}):`, message);
-  const client = clients.get(clientId);
+  const client = state.clients.get(clientId);
   if (client) {
     client.isMCP = true;
   }
   // Track which MCP client originated this request for response routing
   const requestMsg = message as RequestMessage;
   if (typeof requestMsg.id === 'string') {
-    pendingRequestOrigins.set(requestMsg.id, clientId);
+    state.pendingRequestOrigins.set(requestMsg.id, clientId);
   }
-  if (figmaPluginClient && clients.has(figmaPluginClient)) {
-    const figmaClient = clients.get(figmaPluginClient);
+  if (state.figmaPluginClient && state.clients.has(state.figmaPluginClient)) {
+    const figmaClient = state.clients.get(state.figmaPluginClient);
     if (figmaClient?.ws.readyState === WebSocket.OPEN) {
       figmaClient.ws.send(JSON.stringify(message));
-      console.log(`  Routed to Figma plugin: ${figmaPluginClient}`);
+      console.log(`  Routed to Figma plugin: ${state.figmaPluginClient}`);
     }
   } else {
     console.error('  No Figma plugin connected!');
   }
 }
 
-function routeResponse(message: ResponseMessage, clientId: string): void {
+/**
+ * Route a response message from the Figma plugin back to the originating MCP client.
+ */
+export function routeResponse(
+  state: ServerState,
+  message: ResponseMessage,
+  clientId: string
+): void {
   console.log(`[RESPONSE] Figma -> MCP (${clientId}):`, message);
-  if (figmaPluginClient && clientId !== figmaPluginClient) {
+  if (state.figmaPluginClient && clientId !== state.figmaPluginClient) {
     console.warn(`  Ignoring response from unregistered client ${clientId}`);
     return;
   }
-  const originClientId = pendingRequestOrigins.get(message.id);
-  pendingRequestOrigins.delete(message.id);
+  const originClientId = state.pendingRequestOrigins.get(message.id);
+  state.pendingRequestOrigins.delete(message.id);
 
   if (originClientId) {
-    const originClient = clients.get(originClientId);
+    const originClient = state.clients.get(originClientId);
     if (originClient?.ws.readyState === WebSocket.OPEN) {
       originClient.ws.send(JSON.stringify(message));
       console.log(`  Routed to originating MCP client: ${originClientId}`);
     }
   } else {
     // Fallback: broadcast to all MCP clients (for requests without tracked IDs)
-    for (const [, mcpClient] of clients.entries()) {
+    for (const [, mcpClient] of state.clients.entries()) {
       if (mcpClient.isMCP && mcpClient.ws.readyState === WebSocket.OPEN) {
         mcpClient.ws.send(JSON.stringify(message));
       }
@@ -158,31 +178,39 @@ function routeResponse(message: ResponseMessage, clientId: string): void {
   }
 }
 
-function routeMessage(message: BridgeMessage, clientId: string): void {
+/**
+ * Classify a message and route it to the appropriate handler.
+ */
+export function routeMessage(state: ServerState, message: BridgeMessage, clientId: string): void {
   const isRequest = 'type' in message && 'payload' in message;
   const isResponse = 'id' in message && 'success' in message;
 
   if (isRequest) {
-    routeRequest(message, clientId);
+    routeRequest(state, message, clientId);
   } else if (isResponse) {
-    routeResponse(message, clientId);
+    routeResponse(state, message, clientId);
   } else {
     console.log(`[UNKNOWN] Message from ${clientId}:`, message);
   }
 }
 
-// Create WebSocket server
-const wss = new WebSocketServer({ port: PORT });
+export interface ServerHandle {
+  wss: WebSocketServer;
+  state: ServerState;
+  heartbeatInterval: ReturnType<typeof setInterval>;
+  shutdown: (signal: string) => void;
+}
 
-console.log(`WebSocket bridge server started on port ${PORT}`);
-
-wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
+/**
+ * Wire up event handlers for a newly connected WebSocket client.
+ */
+function setupConnection(state: ServerState, ws: WebSocket): void {
   const clientId = `client-${randomUUID()}`;
 
   console.log(`Client connected: ${clientId}`);
 
   // Store client connection with heartbeat info
-  clients.set(clientId, {
+  state.clients.set(clientId, {
     ws,
     isAlive: true,
     lastPong: Date.now()
@@ -190,7 +218,7 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
 
   // Set up ping/pong for connection health
   ws.on('pong', () => {
-    const client = clients.get(clientId);
+    const client = state.clients.get(clientId);
     if (client) {
       client.isAlive = true;
       client.lastPong = Date.now();
@@ -219,8 +247,8 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
         return;
       }
 
-      if (!handleFigmaRegistration(message, clientId, ws)) {
-        routeMessage(message, clientId);
+      if (!handleFigmaRegistration(state, message, clientId, ws)) {
+        routeMessage(state, message, clientId);
       }
     } catch (error) {
       console.error(`Error parsing message from ${clientId}:`, error);
@@ -235,15 +263,15 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
   ws.on('close', () => {
     console.log(`Client disconnected: ${clientId}`);
     // If the primary Figma plugin disconnects, clear it
-    if (clientId === figmaPluginClient) {
+    if (clientId === state.figmaPluginClient) {
       console.log(`  Primary Figma plugin disconnected, clearing assignment`);
-      figmaPluginClient = null;
+      state.figmaPluginClient = null;
     }
-    clients.delete(clientId);
+    state.clients.delete(clientId);
     // Clean up any pending request origins for this client
-    for (const [reqId, originId] of pendingRequestOrigins.entries()) {
+    for (const [reqId, originId] of state.pendingRequestOrigins.entries()) {
       if (originId === clientId) {
-        pendingRequestOrigins.delete(reqId);
+        state.pendingRequestOrigins.delete(reqId);
       }
     }
   });
@@ -251,11 +279,11 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
   ws.on('error', (error: Error) => {
     console.error(`WebSocket error for ${clientId}:`, error);
     // Clean up errored connection immediately (don't wait for heartbeat)
-    if (clientId === figmaPluginClient) {
+    if (clientId === state.figmaPluginClient) {
       console.log(`  Primary Figma plugin errored, clearing assignment`);
-      figmaPluginClient = null;
+      state.figmaPluginClient = null;
     }
-    clients.delete(clientId);
+    state.clients.delete(clientId);
     try {
       ws.terminate();
     } catch {
@@ -271,63 +299,87 @@ wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
       clientId
     })
   );
-});
-
-wss.on('error', (error: Error) => {
-  console.error('WebSocket server error:', error);
-});
-
-/**
- * Heartbeat interval to detect dead connections
- */
-const heartbeatInterval = setInterval(() => {
-  const now = Date.now();
-
-  for (const [clientId, client] of clients.entries()) {
-    // Check if client hasn't responded to ping
-    if (!client.isAlive || now - client.lastPong > HEARTBEAT_TIMEOUT) {
-      console.log(`Client ${clientId} appears dead, terminating connection`);
-      client.ws.terminate();
-      clients.delete(clientId);
-      continue;
-    }
-
-    // Mark as pending pong and send ping
-    client.isAlive = false;
-    try {
-      client.ws.ping();
-    } catch (error) {
-      console.error(`Failed to ping ${clientId}:`, error);
-      client.ws.terminate();
-      clients.delete(clientId);
-    }
-  }
-}, HEARTBEAT_INTERVAL);
-
-// Graceful shutdown handler
-function shutdown(signal: string): void {
-  console.log(`\n${signal} received, shutting down WebSocket server...`);
-
-  // Clear heartbeat interval
-  clearInterval(heartbeatInterval);
-
-  // Close all client connections
-  for (const [_clientId, client] of clients.entries()) {
-    client.ws.close();
-  }
-
-  // Close server
-  wss.close(() => {
-    console.log('WebSocket server closed');
-    process.exit(0);
-  });
-
-  // Force exit after timeout if graceful shutdown stalls
-  setTimeout(() => {
-    console.error('Graceful shutdown timed out, forcing exit');
-    process.exit(1);
-  }, 5000);
 }
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+/**
+ * Create and start a WebSocket bridge server on the given port.
+ * Returns a handle for testing and graceful shutdown.
+ */
+export function createServer(port: number): ServerHandle {
+  const state = createServerState();
+
+  const wss = new WebSocketServer({ port });
+
+  console.log(`WebSocket bridge server started on port ${port}`);
+
+  wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
+    setupConnection(state, ws);
+  });
+
+  wss.on('error', (error: Error) => {
+    console.error('WebSocket server error:', error);
+  });
+
+  /**
+   * Heartbeat interval to detect dead connections
+   */
+  const heartbeatInterval = setInterval(() => {
+    const now = Date.now();
+
+    for (const [clientId, client] of state.clients.entries()) {
+      // Check if client hasn't responded to ping
+      if (!client.isAlive || now - client.lastPong > HEARTBEAT_TIMEOUT) {
+        console.log(`Client ${clientId} appears dead, terminating connection`);
+        client.ws.terminate();
+        state.clients.delete(clientId);
+        continue;
+      }
+
+      // Mark as pending pong and send ping
+      client.isAlive = false;
+      try {
+        client.ws.ping();
+      } catch (error) {
+        console.error(`Failed to ping ${clientId}:`, error);
+        client.ws.terminate();
+        state.clients.delete(clientId);
+      }
+    }
+  }, HEARTBEAT_INTERVAL);
+
+  // Graceful shutdown handler
+  function shutdown(signal: string): void {
+    console.log(`\n${signal} received, shutting down WebSocket server...`);
+
+    // Clear heartbeat interval
+    clearInterval(heartbeatInterval);
+
+    // Close all client connections
+    for (const [_clientId, client] of state.clients.entries()) {
+      client.ws.close();
+    }
+
+    // Close server
+    wss.close(() => {
+      console.log('WebSocket server closed');
+      process.exit(0);
+    });
+
+    // Force exit after timeout if graceful shutdown stalls
+    setTimeout(() => {
+      console.error('Graceful shutdown timed out, forcing exit');
+      process.exit(1);
+    }, 5000);
+  }
+
+  return { wss, state, heartbeatInterval, shutdown };
+}
+
+// Auto-start when this file is the entry point
+const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+if (isMainModule) {
+  const port = parseInt(process.env.PORT ?? '8080', 10);
+  const { shutdown } = createServer(port);
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+}

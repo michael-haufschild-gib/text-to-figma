@@ -618,3 +618,16 @@ export function getFigmaBridge(): FigmaBridge {
   bridgeInstance ??= new FigmaBridge();
   return bridgeInstance;
 }
+
+/**
+ * Reset the global Figma bridge (for testing only)
+ *
+ * Disconnects the existing bridge and creates a fresh instance
+ * on the next getFigmaBridge() call.
+ */
+export function resetFigmaBridge(): void {
+  if (bridgeInstance) {
+    bridgeInstance.disconnect();
+  }
+  bridgeInstance = null;
+}

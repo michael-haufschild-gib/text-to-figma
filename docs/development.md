@@ -77,9 +77,9 @@ cd figma-plugin && npm run build
 ### Making Changes to WebSocket Server
 
 ```bash
-# 1. Edit websocket-server/server.js (no build needed)
-# 2. Restart server
-cd websocket-server && npm start
+# 1. Edit websocket-server/src/server.ts
+# 2. Rebuild and restart
+cd websocket-server && npm run build && npm start
 ```
 
 ---
@@ -88,7 +88,7 @@ cd websocket-server && npm start
 
 | Component        | Default Port    | Environment Variable |
 | ---------------- | --------------- | -------------------- |
-| WebSocket Server | 8080            | `WEBSOCKET_PORT`     |
+| WebSocket Server | 8080            | `PORT`               |
 | MCP Server       | stdio (no port) | N/A                  |
 
 ---
@@ -107,11 +107,11 @@ kill $(lsof -t -i :8080)
 
 ## Build Outputs
 
-| Source                       | Output                 | Built By |
-| ---------------------------- | ---------------------- | -------- |
-| `mcp-server/src/*.ts`        | `mcp-server/dist/*.js` | `tsc`    |
-| `figma-plugin/code.ts`       | `figma-plugin/code.js` | `tsc`    |
-| `websocket-server/server.js` | N/A (pure JS)          | N/A      |
+| Source                      | Output                       | Built By |
+| --------------------------- | ---------------------------- | -------- |
+| `mcp-server/src/*.ts`       | `mcp-server/dist/*.js`       | `tsc`    |
+| `figma-plugin/code.ts`      | `figma-plugin/code.js`       | `tsc`    |
+| `websocket-server/src/*.ts` | `websocket-server/dist/*.js` | `tsc`    |
 
 ---
 

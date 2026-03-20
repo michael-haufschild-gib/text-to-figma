@@ -10,13 +10,29 @@ import * as net from 'net';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import WebSocket from 'ws';
+import { getConfig } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const WEBSOCKET_PORT = 8080;
+const DEFAULT_WEBSOCKET_PORT = 8080;
 const STARTUP_TIMEOUT = 10000; // 10 seconds to wait for server to start
 const PORT_CHECK_INTERVAL = 200; // Check every 200ms
+
+/**
+ * Extract port from the configured WebSocket URL.
+ * Falls back to DEFAULT_WEBSOCKET_PORT if URL parsing fails.
+ */
+function getWebSocketPort(): number {
+  try {
+    const config = getConfig();
+    const url = new URL(config.FIGMA_WS_URL);
+    const port = parseInt(url.port, 10);
+    return Number.isFinite(port) && port > 0 ? port : DEFAULT_WEBSOCKET_PORT;
+  } catch {
+    return DEFAULT_WEBSOCKET_PORT;
+  }
+}
 
 let spawnedProcess: ChildProcess | null = null;
 
@@ -165,7 +181,7 @@ export interface SpawnResult {
  * Will spawn it if not already running.
  */
 export async function ensureWebSocketServer(): Promise<SpawnResult> {
-  const port = WEBSOCKET_PORT;
+  const port = getWebSocketPort();
 
   console.error(`[WebSocket Spawner] Checking if WebSocket server is running on port ${port}...`);
 

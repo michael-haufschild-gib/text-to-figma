@@ -459,3 +459,32 @@ describe('FigmaBridge', () => {
 });
 
 // Circuit breaker tests are in figma-bridge-circuit-breaker.test.ts
+
+describe('resetFigmaBridge', () => {
+  // Import singleton functions after mock
+  let getFigmaBridge: typeof import('../../mcp-server/src/figma-bridge.js').getFigmaBridge;
+  let resetFigmaBridge: typeof import('../../mcp-server/src/figma-bridge.js').resetFigmaBridge;
+
+  beforeEach(async () => {
+    loadConfig();
+    const mod = await import('../../mcp-server/src/figma-bridge.js');
+    getFigmaBridge = mod.getFigmaBridge;
+    resetFigmaBridge = mod.resetFigmaBridge;
+  });
+
+  afterEach(() => {
+    resetConfig();
+    vi.restoreAllMocks();
+  });
+
+  it('creates a fresh instance after reset', () => {
+    const first = getFigmaBridge();
+    const sameInstance = getFigmaBridge();
+    expect(first).toBe(sameInstance);
+
+    resetFigmaBridge();
+
+    const fresh = getFigmaBridge();
+    expect(fresh).not.toBe(first);
+  });
+});
