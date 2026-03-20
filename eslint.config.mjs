@@ -1,12 +1,19 @@
-// ESLint v9 flat config — unified for all three packages + tests
-const tsParser = require('@typescript-eslint/parser');
-const tseslint = require('@typescript-eslint/eslint-plugin');
-const prettierPlugin = require('eslint-plugin-prettier');
-const eslintConfigPrettier = require('eslint-config-prettier');
-const figmaPlugin = require('@figma/eslint-plugin-figma-plugins');
-const globals = require('globals');
+// ESLint v9 flat config — unified for all three packages + tests (ESM)
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// Custom rules
+import tsParser from '@typescript-eslint/parser';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import prettierPlugin from 'eslint-plugin-prettier';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import figmaPlugin from '@figma/eslint-plugin-figma-plugins';
+import globals from 'globals';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+
+// Custom rules (CommonJS modules loaded via createRequire)
 const localLintPlugin = {
   rules: {
     'no-inline-color-values': require('./eslint-rules/no-inline-color-values'),
@@ -49,7 +56,7 @@ const codeQualityRules = {
   'no-unused-expressions': 'error'
 };
 
-module.exports = [
+export default [
   // ─── MCP Server: TypeScript (strict) ─────────────────────────────────────
   {
     files: ['mcp-server/src/**/*.ts'],
@@ -170,7 +177,24 @@ module.exports = [
       'local/no-shallow-test-matchers': 'error',
       'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': ['warn', { max: 300, skipBlankLines: true, skipComments: true }],
-      complexity: ['warn', { max: 25 }]
+      complexity: ['warn', { max: 25 }],
+
+      // ─── Ban .skip abuse ─────────────────────────────────────────────────
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.object.name="it"][callee.property.name="skip"]',
+          message: 'No it.skip — fix or remove the test.'
+        },
+        {
+          selector: 'CallExpression[callee.object.name="test"][callee.property.name="skip"]',
+          message: 'No test.skip — fix or remove the test.'
+        },
+        {
+          selector: 'CallExpression[callee.object.name="describe"][callee.property.name="skip"]',
+          message: 'No describe.skip — fix or remove the test suite.'
+        }
+      ]
     }
   },
 
