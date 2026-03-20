@@ -11,29 +11,33 @@ description: Create ANY type of drawing, illustration, icon, or visual graphic i
 Before creating ANY shapes, you MUST plan visually:
 
 **1. ASCII Art Sketch**
-   - Draw a rough layout using ASCII characters
-   - Mark key anchor points with approximate coordinates
-   - Show spatial relationships between major elements
+
+- Draw a rough layout using ASCII characters
+- Mark key anchor points with approximate coordinates
+- Show spatial relationships between major elements
 
 **2. Coordinate System**
-   - Establish canvas dimensions (typically 800x600 or 1000x800)
-   - Define reference point (usually center or top-left)
-   - Calculate positions for major elements
+
+- Establish canvas dimensions (typically 800x600 or 1000x800)
+- Define reference point (usually center or top-left)
+- Calculate positions for major elements
 
 **3. Detailed Shape Inventory**
-   - List ALL shapes needed including depth/shading layers:
-     * **Primary shapes** (main elements) - use paths for organic/detailed work!
-     * **Shading layers** (shadows, highlights, gradients)
-     * **Detail elements** (fine details, textures, accents)
-     * For EACH shape specify:
-       - Shape type (PATH preferred for organic/detailed work!)
-       - Exact position (x, y)
-       - Dimensions OR path coordinates
-       - Base color + shading colors
-       - Layering order (back to front)
-       - Opacity if translucent
+
+- List ALL shapes needed including depth/shading layers:
+  - **Primary shapes** (main elements) - use paths for organic/detailed work!
+  - **Shading layers** (shadows, highlights, gradients)
+  - **Detail elements** (fine details, textures, accents)
+  - For EACH shape specify:
+    - Shape type (PATH preferred for organic/detailed work!)
+    - Exact position (x, y)
+    - Dimensions OR path coordinates
+    - Base color + shading colors
+    - Layering order (back to front)
+    - Opacity if translucent
 
 **Example for Detailed Organic Illustration:**
+
 ```
 Canvas: 800x600
 Subject: Detailed leaf illustration with depth
@@ -85,6 +89,7 @@ Export checkpoints: After base (4 shapes), after veins (12 shapes), after shadin
 ```
 
 **Example for Complex Subject - Logo:**
+
 ```
 Canvas: 600x400
 
@@ -116,7 +121,7 @@ SHAPE PLAN:
 // MANDATORY CHECKPOINT: Export current state
 await export_node({
   nodeId: canvas.frameId,
-  format: "PNG",
+  format: 'PNG',
   scale: 1,
   returnBase64: true
 });
@@ -132,6 +137,7 @@ await export_node({
 ```
 
 **Why Frequent Exports Are Non-Negotiable:**
+
 - You can't see what you're creating without exports
 - Errors compound quickly in spatial positioning
 - Proportion mistakes are invisible until rendered
@@ -145,6 +151,7 @@ await export_node({
 Always prefer paths over simple primitives!
 
 **Core Shape Primitives:**
+
 - `create_ellipse`: Circles, ovals (eyes, heads, organic shapes)
 - `create_frame`: Rectangles, containers (bodies, backgrounds)
 - `create_polygon`: Multi-sided shapes (triangles, hexagons, diamonds)
@@ -161,6 +168,7 @@ Always prefer paths over simple primitives!
   - Essential for hand-drawn look or character outlines
 
 **Shape Combination (Boolean Operations):**
+
 - `create_boolean_operation`: Build complex shapes from simple ones
   - **UNION**: Merge overlapping shapes (combine circles for cloud, flower)
   - **SUBTRACT**: Cut out shapes (donut = circle - smaller circle)
@@ -168,6 +176,7 @@ Always prefer paths over simple primitives!
   - **EXCLUDE**: Remove overlaps (opposing crescents)
 
 **Positioning & Alignment Tools:**
+
 - `set_absolute_position`: Move shape to exact (x, y) coordinates
 - `align_nodes`: Align multiple shapes
   - TOP, BOTTOM, LEFT, RIGHT: Align edges
@@ -180,18 +189,21 @@ Always prefer paths over simple primitives!
 - `get_relative_bounds`: Measure distances between shapes
 
 **Connection & Composition:**
+
 - `connect_shapes`: Position shapes to touch/overlap/merge
   - POSITION_ONLY: Just touch (adjacent shapes)
   - POSITION_OVERLAP: Overlap slightly (smooth visual connection)
   - UNION: Overlap AND boolean union (seamless merge)
 
 **Layer Management (Critical for Depth):**
+
 - `set_layer_order`: Control what appears on top
   - BRING_TO_FRONT: Details, eyes, highlights
   - SEND_TO_BACK: Large base shapes, backgrounds
   - BRING_FORWARD/SEND_BACKWARD: Fine adjustments
 
 **Transform Tools:**
+
 - `set_rotation`: Rotate shapes (angled elements)
 - `set_scale`: Scale shapes (mirror with negative values)
 - `flip_node`: Flip horizontally/vertically
@@ -205,9 +217,9 @@ MANDATORY CHECKPOINT:
 
 1. EXPORT CURRENT STATE:
    await export_node({
-     nodeId: canvas.frameId,
-     format: "PNG",
-     scale: 1
+   nodeId: canvas.frameId,
+   format: "PNG",
+   scale: 1
    });
 
 2. VISUAL ANALYSIS (Study the exported image):
@@ -227,6 +239,7 @@ MANDATORY CHECKPOINT:
 ```
 
 **Why This Matters:**
+
 - Prevents building on faulty foundation
 - Catches errors early (cheap to fix)
 - Confirms mental model vs reality
@@ -239,6 +252,7 @@ MANDATORY CHECKPOINT:
 ### For Different Drawing Types:
 
 **Organic/Detailed Drawings (MOST COMMON):**
+
 - **Primary tool: `create_path` (80-90% of shapes)**
 - Use Bezier curves (C command) extensively for smooth, natural forms
 - Create 15-25+ shapes for proper detail and depth
@@ -253,12 +267,14 @@ MANDATORY CHECKPOINT:
 - **Never settle for simple ellipses/frames for main elements!**
 
 **Geometric/Technical Drawings:**
+
 - Primary: `create_frame`, `create_polygon`, `create_line`
 - Boolean ops for complex shapes
 - `align_nodes` and `distribute_nodes` for precision
 - Paths still useful for rounded technical elements
 
 **Icons/Logos (Simple, Flat Style):**
+
 - Can use `create_ellipse`, `create_polygon`, `create_star`
 - Boolean operations for complex forms
 - High precision positioning
@@ -266,6 +282,7 @@ MANDATORY CHECKPOINT:
 - 5-10 shapes usually sufficient
 
 **Illustrations (High Quality Expected):**
+
 - **Primary tool: `create_path` for ALL major elements**
 - 20-40+ shapes for professional quality
 - Multiple shading/highlight layers per element
@@ -274,6 +291,7 @@ MANDATORY CHECKPOINT:
 - Color variation for depth and interest
 
 **Styling Tools (USE EXTENSIVELY FOR DEPTH):**
+
 - `set_fills`: Solid base colors
 - `add_gradient_fill`: **CRITICAL FOR DEPTH!** (LINEAR, RADIAL)
   - Use on bodies for 3D effect (darker bottom, lighter top)
@@ -289,6 +307,7 @@ MANDATORY CHECKPOINT:
   - SCREEN: For highlight layers
 
 **Export for Verification:**
+
 - `export_node`: Generate PNG/JPG/SVG for visual feedback
 
 ## Complete Example: Heart Icon
@@ -331,8 +350,8 @@ DIMENSIONS:
 ```typescript
 // 1. Create canvas
 const canvas = await create_frame({
-  name: "Heart Icon",
-  layoutMode: "NONE"
+  name: 'Heart Icon',
+  layoutMode: 'NONE'
 });
 
 await set_size({
@@ -343,15 +362,15 @@ await set_size({
 
 await set_fills({
   nodeId: canvas.frameId,
-  color: "#FFFFFF"
+  color: '#FFFFFF'
 });
 
 // 2. Create left lobe (circle)
 const leftLobe = await create_ellipse({
-  name: "Left Lobe",
+  name: 'Left Lobe',
   width: 50,
   height: 50,
-  fillColor: "#FF4444",
+  fillColor: '#FF4444',
   parentId: canvas.frameId
 });
 
@@ -363,10 +382,10 @@ await set_absolute_position({
 
 // 3. Create right lobe (circle)
 const rightLobe = await create_ellipse({
-  name: "Right Lobe",
+  name: 'Right Lobe',
   width: 50,
   height: 50,
-  fillColor: "#FF4444",
+  fillColor: '#FF4444',
   parentId: canvas.frameId
 });
 
@@ -378,10 +397,10 @@ await set_absolute_position({
 
 // 4. Create bottom point (triangle/polygon)
 const bottomPoint = await create_polygon({
-  name: "Bottom Point",
+  name: 'Bottom Point',
   sideCount: 3,
   radius: 40,
-  fillColor: "#FF4444",
+  fillColor: '#FF4444',
   parentId: canvas.frameId
 });
 
@@ -393,42 +412,38 @@ await set_absolute_position({
 
 await set_rotation({
   nodeId: bottomPoint.polygonId,
-  rotation: 180  // Point down
+  rotation: 180 // Point down
 });
 
 // CHECKPOINT 1: Export to see shape positioning
 await export_node({
   nodeId: canvas.frameId,
-  format: "PNG",
+  format: 'PNG',
   scale: 1
 });
 // ANALYZE: Do the shapes overlap properly to form a heart? ✓
 
 // 5. Boolean union to create seamless heart
 const heart = await create_boolean_operation({
-  nodeIds: [
-    leftLobe.ellipseId,
-    rightLobe.ellipseId,
-    bottomPoint.polygonId
-  ],
-  operation: "UNION",
-  name: "Heart Shape"
+  nodeIds: [leftLobe.ellipseId, rightLobe.ellipseId, bottomPoint.polygonId],
+  operation: 'UNION',
+  name: 'Heart Shape'
 });
 
 // CHECKPOINT 2: Export unified heart
 await export_node({
   nodeId: canvas.frameId,
-  format: "PNG",
+  format: 'PNG',
   scale: 1
 });
 // ANALYZE: Does the merged shape look smooth? ✓
 
 // 6. Optional: Add highlight for depth
 const highlight = await create_ellipse({
-  name: "Highlight",
+  name: 'Highlight',
   width: 20,
   height: 15,
-  fillColor: "#FFFFFF",
+  fillColor: '#FFFFFF',
   parentId: canvas.frameId
 });
 
@@ -445,14 +460,14 @@ await set_opacity({
 
 await set_layer_order({
   nodeId: highlight.ellipseId,
-  action: "BRING_TO_FRONT"
+  action: 'BRING_TO_FRONT'
 });
 
 // FINAL EXPORT: Verify complete icon
 await export_node({
   nodeId: canvas.frameId,
-  format: "PNG",
-  scale: 2  // Higher resolution for final check
+  format: 'PNG',
+  scale: 2 // Higher resolution for final check
 });
 
 // VERIFICATION:
@@ -465,6 +480,7 @@ await export_node({
 ### Step 3: Result
 
 A clean, professional heart icon created by:
+
 1. Planning shape composition
 2. Building with basic primitives
 3. Using boolean UNION for seamless merge
@@ -476,35 +492,40 @@ A clean, professional heart icon created by:
 For ANY drawing task (icon, illustration, character, logo, etc):
 
 **1. PLAN VISUALLY (5-10 min)**
-   - Create ASCII sketch showing layout
-   - Define canvas size and coordinates
-   - List all shapes needed with type/position/color
-   - Plan layer order (back to front)
+
+- Create ASCII sketch showing layout
+- Define canvas size and coordinates
+- List all shapes needed with type/position/color
+- Plan layer order (back to front)
 
 **2. SELECT APPROPRIATE PRIMITIVES** (1-2 min)
-   - Geometric: frames, polygons, stars
-   - Organic: ellipses, paths (Bezier curves)
-   - Complex: boolean operations
-   - Consider what combines well
+
+- Geometric: frames, polygons, stars
+- Organic: ellipses, paths (Bezier curves)
+- Complex: boolean operations
+- Consider what combines well
 
 **3. BUILD ITERATIVELY** (main work)
-   - Start with largest/base shapes
-   - **Export every 5-10 shapes** (non-negotiable!)
-   - Analyze exported image vs plan
-   - Adjust using spatial/transform tools
-   - Continue next batch
+
+- Start with largest/base shapes
+- **Export every 5-10 shapes** (non-negotiable!)
+- Analyze exported image vs plan
+- Adjust using spatial/transform tools
+- Continue next batch
 
 **4. MANAGE LAYERS THROUGHOUT**
-   - Keep background elements at back
-   - Bring details/highlights to front
-   - Use set_layer_order early and often
-   - Think "painting in layers"
+
+- Keep background elements at back
+- Bring details/highlights to front
+- Use set_layer_order early and often
+- Think "painting in layers"
 
 **5. POLISH & VERIFY** (2-5 min)
-   - Apply final styling (gradients, effects, shadows)
-   - Export at 2x scale
-   - Check against original plan
-   - Verify proportions, alignment, colors
+
+- Apply final styling (gradients, effects, shadows)
+- Export at 2x scale
+- Check against original plan
+- Verify proportions, alignment, colors
 
 ## Adherence & Quality Check Protocol
 
@@ -534,6 +555,7 @@ SELF-CHECK:
 ### ❌ Working Without Visual Planning
 
 **WRONG:**
+
 ```typescript
 // Just start creating random shapes
 await create_ellipse({ width: 100, height: 80 });
@@ -542,6 +564,7 @@ await create_frame({ width: 50, height: 60 });
 ```
 
 **RIGHT:**
+
 ```typescript
 // Plan first with ASCII art and coordinates
 /*
@@ -560,15 +583,17 @@ const canvas = await create_frame({ ... });
 ### ❌ No Export Feedback
 
 **WRONG:**
+
 ```typescript
 // Create 30 shapes without looking
 // Discover at end: completely wrong proportions!
 ```
 
 **RIGHT:**
+
 ```typescript
 // Create 5-8 shapes
-await export_node({ nodeId: canvas.frameId, format: "PNG" });
+await export_node({ nodeId: canvas.frameId, format: 'PNG' });
 // Look at result, verify against plan
 // Adjust if needed, THEN continue
 ```
@@ -576,84 +601,95 @@ await export_node({ nodeId: canvas.frameId, format: "PNG" });
 ### ❌ Wrong Tool Selection
 
 **WRONG - Simple primitives for detailed organic work:**
+
 ```typescript
 // Using basic ellipse for a complex organic shape - TOO SIMPLE!
 const mainShape = await create_ellipse({
   width: 200,
   height: 140,
-  fillColor: "#4CAF50"
+  fillColor: '#4CAF50'
 });
 // Result: Flat, generic, lacks character
 ```
 
 **STILL WRONG - No shading or depth:**
+
 ```typescript
 const mainShape = await create_path({
-  commands: [/* basic outline */],
-  fillColor: "#4CAF50"
+  commands: [
+    /* basic outline */
+  ],
+  fillColor: '#4CAF50'
 });
 // Better shape, but still flat and lifeless
 ```
 
 **RIGHT - Detailed path with shading layers:**
+
 ```typescript
 // 1. Base shape (custom path with Bezier curves)
 const mainShape = await create_path({
-  name: "Main Element",
+  name: 'Main Element',
   commands: [
     { type: 'M', x: 100, y: 150 },
-    { type: 'C', x1: 120, y1: 120, x2: 180, y2: 110, x: 220, y: 130 },  // Smooth curve
-    { type: 'C', x1: 260, y1: 150, x2: 270, y2: 200, x: 250, y: 240 },  // Flowing contour
-    { type: 'C', x1: 220, y1: 270, x2: 160, y2: 280, x: 120, y: 260 },  // Bottom curve
-    { type: 'C', x1: 80, y1: 240, x2: 70, y2: 190, x: 100, y: 150 },    // Back to start
+    { type: 'C', x1: 120, y1: 120, x2: 180, y2: 110, x: 220, y: 130 }, // Smooth curve
+    { type: 'C', x1: 260, y1: 150, x2: 270, y2: 200, x: 250, y: 240 }, // Flowing contour
+    { type: 'C', x1: 220, y1: 270, x2: 160, y2: 280, x: 120, y: 260 }, // Bottom curve
+    { type: 'C', x1: 80, y1: 240, x2: 70, y2: 190, x: 100, y: 150 }, // Back to start
     { type: 'Z' }
   ],
-  fillColor: "#4CAF50",
-  strokeColor: "#2E7D32",
+  fillColor: '#4CAF50',
+  strokeColor: '#2E7D32',
   strokeWeight: 2
 });
 
 // 2. Add gradient for depth
 await add_gradient_fill({
   nodeId: mainShape.pathId,
-  type: "LINEAR",
-  angle: 270,  // Top to bottom
+  type: 'LINEAR',
+  angle: 270, // Top to bottom
   stops: [
-    { position: 0, color: "#66BB6A", opacity: 1 },    // Lighter top
-    { position: 1, color: "#388E3C", opacity: 1 }     // Darker bottom
+    { position: 0, color: '#66BB6A', opacity: 1 }, // Lighter top
+    { position: 1, color: '#388E3C', opacity: 1 } // Darker bottom
   ]
 });
 
 // 3. Shadow layer for depth
 const shadow = await create_path({
-  name: "Shadow Layer",
-  commands: [/* slightly offset shadow path following main contour */],
-  fillColor: "#1B5E20"
+  name: 'Shadow Layer',
+  commands: [
+    /* slightly offset shadow path following main contour */
+  ],
+  fillColor: '#1B5E20'
 });
 await set_opacity({ nodeId: shadow.pathId, opacity: 0.35 });
-await set_layer_order({ nodeId: shadow.pathId, action: "SEND_TO_BACK" });
+await set_layer_order({ nodeId: shadow.pathId, action: 'SEND_TO_BACK' });
 
 // 4. Highlight for 3D effect
 const highlight = await create_path({
-  name: "Highlight",
-  commands: [/* curved highlight along one edge */],
-  fillColor: "#FFFFFF"
+  name: 'Highlight',
+  commands: [
+    /* curved highlight along one edge */
+  ],
+  fillColor: '#FFFFFF'
 });
 await set_opacity({ nodeId: highlight.pathId, opacity: 0.25 });
-await set_layer_order({ nodeId: highlight.pathId, action: "BRING_TO_FRONT" });
+await set_layer_order({ nodeId: highlight.pathId, action: 'BRING_TO_FRONT' });
 
 // 5. Drop shadow for overall depth
 await apply_effects({
   nodeId: mainShape.pathId,
-  effects: [{
-    type: "DROP_SHADOW",
-    color: "#000000",
-    opacity: 0.25,
-    x: 0,
-    y: 6,
-    blur: 12,
-    spread: 0
-  }]
+  effects: [
+    {
+      type: 'DROP_SHADOW',
+      color: '#000000',
+      opacity: 0.25,
+      x: 0,
+      y: 6,
+      blur: 12,
+      spread: 0
+    }
+  ]
 });
 
 // Result: Professional, detailed, dimensional shape with depth!
@@ -662,6 +698,7 @@ await apply_effects({
 ### ❌ Ignoring Layer Order
 
 **WRONG:**
+
 ```typescript
 // Create details first, then base shapes
 await create_ellipse({ ... }); // small detail
@@ -670,6 +707,7 @@ await create_path({ ... }); // large main element
 ```
 
 **RIGHT:**
+
 ```typescript
 // Large base shapes first
 const mainElement = await create_path({ ... });
@@ -729,11 +767,12 @@ Before marking a drawing task complete:
 **EXECUTION:**
 ✓ Used `create_path` for 80-90% of organic shapes (NOT ellipses!)
 ✓ Each major element has AT LEAST:
-  - Base shape (path with gradients)
-  - Shadow layer (darker, 25-40% opacity)
-  - Highlight layer (lighter, 15-30% opacity)
-✓ Exported at least 4-5 checkpoints during creation
-✓ Layer order properly managed (shadows back, highlights front)
+
+- Base shape (path with gradients)
+- Shadow layer (darker, 25-40% opacity)
+- Highlight layer (lighter, 15-30% opacity)
+  ✓ Exported at least 4-5 checkpoints during creation
+  ✓ Layer order properly managed (shadows back, highlights front)
 
 **DEPTH & POLISH:**
 ✓ Gradients applied to major shapes for 3D effect
@@ -759,10 +798,11 @@ Before marking a drawing task complete:
 
 === RECALL CIB-001 ===
 For EVERY drawing task:
+
 1. Create ASCII plan with coordinates FIRST
 2. Use appropriate tools (not just frames/ellipses)
 3. Export and analyze every 5-10 shapes
 4. Use spatial tools to verify and adjust
 5. Manage layer order throughout
 6. Verify final result against plan
-=== END RECALL ===
+   === END RECALL ===

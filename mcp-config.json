@@ -3,9 +3,7 @@
   "mcpServers": {
     "text-to-figma": {
       "command": "node",
-      "args": [
-        "./mcp-server/dist/index.js"
-      ],
+      "args": ["./mcp-server/dist/index.js"],
       "env": {
         "FIGMA_WS_URL": "ws://localhost:8080",
         "NODE_ENV": "development",

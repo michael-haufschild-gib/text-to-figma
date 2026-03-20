@@ -37,6 +37,7 @@
 To reduce inline style verbosity and improve consistency, use the new **style pattern tokens** and **utility functions**:
 
 **Style Pattern Tokens** (`stylePatternTokens` from `theme/tokens.ts`):
+
 ```tsx
 import { stylePatternTokens } from '../theme/tokens';
 
@@ -56,6 +57,7 @@ import { stylePatternTokens } from '../theme/tokens';
 ```
 
 **Utility Functions** (`theme/themeUtils.tsx`):
+
 ```tsx
 import {
   createOverlayBackground,
@@ -108,6 +110,7 @@ import {
 ```
 
 **Benefits:**
+
 - Reduces inline style duplication across components
 - Maintains consistency with theme tokens
 - Cross-platform compatible (React Native ready)

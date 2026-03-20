@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
+    "semantic-search": {
+      "command": "node",
+      "args": [
+        "/Users/Spare/Documents/code/monetisation/repos/semantic-search/dist/mcp-server/index.js"
+      ],
+      "env": {
+        "TOKENIZERS_PARALLELISM": "false"
+      }
+    },
+    "text-to-figma": {
+      "command": "node",
+      "args": ["/Users/Spare/Documents/code/text-to-figma/mcp-server/dist/index.js"],
+      "env": {
+        "WEBSOCKET_URL": "ws://localhost:8080",
+        "NODE_ENV": "development",
+        "LOG_LEVEL": "info"
+      },
+      "type": "stdio"
+    }
+  }
+}
