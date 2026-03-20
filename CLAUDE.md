@@ -48,6 +48,19 @@ npm run type-check   # TypeScript strict mode, both workspaces
 - **Schema naming**: PascalCase — `CreateFrameInputSchema`, `SetFillsInputSchema`
 - **Logger**: Single logger at `monitoring/logger.ts`. Use `getLogger().child({ tool: 'name' })`.
 - **Metrics**: Centralized in `routing/tool-router.ts` — individual tools do not track metrics.
-- **Errors**: Structured codes in `errors/error-codes.ts`. Legacy classes in `errors/index.ts`.
+- **Errors**: Unified error system in `errors/index.ts`. All error classes carry an `ErrorCode` for machine-readable classification. `FigmaBridgeError` wraps `StructuredError` for bridge failures. Error codes defined in `errors/error-codes.ts`.
 - **MCP requirement**: All logs go to stderr (`console.error`). stdout is reserved for JSON-RPC.
 - **Config**: Environment variables validated by Zod schema in `config.ts`. See `.env.example`.
+- **ESLint**: ESM config in `eslint.config.mjs`. Custom rules in `eslint-rules/` (CJS, loaded via `createRequire`).
+
+## Architecture Decisions
+
+**Singleton services** — FigmaBridge, NodeRegistry, ToolRegistry, Logger, MetricsRegistry use module-level singletons with get/reset functions. Chosen because the MCP server runs as a single stdio process — there is no multi-instance need. Reset functions exist for test isolation.
+
+**Circuit breaker in FigmaBridge** — Prevents cascading failures when Figma plugin is unresponsive. HALF_OPEN state allows only one probe request to avoid thundering herd on recovery. Parameters: 5 failure threshold, 30s reset timeout.
+
+**8pt spacing grid enforcement** — Design system constraint validated at the Zod schema level (`spacingSchema`). Values snapped to grid automatically by `auto-validator.ts` for `create_design` tool. This prevents LLM agents from generating non-standard spacing values.
+
+**WebSocket bridge as separate process** — The bridge runs independently so the MCP server (stdio) doesn't need to host a WebSocket server. The `websocket-spawner.ts` auto-starts it if not running. Single Figma plugin instance enforced by the bridge.
+
+**Request→client tracking** — The WebSocket bridge tracks which MCP client sent each request (by request ID) to route responses to the correct originator, preventing cross-talk between multiple MCP sessions.
