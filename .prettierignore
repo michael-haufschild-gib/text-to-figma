@@ -1,0 +1,16 @@
+# Build outputs
+node_modules/
+**/node_modules/
+**/dist/
+**/build/
+coverage/
+**/coverage/
+
+# Generated files
+figma-plugin/code.js
+package-lock.json
+**/package-lock.json
+*.tsbuildinfo
+
+# Screenshots and binaries
+screenshots/

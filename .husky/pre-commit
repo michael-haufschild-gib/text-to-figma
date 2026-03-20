@@ -1,13 +1,14 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Fail fast on any error
+set -e
+
 # Run lint-staged for code formatting and linting
 npx lint-staged
 
-# Run type checking
+# Run type checking via root workspace command
 echo "Running TypeScript type check..."
-cd mcp-server && npm run type-check
-cd ../websocket-server && echo "Skipping type-check (JavaScript project)"
-cd ../figma-plugin && npm run type-check
+npm run type-check
 
 echo "✓ Pre-commit checks passed"

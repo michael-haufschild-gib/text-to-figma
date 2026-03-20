@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/core/schema/stryker-core.schema.json",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.workspace.ts"
+  },
+  "mutate": [
+    "mcp-server/src/constraints/color.ts",
+    "mcp-server/src/constraints/spacing.ts",
+    "mcp-server/src/constraints/typography.ts",
+    "mcp-server/src/utils/color-converter.ts",
+    "mcp-server/src/tools/utils/path-command-repair.ts"
+  ],
+  "mutator": {
+    "excludedMutations": ["StringLiteral", "ObjectLiteral"]
+  },
+  "reporters": ["clear-text", "html"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 85
+  },
+  "concurrency": 4,
+  "timeoutMS": 30000,
+  "tempDirName": ".stryker-tmp"
+}

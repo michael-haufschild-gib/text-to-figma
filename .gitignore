@@ -42,9 +42,9 @@ playwright/.cache/
 .test-results/
 playwright/.playwright/
 screenshots/
-tests/
 
 # Figma plugin build artifacts
+figma-plugin/code.js
 figma-plugin/build/
 figma-plugin/dist/
 
@@ -70,3 +70,8 @@ npm-debug.log*
 .temp/
 *.tmp
 *.temp
+task_state.md
+
+# Stryker mutation testing
+.stryker-tmp/
+reports/mutation/

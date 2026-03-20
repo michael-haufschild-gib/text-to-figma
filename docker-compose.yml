@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   # WebSocket Bridge Server
@@ -7,7 +7,7 @@ services:
       context: ./websocket-server
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - '8080:8080'
     environment:
       - PORT=8080
       - REQUEST_TIMEOUT=30000
@@ -15,10 +15,10 @@ services:
     healthcheck:
       test:
         [
-          "CMD",
-          "node",
-          "-e",
-          "require('http').get('http://localhost:8080', (res) => process.exit(res.statusCode === 200 ? 0 : 1))",
+          'CMD',
+          'node',
+          '-e',
+          "const net = require('net'); const s = new net.Socket(); s.connect(8080, '127.0.0.1', () => { s.destroy(); process.exit(0); }); s.on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 3000);"
         ]
       interval: 30s
       timeout: 10s
@@ -45,14 +45,14 @@ services:
       - ENABLE_METRICS=true
       - ENABLE_ERROR_TRACKING=true
     ports:
-      - "8081:8081" # Health check endpoint
+      - '8081:8081' # Health check endpoint
     healthcheck:
       test:
         [
-          "CMD",
-          "node",
-          "-e",
-          "require('http').get('http://localhost:8081/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))",
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:8081/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
         ]
       interval: 30s
       timeout: 10s

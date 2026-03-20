@@ -1,5 +1,3 @@
-# Copilot Instructions for Plinko
-
 === CRITICAL INSTRUCTION BLOCK (CIB-001)===
 
 ## MANDATORY TOOLS
@@ -15,48 +13,46 @@ WHY: Prevents cognitive overload, ensures systematic approach
 ### For Task Management
 
 ```
-USE: todo_write
-WHEN: Any task with multiple steps
+USE: TodoWrite
+WHEN: Any task with 3+ steps
 WHY: Tracks progress, maintains focus
 ```
-## No summaries or stopping before fully completing tasks
 
-1. Always complete all tasks fully. Do not simplify approaches, do not skip tasks.
-2. There is no token or time limit. Always complete tasks fully.
-3. Do not write summary files or output long summaries of your actions in chat.
+=== END CRITICAL INSTRUCTION BLOCK (CIB-001)===
 
+## Project Purpose
 
-=== END CIB-001===
+Text-to-Figma is a **three-tier architecture** that provides MCP tools to LLM agents to read from and write to Figma files.
 
-## MANDATORY EXECUTION PROTOCOL
+It consists of 3 components:
 
-1. Always follow `docs/meta/styleguide.md` - No exceptions!
-Always complete all tasks fully. Do not simplify approaches, do not skip tasks.
-2. Always keep tests up to date and maintain 100% test coverage.
-3. Always test. 100% of tests must pass.
-4. Always fix bugs. Never changes tests only to make them pass if the cause is in the code it is testing.
-5. Never run Vitest in watch mode; automation must use `npm test`. Only set `ALLOW_VITEST_WATCH=1` when a human explicitly authorizes interactive debugging.
-6. **CRITICAL**: After implementing new functionality, ALWAYS create comprehensive tests:
-   - Unit tests for logic and components (Vitest)
-   - Integration tests
-   - Playwright tests for frontend functionality (must visually confirm UI works)
-   - Run ALL tests before considering task complete
-   - Maintain 100% test coverage - no exceptions
+### 1. FIGMA PLUGIN (`figma-plugin/`)
 
+**Purpose**: Executes Figma API operations
+**Language**: TypeScript (5.3.0)
 
-## Reference docs
+### 2. WEBSOCKET SERVER (`websocket-server/`)
 
-- Coding style: `docs/meta/styleguide.md`
+**Purpose**: Bridges MCP server and Figma plugin via WebSocket
+**Language**: JavaScript (ES2022 modules)
+**Port**: 8080 (default)
 
-## Checklist for Task Completion
+### 3. MCP SERVER (`mcp-server/`)
 
-If not all criteria are met, continue working until they are:
+**Purpose**: Exposes Figma design tools via the Model Context Protocol
+**Language**: TypeScript (5.9.3)
 
-1. All tasks are fully completed. No shortcuts were taken. No approaches were simplified. No tasks were skipped.
-2. Used `mcp__mcp_docker__sequentialthinking` for complex tasks.
-3. Used `todo_write` for task management.
-4. No summary files or long summaries of actions are output in chat.
-5. All tests are updated and maintain 100% test coverage.
-6. All tests pass successfully.
-7. Bugs are fixed without changing tests to make them pass.
-8. Code follows `docs/meta/styleguide.md` without exceptions.
+## Workspace Layout
+
+```
+text-to-figma/
+├── mcp-server/              # Model Context Protocol server (TypeScript)
+├── websocket-server/        # WebSocket bridge (JavaScript)
+├── figma-plugin/            # Figma plugin code (TypeScript)
+├── tests/                   # Comprehensive test suite
+├── docs/                    # Architecture & implementation docs
+├── package.json             # Monorepo root with workspaces
+├── build-all.sh             # Automated build script
+├── docker-compose.yml       # Container orchestration
+└── mcp-config.json          # MCP s
+```
