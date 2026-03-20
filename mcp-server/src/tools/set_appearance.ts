@@ -214,7 +214,7 @@ export async function setAppearance(input: SetAppearanceInput): Promise<SetAppea
   // Build command payload for Figma
   const payload: Record<string, unknown> = { nodeId: validated.nodeId };
 
-  if (validated.blendMode) {
+  if (validated.blendMode !== undefined) {
     payload.blendMode = validated.blendMode;
     applied.push('blendMode');
     cssLines.push(`mix-blend-mode: ${validated.blendMode.toLowerCase().replace('_', '-')};`);
@@ -226,7 +226,7 @@ export async function setAppearance(input: SetAppearanceInput): Promise<SetAppea
     cssLines.push(`opacity: ${validated.opacity};`);
   }
 
-  if (validated.clipping) {
+  if (validated.clipping !== undefined) {
     payload.clipping = validated.clipping;
     applied.push('clipping');
     if (validated.clipping.useMask) {

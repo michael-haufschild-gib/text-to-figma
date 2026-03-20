@@ -480,9 +480,7 @@ let globalRegistry: MetricsRegistry | null = null;
  * Get global metrics registry
  */
 export function getMetrics(): MetricsRegistry {
-  if (!globalRegistry) {
-    globalRegistry = new MetricsRegistry();
-  }
+  globalRegistry ??= new MetricsRegistry();
   return globalRegistry;
 }
 

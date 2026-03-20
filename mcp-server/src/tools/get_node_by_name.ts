@@ -136,7 +136,7 @@ export async function getNodeByName(input: GetNodeByNameInput): Promise<GetNodeB
   });
   // Note: Response validated by bridge at protocol level
 
-  const nodes = response.nodes || [];
+  const nodes = response.nodes ?? [];
   const matchType = validated.exactMatch ? 'exact' : 'partial';
   const searchScope = validated.findAll ? 'all matches' : 'first match';
 

@@ -210,46 +210,27 @@ figma.ui.onmessage = (msg: Record<string, unknown>): void => {
 };
 
 async function handleMessage(msg: Record<string, unknown>): Promise<void> {
-  if (!msg || typeof msg !== 'object') {
-    figma.ui.postMessage({
-      id: null,
-      success: false,
-      error: 'Invalid message format: expected object'
-    });
-    return;
-  }
-
   const { type, payload, requestId } = msg as {
     type: string;
     payload?: Record<string, unknown>;
     requestId?: string;
   };
 
-  if (!type || typeof type !== 'string') {
+  if (typeof type !== 'string' || type === '') {
     figma.ui.postMessage({
-      id: requestId || null,
+      id: requestId ?? null,
       success: false,
       error: 'Missing or invalid message type'
     });
     return;
   }
 
-  if (payload !== undefined && typeof payload !== 'object') {
-    figma.ui.postMessage({
-      id: requestId,
-      success: false,
-      error: 'Invalid payload: expected object or undefined'
-    });
-    return;
-  }
-
   try {
-    const handler = handlers[type];
-    if (!handler) {
+    if (!(type in handlers)) {
       throw new Error(`Unknown command type: ${type}`);
     }
 
-    const result = await handler(payload || {});
+    const result = await handlers[type](payload ?? {});
 
     figma.ui.postMessage({ id: requestId, success: true, data: result });
   } catch (error) {

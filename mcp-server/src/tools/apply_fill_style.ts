@@ -105,7 +105,7 @@ export async function applyFillStyle(input: ApplyFillStyleInput): Promise<ApplyF
 
   return {
     nodeId: validated.nodeId,
-    styleName: response.styleName || validated.styleNameOrId,
-    message: `Applied fill style "${response.styleName || validated.styleNameOrId}" to node`
+    styleName: response.styleName ?? validated.styleNameOrId,
+    message: `Applied fill style "${response.styleName ?? validated.styleNameOrId}" to node`
   };
 }

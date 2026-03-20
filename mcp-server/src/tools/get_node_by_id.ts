@@ -125,8 +125,8 @@ export async function getNodeById(input: GetNodeByIdInput): Promise<GetNodeByIdR
     nodeId: validated.nodeId
   });
 
-  if (!response.exists || !response.node) {
-    throw new Error(response.error || 'Node not found');
+  if (response.exists !== true || response.node === undefined) {
+    throw new Error(response.error ?? 'Node not found');
   }
 
   const node = response.node;

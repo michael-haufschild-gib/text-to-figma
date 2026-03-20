@@ -170,7 +170,7 @@ export async function createStar(input: CreateStarInput): Promise<CreateStarResu
 /* For rating stars, consider using Unicode: ★ (U+2605) or SVG */`;
 
   return {
-    starId: response.nodeId || '',
+    starId: response.nodeId ?? '',
     pointCount: validated.pointCount,
     radius: validated.radius,
     innerRadius,

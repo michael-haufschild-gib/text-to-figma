@@ -278,7 +278,9 @@ export class FigmaBridge {
 
       // Handle connection/info messages (not responses to requests)
       if (message.type === 'connection' || message.type === 'info') {
-        console.error(`[FigmaBridge] ${message.type}: ${message.message || 'message received'}`);
+        console.error(
+          `[FigmaBridge] ${String(message.type)}: ${String(message.message ?? 'message received')}`
+        );
         return;
       }
 
@@ -339,7 +341,7 @@ export class FigmaBridge {
    * Both sendToFigma and sendToFigmaWithAbort delegate here.
    */
   private dispatchRequest<T>(type: string, payload: unknown): { id: string; promise: Promise<T> } {
-    if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    if (!this.connected || this.ws?.readyState !== WebSocket.OPEN) {
       throw new FigmaBridgeError(
         createError(ErrorCode.CONN_NOT_CONNECTED, 'Not connected to Figma plugin')
       );
@@ -373,7 +375,7 @@ export class FigmaBridge {
           } else {
             reject(
               new FigmaBridgeError(
-                createError(ErrorCode.OP_FAILED, response.error || 'Request failed')
+                createError(ErrorCode.OP_FAILED, response.error ?? 'Request failed')
               )
             );
           }
@@ -613,8 +615,6 @@ let bridgeInstance: FigmaBridge | null = null;
  * Gets the global Figma bridge instance
  */
 export function getFigmaBridge(): FigmaBridge {
-  if (!bridgeInstance) {
-    bridgeInstance = new FigmaBridge();
-  }
+  bridgeInstance ??= new FigmaBridge();
   return bridgeInstance;
 }

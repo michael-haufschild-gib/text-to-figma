@@ -7,18 +7,38 @@
 
 import { cacheNode, hexToRgb, loadFont, resolveParent } from '../helpers.js';
 
+function applyLayoutSizing(frame: FrameNode, payload: Record<string, unknown>): void {
+  if (
+    typeof payload.layoutMode !== 'string' ||
+    payload.layoutMode === 'NONE' ||
+    payload.parentId === undefined
+  ) {
+    return;
+  }
+  if (payload.horizontalSizing !== undefined) {
+    frame.layoutSizingHorizontal = payload.horizontalSizing as 'FIXED' | 'HUG' | 'FILL';
+  } else if (payload.width === undefined) {
+    frame.layoutSizingHorizontal = 'FILL';
+  }
+  if (payload.verticalSizing !== undefined) {
+    frame.layoutSizingVertical = payload.verticalSizing as 'FIXED' | 'HUG' | 'FILL';
+  } else if (payload.height === undefined) {
+    frame.layoutSizingVertical = 'HUG';
+  }
+}
+
 export function handleCreateFrame(payload: Record<string, unknown>): unknown {
   const frame = figma.createFrame();
-  frame.name = (payload.name as string) || 'Frame';
-  frame.x = (payload.x as number) || 0;
-  frame.y = (payload.y as number) || 0;
+  frame.name = typeof payload.name === 'string' ? payload.name : 'Frame';
+  frame.x = typeof payload.x === 'number' ? payload.x : 0;
+  frame.y = typeof payload.y === 'number' ? payload.y : 0;
   frame.fills = [];
 
-  if (payload.width && payload.height) {
-    frame.resize(payload.width as number, payload.height as number);
+  if (typeof payload.width === 'number' && typeof payload.height === 'number') {
+    frame.resize(payload.width, payload.height);
   }
 
-  if (payload.layoutMode && payload.layoutMode !== 'NONE') {
+  if (typeof payload.layoutMode === 'string' && payload.layoutMode !== 'NONE') {
     frame.layoutMode = payload.layoutMode as 'HORIZONTAL' | 'VERTICAL';
   }
   if (payload.itemSpacing !== undefined) {
@@ -31,20 +51,7 @@ export function handleCreateFrame(payload: Record<string, unknown>): unknown {
 
   const parent = resolveParent(payload.parentId as string | undefined);
   parent.appendChild(frame);
-
-  // Layout sizing AFTER adding to parent (FILL requires auto-layout parent)
-  if (payload.layoutMode && payload.layoutMode !== 'NONE' && payload.parentId) {
-    if (payload.horizontalSizing) {
-      frame.layoutSizingHorizontal = payload.horizontalSizing as 'FIXED' | 'HUG' | 'FILL';
-    } else if (!payload.width) {
-      frame.layoutSizingHorizontal = 'FILL';
-    }
-    if (payload.verticalSizing) {
-      frame.layoutSizingVertical = payload.verticalSizing as 'FIXED' | 'HUG' | 'FILL';
-    } else if (!payload.height) {
-      frame.layoutSizingVertical = 'HUG';
-    }
-  }
+  applyLayoutSizing(frame, payload);
 
   cacheNode(frame);
   figma.viewport.scrollAndZoomIntoView([frame]);
@@ -53,27 +60,32 @@ export function handleCreateFrame(payload: Record<string, unknown>): unknown {
 }
 
 export async function handleCreateText(payload: Record<string, unknown>): Promise<unknown> {
-  const fontFamily = (payload.fontFamily as string) || 'Inter';
-  const fontWeight = (payload.fontWeight as number) || 400;
+  const fontFamily = typeof payload.fontFamily === 'string' ? payload.fontFamily : 'Inter';
+  const fontWeight = typeof payload.fontWeight === 'number' ? payload.fontWeight : 400;
   const fontName = await loadFont(fontFamily, fontWeight);
 
   const textNode = figma.createText();
   textNode.fontName = fontName;
-  textNode.characters = (payload.content as string) || '';
-  textNode.name = (payload.name as string) || 'Text';
-  textNode.x = (payload.x as number) || 0;
-  textNode.y = (payload.y as number) || 0;
+  textNode.characters = typeof payload.content === 'string' ? payload.content : '';
+  textNode.name = typeof payload.name === 'string' ? payload.name : 'Text';
+  textNode.x = typeof payload.x === 'number' ? payload.x : 0;
+  textNode.y = typeof payload.y === 'number' ? payload.y : 0;
 
-  if (payload.fontSize) textNode.fontSize = payload.fontSize as number;
-  if (payload.color) {
-    textNode.fills = [{ type: 'SOLID', color: hexToRgb(payload.color as string) }];
+  if (typeof payload.fontSize === 'number') {
+    textNode.fontSize = payload.fontSize;
   }
-  if (payload.textAlign)
+  if (typeof payload.color === 'string') {
+    textNode.fills = [{ type: 'SOLID', color: hexToRgb(payload.color) }];
+  }
+  if (typeof payload.textAlign === 'string') {
     textNode.textAlignHorizontal = payload.textAlign as TextNode['textAlignHorizontal'];
-  if (payload.lineHeight)
-    textNode.lineHeight = { value: payload.lineHeight as number, unit: 'PIXELS' };
-  if (payload.letterSpacing)
-    textNode.letterSpacing = { value: payload.letterSpacing as number, unit: 'PIXELS' };
+  }
+  if (typeof payload.lineHeight === 'number') {
+    textNode.lineHeight = { value: payload.lineHeight, unit: 'PIXELS' };
+  }
+  if (typeof payload.letterSpacing === 'number') {
+    textNode.letterSpacing = { value: payload.letterSpacing, unit: 'PIXELS' };
+  }
 
   const parent = resolveParent(payload.parentId as string | undefined);
   parent.appendChild(textNode);
@@ -85,17 +97,19 @@ export async function handleCreateText(payload: Record<string, unknown>): Promis
 
 export function handleCreateEllipse(payload: Record<string, unknown>): unknown {
   const ellipse = figma.createEllipse();
-  ellipse.name = (payload.name as string) || 'Ellipse';
-  ellipse.x = (payload.x as number) || 0;
-  ellipse.y = (payload.y as number) || 0;
-  ellipse.resize((payload.width as number) || 100, (payload.height as number) || 100);
+  ellipse.name = typeof payload.name === 'string' ? payload.name : 'Ellipse';
+  ellipse.x = typeof payload.x === 'number' ? payload.x : 0;
+  ellipse.y = typeof payload.y === 'number' ? payload.y : 0;
+  const w = typeof payload.width === 'number' ? payload.width : 100;
+  const h = typeof payload.height === 'number' ? payload.height : 100;
+  ellipse.resize(w, h);
 
-  if (payload.fillColor) {
-    ellipse.fills = [{ type: 'SOLID', color: hexToRgb(payload.fillColor as string) }];
+  if (typeof payload.fillColor === 'string') {
+    ellipse.fills = [{ type: 'SOLID', color: hexToRgb(payload.fillColor) }];
   }
-  if (payload.strokeColor && payload.strokeWeight) {
-    ellipse.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor as string) }];
-    ellipse.strokeWeight = payload.strokeWeight as number;
+  if (typeof payload.strokeColor === 'string' && typeof payload.strokeWeight === 'number') {
+    ellipse.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor) }];
+    ellipse.strokeWeight = payload.strokeWeight;
   }
 
   const parent = resolveParent(payload.parentId as string | undefined);
@@ -108,23 +122,29 @@ export function handleCreateEllipse(payload: Record<string, unknown>): unknown {
 
 export function handleCreateLine(payload: Record<string, unknown>): unknown {
   const line = figma.createLine();
-  line.name = (payload.name as string) || 'Line';
+  line.name = typeof payload.name === 'string' ? payload.name : 'Line';
 
-  const x1 = (payload.x1 as number) || 0;
-  const y1 = (payload.y1 as number) || 0;
-  const x2 = (payload.x2 as number) || 100;
-  const y2 = (payload.y2 as number) || 0;
+  const x1 = typeof payload.x1 === 'number' ? payload.x1 : 0;
+  const y1 = typeof payload.y1 === 'number' ? payload.y1 : 0;
+  const x2 = typeof payload.x2 === 'number' ? payload.x2 : 100;
+  const y2 = typeof payload.y2 === 'number' ? payload.y2 : 0;
 
   line.x = Math.min(x1, x2);
   line.y = Math.min(y1, y2);
   line.resize(Math.max(Math.abs(x2 - x1), 0.01), Math.max(Math.abs(y2 - y1), 0.01));
 
-  if (payload.strokeColor) {
-    line.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor as string) }];
+  if (typeof payload.strokeColor === 'string') {
+    line.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor) }];
   }
-  if (payload.strokeWeight) line.strokeWeight = payload.strokeWeight as number;
-  if (payload.strokeCap) line.strokeCap = payload.strokeCap as StrokeCap;
-  if (payload.dashPattern) line.dashPattern = payload.dashPattern as number[];
+  if (typeof payload.strokeWeight === 'number') {
+    line.strokeWeight = payload.strokeWeight;
+  }
+  if (typeof payload.strokeCap === 'string') {
+    line.strokeCap = payload.strokeCap as StrokeCap;
+  }
+  if (Array.isArray(payload.dashPattern)) {
+    line.dashPattern = payload.dashPattern as number[];
+  }
 
   const parent = resolveParent(payload.parentId as string | undefined);
   parent.appendChild(line);
@@ -136,19 +156,19 @@ export function handleCreateLine(payload: Record<string, unknown>): unknown {
 
 export function handleCreatePolygon(payload: Record<string, unknown>): unknown {
   const polygon = figma.createPolygon();
-  polygon.name = (payload.name as string) || 'Polygon';
-  polygon.x = (payload.x as number) || 0;
-  polygon.y = (payload.y as number) || 0;
-  polygon.pointCount = (payload.sideCount as number) || 3;
-  const r = (payload.radius as number) || 50;
+  polygon.name = typeof payload.name === 'string' ? payload.name : 'Polygon';
+  polygon.x = typeof payload.x === 'number' ? payload.x : 0;
+  polygon.y = typeof payload.y === 'number' ? payload.y : 0;
+  polygon.pointCount = typeof payload.sideCount === 'number' ? payload.sideCount : 3;
+  const r = typeof payload.radius === 'number' ? payload.radius : 50;
   polygon.resize(r * 2, r * 2);
 
-  if (payload.fillColor) {
-    polygon.fills = [{ type: 'SOLID', color: hexToRgb(payload.fillColor as string) }];
+  if (typeof payload.fillColor === 'string') {
+    polygon.fills = [{ type: 'SOLID', color: hexToRgb(payload.fillColor) }];
   }
-  if (payload.strokeColor && payload.strokeWeight) {
-    polygon.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor as string) }];
-    polygon.strokeWeight = payload.strokeWeight as number;
+  if (typeof payload.strokeColor === 'string' && typeof payload.strokeWeight === 'number') {
+    polygon.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor) }];
+    polygon.strokeWeight = payload.strokeWeight;
   }
 
   const parent = resolveParent(payload.parentId as string | undefined);
@@ -160,22 +180,22 @@ export function handleCreatePolygon(payload: Record<string, unknown>): unknown {
 
 export function handleCreateStar(payload: Record<string, unknown>): unknown {
   const star = figma.createStar();
-  star.name = (payload.name as string) || 'Star';
-  star.x = (payload.x as number) || 0;
-  star.y = (payload.y as number) || 0;
-  star.pointCount = (payload.pointCount as number) || 5;
-  const r = (payload.radius as number) || 50;
+  star.name = typeof payload.name === 'string' ? payload.name : 'Star';
+  star.x = typeof payload.x === 'number' ? payload.x : 0;
+  star.y = typeof payload.y === 'number' ? payload.y : 0;
+  star.pointCount = typeof payload.pointCount === 'number' ? payload.pointCount : 5;
+  const r = typeof payload.radius === 'number' ? payload.radius : 50;
   star.resize(r * 2, r * 2);
 
-  if (payload.innerRadius) {
-    star.innerRadius = (payload.innerRadius as number) / r;
+  if (typeof payload.innerRadius === 'number') {
+    star.innerRadius = payload.innerRadius / r;
   }
-  if (payload.fillColor) {
-    star.fills = [{ type: 'SOLID', color: hexToRgb(payload.fillColor as string) }];
+  if (typeof payload.fillColor === 'string') {
+    star.fills = [{ type: 'SOLID', color: hexToRgb(payload.fillColor) }];
   }
-  if (payload.strokeColor && payload.strokeWeight) {
-    star.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor as string) }];
-    star.strokeWeight = payload.strokeWeight as number;
+  if (typeof payload.strokeColor === 'string' && typeof payload.strokeWeight === 'number') {
+    star.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor) }];
+    star.strokeWeight = payload.strokeWeight;
   }
 
   const parent = resolveParent(payload.parentId as string | undefined);
@@ -187,10 +207,12 @@ export function handleCreateStar(payload: Record<string, unknown>): unknown {
 
 export function handleCreateRectangleWithImageFill(payload: Record<string, unknown>): unknown {
   const rect = figma.createRectangle();
-  rect.name = (payload.name as string) || 'Image';
-  rect.x = (payload.x as number) || 0;
-  rect.y = (payload.y as number) || 0;
-  rect.resize((payload.width as number) || 100, (payload.height as number) || 100);
+  rect.name = typeof payload.name === 'string' ? payload.name : 'Image';
+  rect.x = typeof payload.x === 'number' ? payload.x : 0;
+  rect.y = typeof payload.y === 'number' ? payload.y : 0;
+  const w = typeof payload.width === 'number' ? payload.width : 100;
+  const h = typeof payload.height === 'number' ? payload.height : 100;
+  rect.resize(w, h);
   rect.fills = [{ type: 'SOLID', color: { r: 0.9, g: 0.9, b: 0.9 } }];
 
   const parent = resolveParent(payload.parentId as string | undefined);

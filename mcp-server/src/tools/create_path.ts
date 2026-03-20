@@ -13,7 +13,8 @@ import { getFigmaBridge } from '../figma-bridge.js';
 import {
   formatRepairReport,
   repairPathCommands,
-  type PathCommand as RepairedPathCommand
+  type PathCommand as RepairedPathCommand,
+  type RawPathCommand
 } from './utils/path-command-repair.js';
 
 /**
@@ -71,7 +72,7 @@ export type PathCommand = z.infer<typeof PathCommandSchema>;
  */
 export const CreatePathInputSchema = z.object({
   name: z.string().optional().describe('Name for the path (default: "Path")'),
-  commands: z.array(z.any()).min(2).describe('Array of path commands'),
+  commands: z.array(z.custom<RawPathCommand>()).min(2).describe('Array of path commands'),
   fillColor: z.string().optional().describe('Fill color in hex format'),
   strokeColor: z.string().optional().describe('Stroke color in hex format'),
   strokeWeight: z.number().optional().describe('Stroke width in pixels'),
@@ -230,8 +231,8 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  const name = validated.name || 'Path';
-  const closed = validated.closed || false;
+  const name = validated.name ?? 'Path';
+  const closed = validated.closed ?? false;
 
   // Send command to Figma with normalized commands
   const response = await bridge.sendToFigmaWithRetry<{
@@ -247,7 +248,7 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
     parentId: validated.parentId
   });
 
-  if (!response.pathId) {
+  if (response.pathId === '') {
     throw new Error('Failed to create path: No pathId returned');
   }
 

@@ -223,9 +223,7 @@ let healthCheckInstance: HealthCheckServer | null = null;
  * Get or create the global health check server
  */
 export function getHealthCheckServer(): HealthCheckServer {
-  if (!healthCheckInstance) {
-    healthCheckInstance = new HealthCheckServer();
-  }
+  healthCheckInstance ??= new HealthCheckServer();
   return healthCheckInstance;
 }
 

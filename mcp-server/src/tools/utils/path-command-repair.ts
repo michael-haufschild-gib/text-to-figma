@@ -15,7 +15,7 @@
  * Raw path command from LLM input — may have wrong types or missing fields.
  * This is the input to the repair system.
  */
-interface RawPathCommand {
+export interface RawPathCommand {
   type?: unknown;
   x?: unknown;
   y?: unknown;
@@ -194,7 +194,7 @@ function repairQCommand(cmd: RawPathCommand, index: number): RepairResult {
  * Repairs a single path command with intelligent error handling
  */
 function repairCommand(cmd: RawPathCommand, index: number): RepairResult {
-  if (!cmd || typeof cmd !== 'object') {
+  if (typeof cmd !== 'object') {
     throw new PathCommandValidationError(
       `Command must be an object`,
       index,
@@ -204,7 +204,7 @@ function repairCommand(cmd: RawPathCommand, index: number): RepairResult {
     );
   }
 
-  if (!cmd.type || typeof cmd.type !== 'string') {
+  if (typeof cmd.type !== 'string' || cmd.type === '') {
     throw new PathCommandValidationError(
       `Command must have a 'type' property`,
       index,
@@ -280,7 +280,7 @@ export function repairPathCommands(commands: RawPathCommand[]): CommandRepairRep
   }
 
   const firstCommand = repairedCommands[0];
-  if (!firstCommand || firstCommand.type !== 'M') {
+  if (firstCommand?.type !== 'M') {
     throw new Error(
       `Path must start with M (Move) command, but started with ${firstCommand?.type ?? 'nothing'}.\n` +
         `The first command sets the starting point of the path.\n` +

@@ -9,16 +9,20 @@ import { getNode } from '../helpers.js';
 
 export async function handleSetTextProperties(payload: Record<string, unknown>): Promise<unknown> {
   const node = getNode(payload.nodeId as string);
-  if (!node || node.type !== 'TEXT') throw new Error('Node is not a text node');
+  if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
   await figma.loadFontAsync(node.fontName as FontName);
 
-  if (payload.decoration) node.textDecoration = payload.decoration as TextDecoration;
-  if (payload.letterSpacing) {
+  if (typeof payload.decoration === 'string') {
+    node.textDecoration = payload.decoration as TextDecoration;
+  }
+  if (payload.letterSpacing !== undefined) {
     const ls = payload.letterSpacing as { value: number; unit: string };
     node.letterSpacing = { value: ls.value, unit: ls.unit as 'PIXELS' | 'PERCENT' };
   }
-  if (payload.textCase) node.textCase = payload.textCase as TextCase;
+  if (typeof payload.textCase === 'string') {
+    node.textCase = payload.textCase as TextCase;
+  }
   if (payload.paragraphSpacing !== undefined)
     node.paragraphSpacing = payload.paragraphSpacing as number;
   if (payload.paragraphIndent !== undefined)
@@ -29,7 +33,7 @@ export async function handleSetTextProperties(payload: Record<string, unknown>):
 
 export function handleSetTextDecoration(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
-  if (!node || node.type !== 'TEXT') throw new Error('Node is not a text node');
+  if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
   node.textDecoration = payload.decoration as TextDecoration;
   return {
@@ -41,7 +45,7 @@ export function handleSetTextDecoration(payload: Record<string, unknown>): unkno
 
 export function handleSetTextCase(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
-  if (!node || node.type !== 'TEXT') throw new Error('Node is not a text node');
+  if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
   node.textCase = payload.textCase as TextCase;
   return {
@@ -53,9 +57,10 @@ export function handleSetTextCase(payload: Record<string, unknown>): unknown {
 
 export function handleSetLetterSpacing(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
-  if (!node || node.type !== 'TEXT') throw new Error('Node is not a text node');
+  if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  const unit = (payload.unit as 'PIXELS' | 'PERCENT') || 'PERCENT';
+  const unit =
+    typeof payload.unit === 'string' ? (payload.unit as 'PIXELS' | 'PERCENT') : 'PERCENT';
   node.letterSpacing = { value: payload.value as number, unit };
   return {
     nodeId: payload.nodeId,
@@ -67,7 +72,7 @@ export function handleSetLetterSpacing(payload: Record<string, unknown>): unknow
 
 export function handleSetParagraphSpacing(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
-  if (!node || node.type !== 'TEXT') throw new Error('Node is not a text node');
+  if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
   if (payload.paragraphSpacing !== undefined)
     node.paragraphSpacing = payload.paragraphSpacing as number;

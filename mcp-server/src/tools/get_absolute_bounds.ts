@@ -121,10 +121,6 @@ export async function getAbsoluteBounds(
     nodeId: validated.nodeId
   });
 
-  if (!response.bounds) {
-    throw new Error('Failed to get absolute bounds');
-  }
-
   return {
     success: true as const,
     nodeId: validated.nodeId,

@@ -170,7 +170,7 @@ export async function setLayerOrder(input: SetLayerOrderInput): Promise<SetLayer
     });
 
     const duration = Date.now() - startTime;
-    const message = `Set layer order: ${validated.action}${response.newIndex !== undefined ? ` (now at index ${response.newIndex})` : ''}`;
+    const message = `Set layer order: ${validated.action} (now at index ${String(response.newIndex)})`;
 
     log.info('Layer order set successfully', {
       nodeId: validated.nodeId,

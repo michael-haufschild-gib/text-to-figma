@@ -41,13 +41,43 @@ const strictTypeScriptRules = {
     'error',
     { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' }
   ],
-  '@typescript-eslint/require-await': 'warn'
+  '@typescript-eslint/require-await': 'error',
+
+  // ─── Implicit `any` safety — catches AI-generated type holes ────────────
+  '@typescript-eslint/no-unsafe-assignment': 'error',
+  '@typescript-eslint/no-unsafe-call': 'error',
+  '@typescript-eslint/no-unsafe-member-access': 'error',
+  '@typescript-eslint/no-unsafe-return': 'error',
+  '@typescript-eslint/no-unsafe-argument': 'error',
+
+  // ─── Logic correctness ──────────────────────────────────────────────────
+  '@typescript-eslint/no-unnecessary-condition': 'error',
+  '@typescript-eslint/switch-exhaustiveness-check': 'error',
+  '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true, allowBoolean: true }],
+  '@typescript-eslint/prefer-nullish-coalescing': 'error',
+  '@typescript-eslint/prefer-optional-chain': 'error',
+  '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
+
+  // ─── Boolean hygiene — kills lazy truthiness, forces explicit checks ────
+  '@typescript-eslint/strict-boolean-expressions': [
+    'error',
+    {
+      allowString: false,
+      allowNumber: false,
+      allowNullableObject: true,
+      allowNullableBoolean: true,
+      allowNullableString: true,
+      allowNullableNumber: false,
+      allowNullableEnum: false,
+      allowAny: false
+    }
+  ]
 };
 
 const codeQualityRules = {
   'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
-  'max-lines-per-function': ['warn', { max: 150, skipBlankLines: true, skipComments: true }],
-  complexity: ['warn', { max: 25 }],
+  'max-lines-per-function': ['error', { max: 100, skipBlankLines: true, skipComments: true }],
+  complexity: ['error', { max: 20 }],
   eqeqeq: ['error', 'always'],
   curly: ['error', 'all'],
   'no-throw-literal': 'error',
@@ -155,14 +185,16 @@ export default [
     }
   },
 
-  // ─── Tests: TypeScript ───────────────────────────────────────────────────
+  // ─── Tests: TypeScript (type-checked) ───────────────────────────────────
   {
     files: ['tests/**/*.ts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 2022,
-        sourceType: 'module'
+        sourceType: 'module',
+        project: ['./tests/tsconfig.eslint.json'],
+        tsconfigRootDir: __dirname
       },
       globals: {
         ...globals.node
@@ -174,12 +206,22 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/require-await': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
+      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true, allowBoolean: true }],
       'local/no-shallow-test-matchers': 'error',
       'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': ['warn', { max: 300, skipBlankLines: true, skipComments: true }],
-      complexity: ['warn', { max: 25 }],
+      'max-lines-per-function': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+      complexity: ['error', { max: 15 }],
 
-      // ─── Ban .skip abuse ─────────────────────────────────────────────────
+      // ─── Ban .skip and .only abuse ───────────────────────────────────────
       'no-restricted-syntax': [
         'error',
         {
@@ -193,6 +235,18 @@ export default [
         {
           selector: 'CallExpression[callee.object.name="describe"][callee.property.name="skip"]',
           message: 'No describe.skip — fix or remove the test suite.'
+        },
+        {
+          selector: 'CallExpression[callee.object.name="it"][callee.property.name="only"]',
+          message: 'No it.only — remove before committing.'
+        },
+        {
+          selector: 'CallExpression[callee.object.name="test"][callee.property.name="only"]',
+          message: 'No test.only — remove before committing.'
+        },
+        {
+          selector: 'CallExpression[callee.object.name="describe"][callee.property.name="only"]',
+          message: 'No describe.only — remove before committing.'
         }
       ]
     }

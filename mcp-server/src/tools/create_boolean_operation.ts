@@ -168,7 +168,7 @@ export async function createBooleanOperation(
 </svg>`;
 
   return {
-    booleanNodeId: response.nodeId || '',
+    booleanNodeId: response.nodeId ?? '',
     operation: validated.operation,
     nodeCount: validated.nodeIds.length,
     cssEquivalent,

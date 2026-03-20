@@ -192,7 +192,7 @@ export async function createTextStyle(input: CreateTextStyleInput): Promise<Crea
   // Note: Response validated by bridge at protocol level
 
   return {
-    styleId: response.styleId || '',
+    styleId: response.styleId ?? '',
     name: validated.name,
     fontSize: validated.fontSize,
     fontWeight: validated.fontWeight,

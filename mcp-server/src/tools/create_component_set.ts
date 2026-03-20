@@ -122,7 +122,7 @@ export async function createComponentSet(
   // Note: Response validated by bridge at protocol level
 
   return {
-    componentSetId: response.componentSetId || '',
+    componentSetId: response.componentSetId ?? '',
     name: validated.name,
     variantCount: validated.componentIds.length,
     message: `Created component set "${validated.name}" with ${validated.componentIds.length} variants`

@@ -89,16 +89,16 @@ function generateHtmlAnalogy(input: CreateFrameInput): {
   gap: ${input.itemSpacing}px;
   padding: ${input.padding}px;`;
 
-    if (input.width) {
-      cssEquivalent += `\n  width: ${input.width}px;`;
+    if (input.width !== undefined) {
+      cssEquivalent += `\n  width: ${String(input.width)}px;`;
     }
-    if (input.height) {
-      cssEquivalent += `\n  height: ${input.height}px;`;
+    if (input.height !== undefined) {
+      cssEquivalent += `\n  height: ${String(input.height)}px;`;
     }
     cssEquivalent += '\n}';
   } else {
     cssEquivalent = `.${input.name} {
-  position: relative;${input.width ? `\n  width: ${input.width}px;` : ''}${input.height ? `\n  height: ${input.height}px;` : ''}
+  position: relative;${input.width !== undefined ? `\n  width: ${String(input.width)}px;` : ''}${input.height !== undefined ? `\n  height: ${String(input.height)}px;` : ''}
 }`;
   }
 
@@ -132,7 +132,7 @@ export async function createFrame(input: CreateFrameInput): Promise<CreateFrameR
   const validated = input;
 
   // Validate parent relationship if parentId provided
-  if (validated.parentId) {
+  if (validated.parentId !== undefined) {
     const parentValidation = await validateParentRelationship('frame', validated.parentId, {
       strict: true,
       checkExists: true
@@ -143,7 +143,7 @@ export async function createFrame(input: CreateFrameInput): Promise<CreateFrameR
         formatValidationError(parentValidation),
         'create_frame',
         validated,
-        [{ message: parentValidation.error || 'Parent validation failed' }]
+        [{ message: parentValidation.error ?? 'Parent validation failed' }]
       );
     }
   }
@@ -194,10 +194,10 @@ export async function createFrame(input: CreateFrameInput): Promise<CreateFrameR
   registry.register(response.nodeId, {
     type: 'FRAME',
     name: validated.name,
-    parentId: validated.parentId || null,
+    parentId: validated.parentId ?? null,
     children: [],
     bounds:
-      validated.width && validated.height
+      validated.width !== undefined && validated.height !== undefined
         ? { x: 0, y: 0, width: validated.width, height: validated.height }
         : undefined
   });

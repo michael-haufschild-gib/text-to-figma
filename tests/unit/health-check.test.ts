@@ -35,7 +35,7 @@ describe('HealthCheckRegistry', () => {
 
     it('runs async health checkers', async () => {
       const registry = new HealthCheckRegistry();
-      registry.register('async-test', async () => ({
+      registry.register('async-test', () => ({
         name: 'async-test',
         status: 'degraded',
         message: 'Slow response',
@@ -131,7 +131,7 @@ describe('HealthCheckRegistry', () => {
   });
 
   describe('uptime', () => {
-    it('tracks uptime from creation', async () => {
+    it('tracks uptime from creation', () => {
       const registry = new HealthCheckRegistry();
       const uptime = registry.getUptime();
       expect(uptime).toBeGreaterThanOrEqual(0);
@@ -156,8 +156,9 @@ describe('Built-in Health Checkers', () => {
       // Under normal test conditions, memory usage should be healthy
       expect(['healthy', 'degraded']).toContain(result.status);
       expect(result.metrics).toBeTypeOf('object');
-      expect(result.metrics!.heapUsed).toBeGreaterThan(0);
-      expect(result.metrics!.heapTotal).toBeGreaterThan(0);
+      const metrics = result.metrics as Record<string, number>;
+      expect(metrics.heapUsed).toBeGreaterThan(0);
+      expect(metrics.heapTotal).toBeGreaterThan(0);
     });
 
     it('uses default thresholds when not specified', () => {
@@ -174,7 +175,7 @@ describe('Built-in Health Checkers', () => {
       expect(result.name).toBe('figma_connection');
       expect(result.status).toBe('healthy');
       expect(result.message).toContain('Connected');
-      expect(result.metrics!.connected).toBe(true);
+      expect((result.metrics as Record<string, unknown>).connected).toBe(true);
     });
 
     it('returns degraded when disconnected', () => {
@@ -182,7 +183,7 @@ describe('Built-in Health Checkers', () => {
       const result = checker();
       expect(result.status).toBe('degraded');
       expect(result.message).toContain('Not connected');
-      expect(result.metrics!.connected).toBe(false);
+      expect((result.metrics as Record<string, unknown>).connected).toBe(false);
     });
   });
 

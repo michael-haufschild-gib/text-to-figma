@@ -165,7 +165,7 @@ export class Logger {
       message
     };
 
-    if (this.config.includeContext && (this.context || context)) {
+    if (this.config.includeContext) {
       entry.context = { ...this.context, ...context };
     }
 
@@ -267,9 +267,7 @@ let globalLogger: Logger | null = null;
  * @param config
  */
 export function getLogger(config?: LoggerConfig): Logger {
-  if (!globalLogger) {
-    globalLogger = new Logger(config);
-  }
+  globalLogger ??= new Logger(config);
   return globalLogger;
 }
 

@@ -107,7 +107,7 @@ export async function applyEffectStyle(
 
   return {
     nodeId: validated.nodeId,
-    styleName: response.styleName || validated.styleNameOrId,
-    message: `Applied effect style "${response.styleName || validated.styleNameOrId}" to node`
+    styleName: response.styleName ?? validated.styleNameOrId,
+    message: `Applied effect style "${response.styleName ?? validated.styleNameOrId}" to node`
   };
 }

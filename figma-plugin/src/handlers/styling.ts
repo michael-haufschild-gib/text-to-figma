@@ -11,11 +11,11 @@ export function handleSetFills(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
   if (!node || !('fills' in node)) throw new Error('Node not found or does not support fills');
 
-  if (payload.color) {
-    const rgb = hexToRgb(payload.color as string);
-    const opacity = (payload.opacity as number) ?? 1;
+  if (typeof payload.color === 'string') {
+    const rgb = hexToRgb(payload.color);
+    const opacity = typeof payload.opacity === 'number' ? payload.opacity : 1;
     (node as GeometryMixin).fills = [{ type: 'SOLID', color: rgb, opacity }];
-  } else if (payload.fills) {
+  } else if (Array.isArray(payload.fills)) {
     (node as GeometryMixin).fills = payload.fills as Paint[];
   }
 
@@ -24,7 +24,7 @@ export function handleSetFills(payload: Record<string, unknown>): unknown {
 
 export function handleSetCornerRadius(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
-  if (!node) throw new Error(`Node not found: ${payload.nodeId}`);
+  if (!node) throw new Error(`Node not found: ${String(payload.nodeId)}`);
   if (!('cornerRadius' in node))
     throw new Error(`Node does not support corner radius (type: ${node.type})`);
 
@@ -44,19 +44,22 @@ export function handleSetCornerRadius(payload: Record<string, unknown>): unknown
 
 export function handleSetStroke(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
-  if (!node) throw new Error(`Node not found: ${payload.nodeId}`);
+  if (!node) throw new Error(`Node not found: ${String(payload.nodeId)}`);
   if (!('strokes' in node)) throw new Error(`Node does not support strokes (type: ${node.type})`);
 
   const geoNode = node as GeometryMixin;
-  if (payload.strokeColor) {
-    const rgb = hexToRgb(payload.strokeColor as string);
-    const opacity = (payload.opacity as number) ?? 1;
+  if (typeof payload.strokeColor === 'string') {
+    const rgb = hexToRgb(payload.strokeColor);
+    const opacity = typeof payload.opacity === 'number' ? payload.opacity : 1;
     geoNode.strokes = [{ type: 'SOLID', color: rgb, opacity }];
   }
   if (payload.strokeWeight !== undefined) geoNode.strokeWeight = payload.strokeWeight as number;
-  if (payload.strokeAlign)
+  if (typeof payload.strokeAlign === 'string') {
     (geoNode as FrameNode).strokeAlign = payload.strokeAlign as 'INSIDE' | 'OUTSIDE' | 'CENTER';
-  if (payload.dashPattern) geoNode.dashPattern = payload.dashPattern as number[];
+  }
+  if (Array.isArray(payload.dashPattern)) {
+    geoNode.dashPattern = payload.dashPattern as number[];
+  }
 
   return { nodeId: payload.nodeId, message: 'Stroke applied successfully' };
 }
@@ -65,16 +68,16 @@ export function handleSetAppearance(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 
-  if (payload.blendMode && 'blendMode' in node) {
+  if (typeof payload.blendMode === 'string' && 'blendMode' in node) {
     (node as BlendMixin).blendMode = payload.blendMode as BlendMode;
   }
   if (payload.opacity !== undefined && 'opacity' in node) {
     (node as BlendMixin).opacity = payload.opacity as number;
   }
-  if (payload.clipping && 'clipsContent' in node) {
+  if (payload.clipping !== undefined && 'clipsContent' in node) {
     const clipping = payload.clipping as Record<string, unknown>;
     const frameNode = node as FrameNode;
-    if (clipping.useMask) {
+    if (clipping.useMask === true) {
       frameNode.clipsContent = true;
       if ('children' in node && (node as FrameNode).children.length > 0) {
         ((node as FrameNode).children[0] as SceneNode & { isMask: boolean }).isMask = true;
@@ -127,17 +130,20 @@ export function handleApplyEffects(payload: Record<string, unknown>): unknown {
 
 export function handleAddGradientFill(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
-  if (!node) throw new Error(`Node not found: ${payload.nodeId}`);
+  if (!node) throw new Error(`Node not found: ${String(payload.nodeId)}`);
   if (!('fills' in node)) throw new Error(`Node type ${node.type} does not support fills`);
 
   const gradientType = payload.type === 'RADIAL' ? 'GRADIENT_RADIAL' : 'GRADIENT_LINEAR';
   const stops: ColorStop[] = (payload.stops as Array<Record<string, unknown>>).map((stop) => ({
     position: stop.position as number,
-    color: { ...hexToRgb(stop.color as string), a: (stop.opacity as number) || 1 }
+    color: {
+      ...hexToRgb(stop.color as string),
+      a: typeof stop.opacity === 'number' ? stop.opacity : 1
+    }
   }));
 
   let gradientTransform: Transform;
-  if (payload.gradientTransform) {
+  if (Array.isArray(payload.gradientTransform)) {
     gradientTransform = payload.gradientTransform as Transform;
   } else if (gradientType === 'GRADIENT_LINEAR' && payload.angle !== undefined) {
     const angleRad = ((payload.angle as number) * Math.PI) / 180;
@@ -174,39 +180,41 @@ export function handleSetImageFill(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
   if (!node || !('fills' in node)) throw new Error('Node does not support fills');
 
-  if (payload.imageBytes) {
-    let bytes: Uint8Array;
-    if (Array.isArray(payload.imageBytes)) {
-      bytes = new Uint8Array(payload.imageBytes as number[]);
-    } else if (typeof payload.imageBytes === 'string') {
-      throw new Error(
-        'Base64 strings not supported in plugin main thread. Please send image data as a byte array.'
-      );
-    } else {
-      throw new Error('imageBytes must be an array of numbers or Uint8Array');
-    }
+  if (Array.isArray(payload.imageBytes)) {
+    const bytes = new Uint8Array(payload.imageBytes as number[]);
 
     const imageHash = figma.createImage(bytes).hash;
+    const scaleMode =
+      typeof payload.scaleMode === 'string'
+        ? (payload.scaleMode as ImagePaint['scaleMode'])
+        : 'FILL';
+    const opacity = typeof payload.opacity === 'number' ? payload.opacity : 1;
     const imageFill: ImagePaint = {
       type: 'IMAGE',
       imageHash,
-      scaleMode: (payload.scaleMode as ImagePaint['scaleMode']) || 'FILL',
-      opacity: (payload.opacity as number) ?? 1
+      scaleMode,
+      opacity
     };
     (node as GeometryMixin).fills = [imageFill];
 
     return {
       nodeId: payload.nodeId,
-      scaleMode: payload.scaleMode || 'FILL',
-      opacity: payload.opacity || 1,
+      scaleMode,
+      opacity,
       message: 'Image fill applied successfully from byte array'
     };
-  } else if (payload.imageUrl) {
+  } else if (typeof payload.imageBytes === 'string') {
+    throw new Error(
+      'Base64 strings not supported in plugin main thread. Please send image data as a byte array.'
+    );
+  } else if (typeof payload.imageUrl === 'string') {
+    const scaleMode = typeof payload.scaleMode === 'string' ? payload.scaleMode : 'FILL';
+    const opacity = typeof payload.opacity === 'number' ? payload.opacity : 1;
     return {
       nodeId: payload.nodeId,
       imageUrl: payload.imageUrl,
-      scaleMode: payload.scaleMode || 'FILL',
-      opacity: payload.opacity || 1,
+      scaleMode,
+      opacity,
       message:
         'Image URL received. To load: fetch image in UI thread, convert to byte array, then call set_image_fill with imageBytes.',
       requiresUiFetch: true

@@ -109,7 +109,7 @@ export async function setLayoutSizing(input: SetLayoutSizingInput): Promise<SetL
   // Validate input
   const validated = input;
 
-  if (!validated.horizontal && !validated.vertical) {
+  if (validated.horizontal === undefined && validated.vertical === undefined) {
     throw new Error('Must specify at least one of horizontal or vertical');
   }
 
@@ -126,21 +126,21 @@ export async function setLayoutSizing(input: SetLayoutSizingInput): Promise<SetL
 
   // Build CSS equivalent
   const cssParts: string[] = [];
-  if (validated.horizontal) {
+  if (validated.horizontal !== undefined) {
     if (validated.horizontal === 'FIXED') {
       cssParts.push('width: [fixed]px');
     } else if (validated.horizontal === 'HUG') {
       cssParts.push('width: fit-content');
-    } else if (validated.horizontal === 'FILL') {
+    } else {
       cssParts.push('flex: 1');
     }
   }
-  if (validated.vertical) {
+  if (validated.vertical !== undefined) {
     if (validated.vertical === 'FIXED') {
       cssParts.push('height: [fixed]px');
     } else if (validated.vertical === 'HUG') {
       cssParts.push('height: fit-content');
-    } else if (validated.vertical === 'FILL') {
+    } else {
       cssParts.push('align-self: stretch');
     }
   }

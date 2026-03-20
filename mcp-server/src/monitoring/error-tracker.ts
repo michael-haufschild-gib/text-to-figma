@@ -93,7 +93,7 @@ function generateFingerprint(error: Error, context?: Record<string, unknown>): s
     error.stack?.split('\n')[1] ?? '' // First stack frame
   ];
 
-  if (context?.operation) {
+  if (context?.operation !== undefined) {
     parts.push(String(context.operation));
   }
 
@@ -104,32 +104,29 @@ function generateFingerprint(error: Error, context?: Record<string, unknown>): s
  * Categorize error
  * @param error
  */
+const CATEGORY_RULES: Array<{
+  keywords: string[];
+  nameKeywords?: string[];
+  category: ErrorCategory;
+}> = [
+  { nameKeywords: ['validation'], keywords: ['invalid', 'required'], category: 'validation' },
+  { nameKeywords: ['network'], keywords: ['connection', 'timeout'], category: 'network' },
+  { keywords: ['figma', 'node', 'frame'], category: 'figma_api' },
+  { nameKeywords: ['typeerror', 'referenceerror'], keywords: [], category: 'internal' },
+  { keywords: ['user', 'input'], category: 'user_input' },
+  { keywords: ['config', 'configuration'], category: 'configuration' }
+];
+
 function categorizeError(error: Error): ErrorCategory {
   const message = error.message.toLowerCase();
   const name = error.name.toLowerCase();
 
-  if (name.includes('validation') || message.includes('invalid') || message.includes('required')) {
-    return 'validation';
-  }
-
-  if (name.includes('network') || message.includes('connection') || message.includes('timeout')) {
-    return 'network';
-  }
-
-  if (message.includes('figma') || message.includes('node') || message.includes('frame')) {
-    return 'figma_api';
-  }
-
-  if (name.includes('typeerror') || name.includes('referenceerror')) {
-    return 'internal';
-  }
-
-  if (message.includes('user') || message.includes('input')) {
-    return 'user_input';
-  }
-
-  if (message.includes('config') || message.includes('configuration')) {
-    return 'configuration';
+  for (const rule of CATEGORY_RULES) {
+    const nameMatch = rule.nameKeywords?.some((kw) => name.includes(kw)) === true;
+    const msgMatch = rule.keywords.some((kw) => message.includes(kw));
+    if (nameMatch || msgMatch) {
+      return rule.category;
+    }
   }
 
   return 'unknown';
@@ -425,9 +422,7 @@ let globalTracker: ErrorTracker | null = null;
  * @param config
  */
 export function getErrorTracker(config?: ErrorTrackerConfig): ErrorTracker {
-  if (!globalTracker) {
-    globalTracker = new ErrorTracker(config);
-  }
+  globalTracker ??= new ErrorTracker(config);
   return globalTracker;
 }
 

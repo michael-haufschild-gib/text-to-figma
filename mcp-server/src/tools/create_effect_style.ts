@@ -170,7 +170,7 @@ export async function createEffectStyle(
   // Note: Response validated by bridge at protocol level
 
   return {
-    styleId: response.styleId || '',
+    styleId: response.styleId ?? '',
     name: validated.name,
     effectCount: validated.effects.length,
     message: `Created effect style "${validated.name}" with ${validated.effects.length} effect(s)`

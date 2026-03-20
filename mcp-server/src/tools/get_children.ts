@@ -131,7 +131,7 @@ export async function getChildren(input: GetChildrenInput): Promise<GetChildrenR
   });
   // Note: Response validated by bridge at protocol level
 
-  const children = response.children || [];
+  const children = response.children ?? [];
   const scope = validated.recursive ? 'descendants' : 'direct children';
 
   return {

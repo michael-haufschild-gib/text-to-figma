@@ -33,9 +33,12 @@ export function handleSetExportSettings(payload: Record<string, unknown>): unkno
 
   const settings: ExportSettings[] = (payload.settings as Array<Record<string, unknown>>).map(
     (s) => ({
-      format: (s.format as ExportSettings['format']) || 'PNG',
-      constraint: (s.constraint as ExportSettingsConstraints) || { type: 'SCALE', value: 1 },
-      suffix: (s.suffix as string) || ''
+      format: typeof s.format === 'string' ? (s.format as ExportSettings['format']) : 'PNG',
+      constraint:
+        s.constraint !== undefined
+          ? (s.constraint as ExportSettingsConstraints)
+          : { type: 'SCALE', value: 1 },
+      suffix: typeof s.suffix === 'string' ? s.suffix : ''
     })
   );
 
@@ -51,8 +54,8 @@ export async function handleExportNode(payload: Record<string, unknown>): Promis
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 
-  const format = (payload.format as string) || 'PNG';
-  const scale = (payload.scale as number) || 1;
+  const format = typeof payload.format === 'string' ? payload.format : 'PNG';
+  const scale = typeof payload.scale === 'number' ? payload.scale : 1;
 
   const exportFormat = format === 'JPG' ? 'JPG' : format === 'SVG' ? 'SVG' : 'PNG';
   const bytes = await node.exportAsync({
@@ -97,7 +100,7 @@ export function handleGetPluginData(payload: Record<string, unknown>): unknown {
 
 export function handleCreatePageWithPayload(payload: Record<string, unknown>): unknown {
   const page = figma.createPage();
-  page.name = (payload.name as string) || 'Page';
+  page.name = typeof payload.name === 'string' ? payload.name : 'Page';
   return { pageId: page.id, name: page.name, message: 'Page created successfully' };
 }
 
@@ -107,7 +110,7 @@ export function handleListPages(): unknown {
     name: page.name,
     isCurrent: page === figma.currentPage
   }));
-  return { pages, message: `Found ${pages.length} page(s)` };
+  return { pages, message: `Found ${String(pages.length)} page(s)` };
 }
 
 export async function handleSetCurrentPage(payload: Record<string, unknown>): Promise<unknown> {
@@ -153,57 +156,29 @@ export function handleSetClippingMask(payload: Record<string, unknown>): unknown
 
 export function handleCreatePath(payload: Record<string, unknown>): unknown {
   const vectorNode = figma.createVector();
-  vectorNode.name = (payload.name as string) || 'Path';
+  vectorNode.name = typeof payload.name === 'string' ? payload.name : 'Path';
 
   const commands = payload.commands as Array<Record<string, unknown>>;
-  if (!commands || commands.length === 0) throw new Error('Path requires at least one command');
+  if (!Array.isArray(commands) || commands.length === 0) {
+    throw new Error('Path requires at least one command');
+  }
   if (commands[0].type !== 'M') throw new Error('Path must start with M (Move) command');
 
-  let pathData = '';
-
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
-    switch (cmd.type) {
-      case 'M':
-        validateCoord(cmd, 'x', i);
-        validateCoord(cmd, 'y', i);
-        pathData += `M ${cmd.x} ${cmd.y} `;
-        break;
-      case 'L':
-        validateCoord(cmd, 'x', i);
-        validateCoord(cmd, 'y', i);
-        pathData += `L ${cmd.x} ${cmd.y} `;
-        break;
-      case 'C':
-        for (const k of ['x1', 'y1', 'x2', 'y2', 'x', 'y']) validateCoord(cmd, k, i);
-        pathData += `C ${cmd.x1} ${cmd.y1} ${cmd.x2} ${cmd.y2} ${cmd.x} ${cmd.y} `;
-        break;
-      case 'Q':
-        for (const k of ['x1', 'y1', 'x', 'y']) validateCoord(cmd, k, i);
-        pathData += `Q ${cmd.x1} ${cmd.y1} ${cmd.x} ${cmd.y} `;
-        break;
-      case 'Z':
-        pathData += 'Z ';
-        break;
-      default:
-        throw new Error(`Unknown path command type '${cmd.type}' at index ${i}`);
-    }
-  }
-
-  if (payload.closed && !pathData.includes('Z')) pathData += 'Z';
-  const trimmedPath = pathData.trim();
-  if (!trimmedPath) throw new Error('Generated path data is empty');
+  const pathData = buildPathData(commands);
+  const finalPath = payload.closed === true && !pathData.includes('Z') ? pathData + ' Z' : pathData;
+  const trimmedPath = finalPath.trim();
+  if (trimmedPath === '') throw new Error('Generated path data is empty');
 
   vectorNode.vectorPaths = [{ windingRule: 'NONZERO', data: trimmedPath }];
 
-  if (payload.fillColor) {
-    vectorNode.fills = [{ type: 'SOLID', color: hexToRgb(payload.fillColor as string) }];
+  if (typeof payload.fillColor === 'string') {
+    vectorNode.fills = [{ type: 'SOLID', color: hexToRgb(payload.fillColor) }];
   } else {
     vectorNode.fills = [];
   }
-  if (payload.strokeColor) {
-    vectorNode.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor as string) }];
-    vectorNode.strokeWeight = (payload.strokeWeight as number) || 1;
+  if (typeof payload.strokeColor === 'string') {
+    vectorNode.strokes = [{ type: 'SOLID', color: hexToRgb(payload.strokeColor) }];
+    vectorNode.strokeWeight = typeof payload.strokeWeight === 'number' ? payload.strokeWeight : 1;
   }
 
   const parent = resolveParent(payload.parentId as string | undefined);
@@ -212,30 +187,71 @@ export function handleCreatePath(payload: Record<string, unknown>): unknown {
 
   return {
     pathId: vectorNode.id,
-    message: `Path created successfully with ${commands.length} commands`
+    message: `Path created successfully with ${String(commands.length)} commands`
   };
+}
+
+function buildPathData(commands: Array<Record<string, unknown>>): string {
+  let pathData = '';
+
+  for (let i = 0; i < commands.length; i++) {
+    const cmd = commands[i];
+    switch (cmd.type) {
+      case 'M':
+        validateCoord(cmd, 'x', i);
+        validateCoord(cmd, 'y', i);
+        pathData += `M ${String(cmd.x)} ${String(cmd.y)} `;
+        break;
+      case 'L':
+        validateCoord(cmd, 'x', i);
+        validateCoord(cmd, 'y', i);
+        pathData += `L ${String(cmd.x)} ${String(cmd.y)} `;
+        break;
+      case 'C':
+        for (const k of ['x1', 'y1', 'x2', 'y2', 'x', 'y']) validateCoord(cmd, k, i);
+        pathData += `C ${String(cmd.x1)} ${String(cmd.y1)} ${String(cmd.x2)} ${String(cmd.y2)} ${String(cmd.x)} ${String(cmd.y)} `;
+        break;
+      case 'Q':
+        for (const k of ['x1', 'y1', 'x', 'y']) validateCoord(cmd, k, i);
+        pathData += `Q ${String(cmd.x1)} ${String(cmd.y1)} ${String(cmd.x)} ${String(cmd.y)} `;
+        break;
+      case 'Z':
+        pathData += 'Z ';
+        break;
+      default:
+        throw new Error(`Unknown path command type '${String(cmd.type)}' at index ${String(i)}`);
+    }
+  }
+
+  return pathData;
 }
 
 function validateCoord(cmd: Record<string, unknown>, key: string, index: number): void {
   const val = cmd[key];
   if (typeof val !== 'number')
-    throw new Error(`Command ${index} (${cmd.type}): Property '${key}' must be a number`);
+    throw new Error(
+      `Command ${String(index)} (${String(cmd.type)}): Property '${key}' must be a number`
+    );
   if (!isFinite(val))
-    throw new Error(`Command ${index} (${cmd.type}): Property '${key}' must be a finite number`);
+    throw new Error(
+      `Command ${String(index)} (${String(cmd.type)}): Property '${key}' must be a finite number`
+    );
 }
 
 export function handleCreateBooleanOperation(payload: Record<string, unknown>): unknown {
   const nodeIds = payload.nodeIds as string[];
-  if (!nodeIds || nodeIds.length < 2)
+  if (!Array.isArray(nodeIds) || nodeIds.length < 2)
     throw new Error('Boolean operation requires at least 2 nodes');
 
   const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 2) throw new Error('Could not find all nodes for boolean operation');
 
   const booleanNode = figma.createBooleanOperation();
-  booleanNode.name = (payload.name as string) || 'Boolean';
+  booleanNode.name = typeof payload.name === 'string' ? payload.name : 'Boolean';
   booleanNode.booleanOperation =
-    (payload.operation as 'UNION' | 'INTERSECT' | 'SUBTRACT' | 'EXCLUDE') || 'UNION';
+    typeof payload.operation === 'string'
+      ? (payload.operation as 'UNION' | 'INTERSECT' | 'SUBTRACT' | 'EXCLUDE')
+      : 'UNION';
 
   for (const node of nodes) {
     booleanNode.appendChild(node);

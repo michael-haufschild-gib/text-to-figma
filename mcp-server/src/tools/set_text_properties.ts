@@ -183,7 +183,7 @@ export async function setTextProperties(
   // Build command payload for Figma
   const payload: Record<string, unknown> = { nodeId: validated.nodeId };
 
-  if (validated.decoration) {
+  if (validated.decoration !== undefined) {
     payload.decoration = validated.decoration;
     applied.push('decoration');
     if (validated.decoration === 'UNDERLINE') {
@@ -195,7 +195,7 @@ export async function setTextProperties(
     }
   }
 
-  if (validated.letterSpacing) {
+  if (validated.letterSpacing !== undefined) {
     payload.letterSpacing = validated.letterSpacing;
     applied.push('letterSpacing');
     const value = validated.letterSpacing.value;
@@ -203,7 +203,7 @@ export async function setTextProperties(
     cssLines.push(`letter-spacing: ${cssValue};`);
   }
 
-  if (validated.textCase) {
+  if (validated.textCase !== undefined) {
     payload.textCase = validated.textCase;
     applied.push('textCase');
     const caseMap: Record<string, string> = {

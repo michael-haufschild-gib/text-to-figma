@@ -82,9 +82,7 @@ export function loadConfig(): Config {
       throw new ConfigurationError(
         `Configuration validation failed: ${firstError?.message ?? 'unknown'}`,
         firstError?.path.join('.') ?? 'unknown',
-        firstError?.path[0] !== undefined && firstError?.path[0] !== null
-          ? process.env[String(firstError.path[0])]
-          : undefined
+        firstError?.path[0] !== undefined ? process.env[String(firstError.path[0])] : undefined
       );
     }
     throw error;

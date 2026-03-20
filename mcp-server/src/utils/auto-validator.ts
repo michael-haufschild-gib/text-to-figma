@@ -109,7 +109,7 @@ function isValidFontSize(value: number): boolean {
  * @param obj
  */
 function deepClone<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
+  return JSON.parse(JSON.stringify(obj)) as T;
 }
 
 /**
@@ -245,7 +245,7 @@ export function validateSpec(spec: NodeSpec): ValidationResult {
 
   function walkNode(node: NodeSpec, path: string, depth: number): void {
     totalNodes++;
-    nodesByType[node.type] = (nodesByType[node.type] || 0) + 1;
+    nodesByType[node.type] = (nodesByType[node.type] ?? 0) + 1;
     maxDepth = Math.max(maxDepth, depth);
 
     // Validate type
@@ -300,8 +300,8 @@ export function validateSpec(spec: NodeSpec): ValidationResult {
 
       // Validate text node has content
       if (node.type === 'text') {
-        const content = props.content || props.text;
-        if (!content || (typeof content === 'string' && content.trim() === '')) {
+        const content = props.content ?? props.text;
+        if (content === undefined || (typeof content === 'string' && content.trim() === '')) {
           issues.push({
             path,
             field: 'content',

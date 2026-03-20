@@ -159,11 +159,11 @@ export async function createEllipse(input: CreateEllipseInput): Promise<CreateEl
   height: ${validated.height}px;
   border-radius: 50%; /* Makes it ${isCircle ? 'a circle' : 'an ellipse'} */`;
 
-  if (validated.fillColor) {
+  if (validated.fillColor !== undefined) {
     cssEquivalent += `\n  background-color: ${validated.fillColor};`;
   }
 
-  if (validated.strokeColor && validated.strokeWeight) {
+  if (validated.strokeColor !== undefined && validated.strokeWeight !== undefined) {
     cssEquivalent += `\n  border: ${validated.strokeWeight}px solid ${validated.strokeColor};`;
   }
 
@@ -182,7 +182,7 @@ export async function createEllipse(input: CreateEllipseInput): Promise<CreateEl
   }
 
   return {
-    ellipseId: response.nodeId || '',
+    ellipseId: response.nodeId ?? '',
     width: validated.width,
     height: validated.height,
     isCircle,

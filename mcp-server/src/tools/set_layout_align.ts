@@ -113,7 +113,7 @@ export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLay
   // Validate input
   const validated = input;
 
-  if (!validated.primaryAxis && !validated.counterAxis) {
+  if (validated.primaryAxis === undefined && validated.counterAxis === undefined) {
     throw new Error('Must specify at least one of primaryAxis or counterAxis');
   }
 
@@ -131,7 +131,7 @@ export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLay
   // Build CSS equivalent
   const cssParts: string[] = [];
 
-  if (validated.primaryAxis) {
+  if (validated.primaryAxis !== undefined) {
     const primaryMap: Record<string, string> = {
       MIN: 'flex-start',
       CENTER: 'center',
@@ -141,7 +141,7 @@ export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLay
     cssParts.push(`justify-content: ${primaryMap[validated.primaryAxis]}`);
   }
 
-  if (validated.counterAxis) {
+  if (validated.counterAxis !== undefined) {
     const counterMap: Record<string, string> = {
       MIN: 'flex-start',
       CENTER: 'center',

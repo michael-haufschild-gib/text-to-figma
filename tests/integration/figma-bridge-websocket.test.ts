@@ -6,7 +6,7 @@
  * No mocks — exercises the actual WebSocket code paths in FigmaBridge.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { WebSocketServer, WebSocket as WsClient } from 'ws';
 import { loadConfig, resetConfig } from '../../mcp-server/src/config.js';
 import { ErrorCode } from '../../mcp-server/src/errors/error-codes.js';
@@ -52,7 +52,7 @@ describe('FigmaBridge WebSocket integration', () => {
   let bridge: FigmaBridge;
 
   // Suppress FigmaBridge console.error logs in test output
-  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: MockInstance;
 
   beforeEach(async () => {
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -64,7 +64,7 @@ describe('FigmaBridge WebSocket integration', () => {
 
   afterEach(async () => {
     bridge?.disconnect();
-    errorSpy?.mockRestore();
+    errorSpy.mockRestore();
     await new Promise<void>((resolve) => {
       server.close(() => resolve());
     });
@@ -117,7 +117,7 @@ describe('FigmaBridge WebSocket integration', () => {
       // Server echoes back with success
       server.on('connection', (ws) => {
         ws.on('message', (data) => {
-          const msg = JSON.parse(data.toString());
+          const msg = JSON.parse(data.toString()) as Record<string, unknown>;
           ws.send(
             JSON.stringify({
               id: msg.id,
@@ -143,7 +143,7 @@ describe('FigmaBridge WebSocket integration', () => {
     it('rejects when server returns success=false', async () => {
       server.on('connection', (ws) => {
         ws.on('message', (data) => {
-          const msg = JSON.parse(data.toString());
+          const msg = JSON.parse(data.toString()) as Record<string, unknown>;
           ws.send(
             JSON.stringify({
               id: msg.id,
@@ -190,7 +190,7 @@ describe('FigmaBridge WebSocket integration', () => {
       server.on('connection', (ws) => {
         const queue: Array<{ id: string; payload: unknown }> = [];
         ws.on('message', (data) => {
-          const msg = JSON.parse(data.toString());
+          const msg = JSON.parse(data.toString()) as Record<string, unknown>;
           queue.push(msg);
 
           if (queue.length === 2) {
@@ -219,7 +219,7 @@ describe('FigmaBridge WebSocket integration', () => {
         ws.send(JSON.stringify({ type: 'connection', message: 'Plugin connected' }));
 
         ws.on('message', (data) => {
-          const msg = JSON.parse(data.toString());
+          const msg = JSON.parse(data.toString()) as Record<string, unknown>;
           ws.send(JSON.stringify({ id: msg.id, success: true, data: 'ok' }));
         });
       });
@@ -328,7 +328,7 @@ describe('FigmaBridge WebSocket integration', () => {
       // Server returns errors
       server.on('connection', (ws) => {
         ws.on('message', (data) => {
-          const msg = JSON.parse(data.toString());
+          const msg = JSON.parse(data.toString()) as Record<string, unknown>;
           ws.send(JSON.stringify({ id: msg.id, success: false, error: 'Figma API error' }));
         });
       });
@@ -380,7 +380,7 @@ describe('FigmaBridge WebSocket integration', () => {
 
       server.on('connection', (ws) => {
         ws.on('message', (data) => {
-          const msg = JSON.parse(data.toString());
+          const msg = JSON.parse(data.toString()) as Record<string, unknown>;
           if (shouldSucceed) {
             ws.send(JSON.stringify({ id: msg.id, success: true, data: 'recovered' }));
           } else {

@@ -11,7 +11,9 @@ export function handleCreateColorStyle(payload: Record<string, unknown>): unknow
   const paintStyle = figma.createPaintStyle();
   paintStyle.name = payload.name as string;
   paintStyle.paints = [{ type: 'SOLID', color: hexToRgb(payload.color as string) }];
-  if (payload.description) paintStyle.description = payload.description as string;
+  if (typeof payload.description === 'string') {
+    paintStyle.description = payload.description;
+  }
 
   return {
     styleId: paintStyle.id,
@@ -25,19 +27,27 @@ export async function handleCreateTextStyle(payload: Record<string, unknown>): P
   const textStyle = figma.createTextStyle();
   textStyle.name = payload.name as string;
 
-  const fontFamily = (payload.fontFamily as string) || 'Inter';
-  const fontWeight = (payload.fontWeight as number) || 400;
+  const fontFamily = typeof payload.fontFamily === 'string' ? payload.fontFamily : 'Inter';
+  const fontWeight = typeof payload.fontWeight === 'number' ? payload.fontWeight : 400;
   const fontName = await loadFont(fontFamily, fontWeight);
   textStyle.fontName = fontName;
   textStyle.fontSize = payload.fontSize as number;
 
-  if (payload.lineHeight)
-    textStyle.lineHeight = { value: payload.lineHeight as number, unit: 'PIXELS' };
-  if (payload.letterSpacing)
-    textStyle.letterSpacing = { value: payload.letterSpacing as number, unit: 'PIXELS' };
-  if (payload.textCase) textStyle.textCase = payload.textCase as TextCase;
-  if (payload.textDecoration) textStyle.textDecoration = payload.textDecoration as TextDecoration;
-  if (payload.description) textStyle.description = payload.description as string;
+  if (typeof payload.lineHeight === 'number') {
+    textStyle.lineHeight = { value: payload.lineHeight, unit: 'PIXELS' };
+  }
+  if (typeof payload.letterSpacing === 'number') {
+    textStyle.letterSpacing = { value: payload.letterSpacing, unit: 'PIXELS' };
+  }
+  if (typeof payload.textCase === 'string') {
+    textStyle.textCase = payload.textCase as TextCase;
+  }
+  if (typeof payload.textDecoration === 'string') {
+    textStyle.textDecoration = payload.textDecoration as TextDecoration;
+  }
+  if (typeof payload.description === 'string') {
+    textStyle.description = payload.description;
+  }
 
   return {
     styleId: textStyle.id,
@@ -54,7 +64,9 @@ export function handleCreateEffectStyle(payload: Record<string, unknown>): unkno
 
   const effects = convertEffects(payload.effects as Array<Record<string, unknown>>);
   effectStyle.effects = effects;
-  if (payload.description) effectStyle.description = payload.description as string;
+  if (typeof payload.description === 'string') {
+    effectStyle.description = payload.description;
+  }
 
   return {
     styleId: effectStyle.id,
@@ -70,7 +82,7 @@ export async function handleApplyFillStyle(payload: Record<string, unknown>): Pr
 
   const styles = await figma.getLocalPaintStylesAsync();
   const style = styles.find((s) => s.name === payload.styleName);
-  if (!style) throw new Error(`Fill style not found: ${payload.styleName}`);
+  if (!style) throw new Error(`Fill style not found: ${String(payload.styleName)}`);
 
   await (
     node as GeometryMixin & {
@@ -81,23 +93,23 @@ export async function handleApplyFillStyle(payload: Record<string, unknown>): Pr
   return {
     nodeId: payload.nodeId,
     styleName: payload.styleName,
-    message: `Fill style applied: ${payload.styleName}`
+    message: `Fill style applied: ${String(payload.styleName)}`
   };
 }
 
 export async function handleApplyTextStyle(payload: Record<string, unknown>): Promise<unknown> {
   const node = getNode(payload.nodeId as string);
-  if (!node || node.type !== 'TEXT') throw new Error('Node is not a text node');
+  if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
   const styles = await figma.getLocalTextStylesAsync();
   const style = styles.find((s) => s.name === payload.styleName);
-  if (!style) throw new Error(`Text style not found: ${payload.styleName}`);
+  if (!style) throw new Error(`Text style not found: ${String(payload.styleName)}`);
 
   await node.setTextStyleIdAsync(style.id);
   return {
     nodeId: payload.nodeId,
     styleName: payload.styleName,
-    message: `Text style applied: ${payload.styleName}`
+    message: `Text style applied: ${String(payload.styleName)}`
   };
 }
 
@@ -107,7 +119,7 @@ export async function handleApplyEffectStyle(payload: Record<string, unknown>): 
 
   const styles = await figma.getLocalEffectStylesAsync();
   const style = styles.find((s) => s.name === payload.styleName);
-  if (!style) throw new Error(`Effect style not found: ${payload.styleName}`);
+  if (!style) throw new Error(`Effect style not found: ${String(payload.styleName)}`);
 
   await (
     node as BlendMixin & {
@@ -118,6 +130,6 @@ export async function handleApplyEffectStyle(payload: Record<string, unknown>): 
   return {
     nodeId: payload.nodeId,
     styleName: payload.styleName,
-    message: `Effect style applied: ${payload.styleName}`
+    message: `Effect style applied: ${String(payload.styleName)}`
   };
 }

@@ -144,10 +144,6 @@ export async function getRelativeBounds(
     referenceNodeId: validated.referenceNodeId
   });
 
-  if (!response.relativeBounds) {
-    throw new Error('Failed to get relative bounds');
-  }
-
   const rb = response.relativeBounds;
 
   return {

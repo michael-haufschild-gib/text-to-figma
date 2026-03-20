@@ -9,11 +9,10 @@ import { cacheNode, getNode, resolveParent } from '../helpers.js';
 
 export function handleCreateComponent(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.frameId as string);
-  if (!node || node.type !== 'FRAME')
-    throw new Error('Node must be a frame to convert to component');
+  if (node?.type !== 'FRAME') throw new Error('Node must be a frame to convert to component');
 
   const component = figma.createComponent();
-  component.name = (payload.name as string) || 'Component';
+  component.name = typeof payload.name === 'string' ? payload.name : 'Component';
   component.resize(node.width, node.height);
   component.x = node.x;
   component.y = node.y;
@@ -24,7 +23,9 @@ export function handleCreateComponent(payload: Record<string, unknown>): unknown
   }
   node.remove();
 
-  if (payload.description) component.description = payload.description as string;
+  if (typeof payload.description === 'string') {
+    component.description = payload.description;
+  }
   figma.viewport.scrollAndZoomIntoView([component]);
 
   return {
@@ -36,12 +37,14 @@ export function handleCreateComponent(payload: Record<string, unknown>): unknown
 
 export function handleCreateInstance(payload: Record<string, unknown>): unknown {
   const component = getNode(payload.componentId as string);
-  if (!component || component.type !== 'COMPONENT') throw new Error('Node is not a component');
+  if (component?.type !== 'COMPONENT') throw new Error('Node is not a component');
 
   const instance = component.createInstance();
-  instance.x = (payload.x as number) || 0;
-  instance.y = (payload.y as number) || 0;
-  if (payload.name) instance.name = payload.name as string;
+  instance.x = typeof payload.x === 'number' ? payload.x : 0;
+  instance.y = typeof payload.y === 'number' ? payload.y : 0;
+  if (typeof payload.name === 'string') {
+    instance.name = payload.name;
+  }
 
   const parent = resolveParent(payload.parentId as string | undefined);
   parent.appendChild(instance);
@@ -56,7 +59,7 @@ export function handleCreateInstance(payload: Record<string, unknown>): unknown 
 
 export function handleCreateComponentSet(payload: Record<string, unknown>): unknown {
   const variantIds = payload.variantIds as string[];
-  if (!variantIds || variantIds.length === 0)
+  if (!Array.isArray(variantIds) || variantIds.length === 0)
     throw new Error('Component set requires at least one component');
 
   const components = variantIds
@@ -66,7 +69,7 @@ export function handleCreateComponentSet(payload: Record<string, unknown>): unkn
   if (components.length === 0) throw new Error('No valid components found');
 
   const frame = figma.createFrame();
-  frame.name = (payload.name as string) || 'Component Set';
+  frame.name = typeof payload.name === 'string' ? payload.name : 'Component Set';
   frame.layoutMode = 'HORIZONTAL';
   frame.itemSpacing = 16;
 
@@ -74,7 +77,9 @@ export function handleCreateComponentSet(payload: Record<string, unknown>): unkn
     frame.appendChild(comp);
   }
 
-  if (payload.description) frame.setPluginData('description', payload.description as string);
+  if (typeof payload.description === 'string') {
+    frame.setPluginData('description', payload.description);
+  }
   figma.viewport.scrollAndZoomIntoView([frame]);
 
   return {
@@ -87,7 +92,7 @@ export function handleCreateComponentSet(payload: Record<string, unknown>): unkn
 
 export function handleSetComponentProperties(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.componentId as string);
-  if (!node || node.type !== 'COMPONENT') throw new Error('Node is not a component');
+  if (node?.type !== 'COMPONENT') throw new Error('Node is not a component');
 
   const component = node;
   const updated: string[] = [];
@@ -110,24 +115,23 @@ export function handleSetComponentProperties(payload: Record<string, unknown>): 
 
 export function handleAddVariantProperty(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.componentSetId as string);
-  if (!node || node.type !== 'COMPONENT_SET') throw new Error('Node is not a component set');
+  if (node?.type !== 'COMPONENT_SET') throw new Error('Node is not a component set');
 
-  const values = (payload.values as string[]) || [];
+  const values = Array.isArray(payload.values) ? (payload.values as string[]) : [];
   return {
     componentSetId: payload.componentSetId,
     propertyName: payload.propertyName,
     valueCount: values.length,
-    message: `Variant property added: ${payload.propertyName}`
+    message: `Variant property added: ${String(payload.propertyName)}`
   };
 }
 
 export async function handleSetInstanceSwap(payload: Record<string, unknown>): Promise<unknown> {
   const instance = getNode(payload.instanceId as string);
-  if (!instance || instance.type !== 'INSTANCE') throw new Error('Node is not an instance');
+  if (instance?.type !== 'INSTANCE') throw new Error('Node is not an instance');
 
   const newComponent = getNode(payload.newComponentId as string);
-  if (!newComponent || newComponent.type !== 'COMPONENT')
-    throw new Error('New component not found');
+  if (newComponent?.type !== 'COMPONENT') throw new Error('New component not found');
 
   const mainComponent = await instance.getMainComponentAsync();
   const oldComponentId = mainComponent?.id;

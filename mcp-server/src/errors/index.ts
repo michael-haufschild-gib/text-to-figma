@@ -37,7 +37,7 @@ export class ToolExecutionError extends Error {
     super(message);
     this.name = 'ToolExecutionError';
     this.errorCode = errorCode ?? ErrorCode.OP_FAILED;
-    Error.captureStackTrace?.(this, this.constructor);
+    Error.captureStackTrace(this, this.constructor);
   }
 
   toJSON(): Record<string, unknown> {
@@ -135,7 +135,7 @@ export class ConfigurationError extends Error {
   ) {
     super(message);
     this.name = 'ConfigurationError';
-    Error.captureStackTrace?.(this, this.constructor);
+    Error.captureStackTrace(this, this.constructor);
   }
 
   toJSON(): Record<string, unknown> {
@@ -159,7 +159,7 @@ export class FigmaBridgeError extends Error {
   constructor(errorOrMessage: StructuredError | string, legacyCode?: string) {
     if (typeof errorOrMessage === 'string') {
       // Legacy constructor support: (message, code)
-      const code = (legacyCode as ErrorCode) || ErrorCode.SYS_INTERNAL;
+      const code = (legacyCode as ErrorCode | undefined) ?? ErrorCode.SYS_INTERNAL;
       const structured = createError(code, errorOrMessage);
       super(errorOrMessage);
       this.structuredError = structured;

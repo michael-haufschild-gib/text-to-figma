@@ -164,11 +164,11 @@ export async function alignNodes(input: AlignNodesInput): Promise<AlignNodesResu
     }>('align_nodes', {
       nodeIds: validated.nodeIds,
       alignment: validated.alignment,
-      alignTo: validated.alignTo || 'SELECTION_BOUNDS'
+      alignTo: validated.alignTo ?? 'SELECTION_BOUNDS'
     });
 
     const duration = Date.now() - startTime;
-    const alignTo = validated.alignTo || 'SELECTION_BOUNDS';
+    const alignTo = validated.alignTo ?? 'SELECTION_BOUNDS';
     const message = `Aligned ${validated.nodeIds.length} nodes to ${validated.alignment} (relative to ${alignTo})`;
 
     log.info('Nodes aligned successfully', {

@@ -99,7 +99,7 @@ export async function getPluginData(input: GetPluginDataInput): Promise<GetPlugi
   });
   // Note: Response validated by bridge at protocol level
 
-  const value = response.value || '';
+  const value = response.value ?? '';
   const hasValue = value.length > 0;
 
   return {

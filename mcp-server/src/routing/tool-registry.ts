@@ -139,9 +139,7 @@ let globalRegistry: ToolRegistry | null = null;
  * Singleton pattern ensures all parts of application share same registry
  */
 export function getToolRegistry(): ToolRegistry {
-  if (!globalRegistry) {
-    globalRegistry = new ToolRegistry();
-  }
+  globalRegistry ??= new ToolRegistry();
   return globalRegistry;
 }
 

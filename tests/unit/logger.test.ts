@@ -49,7 +49,7 @@ describe('Logger', () => {
 
       // Verify the logged JSON contains the child context
       const logged = spy.mock.calls[0][0] as string;
-      const parsed = JSON.parse(logged);
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
       expect(parsed.context.component).toBe('test');
     });
   });
@@ -62,7 +62,7 @@ describe('Logger', () => {
       logger.error('Something broke', new Error('test error'));
 
       const logged = spy.mock.calls[0][0] as string;
-      const parsed = JSON.parse(logged);
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
       expect(parsed.error.name).toBe('Error');
       expect(parsed.error.message).toBe('test error');
     });
@@ -91,7 +91,7 @@ describe('Logger', () => {
       logger.info('test message');
 
       const logged = spy.mock.calls[0][0] as string;
-      const parsed = JSON.parse(logged);
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
       expect(parsed.level).toBe('info');
       expect(parsed.message).toBe('test message');
       expect(parsed.timestamp).toBeTypeOf('number');
@@ -106,7 +106,7 @@ describe('Logger', () => {
       child.info('frame created');
 
       const logged = spy.mock.calls[0][0] as string;
-      const parsed = JSON.parse(logged);
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
       expect(parsed.context.tool).toBe('create_frame');
     });
   });
@@ -147,7 +147,7 @@ describe('Logger', () => {
       logger.error('Failed', err);
 
       const logged = spy.mock.calls[0][0] as string;
-      const parsed = JSON.parse(logged);
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
       expect(parsed.error.name).toBe('TypeError');
       expect(parsed.error.message).toBe('type mismatch');
     });
@@ -171,7 +171,7 @@ describe('Logger', () => {
       grandchild.info('frame created');
 
       const logged = spy.mock.calls[0][0] as string;
-      const parsed = JSON.parse(logged);
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
       expect(parsed.context.component).toBe('router');
       expect(parsed.context.tool).toBe('create_frame');
     });
@@ -212,7 +212,10 @@ describe('Logger', () => {
       logger.error('critical issue');
       expect(spy).toHaveBeenCalledTimes(1);
 
-      const parsed = JSON.parse(spy.mock.calls[0][0] as string);
+      const parsed = JSON.parse(spy.mock.calls[0][0] as string) as Record<
+        string,
+        Record<string, unknown>
+      >;
       expect(parsed.level).toBe('error');
       expect(parsed.message).toBe('critical issue');
     });
@@ -224,7 +227,10 @@ describe('Logger', () => {
       logger.fatal('system crash');
       expect(spy).toHaveBeenCalledTimes(1);
 
-      const parsed = JSON.parse(spy.mock.calls[0][0] as string);
+      const parsed = JSON.parse(spy.mock.calls[0][0] as string) as Record<
+        string,
+        Record<string, unknown>
+      >;
       expect(parsed.level).toBe('fatal');
       expect(parsed.message).toBe('system crash');
     });
@@ -234,7 +240,10 @@ describe('Logger', () => {
       const logger = new Logger({ level: 'fatal', pretty: false });
 
       logger.error('crashed', new TypeError('null reference'));
-      const parsed = JSON.parse(spy.mock.calls[0][0] as string);
+      const parsed = JSON.parse(spy.mock.calls[0][0] as string) as Record<
+        string,
+        Record<string, unknown>
+      >;
       expect(parsed.error.name).toBe('TypeError');
       expect(parsed.error.message).toBe('null reference');
     });
@@ -263,7 +272,7 @@ describe('Logger', () => {
       logger.info('test');
 
       const logged = spy.mock.calls[0][0] as string;
-      const parsed = JSON.parse(logged);
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
       expect(parsed.level).toBe('info');
       expect(parsed.message).toBe('test');
       expect(parsed.timestamp).toBeGreaterThan(0);
@@ -276,7 +285,7 @@ describe('Logger', () => {
       logger.error('fail', new Error('broken'));
 
       const logged = spy.mock.calls[0][0] as string;
-      const parsed = JSON.parse(logged);
+      const parsed = JSON.parse(logged) as Record<string, Record<string, unknown>>;
       expect(parsed.error.name).toBe('Error');
       expect(parsed.error.message).toBe('broken');
       expect(parsed.error.stack).toContain('Error: broken');

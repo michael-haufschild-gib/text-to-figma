@@ -168,7 +168,7 @@ export async function distributeNodes(input: DistributeNodesInput): Promise<Dist
     // Get Figma bridge
     const bridge = getFigmaBridge();
 
-    const method = validated.method || 'SPACING';
+    const method = validated.method ?? 'SPACING';
 
     // Send command to Figma
     // Send command to Figma
@@ -184,8 +184,8 @@ export async function distributeNodes(input: DistributeNodesInput): Promise<Dist
     });
 
     const duration = Date.now() - startTime;
-    const actualSpacing = validated.spacing || response.spacing;
-    const message = `Distributed ${validated.nodeIds.length} nodes ${validated.axis.toLowerCase()} using ${method}${actualSpacing ? ` (spacing: ${actualSpacing}px)` : ''}`;
+    const actualSpacing = validated.spacing ?? response.spacing;
+    const message = `Distributed ${validated.nodeIds.length} nodes ${validated.axis.toLowerCase()} using ${method}${actualSpacing !== undefined ? ` (spacing: ${String(actualSpacing)}px)` : ''}`;
 
     log.info('Nodes distributed successfully', {
       nodeCount: validated.nodeIds.length,

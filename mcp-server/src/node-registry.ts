@@ -254,7 +254,7 @@ export class NodeRegistry {
     const nodesByType: Record<string, number> = {};
 
     for (const node of this.nodes.values()) {
-      nodesByType[node.type] = (nodesByType[node.type] || 0) + 1;
+      nodesByType[node.type] = (nodesByType[node.type] ?? 0) + 1;
     }
 
     return {
@@ -308,9 +308,7 @@ let registryInstance: NodeRegistry | null = null;
  * Get the global node registry instance
  */
 export function getNodeRegistry(): NodeRegistry {
-  if (!registryInstance) {
-    registryInstance = new NodeRegistry();
-  }
+  registryInstance ??= new NodeRegistry();
   return registryInstance;
 }
 

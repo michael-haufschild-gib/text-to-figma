@@ -67,7 +67,7 @@ export interface CreateTextResult {
  */
 function generateCssEquivalent(input: CreateTextInput, appliedLineHeight: number): string {
   const fontWeightName =
-    Object.entries(FONT_WEIGHTS).find(([_, val]) => val === input.fontWeight)?.[0] || 'normal';
+    Object.entries(FONT_WEIGHTS).find(([_, val]) => val === input.fontWeight)?.[0] ?? 'normal';
 
   let css = `font-family: ${input.fontFamily};
   font-size: ${input.fontSize}px;
@@ -82,7 +82,7 @@ function generateCssEquivalent(input: CreateTextInput, appliedLineHeight: number
     css += `\n  color: ${input.color};`;
   }
 
-  if (input.letterSpacing) {
+  if (input.letterSpacing !== undefined) {
     css += `\n  letter-spacing: ${input.letterSpacing}px;`;
   }
 
@@ -140,7 +140,7 @@ export async function createText(input: CreateTextInput): Promise<CreateTextResu
   });
 
   // Validate response contains nodeId
-  if (!response.nodeId) {
+  if (response.nodeId === '') {
     throw new Error('Figma plugin returned invalid response: missing nodeId field');
   }
 

@@ -214,8 +214,8 @@ export async function connectShapes(input: ConnectShapesInput): Promise<ConnectS
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  const method = validated.method || 'POSITION_OVERLAP';
-  const overlap = validated.overlap || 5;
+  const method = validated.method ?? 'POSITION_OVERLAP';
+  const overlap = validated.overlap ?? 5;
   const unionResult = validated.unionResult !== false; // Default true
 
   // Send command to Figma
@@ -234,7 +234,7 @@ export async function connectShapes(input: ConnectShapesInput): Promise<ConnectS
     unionResult
   });
 
-  const merged = response.merged || false;
+  const merged = response.merged ?? false;
 
   return {
     success: true as const,

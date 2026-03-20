@@ -13,7 +13,9 @@ export function handleSetLayoutProperties(payload: Record<string, unknown>): unk
   if (!node || !('layoutMode' in node)) throw new Error('Node does not support auto-layout');
 
   const frame = node as FrameNode;
-  if (payload.layoutMode) frame.layoutMode = payload.layoutMode as 'HORIZONTAL' | 'VERTICAL';
+  if (typeof payload.layoutMode === 'string') {
+    frame.layoutMode = payload.layoutMode as 'HORIZONTAL' | 'VERTICAL';
+  }
   if (payload.itemSpacing !== undefined) frame.itemSpacing = payload.itemSpacing as number;
   if (payload.padding !== undefined) {
     const p = payload.padding as number;
@@ -29,10 +31,12 @@ export function handleSetLayoutAlign(payload: Record<string, unknown>): unknown 
     throw new Error('Node does not support layout alignment');
 
   const frame = node as FrameNode;
-  if (payload.primaryAxis)
+  if (typeof payload.primaryAxis === 'string') {
     frame.primaryAxisAlignItems = payload.primaryAxis as FrameNode['primaryAxisAlignItems'];
-  if (payload.counterAxis)
+  }
+  if (typeof payload.counterAxis === 'string') {
     frame.counterAxisAlignItems = payload.counterAxis as FrameNode['counterAxisAlignItems'];
+  }
 
   return { nodeId: payload.nodeId, message: 'Layout alignment set successfully' };
 }
@@ -43,9 +47,12 @@ export function handleSetLayoutSizing(payload: Record<string, unknown>): unknown
     throw new Error('Node does not support layout sizing');
 
   const frame = node as FrameNode;
-  if (payload.horizontal)
+  if (typeof payload.horizontal === 'string') {
     frame.layoutSizingHorizontal = payload.horizontal as 'FIXED' | 'HUG' | 'FILL';
-  if (payload.vertical) frame.layoutSizingVertical = payload.vertical as 'FIXED' | 'HUG' | 'FILL';
+  }
+  if (typeof payload.vertical === 'string') {
+    frame.layoutSizingVertical = payload.vertical as 'FIXED' | 'HUG' | 'FILL';
+  }
 
   return { nodeId: payload.nodeId, message: 'Layout sizing set successfully' };
 }
@@ -54,17 +61,20 @@ export function handleSetConstraints(payload: Record<string, unknown>): unknown 
   const node = getNode(payload.nodeId as string);
   if (!node || !('constraints' in node)) throw new Error('Node does not support constraints');
 
+  const h = typeof payload.horizontal === 'string' ? payload.horizontal : 'MIN';
+  const v = typeof payload.vertical === 'string' ? payload.vertical : 'MIN';
+
   (node as ConstraintMixin).constraints = {
-    horizontal: (payload.horizontal as ConstraintType) || 'MIN',
-    vertical: (payload.vertical as ConstraintType) || 'MIN'
+    horizontal: h as ConstraintType,
+    vertical: v as ConstraintType
   };
 
   return {
     nodeId: payload.nodeId,
     applied: [
-      payload.horizontal ? `horizontal: ${payload.horizontal}` : '',
-      payload.vertical ? `vertical: ${payload.vertical}` : ''
-    ].filter(Boolean),
+      typeof payload.horizontal === 'string' ? `horizontal: ${payload.horizontal}` : '',
+      typeof payload.vertical === 'string' ? `vertical: ${payload.vertical}` : ''
+    ].filter((s) => s !== ''),
     message: 'Constraints applied successfully'
   };
 }
@@ -115,7 +125,7 @@ export function handleAlignNodes(payload: Record<string, unknown>): unknown {
   if (nodes.length < 2) throw new Error('At least 2 valid nodes required for alignment');
 
   const alignment = payload.alignment as string;
-  const alignTo = (payload.alignTo as string) || 'SELECTION_BOUNDS';
+  const alignTo = typeof payload.alignTo === 'string' ? payload.alignTo : 'SELECTION_BOUNDS';
 
   const referenceValue = computeAlignmentReference(nodes, alignment, alignTo);
 
@@ -143,30 +153,13 @@ export function handleAlignNodes(payload: Record<string, unknown>): unknown {
     }
   }
 
-  return { message: `Aligned ${nodes.length} nodes to ${alignment}` };
+  return { message: `Aligned ${String(nodes.length)} nodes to ${alignment}` };
 }
 
 function computeAlignmentReference(nodes: SceneNode[], alignment: string, alignTo: string): number {
-  const refNode = alignTo === 'LAST' ? nodes[nodes.length - 1] : nodes[0];
-
   if (alignTo === 'FIRST' || alignTo === 'LAST') {
-    const { width, height } = getNodeDimensions(refNode);
-    switch (alignment) {
-      case 'LEFT':
-        return refNode.x;
-      case 'CENTER_H':
-        return refNode.x + width / 2;
-      case 'RIGHT':
-        return refNode.x + width;
-      case 'TOP':
-        return refNode.y;
-      case 'CENTER_V':
-        return refNode.y + height / 2;
-      case 'BOTTOM':
-        return refNode.y + height;
-      default:
-        return 0;
-    }
+    const refNode = alignTo === 'LAST' ? nodes[nodes.length - 1] : nodes[0];
+    return computeRefFromNode(refNode, alignment);
   }
 
   // SELECTION_BOUNDS
@@ -194,13 +187,33 @@ function computeAlignmentReference(nodes: SceneNode[], alignment: string, alignT
   }
 }
 
+function computeRefFromNode(refNode: SceneNode, alignment: string): number {
+  const { width, height } = getNodeDimensions(refNode);
+  switch (alignment) {
+    case 'LEFT':
+      return refNode.x;
+    case 'CENTER_H':
+      return refNode.x + width / 2;
+    case 'RIGHT':
+      return refNode.x + width;
+    case 'TOP':
+      return refNode.y;
+    case 'CENTER_V':
+      return refNode.y + height / 2;
+    case 'BOTTOM':
+      return refNode.y + height;
+    default:
+      return 0;
+  }
+}
+
 export function handleDistributeNodes(payload: Record<string, unknown>): unknown {
   const nodeIds = payload.nodeIds as string[];
   const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 3) throw new Error('At least 3 valid nodes required for distribution');
 
   const axis = payload.axis as 'HORIZONTAL' | 'VERTICAL';
-  const method = (payload.method as string) || 'SPACING';
+  const method = typeof payload.method === 'string' ? payload.method : 'SPACING';
 
   nodes.sort((a, b) => (axis === 'HORIZONTAL' ? a.x - b.x : a.y - b.y));
 
@@ -236,7 +249,7 @@ function distributeBySpacing(
 
   return {
     spacing,
-    message: `Distributed ${nodes.length} nodes ${axis === 'HORIZONTAL' ? 'horizontally' : 'vertically'} with ${spacing.toFixed(1)}px spacing`
+    message: `Distributed ${String(nodes.length)} nodes ${axis === 'HORIZONTAL' ? 'horizontally' : 'vertically'} with ${spacing.toFixed(1)}px spacing`
   };
 }
 
@@ -258,7 +271,31 @@ function distributeByCenters(
     nodes[i][pos] = targetCenter - getNodeDimensions(nodes[i])[dim] / 2;
   }
 
-  return { spacing, message: `Distributed ${nodes.length} nodes by centers` };
+  return { spacing, message: `Distributed ${String(nodes.length)} nodes by centers` };
+}
+
+function applyOverlapOffset(
+  pos: { x: number; y: number },
+  overlap: number,
+  targetAnchor: string,
+  sourceAnchor: string
+): { x: number; y: number } {
+  let { x, y } = pos;
+  if (targetAnchor.includes('TOP') && sourceAnchor.includes('BOTTOM')) y += overlap;
+  else if (targetAnchor.includes('BOTTOM') && sourceAnchor.includes('TOP')) y -= overlap;
+  else if (targetAnchor.includes('LEFT') && sourceAnchor.includes('RIGHT')) x += overlap;
+  else if (targetAnchor.includes('RIGHT') && sourceAnchor.includes('LEFT')) x -= overlap;
+  return { x, y };
+}
+
+function tryUnion(source: SceneNode, target: SceneNode): { merged: boolean; newNodeId?: string } {
+  try {
+    const booleanNode = figma.union([source, target], figma.currentPage);
+    return { merged: true, newNodeId: booleanNode.id };
+  } catch (e) {
+    console.warn('Union operation failed:', e);
+    return { merged: false };
+  }
 }
 
 export function handleConnectShapes(payload: Record<string, unknown>): unknown {
@@ -266,10 +303,10 @@ export function handleConnectShapes(payload: Record<string, unknown>): unknown {
   const targetNode = getNode(payload.targetNodeId as string);
   if (!sourceNode || !targetNode) throw new Error('Source or target node not found');
 
-  const method = (payload.method as string) || 'POSITION_OVERLAP';
-  const overlap = (payload.overlap as number) || 5;
-  const targetAnchor = (payload.targetAnchor as string) || 'CENTER';
-  const sourceAnchor = (payload.sourceAnchor as string) || 'CENTER';
+  const method = typeof payload.method === 'string' ? payload.method : 'POSITION_OVERLAP';
+  const overlap = typeof payload.overlap === 'number' ? payload.overlap : 5;
+  const targetAnchor = typeof payload.targetAnchor === 'string' ? payload.targetAnchor : 'CENTER';
+  const sourceAnchor = typeof payload.sourceAnchor === 'string' ? payload.sourceAnchor : 'CENTER';
 
   const targetDims = getNodeDimensions(targetNode);
   const sourceDims = getNodeDimensions(sourceNode);
@@ -281,7 +318,7 @@ export function handleConnectShapes(payload: Record<string, unknown>): unknown {
     targetDims.height,
     targetAnchor
   );
-  let { x: sx, y: sy } = anchorOffset(
+  let sourcePos = anchorOffset(
     targetPos.x,
     targetPos.y,
     sourceDims.width,
@@ -290,25 +327,16 @@ export function handleConnectShapes(payload: Record<string, unknown>): unknown {
   );
 
   if (method === 'POSITION_OVERLAP' || method === 'UNION') {
-    if (targetAnchor.includes('TOP') && sourceAnchor.includes('BOTTOM')) sy += overlap;
-    else if (targetAnchor.includes('BOTTOM') && sourceAnchor.includes('TOP')) sy -= overlap;
-    else if (targetAnchor.includes('LEFT') && sourceAnchor.includes('RIGHT')) sx += overlap;
-    else if (targetAnchor.includes('RIGHT') && sourceAnchor.includes('LEFT')) sx -= overlap;
+    sourcePos = applyOverlapOffset(sourcePos, overlap, targetAnchor, sourceAnchor);
   }
 
-  sourceNode.x = sx;
-  sourceNode.y = sy;
+  sourceNode.x = sourcePos.x;
+  sourceNode.y = sourcePos.y;
 
   let merged = false;
   let newNodeId: string | undefined;
   if (method === 'UNION' && payload.unionResult !== false) {
-    try {
-      const booleanNode = figma.union([sourceNode, targetNode], figma.currentPage);
-      newNodeId = booleanNode.id;
-      merged = true;
-    } catch (e) {
-      console.warn('Union operation failed:', e);
-    }
+    ({ merged, newNodeId } = tryUnion(sourceNode, targetNode));
   }
 
   return {
@@ -336,7 +364,7 @@ function anchorPosition(
     BOTTOM: { x: x + w / 2, y: y + h },
     BOTTOM_RIGHT: { x: x + w, y: y + h }
   };
-  return positions[anchor] || positions.CENTER;
+  return positions[anchor] ?? positions.CENTER;
 }
 
 function anchorOffset(
@@ -357,7 +385,7 @@ function anchorOffset(
     BOTTOM: { x: tx - sw / 2, y: ty - sh },
     BOTTOM_RIGHT: { x: tx - sw, y: ty - sh }
   };
-  return offsets[anchor] || offsets.CENTER;
+  return offsets[anchor] ?? offsets.CENTER;
 }
 
 export function handleAddLayoutGrid(payload: Record<string, unknown>): unknown {
@@ -365,10 +393,11 @@ export function handleAddLayoutGrid(payload: Record<string, unknown>): unknown {
   if (!node || !('layoutGrids' in node)) throw new Error('Node does not support layout grids');
 
   const frame = node as FrameNode;
-  const pattern = (payload.pattern as string) || 'COLUMNS';
-  const gridColor = payload.color
-    ? { ...hexToRgb(payload.color as string), a: 0.1 }
-    : { r: 1, g: 0, b: 0, a: 0.1 };
+  const pattern = typeof payload.pattern === 'string' ? payload.pattern : 'COLUMNS';
+  const gridColor =
+    typeof payload.color === 'string'
+      ? { ...hexToRgb(payload.color), a: 0.1 }
+      : { r: 1, g: 0, b: 0, a: 0.1 };
 
   let grid: LayoutGrid;
   let responseCount: number | undefined;
@@ -378,19 +407,22 @@ export function handleAddLayoutGrid(payload: Record<string, unknown>): unknown {
   if (pattern === 'GRID') {
     grid = {
       pattern: 'GRID',
-      sectionSize: (payload.sectionSize as number) || 64,
+      sectionSize: typeof payload.sectionSize === 'number' ? payload.sectionSize : 64,
       visible: payload.visible !== false,
       color: gridColor
     };
   } else {
-    const count = (payload.count as number) || 12;
-    const gutterSize = (payload.gutter as number) || 16;
-    const offset = (payload.margin as number) || 0;
-    const alignment = (payload.alignment as RowsColsLayoutGrid['alignment']) || 'MIN';
+    const count = typeof payload.count === 'number' ? payload.count : 12;
+    const gutterSize = typeof payload.gutter === 'number' ? payload.gutter : 16;
+    const offset = typeof payload.margin === 'number' ? payload.margin : 0;
+    const alignment =
+      typeof payload.alignment === 'string'
+        ? (payload.alignment as RowsColsLayoutGrid['alignment'])
+        : 'MIN';
 
     grid = {
       pattern: pattern as 'COLUMNS' | 'ROWS',
-      sectionSize: (payload.sectionSize as number) || 64,
+      sectionSize: typeof payload.sectionSize === 'number' ? payload.sectionSize : 64,
       visible: payload.visible !== false,
       color: gridColor,
       alignment,

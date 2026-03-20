@@ -189,12 +189,12 @@ export async function createLine(input: CreateLineInput): Promise<CreateLineResu
   let cssEquivalent = '';
   if (isHorizontal) {
     cssEquivalent = `border-top: ${validated.strokeWeight}px solid ${validated.strokeColor};`;
-    if (validated.dashPattern) {
+    if (validated.dashPattern !== undefined) {
       cssEquivalent += `\nborder-style: dashed;`;
     }
   } else if (isVertical) {
     cssEquivalent = `border-left: ${validated.strokeWeight}px solid ${validated.strokeColor};`;
-    if (validated.dashPattern) {
+    if (validated.dashPattern !== undefined) {
       cssEquivalent += `\nborder-style: dashed;`;
     }
   } else {
@@ -208,7 +208,7 @@ transform: rotate(${angle}deg);`;
   }
 
   return {
-    lineId: response.nodeId || '',
+    lineId: response.nodeId ?? '',
     length: Math.round(length),
     isHorizontal,
     isVertical,

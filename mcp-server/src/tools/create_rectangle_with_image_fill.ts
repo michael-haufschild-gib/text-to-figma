@@ -188,7 +188,7 @@ export async function createRectangleWithImageFill(
   }
 
   return {
-    rectangleId: response.nodeId || '',
+    rectangleId: response.nodeId ?? '',
     imageUrl: validated.imageUrl,
     width: validated.width,
     height: validated.height,

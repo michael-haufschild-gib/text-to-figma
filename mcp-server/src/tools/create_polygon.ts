@@ -153,7 +153,7 @@ export async function createPolygon(input: CreatePolygonInput): Promise<CreatePo
     6: 'hexagon',
     8: 'octagon'
   };
-  const polygonType = polygonTypes[validated.sideCount] || `${validated.sideCount}-sided polygon`;
+  const polygonType = polygonTypes[validated.sideCount] ?? `${validated.sideCount}-sided polygon`;
 
   // Build CSS equivalent (simplified - actual implementation would need SVG)
   const cssEquivalent = `/* ${validated.sideCount}-sided polygon requires SVG or clip-path */
@@ -165,7 +165,7 @@ export async function createPolygon(input: CreatePolygonInput): Promise<CreatePo
 }`;
 
   return {
-    polygonId: response.nodeId || '',
+    polygonId: response.nodeId ?? '',
     sideCount: validated.sideCount,
     radius: validated.radius,
     polygonType,

@@ -105,10 +105,6 @@ export async function listPages(_input: ListPagesInput): Promise<ListPagesResult
     message: string;
   }>('list_pages', {});
 
-  if (!response.pages) {
-    throw new Error('Failed to list pages');
-  }
-
   return {
     success: true as const,
     pageCount: response.pages.length,

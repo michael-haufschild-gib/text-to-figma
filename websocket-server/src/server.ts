@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { WebSocketServer, WebSocket, RawData } from 'ws';
 import { IncomingMessage } from 'http';
 
-const PORT = parseInt(process.env.PORT || '8080', 10);
+const PORT = parseInt(process.env.PORT ?? '8080', 10);
 const MAX_MESSAGE_SIZE = 10 * 1024 * 1024; // 10MB - prevent DoS via large payloads
 const HEARTBEAT_INTERVAL = 30000; // 30 seconds - ping interval
 const HEARTBEAT_TIMEOUT = 60000; // 60 seconds - connection timeout
@@ -39,7 +39,7 @@ type BridgeMessage = FigmaHelloMessage | RequestMessage | ResponseMessage;
  * Returns null if the object does not match any known message shape.
  */
 function validateMessage(obj: unknown): BridgeMessage | null {
-  if (!obj || typeof obj !== 'object') {
+  if (obj === null || obj === undefined || typeof obj !== 'object') {
     return null;
   }
 
@@ -111,55 +111,61 @@ function handleFigmaRegistration(message: BridgeMessage, clientId: string, ws: W
 /**
  * Route a parsed message to the appropriate destination.
  */
+function routeRequest(message: BridgeMessage, clientId: string): void {
+  console.log(`[REQUEST] MCP -> Figma (${clientId}):`, message);
+  const client = clients.get(clientId);
+  if (client) {
+    client.isMCP = true;
+  }
+  // Track which MCP client originated this request for response routing
+  const requestMsg = message as RequestMessage;
+  if (typeof requestMsg.id === 'string') {
+    pendingRequestOrigins.set(requestMsg.id, clientId);
+  }
+  if (figmaPluginClient && clients.has(figmaPluginClient)) {
+    const figmaClient = clients.get(figmaPluginClient);
+    if (figmaClient?.ws.readyState === WebSocket.OPEN) {
+      figmaClient.ws.send(JSON.stringify(message));
+      console.log(`  Routed to Figma plugin: ${figmaPluginClient}`);
+    }
+  } else {
+    console.error('  No Figma plugin connected!');
+  }
+}
+
+function routeResponse(message: ResponseMessage, clientId: string): void {
+  console.log(`[RESPONSE] Figma -> MCP (${clientId}):`, message);
+  if (figmaPluginClient && clientId !== figmaPluginClient) {
+    console.warn(`  Ignoring response from unregistered client ${clientId}`);
+    return;
+  }
+  const originClientId = pendingRequestOrigins.get(message.id);
+  pendingRequestOrigins.delete(message.id);
+
+  if (originClientId) {
+    const originClient = clients.get(originClientId);
+    if (originClient?.ws.readyState === WebSocket.OPEN) {
+      originClient.ws.send(JSON.stringify(message));
+      console.log(`  Routed to originating MCP client: ${originClientId}`);
+    }
+  } else {
+    // Fallback: broadcast to all MCP clients (for requests without tracked IDs)
+    for (const [, mcpClient] of clients.entries()) {
+      if (mcpClient.isMCP && mcpClient.ws.readyState === WebSocket.OPEN) {
+        mcpClient.ws.send(JSON.stringify(message));
+      }
+    }
+  }
+}
+
 function routeMessage(message: BridgeMessage, clientId: string): void {
   const isRequest = 'type' in message && 'payload' in message;
   const isResponse = 'id' in message && 'success' in message;
 
   if (isRequest) {
-    console.log(`[REQUEST] MCP -> Figma (${clientId}):`, message);
-    const client = clients.get(clientId);
-    if (client) {
-      client.isMCP = true;
-    }
-    // Track which MCP client originated this request for response routing
-    const requestMsg = message as RequestMessage;
-    if (requestMsg.id) {
-      pendingRequestOrigins.set(requestMsg.id, clientId);
-    }
-    if (figmaPluginClient && clients.has(figmaPluginClient)) {
-      const figmaClient = clients.get(figmaPluginClient);
-      if (figmaClient && figmaClient.ws.readyState === WebSocket.OPEN) {
-        figmaClient.ws.send(JSON.stringify(message));
-        console.log(`  Routed to Figma plugin: ${figmaPluginClient}`);
-      }
-    } else {
-      console.error('  No Figma plugin connected!');
-    }
+    routeRequest(message, clientId);
   } else if (isResponse) {
-    console.log(`[RESPONSE] Figma -> MCP (${clientId}):`, message);
-    if (figmaPluginClient && clientId !== figmaPluginClient) {
-      console.warn(`  Ignoring response from unregistered client ${clientId}`);
-      return;
-    }
-    // Route response to the specific MCP client that sent the request
-    const responseMsg = message;
-    const originClientId = pendingRequestOrigins.get(responseMsg.id);
-    pendingRequestOrigins.delete(responseMsg.id);
-
-    if (originClientId) {
-      const originClient = clients.get(originClientId);
-      if (originClient && originClient.ws.readyState === WebSocket.OPEN) {
-        originClient.ws.send(JSON.stringify(message));
-        console.log(`  Routed to originating MCP client: ${originClientId}`);
-      }
-    } else {
-      // Fallback: broadcast to all MCP clients (for requests without tracked IDs)
-      for (const [, mcpClient] of clients.entries()) {
-        if (mcpClient.isMCP && mcpClient.ws.readyState === WebSocket.OPEN) {
-          mcpClient.ws.send(JSON.stringify(message));
-        }
-      }
-    }
+    routeResponse(message, clientId);
   } else {
     console.log(`[UNKNOWN] Message from ${clientId}:`, message);
   }

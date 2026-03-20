@@ -105,7 +105,7 @@ export async function applyTextStyle(input: ApplyTextStyleInput): Promise<ApplyT
 
   return {
     nodeId: validated.nodeId,
-    styleName: response.styleName || validated.styleNameOrId,
-    message: `Applied text style "${response.styleName || validated.styleNameOrId}" to text node`
+    styleName: response.styleName ?? validated.styleNameOrId,
+    message: `Applied text style "${response.styleName ?? validated.styleNameOrId}" to text node`
   };
 }

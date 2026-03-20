@@ -87,7 +87,7 @@ export async function getPageHierarchy(
   const registry = getNodeRegistry();
 
   // If refresh requested, query Figma and rebuild registry
-  if (validated.refresh) {
+  if (validated.refresh === true) {
     logger.info('Refreshing hierarchy from Figma...');
 
     const bridge = getFigmaBridge();

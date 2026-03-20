@@ -170,16 +170,16 @@ export async function setCornerRadius(input: SetCornerRadiusInput): Promise<SetC
     message = `Set uniform corner radius: ${validated.radius}px`;
   } else {
     const corners: string[] = [];
-    if (validated.topLeft) {
+    if (validated.topLeft !== undefined) {
       corners.push(`TL:${validated.topLeft}px`);
     }
-    if (validated.topRight) {
+    if (validated.topRight !== undefined) {
       corners.push(`TR:${validated.topRight}px`);
     }
-    if (validated.bottomRight) {
+    if (validated.bottomRight !== undefined) {
       corners.push(`BR:${validated.bottomRight}px`);
     }
-    if (validated.bottomLeft) {
+    if (validated.bottomLeft !== undefined) {
       corners.push(`BL:${validated.bottomLeft}px`);
     }
     message = `Set individual corner radii: ${corners.join(', ')}`;

@@ -65,7 +65,7 @@ export function isContainerNode(
 
 /** Resolve parent from parentId or fall back to currentPage */
 export function resolveParent(parentId?: string): BaseNode & ChildrenMixin {
-  if (parentId) {
+  if (parentId !== undefined) {
     const parent = getNode(parentId);
     if (parent && 'appendChild' in parent) {
       return parent as BaseNode & ChildrenMixin;
@@ -103,24 +103,32 @@ export function convertEffects(effects: Array<Record<string, unknown>>): Effect[
   return effects.map((effect) => {
     const type = effect.type as string;
     if (type === 'DROP_SHADOW' || type === 'INNER_SHADOW') {
-      const rgb = hexToRgb((effect.color as string) || '#000000');
-      const opacity = (effect.opacity as number) ?? 1;
+      const colorStr = typeof effect.color === 'string' ? effect.color : '#000000';
+      const rgb = hexToRgb(colorStr);
+      const opacity = typeof effect.opacity === 'number' ? effect.opacity : 1;
+      const ox = typeof effect.x === 'number' ? effect.x : 0;
+      const oy = typeof effect.y === 'number' ? effect.y : 0;
+      const offsetX = typeof effect.offsetX === 'number' ? effect.offsetX : ox;
+      const offsetY = typeof effect.offsetY === 'number' ? effect.offsetY : oy;
       return {
         type,
         color: { ...rgb, a: opacity },
-        offset: {
-          x: (effect.x as number) || (effect.offsetX as number) || 0,
-          y: (effect.y as number) || (effect.offsetY as number) || 0
-        },
-        radius: (effect.blur as number) || 0,
-        spread: (effect.spread as number) || 0,
+        offset: { x: offsetX, y: offsetY },
+        radius: typeof effect.blur === 'number' ? effect.blur : 0,
+        spread: typeof effect.spread === 'number' ? effect.spread : 0,
         visible: true,
         blendMode: 'NORMAL' as BlendMode
       } as DropShadowEffect | InnerShadowEffect;
     } else if (type === 'LAYER_BLUR' || type === 'BACKGROUND_BLUR') {
+      const radius =
+        typeof effect.radius === 'number'
+          ? effect.radius
+          : typeof effect.blur === 'number'
+            ? effect.blur
+            : 0;
       return {
         type,
-        radius: (effect.radius as number) || (effect.blur as number) || 0,
+        radius,
         visible: true
       } as BlurEffect;
     }

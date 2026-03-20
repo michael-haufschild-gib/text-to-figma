@@ -19,7 +19,7 @@ type TestResult2 = { output: string };
 const mockToolHandler1: ToolHandler<TestInput1, TestResult1> = {
   name: 'test_tool_1',
   schema: z.object({ value: z.number() }),
-  execute: async (input) => ({ result: input.value * 2 }),
+  execute: (input) => ({ result: input.value * 2 }),
   formatResponse: (result) => [{ type: 'text', text: `Result: ${result.result}` }],
   definition: {
     name: 'test_tool_1',
@@ -35,7 +35,7 @@ const mockToolHandler1: ToolHandler<TestInput1, TestResult1> = {
 const mockToolHandler2: ToolHandler<TestInput2, TestResult2> = {
   name: 'test_tool_2',
   schema: z.object({ text: z.string() }),
-  execute: async (input) => ({ output: input.text.toUpperCase() }),
+  execute: (input) => ({ output: input.text.toUpperCase() }),
   formatResponse: (result) => [{ type: 'text', text: result.output }],
   definition: {
     name: 'test_tool_2',

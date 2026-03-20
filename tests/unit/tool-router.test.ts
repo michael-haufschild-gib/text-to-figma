@@ -15,7 +15,7 @@ type TestResult = { result: number };
 const testHandler: ToolHandler<TestInput, TestResult> = {
   name: 'test_tool',
   schema: z.object({ value: z.number() }),
-  execute: async (input) => ({ result: input.value * 2 }),
+  execute: (input) => ({ result: input.value * 2 }),
   formatResponse: (result) => [{ type: 'text', text: `Result: ${result.result}` }],
   definition: {
     name: 'test_tool',
@@ -55,7 +55,7 @@ describe('routeToolCall', () => {
     const failingHandler: ToolHandler<TestInput, TestResult> = {
       ...testHandler,
       name: 'failing_tool',
-      execute: async () => {
+      execute: () => {
         throw new Error('Tool execution failed');
       },
       definition: { ...testHandler.definition, name: 'failing_tool' }
@@ -137,7 +137,7 @@ describe('routeToolCall', () => {
     const failHandler: ToolHandler<TestInput, TestResult> = {
       ...testHandler,
       name: 'fail_metrics_tool',
-      execute: async () => {
+      execute: () => {
         throw new Error('fail for metrics');
       },
       definition: { ...testHandler.definition, name: 'fail_metrics_tool' }
@@ -158,7 +158,7 @@ describe('routeToolCall', () => {
     const failHandler: ToolHandler<TestInput, TestResult> = {
       ...testHandler,
       name: 'duration_fail_tool',
-      execute: async () => {
+      execute: () => {
         throw new Error('duration test');
       },
       definition: { ...testHandler.definition, name: 'duration_fail_tool' }
@@ -188,7 +188,7 @@ describe('routeToolCall', () => {
     const stringThrowHandler: ToolHandler<TestInput, TestResult> = {
       ...testHandler,
       name: 'string_throw_tool',
-      execute: async () => {
+      execute: () => {
         throw 'raw string error';
       },
       definition: { ...testHandler.definition, name: 'string_throw_tool' }

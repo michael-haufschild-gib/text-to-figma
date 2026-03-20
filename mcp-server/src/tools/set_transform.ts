@@ -182,7 +182,7 @@ export async function setTransform(input: SetTransformInput): Promise<SetTransfo
   // Build command payload for Figma
   const payload: Record<string, unknown> = { nodeId: validated.nodeId };
 
-  if (validated.position) {
+  if (validated.position !== undefined) {
     payload.position = validated.position;
     applied.push('position');
     cssLines.push(`position: absolute;`);
@@ -190,7 +190,7 @@ export async function setTransform(input: SetTransformInput): Promise<SetTransfo
     cssLines.push(`top: ${validated.position.y}px;`);
   }
 
-  if (validated.size) {
+  if (validated.size !== undefined) {
     payload.size = validated.size;
     applied.push('size');
     cssLines.push(`width: ${validated.size.width}px;`);
@@ -203,13 +203,13 @@ export async function setTransform(input: SetTransformInput): Promise<SetTransfo
     cssLines.push(`transform: rotate(${validated.rotation}deg);`);
   }
 
-  if (validated.scale) {
+  if (validated.scale !== undefined) {
     payload.scale = validated.scale;
     applied.push('scale');
     cssLines.push(`transform: scale(${validated.scale.x}, ${validated.scale.y});`);
   }
 
-  if (validated.flip) {
+  if (validated.flip !== undefined) {
     payload.flip = validated.flip;
     applied.push('flip');
     const flipTransform =

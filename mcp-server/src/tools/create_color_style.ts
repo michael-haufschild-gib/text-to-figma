@@ -122,7 +122,7 @@ export async function createColorStyle(
   // Note: Response validated by bridge at protocol level
 
   return {
-    styleId: response.styleId || '',
+    styleId: response.styleId ?? '',
     name: validated.name,
     color: validated.color,
     message: `Created color style "${validated.name}" (${validated.color})`

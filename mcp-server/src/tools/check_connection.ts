@@ -61,7 +61,7 @@ export async function checkConnection(): Promise<CheckConnectionResult> {
       wsReadyState: status.wsReadyState,
       wsReadyStateText:
         status.wsReadyState !== undefined
-          ? WS_READY_STATE_TEXT[status.wsReadyState] || 'UNKNOWN'
+          ? (WS_READY_STATE_TEXT[status.wsReadyState] ?? 'UNKNOWN')
           : undefined,
       message:
         'Not connected to Figma plugin. Ensure Figma is open and the Text-to-Figma plugin is running.'
@@ -86,7 +86,7 @@ export async function checkConnection(): Promise<CheckConnectionResult> {
       wsReadyState: status.wsReadyState,
       wsReadyStateText:
         status.wsReadyState !== undefined
-          ? WS_READY_STATE_TEXT[status.wsReadyState] || 'UNKNOWN'
+          ? (WS_READY_STATE_TEXT[status.wsReadyState] ?? 'UNKNOWN')
           : undefined,
       message: `Connected to Figma. File: "${pingResponse.fileName}", Page: "${pingResponse.currentPage}"`
     };
@@ -101,7 +101,7 @@ export async function checkConnection(): Promise<CheckConnectionResult> {
       wsReadyState: status.wsReadyState,
       wsReadyStateText:
         status.wsReadyState !== undefined
-          ? WS_READY_STATE_TEXT[status.wsReadyState] || 'UNKNOWN'
+          ? (WS_READY_STATE_TEXT[status.wsReadyState] ?? 'UNKNOWN')
           : undefined,
       message: 'WebSocket connected but Figma plugin did not respond to ping',
       error: error instanceof Error ? error.message : String(error)

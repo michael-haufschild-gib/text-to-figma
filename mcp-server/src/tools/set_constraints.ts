@@ -128,7 +128,7 @@ function generateCssEquivalent(input: SetConstraintsInput): string {
 function generateDescription(input: SetConstraintsInput): string {
   const parts: string[] = [];
 
-  if (input.horizontal) {
+  if (input.horizontal !== undefined) {
     const descriptions: Record<HorizontalConstraint, string> = {
       MIN: 'pinned to left edge',
       MAX: 'pinned to right edge',
@@ -139,7 +139,7 @@ function generateDescription(input: SetConstraintsInput): string {
     parts.push(descriptions[input.horizontal]);
   }
 
-  if (input.vertical) {
+  if (input.vertical !== undefined) {
     const descriptions: Record<VerticalConstraint, string> = {
       MIN: 'pinned to top edge',
       MAX: 'pinned to bottom edge',
@@ -205,7 +205,7 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
   if (
     resolvedInput.pinLeft === true &&
     resolvedInput.pinRight === true &&
-    !resolvedInput.horizontal
+    resolvedInput.horizontal === undefined
   ) {
     resolvedInput.horizontal = 'STRETCH';
   }
@@ -213,7 +213,7 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
   if (
     resolvedInput.pinTop === true &&
     resolvedInput.pinBottom === true &&
-    !resolvedInput.vertical
+    resolvedInput.vertical === undefined
   ) {
     resolvedInput.vertical = 'STRETCH';
   }
@@ -224,16 +224,16 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
 
   // Build list of applied constraints
   const applied: string[] = [];
-  if (resolvedInput.horizontal) {
+  if (resolvedInput.horizontal !== undefined) {
     applied.push(`horizontal: ${resolvedInput.horizontal}`);
   }
-  if (resolvedInput.vertical) {
+  if (resolvedInput.vertical !== undefined) {
     applied.push(`vertical: ${resolvedInput.vertical}`);
   }
-  if (resolvedInput.aspectRatioLocked) {
+  if (resolvedInput.aspectRatioLocked === true) {
     applied.push('aspectRatioLocked');
   }
-  if (resolvedInput.pinLeft) {
+  if (resolvedInput.pinLeft === true) {
     applied.push('pinLeft');
   }
   if (resolvedInput.pinRight) {
