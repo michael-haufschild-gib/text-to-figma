@@ -2,174 +2,199 @@
  * Unit tests for Tool Router
  */
 
-import assert from 'assert';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import type { ToolHandler } from '../../mcp-server/src/routing/tool-handler.js';
 import { getToolRegistry, resetToolRegistry } from '../../mcp-server/src/routing/tool-registry.js';
 import { routeToolCall } from '../../mcp-server/src/routing/tool-router.js';
+import { getMetrics, resetMetrics } from '../../mcp-server/src/monitoring/metrics.js';
 
-// Type definitions for test
 type TestInput = { value: number };
 type TestResult = { result: number };
 
-/**
- * Test: routeToolCall with valid tool
- */
-async function testRouteValidTool(): Promise<void> {
-  console.log('\n  Test: routeToolCall with valid tool');
-
-  resetToolRegistry();
-  const registry = getToolRegistry();
-
-  // Register a test tool
-  const testHandler: ToolHandler<TestInput, TestResult> = {
+const testHandler: ToolHandler<TestInput, TestResult> = {
+  name: 'test_tool',
+  schema: z.object({ value: z.number() }),
+  execute: async (input) => ({ result: input.value * 2 }),
+  formatResponse: (result) => [{ type: 'text', text: `Result: ${result.result}` }],
+  definition: {
     name: 'test_tool',
-    schema: z.object({ value: z.number() }),
-    execute: async (input) => ({ result: input.value * 2 }),
-    formatResponse: (result) => [
-      { type: 'text', text: `Result: ${result.result}` }
-    ],
-    definition: {
-      name: 'test_tool',
-      description: 'Test tool',
-      inputSchema: {
-        type: 'object',
-        properties: { value: { type: 'number' } },
-        required: ['value']
-      }
+    description: 'Test tool',
+    inputSchema: {
+      type: 'object',
+      properties: { value: { type: 'number' } },
+      required: ['value']
     }
-  };
-
-  registry.register(testHandler);
-
-  // Call the tool
-  const result = await routeToolCall('test_tool', { value: 5 });
-
-  assert.strictEqual(result.length, 1, 'Should return 1 content item');
-  assert.strictEqual(result[0].type, 'text', 'Content type should be text');
-  assert.strictEqual(result[0].text, 'Result: 10', 'Should execute tool correctly');
-
-  console.log('    ✓ routes valid tool correctly');
-}
-
-/**
- * Test: routeToolCall with unknown tool
- */
-async function testRouteUnknownTool(): Promise<void> {
-  console.log('\n  Test: routeToolCall with unknown tool');
-
-  resetToolRegistry();
-
-  try {
-    await routeToolCall('unknown_tool', {});
-    assert.fail('Should throw error for unknown tool');
-  } catch (error) {
-    assert.ok(error instanceof Error, 'Should throw Error');
-    assert.ok(error.message.includes('Unknown tool'), 'Error should mention unknown tool');
   }
+};
 
-  console.log('    ✓ throws error for unknown tool');
-}
-
-/**
- * Test: routeToolCall with invalid input
- */
-async function testRouteInvalidInput(): Promise<void> {
-  console.log('\n  Test: routeToolCall with invalid input');
-
-  resetToolRegistry();
-  const registry = getToolRegistry();
-
-  const testHandler: ToolHandler<TestInput, TestResult> = {
-    name: 'test_tool',
-    schema: z.object({ value: z.number() }),
-    execute: async (input) => ({ result: input.value * 2 }),
-    formatResponse: (result) => [
-      { type: 'text', text: `Result: ${result.result}` }
-    ],
-    definition: {
-      name: 'test_tool',
-      description: 'Test tool',
-      inputSchema: {
-        type: 'object',
-        properties: { value: { type: 'number' } },
-        required: ['value']
-      }
-    }
-  };
-
-  registry.register(testHandler);
-
-  try {
-    await routeToolCall('test_tool', { value: 'not a number' });
-    assert.fail('Should throw validation error');
-  } catch (error) {
-    assert.ok(error, 'Should throw error for invalid input');
-  }
-
-  console.log('    ✓ throws error for invalid input');
-}
-
-/**
- * Test: routeToolCall preserves error from tool execution
- */
-async function testRouteToolExecutionError(): Promise<void> {
-  console.log('\n  Test: routeToolCall with tool execution error');
-
-  resetToolRegistry();
-  const registry = getToolRegistry();
-
-  const failingHandler: ToolHandler<TestInput, TestResult> = {
-    name: 'failing_tool',
-    schema: z.object({ value: z.number() }),
-    execute: async () => {
-      throw new Error('Tool execution failed');
-    },
-    formatResponse: (result) => [
-      { type: 'text', text: `Result: ${result.result}` }
-    ],
-    definition: {
-      name: 'failing_tool',
-      description: 'Failing tool',
-      inputSchema: {
-        type: 'object',
-        properties: { value: { type: 'number' } },
-        required: ['value']
-      }
-    }
-  };
-
-  registry.register(failingHandler);
-
-  try {
-    await routeToolCall('failing_tool', { value: 5 });
-    assert.fail('Should throw tool execution error');
-  } catch (error) {
-    assert.ok(error instanceof Error, 'Should throw Error');
-    assert.strictEqual(error.message, 'Tool execution failed', 'Should preserve error message');
-  }
-
-  console.log('    ✓ preserves tool execution errors');
-}
-
-/**
- * Run all tests
- */
-export async function runToolRouterTests(): Promise<void> {
-  console.log('\n=== Tool Router Tests ===');
-
-  await testRouteValidTool();
-  await testRouteUnknownTool();
-  await testRouteInvalidInput();
-  await testRouteToolExecutionError();
-
-  console.log('\n=== All Tool Router Tests Passed ===\n');
-}
-
-// Auto-run if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runToolRouterTests().catch((error) => {
-    console.error('Test failed:', error);
-    process.exit(1);
+describe('routeToolCall', () => {
+  beforeEach(() => {
+    resetToolRegistry();
   });
-}
+
+  it('routes to the correct handler and returns formatted response', async () => {
+    getToolRegistry().register(testHandler);
+
+    const result = await routeToolCall('test_tool', { value: 5 });
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ type: 'text', text: 'Result: 10' });
+  });
+
+  it('throws for unknown tool', async () => {
+    await expect(routeToolCall('unknown_tool', {})).rejects.toThrow('Unknown tool');
+  });
+
+  it('throws for invalid input', async () => {
+    getToolRegistry().register(testHandler);
+
+    await expect(routeToolCall('test_tool', { value: 'not a number' })).rejects.toThrow();
+  });
+
+  it('preserves errors thrown by the tool execute function', async () => {
+    const failingHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'failing_tool',
+      execute: async () => {
+        throw new Error('Tool execution failed');
+      },
+      definition: { ...testHandler.definition, name: 'failing_tool' }
+    };
+
+    getToolRegistry().register(failingHandler);
+
+    await expect(routeToolCall('failing_tool', { value: 5 })).rejects.toThrow(
+      'Tool execution failed'
+    );
+  });
+
+  it('handles concurrent calls to the same tool', async () => {
+    getToolRegistry().register(testHandler);
+
+    const results = await Promise.all([
+      routeToolCall('test_tool', { value: 1 }),
+      routeToolCall('test_tool', { value: 2 }),
+      routeToolCall('test_tool', { value: 3 })
+    ]);
+
+    expect(results).toHaveLength(3);
+    expect(results[0][0].text).toBe('Result: 2');
+    expect(results[1][0].text).toBe('Result: 4');
+    expect(results[2][0].text).toBe('Result: 6');
+  });
+
+  it('handles zero as valid numeric input', async () => {
+    getToolRegistry().register(testHandler);
+    const result = await routeToolCall('test_tool', { value: 0 });
+    expect(result[0].text).toBe('Result: 0');
+  });
+
+  it('handles negative numbers', async () => {
+    getToolRegistry().register(testHandler);
+    const result = await routeToolCall('test_tool', { value: -5 });
+    expect(result[0].text).toBe('Result: -10');
+  });
+
+  it('rejects extra unknown properties (strict validation)', async () => {
+    getToolRegistry().register(testHandler);
+    // Zod strips unknown properties by default, so this should work
+    const result = await routeToolCall('test_tool', { value: 5, extra: 'ignored' });
+    expect(result[0].text).toBe('Result: 10');
+  });
+
+  it('handles tool that returns multiple content items', async () => {
+    const multiHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'multi_tool',
+      formatResponse: (result) => [
+        { type: 'text', text: `Line 1: ${result.result}` },
+        { type: 'text', text: `Line 2: done` }
+      ],
+      definition: { ...testHandler.definition, name: 'multi_tool' }
+    };
+
+    getToolRegistry().register(multiHandler);
+    const result = await routeToolCall('multi_tool', { value: 5 });
+    expect(result).toHaveLength(2);
+    expect(result[0].text).toBe('Line 1: 10');
+    expect(result[1].text).toBe('Line 2: done');
+  });
+
+  it('records invocation metrics on success', async () => {
+    getToolRegistry().register(testHandler);
+    const metrics = getMetrics();
+
+    await routeToolCall('test_tool', { value: 1 });
+
+    const allMetrics = metrics.getMetrics();
+    const invocations = allMetrics.find((m) => m.name === 'tool_invocations_total');
+    const successes = allMetrics.find((m) => m.name === 'tool_success_total');
+    expect(invocations?.type).toBe('counter');
+    expect(successes?.type).toBe('counter');
+  });
+
+  it('records error metrics on failure', async () => {
+    const failHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'fail_metrics_tool',
+      execute: async () => {
+        throw new Error('fail for metrics');
+      },
+      definition: { ...testHandler.definition, name: 'fail_metrics_tool' }
+    };
+
+    getToolRegistry().register(failHandler);
+    const metrics = getMetrics();
+
+    await expect(routeToolCall('fail_metrics_tool', { value: 1 })).rejects.toThrow();
+
+    const allMetrics = metrics.getMetrics();
+    const errors = allMetrics.find((m) => m.name === 'tool_errors_total');
+    expect(errors?.type).toBe('counter');
+  });
+
+  it('records duration histogram for both success and failure paths', async () => {
+    getToolRegistry().register(testHandler);
+    const failHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'duration_fail_tool',
+      execute: async () => {
+        throw new Error('duration test');
+      },
+      definition: { ...testHandler.definition, name: 'duration_fail_tool' }
+    };
+    getToolRegistry().register(failHandler);
+
+    await routeToolCall('test_tool', { value: 1 });
+    await expect(routeToolCall('duration_fail_tool', { value: 1 })).rejects.toThrow();
+
+    const allMetrics = getMetrics().getMetrics();
+    const durations = allMetrics.find((m) => m.name === 'tool_duration_ms');
+    expect(durations?.type).toBe('histogram');
+  });
+
+  it('propagates the original error type for ZodError on invalid input', async () => {
+    getToolRegistry().register(testHandler);
+
+    try {
+      await routeToolCall('test_tool', { value: 'not_a_number' });
+      expect.fail('Should have thrown');
+    } catch (error) {
+      expect((error as Error).name).toBe('ZodError');
+    }
+  });
+
+  it('propagates non-Error thrown values from execute', async () => {
+    const stringThrowHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'string_throw_tool',
+      execute: async () => {
+        throw 'raw string error';
+      },
+      definition: { ...testHandler.definition, name: 'string_throw_tool' }
+    };
+
+    getToolRegistry().register(stringThrowHandler);
+    await expect(routeToolCall('string_throw_tool', { value: 1 })).rejects.toBe('raw string error');
+  });
+});

@@ -1,16 +1,17 @@
 /**
- * Tests for Intelligent Path Command Repair System
+ * Path Command Repair — Core Validation & Auto-Fix Tests
  *
- * Tests auto-fix capabilities, error messages, and validation
+ * Tests valid command passthrough, type coercion, case normalization,
+ * error detection, and basic edge cases.
  */
 
 import { describe, expect, it } from 'vitest';
 import {
-    formatRepairReport,
-    repairPathCommands
-} from '../../../mcp-server/src/tools/utils/path-command-repair.js';
+  formatRepairReport,
+  repairPathCommands
+} from '../../mcp-server/src/tools/utils/path-command-repair.js';
 
-describe('Path Command Repair System', () => {
+describe('Path Command Repair — core validation', () => {
   describe('Valid Commands', () => {
     it('should pass through valid commands without modification', () => {
       const commands = [
@@ -87,11 +88,11 @@ describe('Path Command Repair System', () => {
       const result = repairPathCommands(commands);
 
       expect(result.totalFixed).toBe(2);
-      expect(result.fixes[0].fixes).toContain(
-        expect.stringMatching(/Converted y from string to number/)
+      expect(result.fixes[0].fixes).toEqual(
+        expect.arrayContaining([expect.stringMatching(/Converted y from string to number/)])
       );
-      expect(result.fixes[1].fixes).toContain(
-        expect.stringMatching(/Converted x from string to number/)
+      expect(result.fixes[1].fixes).toEqual(
+        expect.arrayContaining([expect.stringMatching(/Converted x from string to number/)])
       );
     });
   });
@@ -125,7 +126,7 @@ describe('Path Command Repair System', () => {
   describe('Error Detection: Invalid Structure', () => {
     it('should reject non-array input', () => {
       expect(() => {
-        repairPathCommands('not an array' as any);
+        repairPathCommands('not an array' as never);
       }).toThrow('Commands must be an array');
     });
 
@@ -152,13 +153,13 @@ describe('Path Command Repair System', () => {
 
     it('should reject non-object commands', () => {
       expect(() => {
-        repairPathCommands([{ type: 'M', x: 100, y: 200 }, 'invalid' as any]);
+        repairPathCommands([{ type: 'M', x: 100, y: 200 }, 'invalid' as never]);
       }).toThrow('Command must be an object');
     });
 
     it('should reject commands without type property', () => {
       expect(() => {
-        repairPathCommands([{ type: 'M', x: 100, y: 200 }, { x: 150, y: 250 } as any]);
+        repairPathCommands([{ type: 'M', x: 100, y: 200 }, { x: 150, y: 250 } as never]);
       }).toThrow("Command must have a 'type' property");
     });
   });
@@ -166,7 +167,7 @@ describe('Path Command Repair System', () => {
   describe('Error Detection: Missing Properties', () => {
     it('should reject M command with missing x', () => {
       expect(() => {
-        repairPathCommands([{ type: 'M', y: 200 } as any, { type: 'L', x: 150, y: 250 }]);
+        repairPathCommands([{ type: 'M', y: 200 } as never, { type: 'L', x: 150, y: 250 }]);
       }).toThrow("Property 'x' must be a number");
     });
 
@@ -174,7 +175,7 @@ describe('Path Command Repair System', () => {
       expect(() => {
         repairPathCommands([
           { type: 'M', x: 100, y: 200 },
-          { type: 'C', x1: 120, y1: 180, x: 160, y: 200 } as any
+          { type: 'C', x1: 120, y1: 180, x: 160, y: 200 } as never
         ]);
       }).toThrow("Property 'x2' must be a number");
     });
@@ -183,7 +184,7 @@ describe('Path Command Repair System', () => {
       expect(() => {
         repairPathCommands([
           { type: 'M', x: 100, y: 200 },
-          { type: 'Q', x1: 180, x: 200, y: 250 } as any
+          { type: 'Q', x1: 180, x: 200, y: 250 } as never
         ]);
       }).toThrow("Property 'y1' must be a number");
     });
@@ -239,42 +240,33 @@ describe('Path Command Repair System', () => {
   describe('Error Detection: Unknown Commands', () => {
     it('should reject unknown command types', () => {
       expect(() => {
-        repairPathCommands([
-          { type: 'M', x: 100, y: 200 },
-          { type: 'X', x: 150, y: 250 } as any
-        ]);
+        repairPathCommands([{ type: 'M', x: 100, y: 200 }, { type: 'X', x: 150, y: 250 } as never]);
       }).toThrow("Unknown command type 'X'");
     });
   });
 
   describe('Error Messages', () => {
     it('should provide detailed error with command index', () => {
-      try {
+      expect(() =>
         repairPathCommands([
           { type: 'M', x: 100, y: 200 },
           { type: 'L', x: 'invalid', y: 250 }
-        ]);
-        expect.fail('Should have thrown error');
-      } catch (error: any) {
-        expect(error.message).toContain('Command 1');
-        expect(error.message).toContain('type: L');
-      }
+        ])
+      ).toThrow(/Command 1.*type: L/s);
     });
 
     it('should provide examples in error messages', () => {
-      try {
+      expect(() =>
         repairPathCommands([
           { type: 'M', x: 100, y: 200 },
-          { type: 'C', x1: 120, y1: 180 } as any
-        ]);
-        expect.fail('Should have thrown error');
-      } catch (error: any) {
-        expect(error.message).toContain('Example:');
-        expect(error.message).toContain('{ type: "C"');
-      }
+          { type: 'C', x1: 120, y1: 180 } as never
+        ])
+      ).toThrow(/Example:.*\{ type: "C"/s);
     });
   });
+});
 
+describe('Path Command Repair — reports & edge cases', () => {
   describe('Repair Report Formatting', () => {
     it('should format repair report for valid commands', () => {
       const result = repairPathCommands([
@@ -299,39 +291,75 @@ describe('Path Command Repair System', () => {
     });
   });
 
-  describe('Complex Real-World Scenarios', () => {
-    it('should handle butterfly wing path with mixed issues', () => {
-      const commands = [
-        { type: 'm', x: '400', y: 300 },
-        { type: 'C', x1: '370', y1: 280, x2: '340', y2: 260, x: 310, y: 250 },
-        { type: 'c', x1: 270, y1: '235', x2: '230', y2: '240', x: 200, y: 260 },
-        { type: 'Z' }
-      ];
+  describe('Edge Cases', () => {
+    it('should handle large path with many commands', () => {
+      const commands: Array<Record<string, unknown>> = [{ type: 'M', x: 0, y: 0 }];
+      for (let i = 1; i <= 50; i++) {
+        commands.push({ type: 'L', x: i * 10, y: i * 5 });
+      }
+      commands.push({ type: 'Z' });
 
       const result = repairPathCommands(commands);
-
-      expect(result.commands).toHaveLength(4);
-      expect(result.totalFixed).toBeGreaterThan(0);
-      expect(result.commands[0]).toEqual({ type: 'M', x: 400, y: 300 });
-      expect(result.commands[3]).toEqual({ type: 'Z' });
+      expect(result.commands).toHaveLength(52);
+      expect(result.totalFixed).toBe(0);
     });
 
-    it('should handle quadratic bezier with all string numbers', () => {
-      const commands = [
-        { type: 'M', x: '100', y: '200' },
-        { type: 'Q', x1: '180', y1: '220', x: '200', y: '250' }
-      ];
+    it('should handle negative coordinates (valid for positioning)', () => {
+      const result = repairPathCommands([
+        { type: 'M', x: -100, y: -200 },
+        { type: 'L', x: -50, y: -100 }
+      ]);
+      expect(result.commands[0].x).toBe(-100);
+      expect(result.commands[0].y).toBe(-200);
+      expect(result.totalFixed).toBe(0);
+    });
 
-      const result = repairPathCommands(commands);
+    it('should handle zero coordinates', () => {
+      const result = repairPathCommands([
+        { type: 'M', x: 0, y: 0 },
+        { type: 'L', x: 0, y: 0 }
+      ]);
+      expect(result.totalFixed).toBe(0);
+    });
 
-      expect(result.commands[1]).toEqual({
-        type: 'Q',
-        x1: 180,
-        y1: 220,
-        x: 200,
-        y: 250
-      });
-      expect(result.totalFixed).toBe(2);
+    it('should handle very large coordinates', () => {
+      const result = repairPathCommands([
+        { type: 'M', x: 99999, y: 99999 },
+        { type: 'L', x: 100000, y: 100000 }
+      ]);
+      expect(result.totalFixed).toBe(0);
+    });
+
+    it('should handle fractional coordinates', () => {
+      const result = repairPathCommands([
+        { type: 'M', x: 100.5, y: 200.3 },
+        { type: 'L', x: 150.7, y: 250.9 }
+      ]);
+      expect(result.commands[0].x).toBeCloseTo(100.5);
+      expect(result.totalFixed).toBe(0);
+    });
+
+    it('should handle multiple M (moveto) commands', () => {
+      const result = repairPathCommands([
+        { type: 'M', x: 0, y: 0 },
+        { type: 'L', x: 100, y: 100 },
+        { type: 'M', x: 200, y: 200 },
+        { type: 'L', x: 300, y: 300 }
+      ]);
+      expect(result.commands).toHaveLength(4);
+      expect(result.totalFixed).toBe(0);
+    });
+
+    it('should convert string numbers in Q command control points', () => {
+      const result = repairPathCommands([
+        { type: 'M', x: 0, y: 0 },
+        { type: 'Q', x1: '50', y1: '50', x: '100', y: '100' }
+      ]);
+      expect(result.commands[1].x1).toBe(50);
+      expect(result.commands[1].y1).toBe(50);
+      expect(result.commands[1].x).toBe(100);
+      expect(result.commands[1].y).toBe(100);
+      expect(result.totalFixed).toBe(1);
     });
   });
 });

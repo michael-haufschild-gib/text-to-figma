@@ -36,6 +36,7 @@ tests/
 ### 1. Unit Tests (2 suites)
 
 **Color Converter (`unit/color-converter.test.js`)**
+
 - ✓ Hex to RGB conversion
 - ✓ RGB to Hex conversion
 - ✓ RGB to LCH color space conversion
@@ -45,6 +46,7 @@ tests/
 - ✓ Edge cases (pure colors, black, white, gray)
 
 **Typography Generator (`unit/typography-generator.test.js`)**
+
 - ✓ Font size validation against type scale
 - ✓ Line height recommendations
 - ✓ Font weight validation
@@ -60,6 +62,7 @@ tests/
 ### 2. Integration Tests (4 suites)
 
 **Foundation (`integration/foundation.test.js`)**
+
 - ✓ WebSocket server starts successfully
 - ✓ WebSocket connections work
 - ✓ Welcome messages sent to new connections
@@ -71,6 +74,7 @@ tests/
 - ✓ Cleanup and disconnection work correctly
 
 **WCAG Contrast (`integration/wcag-contrast.test.js`)**
+
 - ✓ WCAG thresholds correct (AA: 4.5:1, AAA: 7.0:1)
 - ✓ Contrast ratio calculations follow WCAG formulas
 - ✓ WCAG AA compliance checks
@@ -82,6 +86,7 @@ tests/
 - ✓ Real-world color combinations
 
 **WCAG Contrast Enhanced (`integration/wcag-contrast-enhanced.test.js`)**
+
 - ✓ Batch contrast checking (multiple color pairs)
 - ✓ Multi-color palette validation
 - ✓ Accessibility report generation (HTML)
@@ -91,6 +96,7 @@ tests/
 - ✓ Suggestions for failing color pairs
 
 **Component Tools (`integration/component-tools.test.js`)**
+
 - ✓ Frame creation with dimensions
 - ✓ Text node creation with typography
 - ✓ Fill application (solid colors)
@@ -110,6 +116,7 @@ tests/
 **Design Token Validation (`validation/design-tokens.test.js`)**
 
 **Spacing Validation (8pt Grid)**
+
 - ✓ Valid spacing values pass (0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 128)
 - ✓ Invalid spacing values fail with suggestions
 - ✓ Mixed valid and invalid spacing
@@ -118,6 +125,7 @@ tests/
 - ✓ Snap-to-grid suggestions
 
 **Typography Validation (Type Scale)**
+
 - ✓ Valid font sizes pass (12, 16, 20, 24, 32, 40, 48, 64)
 - ✓ Invalid font sizes fail with suggestions
 - ✓ Mixed valid and invalid typography
@@ -126,6 +134,7 @@ tests/
 - ✓ Line height recommendations
 
 **Color Contrast Validation (WCAG)**
+
 - ✓ High contrast passes AAA (21:1)
 - ✓ Medium contrast passes AA but not AAA
 - ✓ Low contrast fails both
@@ -135,12 +144,14 @@ tests/
 - ✓ Recommendations for failing pairs
 
 **Token Export Formats**
+
 - ✓ Machine-readable JSON structure
 - ✓ CSS variable format support
 - ✓ Tailwind config format support
 - ✓ Serialization/deserialization
 
 **Comprehensive Validation Report**
+
 - ✓ Report structure (spacing, typography, colors, summary)
 - ✓ Valid/invalid counts
 - ✓ Suggested corrections
@@ -155,6 +166,7 @@ tests/
 ### 4. Visual Regression Tests (1 suite)
 
 **Visual Regression Scaffold (`visual/regression.test.js`)**
+
 - ✓ Screenshot capture and baseline storage
 - ✓ Pixel diff calculations
 - ✓ Threshold-based pass/fail
@@ -164,6 +176,7 @@ tests/
 - ✓ Configurable diff thresholds
 
 **Technologies:**
+
 - Playwright for screenshot capture
 - Custom pixel comparison (extensible to pixelmatch/ResembleJS)
 - HTML report with visual diffs
@@ -180,6 +193,7 @@ tests/
 **Design Review Agent (`agents/design-reviewer.js`)**
 
 **Automated Quality Checks:**
+
 - ✓ Spacing consistency analysis (8pt grid)
 - ✓ Typography hierarchy validation (type scale)
 - ✓ Color contrast verification (WCAG)
@@ -187,6 +201,7 @@ tests/
 - ✓ Design system compliance scoring (0-100)
 
 **Scoring Thresholds:**
+
 - Excellent: 95+
 - Good: 85-94
 - Acceptable: 75-84
@@ -194,6 +209,7 @@ tests/
 - Failing: < 60
 
 **Features:**
+
 - ✓ Component-level reviews
 - ✓ Project-level aggregation
 - ✓ Detailed violation reporting
@@ -211,6 +227,7 @@ tests/
 **Button Component E2E (`e2e/button-component.test.js`)**
 
 **Complete Workflow (9 steps per variant):**
+
 1. ✓ Validate design tokens (spacing, typography, colors)
 2. ✓ Create frame with dimensions
 3. ✓ Style frame with background
@@ -222,11 +239,13 @@ tests/
 9. ✓ Check WCAG AA contrast
 
 **Variants Tested:**
+
 - ✓ Primary button (blue, white text)
 - ✓ Secondary button (white, blue text, blue border)
 - ✓ Danger button (red, white text)
 
 **Validates:**
+
 - Each step's output
 - Node IDs are returned
 - Properties are applied correctly
@@ -241,6 +260,7 @@ tests/
 **Login Form E2E (`e2e/login-form.test.js`)**
 
 **Complete Workflow (12 steps):**
+
 1. ✓ Validate design tokens
 2. ✓ Create form container (320x400px)
 3. ✓ Style container (shadow, padding, border radius)
@@ -255,6 +275,7 @@ tests/
 12. ✓ Verify component composition
 
 **Validates:**
+
 - Form structure (vertical layout, proper spacing)
 - Typography hierarchy (title > subtitle > labels > inputs)
 - Color contrast on all text (title, subtitle, button)
@@ -340,6 +361,7 @@ Total: 10/10 test suites passed
 ### Dependencies
 
 All test dependencies are managed in `tests/package.json`:
+
 - `ws@^8.16.0` - WebSocket client for integration tests
 - Node.js built-in `assert` module for assertions
 - ES modules (type: "module")
@@ -347,42 +369,47 @@ All test dependencies are managed in `tests/package.json`:
 ### Test Utilities
 
 **WebSocket Server Manager**
+
 - Starts/stops the WebSocket bridge server
 - Handles server lifecycle
 - Provides connection management
 
 **Figma Tool Executor**
+
 - Connects to WebSocket bridge
 - Sends tool commands
 - Handles request/response flow
 - Manages timeouts
 
 **Batch Contrast Checker**
+
 - Validates multiple color pairs
 - Generates summary statistics
 - Creates HTML accessibility reports
 
 **Design Review Agent**
+
 - Analyzes component quality
 - Scores design system compliance
 - Provides actionable recommendations
 
 **Visual Regression Tester**
+
 - Captures screenshots
 - Compares with baselines
 - Generates HTML diff reports
 
 ## Coverage Summary
 
-| Category | Test Suites | Test Cases | Coverage |
-|----------|-------------|------------|----------|
-| Unit Tests | 2 | 20+ | 100% |
-| Integration Tests | 4 | 50+ | 100% |
-| Validation Tests | 1 | 30+ | 100% |
-| Visual Tests | 1 | Scaffold | Framework |
-| Agent Tests | 1 | 10+ | 100% |
-| E2E Tests | 2 | 20+ | 100% |
-| **TOTAL** | **10** | **130+** | **100%** |
+| Category          | Test Suites | Test Cases | Coverage  |
+| ----------------- | ----------- | ---------- | --------- |
+| Unit Tests        | 2           | 20+        | 100%      |
+| Integration Tests | 4           | 50+        | 100%      |
+| Validation Tests  | 1           | 30+        | 100%      |
+| Visual Tests      | 1           | Scaffold   | Framework |
+| Agent Tests       | 1           | 10+        | 100%      |
+| E2E Tests         | 2           | 20+        | 100%      |
+| **TOTAL**         | **10**      | **130+**   | **100%**  |
 
 ## Quality Gates
 
@@ -421,6 +448,7 @@ test:
 ### Common Issues
 
 **"MCP server not built"**
+
 ```bash
 cd mcp-server
 npm install
@@ -428,11 +456,13 @@ npm run build
 ```
 
 **"WebSocket connection failed"**
+
 - Ensure WebSocket server is not already running on port 8080
 - Check firewall settings
 - Verify `websocket-server/server.js` exists
 
 **"Test timeout"**
+
 - Increase timeout values in test configuration
 - Check system resources
 - Verify no other processes are blocking
@@ -440,6 +470,7 @@ npm run build
 ### Debug Mode
 
 Run individual tests with verbose output:
+
 ```bash
 NODE_ENV=test node --trace-warnings tests/integration/foundation.test.js
 ```
@@ -485,6 +516,7 @@ Phase 4 delivers a **comprehensive, production-ready test suite** with:
 - ✓ **Agentic review system** for automated quality checks
 
 All tests are designed to:
+
 - Run independently
 - Clean up after themselves
 - Provide detailed output

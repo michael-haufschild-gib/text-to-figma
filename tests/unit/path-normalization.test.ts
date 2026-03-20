@@ -1,130 +1,102 @@
 /**
- * Unit tests for path normalization in create_path tool
+ * Path Normalization Tests
  *
- * Tests that the normalizePathCommands function can handle:
- * - Property order variations
- * - String numbers converted to numbers
- * - Missing optional properties
- * - Helpful error messages
+ * Tests property order normalization, string-to-number coercion,
+ * and error messages via the repairPathCommands function.
  */
 
 import { describe, expect, it } from 'vitest';
-
-// We'll need to export the normalization function for testing
-// For now, we'll test the integration by calling the tool
+import { repairPathCommands } from '../../mcp-server/src/tools/utils/path-command-repair.js';
 
 describe('Path Normalization', () => {
-  it('should handle commands with properties in different order', () => {
-    const commands = [
-      { type: 'M', y: 100, x: 50 }, // Properties reversed
-      { type: 'C', y: 200, x: 150, y2: 180, x2: 120, y1: 120, x1: 80 } // All mixed up
-    ];
+  it('handles commands with properties in different order', () => {
+    const result = repairPathCommands([
+      { type: 'M', y: 100, x: 50 },
+      { type: 'L', y: 200, x: 150 }
+    ]);
 
-    // This should not throw - normalization should handle it
-    expect(() => {
-      // In real test, we'd call the normalization function
-      // For now, just verify the structure is valid
-      commands.forEach(cmd => {
-        expect(cmd).toHaveProperty('type');
-        if (cmd.type === 'M') {
-          expect(cmd).toHaveProperty('x');
-          expect(cmd).toHaveProperty('y');
-        }
-      });
-    }).not.toThrow();
+    expect(result.commands[0]).toEqual({ type: 'M', x: 50, y: 100 });
+    expect(result.commands[1]).toEqual({ type: 'L', x: 150, y: 200 });
   });
 
-  it('should convert string numbers to numbers', () => {
-    const commands = [
-      { type: 'M', x: '50', y: '100' }, // Strings
+  it('converts string numbers to numbers', () => {
+    const result = repairPathCommands([
+      { type: 'M', x: '50', y: '100' },
       { type: 'L', x: '150', y: '200' }
-    ];
+    ]);
 
-    // Normalization should convert these to numbers
-    expect(typeof commands[0].x).toBe('string');
-    // After normalization, they should be numbers
+    expect(result.commands[0].x).toBe(50);
+    expect(result.commands[0].y).toBe(100);
+    expect(result.totalFixed).toBe(2);
   });
 
-  it('should provide helpful error for missing required properties', () => {
-    const commands = [
-      { type: 'M', x: 50 } // Missing y
-    ];
-
-    // Should get clear error message about missing y property
-    expect(true).toBe(true); // Placeholder
+  it('provides helpful error for missing required properties', () => {
+    expect(() =>
+      repairPathCommands([{ type: 'M', x: 50 } as never, { type: 'L', x: 150, y: 200 }])
+    ).toThrow("Property 'y' must be a number");
   });
 
-  it('should validate finite numbers', () => {
-    const invalidCommands = [
-      { type: 'M', x: Infinity, y: 100 },
-      { type: 'L', x: 50, y: NaN }
-    ];
+  it('rejects Infinity and NaN', () => {
+    expect(() =>
+      repairPathCommands([
+        { type: 'M', x: Infinity, y: 100 },
+        { type: 'L', x: 50, y: 200 }
+      ])
+    ).toThrow('must be a finite number');
 
-    // Should reject Infinity and NaN
-    expect(true).toBe(true); // Placeholder
+    expect(() =>
+      repairPathCommands([
+        { type: 'M', x: 100, y: 200 },
+        { type: 'L', x: 50, y: NaN }
+      ])
+    ).toThrow('must be a finite number');
   });
 
-  it('should accept valid path commands', () => {
-    const commands = [
+  it('accepts valid path commands without modification', () => {
+    const result = repairPathCommands([
       { type: 'M', x: 100, y: 200 },
       { type: 'C', x1: 150, y1: 150, x2: 250, y2: 150, x: 300, y: 180 },
       { type: 'L', x: 280, y: 280 },
       { type: 'Z' }
-    ];
+    ]);
 
-    // All valid - should not throw
-    expect(commands).toHaveLength(4);
-    expect(commands[0].type).toBe('M');
-    expect(commands[3].type).toBe('Z');
+    expect(result.commands).toHaveLength(4);
+    expect(result.totalFixed).toBe(0);
   });
 
-  it('should handle case-insensitive command types', () => {
-    const commands = [
-      { type: 'm', x: 50, y: 100 }, // Lowercase
+  it('normalizes lowercase command types to uppercase', () => {
+    const result = repairPathCommands([
+      { type: 'm', x: 50, y: 100 },
       { type: 'l', x: 150, y: 200 }
-    ];
+    ]);
 
-    // Normalization should convert to uppercase
-    expect(true).toBe(true); // Placeholder
+    expect(result.commands[0].type).toBe('M');
+    expect(result.commands[1].type).toBe('L');
   });
 
-  it('should require first command to be M', () => {
-    const commands = [
-      { type: 'L', x: 50, y: 100 }, // Wrong - should start with M
-      { type: 'L', x: 150, y: 200 }
-    ];
-
-    // Should throw error about first command
-    expect(true).toBe(true); // Placeholder
+  it('requires first command to be M', () => {
+    expect(() =>
+      repairPathCommands([
+        { type: 'L', x: 50, y: 100 },
+        { type: 'L', x: 150, y: 200 }
+      ])
+    ).toThrow('Path must start with M (Move) command');
   });
 });
 
-describe('Path Command Examples', () => {
-  it('butterfly wing example should have correct structure', () => {
-    const wingCommand = {
-      type: 'C',
-      x1: 180,
-      y1: 130,
-      x2: 150,
-      y2: 120,
-      x: 120,
-      y: 125
-    };
+describe('Path Command — cubic bezier structure', () => {
+  it('validates all six required coordinates', () => {
+    const result = repairPathCommands([
+      { type: 'M', x: 0, y: 0 },
+      { type: 'C', x1: 180, y1: 130, x2: 150, y2: 120, x: 120, y: 125 }
+    ]);
 
-    expect(wingCommand.type).toBe('C');
-    expect(wingCommand).toHaveProperty('x1');
-    expect(wingCommand).toHaveProperty('y1');
-    expect(wingCommand).toHaveProperty('x2');
-    expect(wingCommand).toHaveProperty('y2');
-    expect(wingCommand).toHaveProperty('x');
-    expect(wingCommand).toHaveProperty('y');
-
-    // All coordinates should be numbers
-    expect(typeof wingCommand.x1).toBe('number');
-    expect(typeof wingCommand.y1).toBe('number');
-    expect(typeof wingCommand.x2).toBe('number');
-    expect(typeof wingCommand.y2).toBe('number');
-    expect(typeof wingCommand.x).toBe('number');
-    expect(typeof wingCommand.y).toBe('number');
+    const c = result.commands[1];
+    expect(c.x1).toBe(180);
+    expect(c.y1).toBe(130);
+    expect(c.x2).toBe(150);
+    expect(c.y2).toBe(120);
+    expect(c.x).toBe(120);
+    expect(c.y).toBe(125);
   });
 });

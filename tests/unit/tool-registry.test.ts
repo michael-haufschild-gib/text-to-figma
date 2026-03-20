@@ -2,25 +2,25 @@
  * Unit tests for Tool Registry
  */
 
-import assert from 'assert';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import type { ToolHandler } from '../../mcp-server/src/routing/tool-handler.js';
-import { ToolRegistry, getToolRegistry, resetToolRegistry } from '../../mcp-server/src/routing/tool-registry.js';
+import {
+  ToolRegistry,
+  getToolRegistry,
+  resetToolRegistry
+} from '../../mcp-server/src/routing/tool-registry.js';
 
-// Type definitions for test handlers
 type TestInput1 = { value: number };
 type TestResult1 = { result: number };
 type TestInput2 = { text: string };
 type TestResult2 = { output: string };
 
-// Mock tool handlers for testing
 const mockToolHandler1: ToolHandler<TestInput1, TestResult1> = {
   name: 'test_tool_1',
   schema: z.object({ value: z.number() }),
   execute: async (input) => ({ result: input.value * 2 }),
-  formatResponse: (result) => [
-    { type: 'text', text: `Result: ${result.result}` }
-  ],
+  formatResponse: (result) => [{ type: 'text', text: `Result: ${result.result}` }],
   definition: {
     name: 'test_tool_1',
     description: 'Test tool 1',
@@ -36,9 +36,7 @@ const mockToolHandler2: ToolHandler<TestInput2, TestResult2> = {
   name: 'test_tool_2',
   schema: z.object({ text: z.string() }),
   execute: async (input) => ({ output: input.text.toUpperCase() }),
-  formatResponse: (result) => [
-    { type: 'text', text: result.output }
-  ],
+  formatResponse: (result) => [{ type: 'text', text: result.output }],
   definition: {
     name: 'test_tool_2',
     description: 'Test tool 2',
@@ -50,184 +48,153 @@ const mockToolHandler2: ToolHandler<TestInput2, TestResult2> = {
   }
 };
 
-/**
- * Test: ToolRegistry.register
- */
-function testRegister(): void {
-  console.log('\n  Test: ToolRegistry.register');
+describe('ToolRegistry', () => {
+  describe('register', () => {
+    it('registers and retrieves a tool', () => {
+      const registry = new ToolRegistry();
+      registry.register(mockToolHandler1);
 
-  const registry = new ToolRegistry();
+      expect(registry.get('test_tool_1')).toBe(mockToolHandler1);
+    });
 
-  // Test registering a single tool
-  registry.register(mockToolHandler1);
-  const retrieved = registry.get('test_tool_1');
-  assert.strictEqual(retrieved, mockToolHandler1, 'Should register and retrieve tool');
+    it('registers multiple tools', () => {
+      const registry = new ToolRegistry();
+      registry.register(mockToolHandler1);
+      registry.register(mockToolHandler2);
 
-  // Test registering multiple tools
-  const registry2 = new ToolRegistry();
-  registry2.register(mockToolHandler1);
-  registry2.register(mockToolHandler2);
+      expect(registry.get('test_tool_1')).toBe(mockToolHandler1);
+      expect(registry.get('test_tool_2')).toBe(mockToolHandler2);
+    });
 
-  const tool1 = registry2.get('test_tool_1');
-  const tool2 = registry2.get('test_tool_2');
+    it('throws on duplicate registration', () => {
+      const registry = new ToolRegistry();
+      registry.register(mockToolHandler1);
 
-  assert.strictEqual(tool1, mockToolHandler1, 'Should retrieve first tool');
-  assert.strictEqual(tool2, mockToolHandler2, 'Should retrieve second tool');
+      expect(() => registry.register(mockToolHandler1)).toThrow(
+        "Tool 'test_tool_1' is already registered"
+      );
+    });
+  });
 
-  // Test duplicate registration throws error
-  const registry3 = new ToolRegistry();
-  registry3.register(mockToolHandler1);
+  describe('get', () => {
+    it('returns undefined for non-existent tool', () => {
+      const registry = new ToolRegistry();
+      expect(registry.get('non_existent')).toBeUndefined();
+    });
+  });
 
-  try {
-    registry3.register(mockToolHandler1);
-    assert.fail('Should throw error on duplicate registration');
-  } catch (error) {
-    assert.ok(error instanceof Error, 'Should throw Error');
-    assert.ok(
-      error.message.includes("Tool 'test_tool_1' is already registered"),
-      'Error message should mention duplicate tool'
-    );
-  }
+  describe('getAll', () => {
+    it('returns empty array when no tools registered', () => {
+      const registry = new ToolRegistry();
+      expect(registry.getAll()).toEqual([]);
+    });
 
-  console.log('    ✓ register works correctly');
-}
+    it('returns all registered tools', () => {
+      const registry = new ToolRegistry();
+      registry.register(mockToolHandler1);
+      registry.register(mockToolHandler2);
 
-/**
- * Test: ToolRegistry.get
- */
-function testGet(): void {
-  console.log('\n  Test: ToolRegistry.get');
+      const all = registry.getAll();
+      expect(all).toHaveLength(2);
+      expect(all).toContain(mockToolHandler1);
+      expect(all).toContain(mockToolHandler2);
+    });
+  });
 
-  const registry = new ToolRegistry();
+  describe('listDefinitions', () => {
+    it('returns empty array when no tools registered', () => {
+      const registry = new ToolRegistry();
+      expect(registry.listDefinitions()).toEqual([]);
+    });
 
-  // Test non-existent tool
-  const result = registry.get('non_existent');
-  assert.strictEqual(result, undefined, 'Should return undefined for non-existent tool');
+    it('returns definitions for all registered tools', () => {
+      const registry = new ToolRegistry();
+      registry.register(mockToolHandler1);
+      registry.register(mockToolHandler2);
 
-  // Test retrieving registered tool
-  registry.register(mockToolHandler1);
-  const retrieved = registry.get('test_tool_1');
-  assert.strictEqual(retrieved, mockToolHandler1, 'Should retrieve registered tool');
+      const defs = registry.listDefinitions();
+      expect(defs).toHaveLength(2);
 
-  console.log('    ✓ get works correctly');
-}
+      const def1 = defs.find((d) => d.name === 'test_tool_1');
+      const def2 = defs.find((d) => d.name === 'test_tool_2');
+      expect(def1?.description).toBe('Test tool 1');
+      expect(def2?.description).toBe('Test tool 2');
+    });
+  });
 
-/**
- * Test: ToolRegistry.getAll
- */
-function testGetAll(): void {
-  console.log('\n  Test: ToolRegistry.getAll');
+  describe('clear', () => {
+    it('removes all registered tools', () => {
+      const registry = new ToolRegistry();
+      registry.register(mockToolHandler1);
+      registry.register(mockToolHandler2);
 
-  const registry = new ToolRegistry();
+      registry.clear();
+      expect(registry.getAll()).toHaveLength(0);
+    });
+  });
+});
 
-  // Test empty registry
-  const empty = registry.getAll();
-  assert.deepStrictEqual(empty, [], 'Should return empty array when no tools registered');
+describe('getToolRegistry singleton', () => {
+  beforeEach(() => {
+    resetToolRegistry();
+  });
 
-  // Test with registered tools
-  registry.register(mockToolHandler1);
-  registry.register(mockToolHandler2);
+  it('returns the same instance on multiple calls', () => {
+    const a = getToolRegistry();
+    const b = getToolRegistry();
+    expect(a).toBe(b);
+  });
 
-  const all = registry.getAll();
-  assert.strictEqual(all.length, 2, 'Should return 2 tools');
-  assert.ok(all.includes(mockToolHandler1), 'Should include first tool');
-  assert.ok(all.includes(mockToolHandler2), 'Should include second tool');
+  it('shares registered tools across references', () => {
+    const a = getToolRegistry();
+    a.register(mockToolHandler1);
 
-  console.log('    ✓ getAll works correctly');
-}
+    const b = getToolRegistry();
+    expect(b.get('test_tool_1')).toBe(mockToolHandler1);
+  });
 
-/**
- * Test: ToolRegistry.listDefinitions
- */
-function testListDefinitions(): void {
-  console.log('\n  Test: ToolRegistry.listDefinitions');
+  it('creates fresh instance after reset', () => {
+    const a = getToolRegistry();
+    a.register(mockToolHandler1);
 
-  const registry = new ToolRegistry();
+    resetToolRegistry();
+    const b = getToolRegistry();
+    expect(b.get('test_tool_1')).toBeUndefined();
+  });
+});
 
-  // Test empty registry
-  const empty = registry.listDefinitions();
-  assert.deepStrictEqual(empty, [], 'Should return empty array when no tools registered');
+describe('ToolRegistry edge cases', () => {
+  it('allows re-registration after clear', () => {
+    const registry = new ToolRegistry();
+    registry.register(mockToolHandler1);
+    registry.clear();
+    expect(() => registry.register(mockToolHandler1)).not.toThrow();
+    expect(registry.get('test_tool_1')).toBe(mockToolHandler1);
+  });
 
-  // Test with registered tools
-  registry.register(mockToolHandler1);
-  registry.register(mockToolHandler2);
+  it('getAll returns all handlers in insertion order', () => {
+    const registry = new ToolRegistry();
+    registry.register(mockToolHandler1);
+    registry.register(mockToolHandler2);
 
-  const definitions = registry.listDefinitions();
-  assert.strictEqual(definitions.length, 2, 'Should return 2 definitions');
+    const all = registry.getAll();
+    expect(all[0]).toBe(mockToolHandler1);
+    expect(all[1]).toBe(mockToolHandler2);
+  });
 
-  const def1 = definitions.find((d) => d.name === 'test_tool_1');
-  const def2 = definitions.find((d) => d.name === 'test_tool_2');
+  it('listDefinitions returns matching count to getAll', () => {
+    const registry = new ToolRegistry();
+    registry.register(mockToolHandler1);
+    registry.register(mockToolHandler2);
 
-  assert.ok(def1, 'Should find definition 1');
-  assert.ok(def2, 'Should find definition 2');
-  assert.strictEqual(def1!.description, 'Test tool 1', 'Description should match');
-  assert.strictEqual(def2!.description, 'Test tool 2', 'Description should match');
+    expect(registry.listDefinitions().length).toBe(registry.getAll().length);
+  });
 
-  console.log('    ✓ listDefinitions works correctly');
-}
+  it('get returns exact handler reference (not copy)', () => {
+    const registry = new ToolRegistry();
+    registry.register(mockToolHandler1);
 
-/**
- * Test: ToolRegistry.clear
- */
-function testClear(): void {
-  console.log('\n  Test: ToolRegistry.clear');
-
-  const registry = new ToolRegistry();
-  registry.register(mockToolHandler1);
-  registry.register(mockToolHandler2);
-
-  registry.clear();
-
-  const all = registry.getAll();
-  assert.strictEqual(all.length, 0, 'Should remove all registered tools');
-
-  console.log('    ✓ clear works correctly');
-}
-
-/**
- * Test: getToolRegistry singleton
- */
-function testSingleton(): void {
-  console.log('\n  Test: getToolRegistry (singleton)');
-
-  resetToolRegistry();
-
-  // Test same instance on multiple calls
-  const registry1 = getToolRegistry();
-  const registry2 = getToolRegistry();
-  assert.strictEqual(registry1, registry2, 'Should return same instance');
-
-  // Test shared state
-  registry1.register(mockToolHandler1);
-  const retrieved = registry2.get('test_tool_1');
-  assert.strictEqual(retrieved, mockToolHandler1, 'Should share registered tools');
-
-  // Test reset creates new instance
-  resetToolRegistry();
-  const registry3 = getToolRegistry();
-  const afterReset = registry3.get('test_tool_1');
-  assert.strictEqual(afterReset, undefined, 'Should create new instance after reset');
-
-  console.log('    ✓ singleton pattern works correctly');
-}
-
-/**
- * Run all tests
- */
-export function runToolRegistryTests(): void {
-  console.log('\n=== Tool Registry Tests ===');
-
-  testRegister();
-  testGet();
-  testGetAll();
-  testListDefinitions();
-  testClear();
-  testSingleton();
-
-  console.log('\n=== All Tool Registry Tests Passed ===\n');
-}
-
-// Auto-run if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runToolRegistryTests();
-}
+    const retrieved = registry.get('test_tool_1');
+    expect(retrieved).toBe(mockToolHandler1);
+  });
+});

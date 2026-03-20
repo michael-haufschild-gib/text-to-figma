@@ -65,6 +65,7 @@ tests/
 ### Prerequisites
 
 1. **Build MCP Server** (required for all tests):
+
    ```bash
    cd mcp-server
    npm run build
@@ -85,6 +86,7 @@ cd tests
 ```
 
 This script:
+
 - Builds MCP server if needed
 - Runs all unit tests
 - Runs all integration tests
@@ -94,6 +96,7 @@ This script:
 ### Run Specific Test Types
 
 **Unit Tests Only**:
+
 ```bash
 # Run all unit tests
 cd tests
@@ -102,6 +105,7 @@ node unit/typography-generator.test.js
 ```
 
 **Integration Tests Only**:
+
 ```bash
 # Run all integration tests
 cd tests
@@ -111,6 +115,7 @@ node integration/wcag-contrast.test.js
 ```
 
 **Single Test File**:
+
 ```bash
 # Run a specific test
 cd tests
@@ -136,6 +141,7 @@ npm run test:integration    # Run only foundation integration test
 **Purpose**: Validate RGB/Hex conversion and WCAG contrast calculations
 
 **Tests**:
+
 - Hex to RGB conversion (with/without # prefix, case insensitive)
 - RGB to Hex conversion (with rounding)
 - Round-trip conversion (Hex → RGB → Hex preserves values)
@@ -148,11 +154,13 @@ npm run test:integration    # Run only foundation integration test
 **Dependencies**: `mcp-server/dist/constraints/color.js`
 
 **Run**:
+
 ```bash
 node unit/color-converter.test.js
 ```
 
 **Expected Output**:
+
 ```
 === Color Converter Unit Tests ===
 
@@ -175,6 +183,7 @@ All Color Converter Tests Passed
 **Purpose**: Validate modular typography scale generation and validation
 
 **Tests**:
+
 - Base font size validation (12, 16, 20, 24, 32, 40, 48, 64)
 - Line height calculation (fontSize × 1.5, rounded to 4pt baseline)
 - Nearest font size matching (for invalid inputs)
@@ -185,11 +194,13 @@ All Color Converter Tests Passed
 **Dependencies**: `mcp-server/dist/constraints/typography.js`
 
 **Run**:
+
 ```bash
 node unit/typography-generator.test.js
 ```
 
 **Expected Output**:
+
 ```
 === Typography Generator Unit Tests ===
 
@@ -211,6 +222,7 @@ All Typography Generator Tests Passed
 **Purpose**: Validate WebSocket bridge end-to-end connectivity
 
 **Tests**:
+
 - WebSocket server starts successfully on port 8080
 - Multiple clients can connect simultaneously
 - Welcome messages are sent to new connections
@@ -221,15 +233,18 @@ All Typography Generator Tests Passed
 - Cleanup and disconnection work correctly
 
 **Dependencies**:
+
 - `websocket-server/server.js` (started by test)
 - `ws` npm package
 
 **Run**:
+
 ```bash
 node integration/foundation.test.js
 ```
 
 **Expected Output**:
+
 ```
 === Foundation Integration Test ===
 
@@ -267,6 +282,7 @@ Test 8: Testing connection state management...
 **Purpose**: Validate component creation and management tools
 
 **Tests**:
+
 - Create frame with auto-layout properties
 - Create text with font loading
 - Create component (reusable design)
@@ -276,10 +292,12 @@ Test 8: Testing connection state management...
 - Constraint validation integration
 
 **Dependencies**:
+
 - `websocket-server/server.js` (started by test)
 - `mcp-server/dist/` (compiled MCP server)
 
 **Run**:
+
 ```bash
 node integration/component-tools.test.js
 ```
@@ -291,6 +309,7 @@ node integration/component-tools.test.js
 **Purpose**: Validate accessibility compliance validation
 
 **Tests**:
+
 - WCAG AA compliance checking (4.5:1 normal, 3:1 large)
 - WCAG AAA compliance checking (7:1 normal, 4.5:1 large)
 - Contrast ratio warnings and suggestions
@@ -299,10 +318,12 @@ node integration/component-tools.test.js
 - Batch contrast checking
 
 **Dependencies**:
+
 - `websocket-server/server.js` (started by test)
 - `mcp-server/dist/constraints/color.js`
 
 **Run**:
+
 ```bash
 node integration/wcag-contrast.test.js
 ```
@@ -314,6 +335,7 @@ node integration/wcag-contrast.test.js
 **Purpose**: Validate visual output consistency in Figma
 
 **Tests** (to be implemented in Phase 5):
+
 - Capture Figma screenshots
 - Compare against baseline images
 - Detect unintended visual changes
@@ -321,6 +343,7 @@ node integration/wcag-contrast.test.js
 - Test responsive layouts
 
 **Tools**:
+
 - Playwright (for Figma automation)
 - Pixelmatch (for image comparison)
 - PNG baseline library
@@ -334,6 +357,7 @@ node integration/wcag-contrast.test.js
 **Purpose**: Validate complete Claude → Figma workflows
 
 **Test Scenarios**:
+
 - Generate button component (Task 28)
 - Generate login form (Task 29)
 - Create navigation header
@@ -341,6 +365,7 @@ node integration/wcag-contrast.test.js
 - Design dashboard layout
 
 **Requirements**:
+
 - Claude API access via MCP
 - WebSocket bridge running
 - Figma plugin installed and connected
@@ -355,6 +380,7 @@ node integration/wcag-contrast.test.js
 ### 1. Create Unit Test
 
 **Template**:
+
 ```javascript
 // tests/unit/my-feature.test.js
 import assert from 'assert';
@@ -401,6 +427,7 @@ runTests()
 ```
 
 **Steps**:
+
 1. Create file in `tests/unit/`
 2. Import required modules from `mcp-server/dist/`
 3. Write test functions with descriptive names
@@ -413,6 +440,7 @@ runTests()
 ### 2. Create Integration Test
 
 **Template**:
+
 ```javascript
 // tests/integration/my-integration.test.js
 import { spawn } from 'child_process';
@@ -425,7 +453,7 @@ async function startServer() {
     cwd: './websocket-server'
   });
 
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise((resolve) => setTimeout(resolve, 2000));
   return serverProcess;
 }
 
@@ -440,7 +468,6 @@ async function runTests() {
     // ... assertions ...
 
     console.log('✓ Test passed');
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
     throw error;
@@ -455,6 +482,7 @@ runTests()
 ```
 
 **Steps**:
+
 1. Create file in `tests/integration/`
 2. Start required services (WebSocket server)
 3. Connect test clients
@@ -484,6 +512,7 @@ If you need custom test execution logic:
 ### Current Coverage (Phase 2 Complete)
 
 **Unit Tests**:
+
 - ✅ Color conversion (RGB ↔ Hex)
 - ✅ Relative luminance calculation
 - ✅ Contrast ratio calculation
@@ -493,6 +522,7 @@ If you need custom test execution logic:
 - ✅ Spacing grid validation (8pt)
 
 **Integration Tests**:
+
 - ✅ WebSocket server connectivity
 - ✅ Multiple client connections
 - ✅ Message passing (bidirectional)
@@ -508,12 +538,14 @@ If you need custom test execution logic:
 ### Coverage Expectations
 
 **All Code Must Have Tests**:
+
 - ✅ Every MCP tool → Integration test
 - ✅ Every constraint validator → Unit test
 - ✅ Every color/typography utility → Unit test
 - ✅ Every WebSocket message type → Integration test
 
 **Test-Driven Development**:
+
 1. Write test first (defines expected behavior)
 2. Implement feature
 3. Run test to verify
@@ -521,11 +553,13 @@ If you need custom test execution logic:
 5. Ensure test passes before committing
 
 **Coverage Metrics**:
+
 - Line coverage: 100% (all code executed)
 - Branch coverage: 100% (all conditions tested)
 - Function coverage: 100% (all functions called)
 
 **Monitoring Coverage** (to be added in Phase 5):
+
 ```bash
 # Install c8 (coverage tool)
 npm install --save-dev c8
@@ -550,9 +584,9 @@ name: Test Suite
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   test:
@@ -584,6 +618,7 @@ jobs:
 ```
 
 **Setup**:
+
 1. Create `.github/workflows/test.yml`
 2. Push to repository
 3. GitHub Actions will run tests on every push/PR
@@ -613,6 +648,7 @@ fi
 ```
 
 **Setup**:
+
 ```bash
 npm install --save-dev husky
 npx husky install
@@ -624,12 +660,14 @@ npx husky add .husky/pre-commit "cd tests && npm test"
 ### Continuous Monitoring
 
 **Test Execution Schedule**:
+
 - Every commit: Run all tests
 - Every PR: Run all tests + visual regression
 - Every merge to main: Run all tests + E2E tests
 - Nightly: Run full test suite + performance tests
 
 **Notifications**:
+
 - Slack integration for test failures
 - Email alerts for critical failures
 - GitHub status checks for PR blocking
@@ -643,17 +681,20 @@ npx husky add .husky/pre-commit "cd tests && npm test"
 #### 1. "MCP server not built" Error
 
 **Symptom**:
+
 ```
 Error: Cannot find module '../mcp-server/dist/constraints/color.js'
 ```
 
 **Solution**:
+
 ```bash
 cd mcp-server
 npm run build
 ```
 
 **Prevention**:
+
 - Always build before running tests
 - Add build step to test runner
 - Use pre-commit hooks
@@ -663,11 +704,13 @@ npm run build
 #### 2. "Port 8080 already in use" Error
 
 **Symptom**:
+
 ```
 Error: listen EADDRINUSE: address already in use :::8080
 ```
 
 **Solution**:
+
 ```bash
 # Kill process on port 8080
 lsof -ti:8080 | xargs kill -9
@@ -676,6 +719,7 @@ lsof -ti:8080 | xargs kill -9
 ```
 
 **Prevention**:
+
 - Test runner automatically kills stale processes
 - Use cleanup in test `finally` blocks
 - Increase timeout for server shutdown
@@ -685,11 +729,13 @@ lsof -ti:8080 | xargs kill -9
 #### 3. WebSocket Connection Timeout
 
 **Symptom**:
+
 ```
 Error: Server failed to start within timeout
 ```
 
 **Solution**:
+
 ```bash
 # Check server logs
 cd websocket-server
@@ -700,6 +746,7 @@ const SERVER_START_DELAY = 5000; // Increase from 2000
 ```
 
 **Prevention**:
+
 - Ensure no firewall blocking
 - Check server output for errors
 - Verify WebSocket dependencies installed
@@ -709,11 +756,13 @@ const SERVER_START_DELAY = 5000; // Increase from 2000
 #### 4. Test Failures After Code Changes
 
 **Symptom**:
+
 ```
 AssertionError: Expected X but got Y
 ```
 
 **Solution**:
+
 ```bash
 # Rebuild MCP server (TypeScript may be stale)
 cd mcp-server
@@ -725,6 +774,7 @@ node unit/my-test.test.js
 ```
 
 **Prevention**:
+
 - Always rebuild before testing
 - Use `tsc --watch` during development
 - Clear dist/ folder periodically
@@ -734,11 +784,13 @@ node unit/my-test.test.js
 #### 5. Permission Denied on Test Runner
 
 **Symptom**:
+
 ```
 bash: ./run-integration-tests.sh: Permission denied
 ```
 
 **Solution**:
+
 ```bash
 chmod +x tests/run-integration-tests.sh
 ```
@@ -751,6 +803,7 @@ chmod +x tests/run-integration-tests.sh
 Tests hang at end, don't exit
 
 **Solution**:
+
 ```javascript
 // Ensure cleanup in finally block
 finally {
@@ -769,6 +822,7 @@ finally {
 ### Debugging Tests
 
 **Enable Verbose Logging**:
+
 ```javascript
 // Add to test file
 const DEBUG = true;
@@ -779,6 +833,7 @@ function log(message) {
 ```
 
 **Inspect WebSocket Messages**:
+
 ```javascript
 ws.on('message', (data) => {
   console.log('Received:', data.toString());
@@ -787,6 +842,7 @@ ws.on('message', (data) => {
 ```
 
 **Check Server Logs**:
+
 ```bash
 # Run server manually to see output
 cd websocket-server
@@ -798,6 +854,7 @@ node integration/foundation.test.js
 ```
 
 **Node Inspector**:
+
 ```bash
 # Debug test with Chrome DevTools
 node --inspect-brk unit/color-converter.test.js
@@ -811,12 +868,14 @@ node --inspect-brk unit/color-converter.test.js
 ### Getting Help
 
 **Resources**:
+
 - **Documentation**: See `docs/TESTING_GUIDE.md` for detailed testing procedures
 - **Task Progress**: See `docs/TASK_PROGRESS.md` for implementation status
 - **Implementation Tasks**: See `docs/IMPLEMENTATION_TASKS.md` for task details
 - **Issues**: Check GitHub Issues for known problems
 
 **Contact**:
+
 - Open a GitHub Issue with:
   - Test output (copy/paste full error)
   - Steps to reproduce
@@ -828,21 +887,25 @@ node --inspect-brk unit/color-converter.test.js
 ## Next Steps
 
 ### Immediate
+
 1. Run all tests: `cd tests && npm test`
 2. Verify 100% pass rate
 3. Review test output for warnings
 
 ### Phase 3 (Design Quality)
+
 - Add component creation tests
 - Add effects validation tests
 - Add LCh color space tests
 
 ### Phase 4 (Testing)
+
 - Implement visual regression tests
 - Create agentic review agent
 - Add E2E test scenarios
 
 ### Phase 5 (Advanced)
+
 - Add performance tests
 - Implement load testing
 - Create monitoring dashboard

@@ -99,11 +99,12 @@ class DesignReviewResult {
   }
 
   calculateScore() {
-    const totalChecks = Object.values(this.checks)
-      .reduce((sum, cat) => sum + cat.passed + cat.failed, 0);
+    const totalChecks = Object.values(this.checks).reduce(
+      (sum, cat) => sum + cat.passed + cat.failed,
+      0
+    );
 
-    const totalPassed = Object.values(this.checks)
-      .reduce((sum, cat) => sum + cat.passed, 0);
+    const totalPassed = Object.values(this.checks).reduce((sum, cat) => sum + cat.passed, 0);
 
     this.score = totalChecks > 0 ? Math.round((totalPassed / totalChecks) * 100) : 0;
 
@@ -203,17 +204,16 @@ class DesignReviewResult {
       output += 'Recommendations:\n';
       output += '───────────────────────────────────────\n';
       for (const rec of this.recommendations) {
-        const icon = rec.priority === 'critical' ? '🚨' :
-                     rec.priority === 'high' ? '⚠️' : 'ℹ️';
+        const icon = rec.priority === 'critical' ? '🚨' : rec.priority === 'high' ? '⚠️' : 'ℹ️';
         output += `${icon} ${rec.category} (${rec.priority})\n`;
         output += `   ${rec.message}\n`;
 
         if (rec.violations.length > 0 && rec.violations.length <= 5) {
-          rec.violations.forEach(v => {
+          rec.violations.forEach((v) => {
             output += `   - ${v}\n`;
           });
         } else if (rec.violations.length > 5) {
-          rec.violations.slice(0, 3).forEach(v => {
+          rec.violations.slice(0, 3).forEach((v) => {
             output += `   - ${v}\n`;
           });
           output += `   ... and ${rec.violations.length - 3} more\n`;
@@ -280,7 +280,8 @@ class DesignReviewAgent {
       if (this.config.spacing.validValues.includes(spacing.value)) {
         result.addPass('spacing');
       } else {
-        result.addViolation('spacing',
+        result.addViolation(
+          'spacing',
           `${spacing.property} uses ${spacing.value}px (not on 8pt grid) at ${spacing.location}`
         );
       }
@@ -298,7 +299,8 @@ class DesignReviewAgent {
       if (this.config.typography.validSizes.includes(node.fontSize)) {
         result.addPass('typography');
       } else {
-        result.addViolation('typography',
+        result.addViolation(
+          'typography',
           `Font size ${node.fontSize}px not in type scale at "${node.text}"`
         );
       }
@@ -307,7 +309,8 @@ class DesignReviewAgent {
       if (this.config.typography.validWeights.includes(node.fontWeight)) {
         result.addPass('typography');
       } else {
-        result.addViolation('typography',
+        result.addViolation(
+          'typography',
           `Font weight ${node.fontWeight} not standard at "${node.text}"`
         );
       }
@@ -320,7 +323,8 @@ class DesignReviewAgent {
         if (Math.abs(actualLineHeight - expectedLineHeight) <= 2) {
           result.addPass('typography');
         } else {
-          result.addViolation('typography',
+          result.addViolation(
+            'typography',
             `Line height ${actualLineHeight}px should be ~${expectedLineHeight}px at "${node.text}"`
           );
         }
@@ -342,14 +346,20 @@ class DesignReviewAgent {
       const contrastRatio = this.calculateContrastRatio(node.foreground, node.background);
       const isLargeText = node.fontSize >= this.config.contrast.textSizes.large;
 
-      const requiredRatio = this.config.contrast.minimumLevel === 'AAA'
-        ? (isLargeText ? 4.5 : 7.0)
-        : (isLargeText ? 3.0 : 4.5);
+      const requiredRatio =
+        this.config.contrast.minimumLevel === 'AAA'
+          ? isLargeText
+            ? 4.5
+            : 7.0
+          : isLargeText
+            ? 3.0
+            : 4.5;
 
       if (contrastRatio >= requiredRatio) {
         result.addPass('contrast');
       } else {
-        result.addViolation('contrast',
+        result.addViolation(
+          'contrast',
           `Contrast ratio ${contrastRatio.toFixed(2)}:1 < ${requiredRatio}:1 (WCAG ${this.config.contrast.minimumLevel}) at "${node.text}"`
         );
       }
@@ -364,9 +374,7 @@ class DesignReviewAgent {
     if (this.config.naming.patterns.component.test(componentData.name)) {
       result.addPass('naming');
     } else {
-      result.addViolation('naming',
-        `Component name "${componentData.name}" should be PascalCase`
-      );
+      result.addViolation('naming', `Component name "${componentData.name}" should be PascalCase`);
     }
 
     // Check layer names
@@ -375,9 +383,7 @@ class DesignReviewAgent {
       if (this.config.naming.patterns.layer.test(layer.name)) {
         result.addPass('naming');
       } else {
-        result.addViolation('naming',
-          `Layer name "${layer.name}" should be camelCase`
-        );
+        result.addViolation('naming', `Layer name "${layer.name}" should be camelCase`);
       }
     }
 
@@ -387,9 +393,7 @@ class DesignReviewAgent {
         if (this.config.naming.patterns.variant.test(variant.name)) {
           result.addPass('naming');
         } else {
-          result.addViolation('naming',
-            `Variant name "${variant.name}" should be kebab-case`
-          );
+          result.addViolation('naming', `Variant name "${variant.name}" should be kebab-case`);
         }
       }
     }
@@ -555,10 +559,14 @@ class DesignReviewAgent {
       componentsReviewed: results.length,
       componentResults: results,
       summary: {
-        excellent: results.filter(r => r.score >= REVIEW_CONFIG.scoring.excellent).length,
-        good: results.filter(r => r.score >= REVIEW_CONFIG.scoring.good && r.score < REVIEW_CONFIG.scoring.excellent).length,
-        acceptable: results.filter(r => r.score >= REVIEW_CONFIG.scoring.acceptable && r.score < REVIEW_CONFIG.scoring.good).length,
-        needsWork: results.filter(r => r.score < REVIEW_CONFIG.scoring.acceptable).length
+        excellent: results.filter((r) => r.score >= REVIEW_CONFIG.scoring.excellent).length,
+        good: results.filter(
+          (r) => r.score >= REVIEW_CONFIG.scoring.good && r.score < REVIEW_CONFIG.scoring.excellent
+        ).length,
+        acceptable: results.filter(
+          (r) => r.score >= REVIEW_CONFIG.scoring.acceptable && r.score < REVIEW_CONFIG.scoring.good
+        ).length,
+        needsWork: results.filter((r) => r.score < REVIEW_CONFIG.scoring.acceptable).length
       }
     };
 
@@ -653,10 +661,10 @@ async function runDesignReview() {
 // Run if executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   runDesignReview()
-    .then(success => {
+    .then((success) => {
       process.exit(success ? 0 : 1);
     })
-    .catch(error => {
+    .catch((error) => {
       console.error('Design review failed:', error);
       process.exit(1);
     });

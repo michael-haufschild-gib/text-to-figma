@@ -3,6 +3,7 @@
 ## Prerequisites
 
 1. **Build MCP Server** (required for most tests):
+
 ```bash
 cd mcp-server
 npm install
@@ -11,6 +12,7 @@ cd ../tests
 ```
 
 2. **Install Test Dependencies**:
+
 ```bash
 cd tests
 npm install
@@ -96,30 +98,35 @@ Total: 10/10 test suites passed
 Each test suite provides detailed output:
 
 **Unit Tests:**
+
 - Test name
 - Pass/fail status
 - Specific assertions validated
 - Edge cases covered
 
 **Integration Tests:**
+
 - Server startup confirmation
 - Connection status
 - Tool execution results
 - Validation results
 
 **Validation Tests:**
+
 - Token validation results
 - Pass/fail counts
 - Suggested corrections
 - WCAG compliance levels
 
 **E2E Tests:**
+
 - Step-by-step progress (1-12 steps)
 - Node IDs created
 - Validation checkpoints
 - Final component verification
 
 **Agent Tests:**
+
 - Design review score (0-100)
 - Grade (Excellent/Good/Acceptable/Needs Improvement/Failing)
 - Violations by category
@@ -182,29 +189,29 @@ npm install
 
 ## Test Files
 
-| Test File | Category | Purpose |
-|-----------|----------|---------|
-| `unit/color-converter.test.js` | Unit | Color utility functions |
-| `unit/typography-generator.test.js` | Unit | Typography utilities |
-| `integration/foundation.test.js` | Integration | WebSocket pipeline |
-| `integration/wcag-contrast.test.js` | Integration | WCAG calculations |
-| `integration/wcag-contrast-enhanced.test.js` | Integration | Batch contrast + reports |
-| `integration/component-tools.test.js` | Integration | Component creation |
-| `validation/design-tokens.test.js` | Validation | Design token validation |
-| `agents/design-reviewer.js` | Agent | Automated design review |
-| `e2e/button-component.test.js` | E2E | Button generation workflow |
-| `e2e/login-form.test.js` | E2E | Form generation workflow |
+| Test File                                    | Category    | Purpose                    |
+| -------------------------------------------- | ----------- | -------------------------- |
+| `unit/color-converter.test.js`               | Unit        | Color utility functions    |
+| `unit/typography-generator.test.js`          | Unit        | Typography utilities       |
+| `integration/foundation.test.js`             | Integration | WebSocket pipeline         |
+| `integration/wcag-contrast.test.js`          | Integration | WCAG calculations          |
+| `integration/wcag-contrast-enhanced.test.js` | Integration | Batch contrast + reports   |
+| `integration/component-tools.test.js`        | Integration | Component creation         |
+| `validation/design-tokens.test.js`           | Validation  | Design token validation    |
+| `agents/design-reviewer.js`                  | Agent       | Automated design review    |
+| `e2e/button-component.test.js`               | E2E         | Button generation workflow |
+| `e2e/login-form.test.js`                     | E2E         | Form generation workflow   |
 
 ## Test Duration
 
-| Category | Duration |
-|----------|----------|
-| Unit Tests | < 1 second |
-| Integration Tests | 5-10 seconds per suite |
-| Validation Tests | 3-5 seconds |
-| Agent Tests | 2-3 seconds |
-| E2E Tests | 10-20 seconds per suite |
-| **Total (All Tests)** | **~60-90 seconds** |
+| Category              | Duration                |
+| --------------------- | ----------------------- |
+| Unit Tests            | < 1 second              |
+| Integration Tests     | 5-10 seconds per suite  |
+| Validation Tests      | 3-5 seconds             |
+| Agent Tests           | 2-3 seconds             |
+| E2E Tests             | 10-20 seconds per suite |
+| **Total (All Tests)** | **~60-90 seconds**      |
 
 ## CI/CD Integration
 
@@ -229,23 +236,27 @@ test:
 ## What Gets Tested
 
 ### ✓ Color System
+
 - Color conversions (Hex, RGB, LCH)
 - Contrast ratio calculations
 - WCAG AA/AAA compliance
 - Perceptual lightness adjustments
 
 ### ✓ Typography
+
 - Font size validation
 - Type scale adherence
 - Line height recommendations
 - Font weight validation
 
 ### ✓ Spacing
+
 - 8pt grid validation
 - Snap-to-grid suggestions
 - Layout property application
 
 ### ✓ Components
+
 - Frame creation
 - Text nodes
 - Fills and strokes
@@ -254,17 +265,20 @@ test:
 - Component creation
 
 ### ✓ Design Tokens
+
 - Spacing validation
 - Typography validation
 - Color contrast validation
 - Export formats (CSS, Tailwind, JSON)
 
 ### ✓ Workflows
+
 - Complete button generation (3 variants)
 - Complete form generation (12 steps)
 - Design system compliance
 
 ### ✓ Quality
+
 - Automated design reviews
 - Naming convention validation
 - Design system scoring
@@ -280,6 +294,7 @@ test:
 ## Support
 
 For issues or questions:
+
 1. Check test output for specific error messages
 2. Review TEST_SUMMARY.md for troubleshooting
 3. Verify MCP server is built and running

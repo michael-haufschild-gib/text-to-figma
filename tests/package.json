@@ -1,31 +1,18 @@
 {
   "name": "text-to-figma-tests",
   "version": "1.0.0",
-  "description": "Comprehensive test suite for Text-to-Figma: Unit, Integration, Validation, E2E, and Agent tests",
+  "description": "Test suite for Text-to-Figma MCP server",
   "type": "module",
   "scripts": {
-    "test": "bash run-all-tests.sh",
-    "test:all": "bash run-all-tests.sh",
-    "test:unit": "node unit/color-converter.test.js && node unit/typography-generator.test.js",
-    "test:integration": "bash run-integration-tests.sh",
-    "test:validation": "node validation/design-tokens.test.js",
-    "test:agent": "node agents/design-reviewer.js",
-    "test:e2e": "node e2e/button-component.test.js && node e2e/login-form.test.js",
-    "test:e2e:button": "node e2e/button-component.test.js",
-    "test:e2e:form": "node e2e/login-form.test.js",
-    "test:contrast": "node integration/wcag-contrast.test.js",
-    "test:contrast:enhanced": "node integration/wcag-contrast-enhanced.test.js",
-    "test:foundation": "node integration/foundation.test.js"
+    "test": "cd .. && npm test",
+    "test:unit": "cd .. && npm run test:unit",
+    "test:integration": "cd .. && npm run test:integration"
   },
   "keywords": [
     "test",
-    "integration",
-    "websocket",
-    "e2e",
-    "validation",
-    "wcag",
-    "design-tokens",
-    "accessibility"
+    "vitest",
+    "unit",
+    "integration"
   ],
   "author": "",
   "license": "MIT",
