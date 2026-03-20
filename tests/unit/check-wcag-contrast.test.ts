@@ -211,7 +211,9 @@ describe('checkWcagContrast', () => {
       }
     });
   });
+});
 
+describe('checkWcagContrast — boundaries and quality', () => {
   describe('summary', () => {
     it('includes summary text', () => {
       const result = checkWcagContrast({

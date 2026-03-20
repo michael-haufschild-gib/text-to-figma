@@ -182,8 +182,19 @@ describe('Handler formatResponse — creation, styling, navigation', () => {
       expect(text).toContain('Error: Invalid spec');
     });
   });
+});
 
-  // ─── Styling handlers ────────────────────────────────────────────────
+describe('Handler formatResponse — styling, navigation, edge cases', () => {
+  beforeEach(() => {
+    resetToolRegistry();
+    registerAllTools();
+  });
+
+  function getHandler(name: string) {
+    const handler = getToolRegistry().get(name);
+    if (!handler) throw new Error(`Handler ${name} not registered`);
+    return handler;
+  }
 
   describe('set_fills', () => {
     it('formats fill application result', () => {

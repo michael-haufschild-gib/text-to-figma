@@ -125,7 +125,9 @@ describe('Auto-Validator', () => {
       expect(result.wasModified).toBe(false);
     });
   });
+});
 
+describe('Auto-Validator — validateSpec and utilities', () => {
   describe('validateSpec', () => {
     it('validates a well-formed spec as valid', () => {
       const result = validateSpec({
