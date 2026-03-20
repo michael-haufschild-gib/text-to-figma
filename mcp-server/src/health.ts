@@ -203,8 +203,9 @@ export class HealthCheckServer {
       return;
     }
 
+    const server = this.server;
     return new Promise((resolve) => {
-      this.server!.close(() => {
+      server.close(() => {
         console.error('[HealthCheck] Health check server stopped');
         this.server = null;
         resolve();

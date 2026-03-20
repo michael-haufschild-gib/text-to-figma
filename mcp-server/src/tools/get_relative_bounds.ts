@@ -123,12 +123,13 @@ export interface GetRelativeBoundsResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function getRelativeBounds(
   input: GetRelativeBoundsInput
 ): Promise<GetRelativeBoundsResult> {
   // Validate input
-  const validated = GetRelativeBoundsInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

@@ -53,6 +53,7 @@ const D65_WHITE_POINT = {
 
 /**
  * Converts RGB to XYZ color space
+ * @param rgb
  */
 export function rgbToXyz(rgb: RGB): XYZ {
   // Convert RGB [0-255] to [0-1]
@@ -80,6 +81,7 @@ export function rgbToXyz(rgb: RGB): XYZ {
 
 /**
  * Converts XYZ to RGB color space
+ * @param xyz
  */
 export function xyzToRgb(xyz: XYZ): RGB {
   // Apply inverse transformation matrix (XYZ D65 to sRGB)
@@ -107,6 +109,7 @@ export function xyzToRgb(xyz: XYZ): RGB {
 
 /**
  * Converts XYZ to Lab color space
+ * @param xyz
  */
 export function xyzToLab(xyz: XYZ): Lab {
   // Normalize by reference white point
@@ -136,6 +139,7 @@ export function xyzToLab(xyz: XYZ): Lab {
 
 /**
  * Converts Lab to XYZ color space
+ * @param lab
  */
 export function labToXyz(lab: Lab): XYZ {
   const fy = (lab.l + 16) / 116;
@@ -159,6 +163,7 @@ export function labToXyz(lab: Lab): XYZ {
 
 /**
  * Converts Lab to LCh color space
+ * @param lab
  */
 export function labToLch(lab: Lab): LCh {
   const l = lab.l;
@@ -175,6 +180,7 @@ export function labToLch(lab: Lab): LCh {
 
 /**
  * Converts LCh to Lab color space
+ * @param lch
  */
 export function lchToLab(lch: LCh): Lab {
   const l = lch.l;
@@ -186,6 +192,7 @@ export function lchToLab(lch: LCh): Lab {
 
 /**
  * Converts RGB to LCh color space
+ * @param rgb
  */
 export function rgbToLch(rgb: RGB): LCh {
   const xyz = rgbToXyz(rgb);
@@ -195,6 +202,7 @@ export function rgbToLch(rgb: RGB): LCh {
 
 /**
  * Converts LCh to RGB color space
+ * @param lch
  */
 export function lchToRgb(lch: LCh): RGB {
   const lab = lchToLab(lch);
@@ -250,6 +258,8 @@ export type ColorHarmonyType =
 
 /**
  * Generates color harmonies based on hue relationships
+ * @param rgb
+ * @param type
  */
 export function generateColorHarmony(rgb: RGB, type: ColorHarmonyType): RGB[] {
   const lch = rgbToLch(rgb);

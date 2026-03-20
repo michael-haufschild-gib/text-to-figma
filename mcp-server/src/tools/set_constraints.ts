@@ -36,7 +36,7 @@ export type VerticalConstraint = z.infer<typeof verticalConstraintSchema>;
 /**
  * Input schema for set_constraints tool
  */
-export const setConstraintsInputSchema = z.object({
+export const SetConstraintsInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to set constraints on'),
   horizontal: horizontalConstraintSchema.optional().describe('Horizontal constraint behavior'),
   vertical: verticalConstraintSchema.optional().describe('Vertical constraint behavior'),
@@ -47,7 +47,7 @@ export const setConstraintsInputSchema = z.object({
   pinBottom: z.boolean().optional().describe('Pin to bottom edge of parent')
 });
 
-export type SetConstraintsInput = z.infer<typeof setConstraintsInputSchema>;
+export type SetConstraintsInput = z.infer<typeof SetConstraintsInputSchema>;
 
 /**
  * Result of setting constraints
@@ -61,6 +61,7 @@ export interface SetConstraintsResult {
 
 /**
  * Generate CSS equivalent for constraints
+ * @param input
  */
 function generateCssEquivalent(input: SetConstraintsInput): string {
   const cssRules: string[] = ['position: absolute;'];
@@ -84,8 +85,12 @@ function generateCssEquivalent(input: SetConstraintsInput): string {
     cssRules.push('left: 50%;');
     cssRules.push('transform: translateX(-50%);');
   } else if (input.horizontal === 'STRETCH') {
-    if (!input.pinLeft) {cssRules.push('left: 0;');}
-    if (!input.pinRight) {cssRules.push('right: 0;');}
+    if (!input.pinLeft) {
+      cssRules.push('left: 0;');
+    }
+    if (!input.pinRight) {
+      cssRules.push('right: 0;');
+    }
   }
 
   // Handle vertical constraints
@@ -100,8 +105,12 @@ function generateCssEquivalent(input: SetConstraintsInput): string {
     }
     cssRules.push('top: 50%;');
   } else if (input.vertical === 'STRETCH') {
-    if (!input.pinTop) {cssRules.push('top: 0;');}
-    if (!input.pinBottom) {cssRules.push('bottom: 0;');}
+    if (!input.pinTop) {
+      cssRules.push('top: 0;');
+    }
+    if (!input.pinBottom) {
+      cssRules.push('bottom: 0;');
+    }
   }
 
   // Handle aspect ratio
@@ -114,6 +123,7 @@ function generateCssEquivalent(input: SetConstraintsInput): string {
 
 /**
  * Generate human-readable description
+ * @param input
  */
 function generateDescription(input: SetConstraintsInput): string {
   const parts: string[] = [];
@@ -141,10 +151,18 @@ function generateDescription(input: SetConstraintsInput): string {
   }
 
   const pinParts: string[] = [];
-  if (input.pinLeft === true) {pinParts.push('left');}
-  if (input.pinRight === true) {pinParts.push('right');}
-  if (input.pinTop === true) {pinParts.push('top');}
-  if (input.pinBottom === true) {pinParts.push('bottom');}
+  if (input.pinLeft === true) {
+    pinParts.push('left');
+  }
+  if (input.pinRight === true) {
+    pinParts.push('right');
+  }
+  if (input.pinTop === true) {
+    pinParts.push('top');
+  }
+  if (input.pinBottom === true) {
+    pinParts.push('bottom');
+  }
 
   if (pinParts.length > 0) {
     parts.push(`pinned to ${pinParts.join(', ')} edge${pinParts.length > 1 ? 's' : ''}`);
@@ -163,10 +181,11 @@ function generateDescription(input: SetConstraintsInput): string {
 
 /**
  * Sets layout constraints on a Figma node
+ * @param input
  */
 export async function setConstraints(input: SetConstraintsInput): Promise<SetConstraintsResult> {
   // Validate input
-  const validated = setConstraintsInputSchema.parse(input);
+  const validated = input;
 
   // Resolve pinning conflicts with constraint settings
   const resolvedInput = { ...validated };
@@ -205,13 +224,27 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
 
   // Build list of applied constraints
   const applied: string[] = [];
-  if (resolvedInput.horizontal) {applied.push(`horizontal: ${resolvedInput.horizontal}`);}
-  if (resolvedInput.vertical) {applied.push(`vertical: ${resolvedInput.vertical}`);}
-  if (resolvedInput.aspectRatioLocked) {applied.push('aspectRatioLocked');}
-  if (resolvedInput.pinLeft) {applied.push('pinLeft');}
-  if (resolvedInput.pinRight) {applied.push('pinRight');}
-  if (resolvedInput.pinTop) {applied.push('pinTop');}
-  if (resolvedInput.pinBottom) {applied.push('pinBottom');}
+  if (resolvedInput.horizontal) {
+    applied.push(`horizontal: ${resolvedInput.horizontal}`);
+  }
+  if (resolvedInput.vertical) {
+    applied.push(`vertical: ${resolvedInput.vertical}`);
+  }
+  if (resolvedInput.aspectRatioLocked) {
+    applied.push('aspectRatioLocked');
+  }
+  if (resolvedInput.pinLeft) {
+    applied.push('pinLeft');
+  }
+  if (resolvedInput.pinRight) {
+    applied.push('pinRight');
+  }
+  if (resolvedInput.pinTop) {
+    applied.push('pinTop');
+  }
+  if (resolvedInput.pinBottom) {
+    applied.push('pinBottom');
+  }
 
   // Send to Figma
   const bridge = getFigmaBridge();

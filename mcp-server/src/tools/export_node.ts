@@ -122,10 +122,11 @@ export interface ExportNodeResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function exportNode(input: ExportNodeInput): Promise<ExportNodeResult> {
   // Validate input
-  const validated = ExportNodeInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

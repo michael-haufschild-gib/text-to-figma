@@ -115,10 +115,11 @@ export interface GetNodeByNameResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function getNodeByName(input: GetNodeByNameInput): Promise<GetNodeByNameResult> {
   // Validate input
-  const validated = GetNodeByNameInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

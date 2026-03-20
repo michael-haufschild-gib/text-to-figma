@@ -60,6 +60,7 @@ export const rgbSchema = z.object({
 
 /**
  * Converts hex color to RGB
+ * @param hex
  */
 export function hexToRgb(hex: string): RGB | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -74,6 +75,7 @@ export function hexToRgb(hex: string): RGB | null {
 
 /**
  * Converts RGB to hex color
+ * @param rgb
  */
 export function rgbToHex(rgb: RGB): string {
   const toHex = (n: number): string => {
@@ -86,6 +88,7 @@ export function rgbToHex(rgb: RGB): string {
 /**
  * Calculates relative luminance of a color
  * https://www.w3.org/TR/WCAG21/#dfn-relative-luminance
+ * @param rgb
  */
 export function getRelativeLuminance(rgb: RGB): number {
   const rsRGB = rgb.r / 255;
@@ -102,6 +105,8 @@ export function getRelativeLuminance(rgb: RGB): number {
 /**
  * Calculates contrast ratio between two colors
  * https://www.w3.org/TR/WCAG21/#dfn-contrast-ratio
+ * @param color1
+ * @param color2
  */
 export function getContrastRatio(color1: RGB, color2: RGB): number {
   const lum1 = getRelativeLuminance(color1);
@@ -133,6 +138,8 @@ export interface ContrastValidationResult {
 
 /**
  * Validates contrast ratio against WCAG standards
+ * @param foreground
+ * @param background
  */
 export function validateContrast(foreground: RGB, background: RGB): ContrastValidationResult {
   const ratio = getContrastRatio(foreground, background);
@@ -148,13 +155,13 @@ export function validateContrast(foreground: RGB, background: RGB): ContrastVali
     }
   };
 
+  // AAA.large and AA.normal share the 4.5 threshold, so the branches collapse to 4:
+  // ratio >= 7.0 → Excellent, ratio >= 4.5 → Good, ratio >= 3.0 → Limited, else → Poor
   let recommendation: string;
   if (passes.AAA.normal) {
     recommendation = 'Excellent contrast - passes WCAG AAA for all text sizes';
   } else if (passes.AAA.large) {
     recommendation = 'Good contrast - passes WCAG AAA for large text, AA for normal text';
-  } else if (passes.AA.normal) {
-    recommendation = 'Acceptable contrast - passes WCAG AA for all text sizes';
   } else if (passes.AA.large) {
     recommendation = 'Limited contrast - only passes WCAG AA for large text';
   } else {
@@ -166,44 +173,4 @@ export function validateContrast(foreground: RGB, background: RGB): ContrastVali
     passes,
     recommendation
   };
-}
-
-/**
- * Checks if contrast meets a specific WCAG level
- */
-export function meetsWCAG(
-  foreground: RGB,
-  background: RGB,
-  level: WCAGLevel,
-  textSize: TextSize
-): boolean {
-  const ratio = getContrastRatio(foreground, background);
-  const threshold = CONTRAST_THRESHOLDS[level][textSize];
-  return ratio >= threshold;
-}
-
-/**
- * Suggests adjustments to improve contrast
- */
-export function suggestContrastAdjustment(
-  foreground: RGB,
-  background: RGB,
-  targetLevel: WCAGLevel = WCAGLevel.AA,
-  textSize: TextSize = TextSize.Normal
-): string {
-  const currentRatio = getContrastRatio(foreground, background);
-  const targetRatio = CONTRAST_THRESHOLDS[targetLevel][textSize];
-
-  if (currentRatio >= targetRatio) {
-    return 'Contrast already meets target level';
-  }
-
-  const foregroundLum = getRelativeLuminance(foreground);
-  const backgroundLum = getRelativeLuminance(background);
-
-  if (foregroundLum > backgroundLum) {
-    return `Increase foreground lightness or decrease background lightness. Target ratio: ${targetRatio}:1, current: ${currentRatio.toFixed(2)}:1`;
-  } else {
-    return `Decrease foreground lightness or increase background lightness. Target ratio: ${targetRatio}:1, current: ${currentRatio.toFixed(2)}:1`;
-  }
 }

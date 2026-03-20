@@ -83,12 +83,13 @@ export interface ApplyEffectStyleResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function applyEffectStyle(
   input: ApplyEffectStyleInput
 ): Promise<ApplyEffectStyleResult> {
   // Validate input
-  const validated = ApplyEffectStyleInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

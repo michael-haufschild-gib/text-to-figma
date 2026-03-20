@@ -17,7 +17,7 @@ import { VALID_FONT_SIZES, validateTypography, type FontSize } from '../constrai
 /**
  * Design tokens input schema
  */
-export const designTokensInputSchema = z.object({
+export const DesignTokensInputSchema = z.object({
   spacing: z.array(z.number()).optional().describe('Array of spacing values to validate'),
   typography: z
     .array(
@@ -40,7 +40,7 @@ export const designTokensInputSchema = z.object({
     .describe('Array of color pairs for contrast validation')
 });
 
-export type DesignTokensInput = z.infer<typeof designTokensInputSchema>;
+export type DesignTokensInput = z.infer<typeof DesignTokensInputSchema>;
 
 /**
  * Spacing validation result
@@ -108,9 +108,10 @@ export interface ValidationReport {
 
 /**
  * Validates design tokens
+ * @param input
  */
-export async function validateDesignTokens(input: DesignTokensInput): Promise<ValidationReport> {
-  const validated = designTokensInputSchema.parse(input);
+export function validateDesignTokens(input: DesignTokensInput): ValidationReport {
+  const validated = input;
 
   const report: ValidationReport = {
     spacing: {
@@ -249,6 +250,7 @@ export async function validateDesignTokens(input: DesignTokensInput): Promise<Va
 
 /**
  * Formats validation report as readable text
+ * @param report
  */
 export function formatValidationReport(report: ValidationReport): string {
   let output = 'Design Tokens Validation Report\n';
@@ -423,21 +425,4 @@ Returns detailed report with:
       }
     }
   }
-};
-
-/**
- * Handler export for tool registration
- */
-export const validateDesignTokensHandler: import('../routing/tool-handler.js').ToolHandler<
-  DesignTokensInput,
-  ValidationReport
-> = {
-  name: 'validate_design_tokens',
-  schema: designTokensInputSchema as any,
-  execute: validateDesignTokens,
-  formatResponse: (result) => {
-    const text = formatValidationReport(result);
-    return [{ type: 'text', text }];
-  },
-  definition: validateDesignTokensToolDefinition
 };

@@ -105,10 +105,11 @@ export interface SetImageFillResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function setImageFill(input: SetImageFillInput): Promise<SetImageFillResult> {
   // Validate input
-  const validated = SetImageFillInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -116,15 +117,12 @@ export async function setImageFill(input: SetImageFillInput): Promise<SetImageFi
   // Send command to Figma
   // Note: bridge.sendToFigma validates success at protocol level
   // It only resolves if Figma returns success=true, otherwise rejects
-  await bridge.sendToFigma(
-    'set_image_fill',
-    {
-      nodeId: validated.nodeId,
-      imageUrl: validated.imageUrl,
-      scaleMode: validated.scaleMode,
-      opacity: validated.opacity
-    }
-  )
+  await bridge.sendToFigmaWithRetry('set_image_fill', {
+    nodeId: validated.nodeId,
+    imageUrl: validated.imageUrl,
+    scaleMode: validated.scaleMode,
+    opacity: validated.opacity
+  });
 
   // Map scale mode to CSS
   const scaleModeToCSS: Record<string, string> = {

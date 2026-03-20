@@ -107,10 +107,11 @@ export interface SetLayoutAlignResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLayoutAlignResult> {
   // Validate input
-  const validated = SetLayoutAlignInputSchema.parse(input);
+  const validated = input;
 
   if (!validated.primaryAxis && !validated.counterAxis) {
     throw new Error('Must specify at least one of primaryAxis or counterAxis');
@@ -121,7 +122,7 @@ export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLay
 
   // Send command to Figma
   // Note: Response validated by bridge at protocol level
-  await bridge.sendToFigma('set_layout_align', {
+  await bridge.sendToFigmaWithRetry('set_layout_align', {
     nodeId: validated.nodeId,
     primaryAxis: validated.primaryAxis,
     counterAxis: validated.counterAxis

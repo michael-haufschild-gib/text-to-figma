@@ -13,7 +13,7 @@ import { layoutModeSchema } from './create_frame.js';
 /**
  * Input schema for set_layout_properties tool
  */
-export const setLayoutPropertiesInputSchema = z.object({
+export const SetLayoutPropertiesInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the frame to modify'),
   layoutMode: layoutModeSchema.optional().describe('Layout direction'),
   itemSpacing: spacingSchema.optional().describe('Gap between children (8pt grid)'),
@@ -22,7 +22,7 @@ export const setLayoutPropertiesInputSchema = z.object({
   height: z.number().positive().optional().describe('Height in pixels')
 });
 
-export type SetLayoutPropertiesInput = z.infer<typeof setLayoutPropertiesInputSchema>;
+export type SetLayoutPropertiesInput = z.infer<typeof SetLayoutPropertiesInputSchema>;
 
 /**
  * Result of updating layout properties
@@ -35,6 +35,7 @@ export interface SetLayoutPropertiesResult {
 
 /**
  * Generates CSS equivalent for the updated properties
+ * @param input
  */
 function generateCssEquivalent(input: SetLayoutPropertiesInput): string {
   const updates: string[] = [];
@@ -71,12 +72,13 @@ function generateCssEquivalent(input: SetLayoutPropertiesInput): string {
 
 /**
  * Updates layout properties on an existing frame
+ * @param input
  */
 export async function setLayoutProperties(
   input: SetLayoutPropertiesInput
 ): Promise<SetLayoutPropertiesResult> {
   // Validate input
-  const validated = setLayoutPropertiesInputSchema.parse(input);
+  const validated = input;
 
   // Track what was updated
   const updated: string[] = [];
@@ -105,7 +107,7 @@ export async function setLayoutProperties(
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigma('set_layout_properties', {
+  await bridge.sendToFigmaWithRetry('set_layout_properties', {
     nodeId: validated.nodeId,
     layoutMode: validated.layoutMode,
     itemSpacing: validated.itemSpacing,
@@ -128,7 +130,22 @@ export const setLayoutPropertiesToolDefinition = {
   name: 'set_layout_properties',
   description: `Updates layout properties on an existing frame in Figma.
 
-Use this tool to modify auto-layout settings after a frame has been created.
+🎯 WHEN TO USE THIS TOOL:
+- Modifying layout on an EXISTING frame
+- Changing spacing/padding after frame creation
+- Adjusting dimensions of an existing container
+- Switching layout direction (horizontal ↔ vertical)
+
+⚠️ DON'T use this for:
+- New frame creation (use create_frame instead)
+- Multi-element designs (use create_design with layout props)
+
+ALTERNATIVE: Use create_design to set all properties at once:
+{
+  type: 'frame',
+  props: { layoutMode: 'HORIZONTAL', itemSpacing: 24, padding: 16, ... },
+  children: [...]
+}
 
 HTML/CSS Analogy:
 - layoutMode: Changes flex-direction (HORIZONTAL = row, VERTICAL = column, NONE = no flexbox)
@@ -179,25 +196,4 @@ CSS equivalent: flex-direction: row; gap: 24px;`,
     },
     required: ['nodeId']
   }
-};
-
-/**
- * Handler export for tool registration
- */
-export const setLayoutPropertiesHandler: import('../routing/tool-handler.js').ToolHandler<
-  SetLayoutPropertiesInput,
-  SetLayoutPropertiesResult
-> = {
-  name: 'set_layout_properties',
-  schema: setLayoutPropertiesInputSchema as any,
-  execute: setLayoutProperties,
-  formatResponse: (result) => {
-    let text = `Layout Properties Updated\n`;
-    text += `Node ID: ${result.nodeId}\n`;
-    text += `Updated Properties: ${result.updated.join(', ')}\n\n`;
-    text += `CSS Equivalent:\n  ${result.cssEquivalent}\n`;
-
-    return [{ type: 'text', text }];
-  },
-  definition: setLayoutPropertiesToolDefinition
 };

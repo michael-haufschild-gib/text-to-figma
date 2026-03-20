@@ -11,13 +11,13 @@ import { getFigmaBridge } from '../figma-bridge.js';
 /**
  * Input schema for create_component tool
  */
-export const createComponentInputSchema = z.object({
+export const CreateComponentInputSchema = z.object({
   frameId: z.string().min(1).describe('ID of the frame to convert to a component'),
   name: z.string().min(1).describe('Name of the component'),
   description: z.string().optional().describe('Optional description for the component')
 });
 
-export type CreateComponentInput = z.infer<typeof createComponentInputSchema>;
+export type CreateComponentInput = z.infer<typeof CreateComponentInputSchema>;
 
 /**
  * Result of creating a component
@@ -31,10 +31,11 @@ export interface CreateComponentResult {
 
 /**
  * Creates a component from a frame in Figma
+ * @param input
  */
 export async function createComponent(input: CreateComponentInput): Promise<CreateComponentResult> {
   // Validate input
-  const validated = createComponentInputSchema.parse(input);
+  const validated = input;
 
   // Send to Figma
   const bridge = getFigmaBridge();

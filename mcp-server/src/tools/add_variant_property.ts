@@ -101,12 +101,13 @@ export interface AddVariantPropertyResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function addVariantProperty(
   input: AddVariantPropertyInput
 ): Promise<AddVariantPropertyResult> {
   // Validate input
-  const validated = AddVariantPropertyInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -114,14 +115,11 @@ export async function addVariantProperty(
   // Send command to Figma
   // Note: bridge.sendToFigma validates success at protocol level
   // It only resolves if Figma returns success=true, otherwise rejects
-  await bridge.sendToFigma(
-    'add_variant_property',
-    {
-      componentSetId: validated.componentSetId,
-      propertyName: validated.propertyName,
-      values: validated.values
-    }
-  )
+  await bridge.sendToFigmaWithRetry('add_variant_property', {
+    componentSetId: validated.componentSetId,
+    propertyName: validated.propertyName,
+    values: validated.values
+  });
 
   return {
     componentSetId: validated.componentSetId,

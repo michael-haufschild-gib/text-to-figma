@@ -21,14 +21,14 @@ export type VariantProperty = z.infer<typeof variantPropertySchema>;
 /**
  * Input schema for set_component_properties tool
  */
-export const setComponentPropertiesInputSchema = z.object({
+export const SetComponentPropertiesInputSchema = z.object({
   componentId: z.string().min(1).describe('ID of the component to modify'),
   name: z.string().optional().describe('New name for the component'),
   description: z.string().optional().describe('New description for the component'),
   variantProperties: z.array(variantPropertySchema).optional().describe('Variant properties to set')
 });
 
-export type SetComponentPropertiesInput = z.infer<typeof setComponentPropertiesInputSchema>;
+export type SetComponentPropertiesInput = z.infer<typeof SetComponentPropertiesInputSchema>;
 
 /**
  * Result of setting component properties
@@ -41,12 +41,13 @@ export interface SetComponentPropertiesResult {
 
 /**
  * Sets properties on a component in Figma
+ * @param input
  */
 export async function setComponentProperties(
   input: SetComponentPropertiesInput
 ): Promise<SetComponentPropertiesResult> {
   // Validate input
-  const validated = setComponentPropertiesInputSchema.parse(input);
+  const validated = input;
 
   // Track what was updated
   const updated: string[] = [];
@@ -63,7 +64,7 @@ export async function setComponentProperties(
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigma('set_component_properties', {
+  await bridge.sendToFigmaWithRetry('set_component_properties', {
     componentId: validated.componentId,
     name: validated.name,
     description: validated.description,

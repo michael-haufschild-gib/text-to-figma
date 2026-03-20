@@ -205,10 +205,11 @@ export interface ConnectShapesResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function connectShapes(input: ConnectShapesInput): Promise<ConnectShapesResult> {
   // Validate input
-  const validated = ConnectShapesInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

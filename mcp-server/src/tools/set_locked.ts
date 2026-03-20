@@ -89,10 +89,11 @@ export interface SetLockedResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function setLocked(input: SetLockedInput): Promise<SetLockedResult> {
   // Validate input
-  const validated = SetLockedInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -100,13 +101,10 @@ export async function setLocked(input: SetLockedInput): Promise<SetLockedResult>
   // Send command to Figma
   // Note: bridge.sendToFigma validates success at protocol level
   // It only resolves if Figma returns success=true, otherwise rejects
-  await bridge.sendToFigma(
-    'set_locked',
-    {
+  await bridge.sendToFigmaWithRetry('set_locked', {
     nodeId: validated.nodeId,
     locked: validated.locked
-  }
-  )
+  });
 
   return {
     nodeId: validated.nodeId,

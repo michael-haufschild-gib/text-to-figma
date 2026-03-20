@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { getNodeRegistry } from '../node-registry.js';
 
 /**
  * Input schema
@@ -37,7 +38,19 @@ export const createEllipseToolDefinition = {
   description: `Creates an ellipse (circle or oval) shape.
 
 PRIMITIVE: Raw Figma shape primitive - not a pre-made component.
-Use for: circles, ovals, avatars, profile pictures, icons, bullets, decorative shapes.
+
+📋 RECOMMENDED WORKFLOW:
+1. Option A (Multi-element): Use create_design to create ellipse + container together
+2. Option B (Single ellipse):
+   - Best practice: Create inside a parent frame for organization
+   - Edge case: Can create at root for standalone decorative elements
+
+🎯 WHEN TO USE THIS TOOL:
+- Adding a single circle/oval to an existing design
+- Creating avatars, icons, bullets, or decorative shapes
+- Building UI step-by-step (for simple designs)
+
+⚠️ For designs with shapes + other elements, prefer create_design instead.
 
 Perfect Circle: Set width = height
 Oval: Set different width and height
@@ -47,7 +60,8 @@ create_ellipse({
   width: 48,
   height: 48,  // Same as width = perfect circle
   fillColor: "#E0E0E0",
-  name: "Avatar"
+  name: "Avatar",
+  parentId: "container-id"  // ← Recommended for organization
 })
 
 Example - Decorative Oval:
@@ -78,7 +92,8 @@ border-radius: 50%; /* Makes any rectangle a circle/ellipse */`,
       },
       parentId: {
         type: 'string' as const,
-        description: 'Parent frame ID (optional)'
+        description:
+          'Parent frame ID. RECOMMENDED: While technically optional, shapes should typically be placed inside frame containers for organized designs. Omit only for root-level decorative elements.'
       },
       fillColor: {
         type: 'string' as const,
@@ -111,27 +126,29 @@ export interface CreateEllipseResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createEllipse(input: CreateEllipseInput): Promise<CreateEllipseResult> {
   // Validate input
-  const validated = CreateEllipseInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
-    'create_ellipse',
-    {
-      width: validated.width,
-      height: validated.height,
-      name: validated.name,
-      parentId: validated.parentId,
-      fillColor: validated.fillColor,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    nodeId?: string;
+    error?: string;
+  }>('create_ellipse', {
+    width: validated.width,
+    height: validated.height,
+    name: validated.name,
+    parentId: validated.parentId,
+    fillColor: validated.fillColor,
+    strokeColor: validated.strokeColor,
+    strokeWeight: validated.strokeWeight
+  });
   // Note: Response validated by bridge at protocol level
 
   const isCircle = validated.width === validated.height;
@@ -151,6 +168,18 @@ export async function createEllipse(input: CreateEllipseInput): Promise<CreateEl
   }
 
   cssEquivalent += '\n}';
+
+  // Register node in hierarchy registry
+  if (response.nodeId) {
+    const registry = getNodeRegistry();
+    registry.register(response.nodeId, {
+      type: 'ELLIPSE',
+      name: validated.name,
+      parentId: validated.parentId ?? null,
+      children: [],
+      bounds: { x: 0, y: 0, width: validated.width, height: validated.height }
+    });
+  }
 
   return {
     ellipseId: response.nodeId || '',

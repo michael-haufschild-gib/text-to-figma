@@ -64,6 +64,7 @@ export class Logger {
 
   /**
    * Create child logger with additional context
+   * @param context
    */
   child(context: Record<string, unknown>): Logger {
     return new Logger(this.config, { ...this.context, ...context });
@@ -71,6 +72,8 @@ export class Logger {
 
   /**
    * Log debug message
+   * @param message
+   * @param context
    */
   debug(message: string, context?: Record<string, unknown>): void {
     this.log('debug', message, context);
@@ -78,6 +81,8 @@ export class Logger {
 
   /**
    * Log info message
+   * @param message
+   * @param context
    */
   info(message: string, context?: Record<string, unknown>): void {
     this.log('info', message, context);
@@ -85,6 +90,8 @@ export class Logger {
 
   /**
    * Log warning message
+   * @param message
+   * @param context
    */
   warn(message: string, context?: Record<string, unknown>): void {
     this.log('warn', message, context);
@@ -92,6 +99,9 @@ export class Logger {
 
   /**
    * Log error message
+   * @param message
+   * @param error
+   * @param context
    */
   error(message: string, error?: Error, context?: Record<string, unknown>): void {
     const entry: LogEntry = {
@@ -114,6 +124,9 @@ export class Logger {
 
   /**
    * Log fatal message
+   * @param message
+   * @param error
+   * @param context
    */
   fatal(message: string, error?: Error, context?: Record<string, unknown>): void {
     const entry: LogEntry = {
@@ -136,6 +149,9 @@ export class Logger {
 
   /**
    * Core log method
+   * @param level
+   * @param message
+   * @param context
    */
   private log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
     // Check if log level is enabled
@@ -158,6 +174,7 @@ export class Logger {
 
   /**
    * Write log entry to output
+   * @param entry
    */
   private write(entry: LogEntry): void {
     if (this.config.pretty) {
@@ -169,6 +186,7 @@ export class Logger {
 
   /**
    * Write pretty-formatted log
+   * @param entry
    */
   private writePretty(entry: LogEntry): void {
     const timestamp = this.config.includeTimestamp
@@ -198,6 +216,7 @@ export class Logger {
 
   /**
    * Write JSON-formatted log
+   * @param entry
    */
   private writeJson(entry: LogEntry): void {
     const json = JSON.stringify(entry);
@@ -209,6 +228,7 @@ export class Logger {
 
   /**
    * Get ANSI color code for log level
+   * @param level
    */
   private getLevelColor(level: LogLevel): string {
     const colors: Record<LogLevel, string> = {
@@ -223,6 +243,7 @@ export class Logger {
 
   /**
    * Update logger configuration
+   * @param config
    */
   setConfig(config: Partial<LoggerConfig>): void {
     Object.assign(this.config, config);
@@ -243,6 +264,7 @@ let globalLogger: Logger | null = null;
 
 /**
  * Get global logger
+ * @param config
  */
 export function getLogger(config?: LoggerConfig): Logger {
   if (!globalLogger) {
@@ -260,6 +282,8 @@ export function resetLogger(): void {
 
 /**
  * Create scoped logger
+ * @param name
+ * @param config
  */
 export function createLogger(name: string, config?: LoggerConfig): Logger {
   return new Logger(config, { scope: name });

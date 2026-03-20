@@ -165,6 +165,7 @@ class Histogram {
   private sum: number = 0;
   private count: number = 0;
   private values: number[] = [];
+  private static readonly MAX_VALUES = 10000;
 
   constructor(_name: string, buckets?: number[]) {
     // Name stored for reference but not actively used
@@ -180,6 +181,11 @@ class Histogram {
     this.sum += value;
     this.count++;
     this.values.push(value);
+
+    // Evict oldest values to prevent unbounded memory growth
+    if (this.values.length > Histogram.MAX_VALUES) {
+      this.values = this.values.slice(-Histogram.MAX_VALUES);
+    }
 
     // Update bucket counts
     for (const bucket of this.buckets) {
@@ -317,65 +323,88 @@ export class MetricsRegistry {
 
   /**
    * Register a counter
+   * @param name
+   * @param description
+   * @param labels
    */
   counter(name: string, description?: string, labels?: string[]): Counter {
-    if (!this.counters.has(name)) {
-      this.counters.set(name, new Counter(name));
-      this.metadata.set(name, {
-        name,
-        type: 'counter',
-        description: description ?? '',
-        labels
-      });
+    const existing = this.counters.get(name);
+    if (existing) {
+      return existing;
     }
-    return this.counters.get(name)!;
+    const counter = new Counter(name);
+    this.counters.set(name, counter);
+    this.metadata.set(name, {
+      name,
+      type: 'counter',
+      description: description ?? '',
+      labels
+    });
+    return counter;
   }
 
   /**
    * Register a gauge
+   * @param name
+   * @param description
+   * @param labels
    */
   gauge(name: string, description?: string, labels?: string[]): Gauge {
-    if (!this.gauges.has(name)) {
-      this.gauges.set(name, new Gauge(name));
-      this.metadata.set(name, {
-        name,
-        type: 'gauge',
-        description: description ?? '',
-        labels
-      });
+    const existing = this.gauges.get(name);
+    if (existing) {
+      return existing;
     }
-    return this.gauges.get(name)!;
+    const gauge = new Gauge(name);
+    this.gauges.set(name, gauge);
+    this.metadata.set(name, {
+      name,
+      type: 'gauge',
+      description: description ?? '',
+      labels
+    });
+    return gauge;
   }
 
   /**
    * Register a histogram
+   * @param name
+   * @param description
+   * @param buckets
    */
   histogram(name: string, description?: string, buckets?: number[]): Histogram {
-    if (!this.histograms.has(name)) {
-      this.histograms.set(name, new Histogram(name, buckets));
-      this.metadata.set(name, {
-        name,
-        type: 'histogram',
-        description: description ?? ''
-      });
+    const existing = this.histograms.get(name);
+    if (existing) {
+      return existing;
     }
-    return this.histograms.get(name)!;
+    const histogram = new Histogram(name, buckets);
+    this.histograms.set(name, histogram);
+    this.metadata.set(name, {
+      name,
+      type: 'histogram',
+      description: description ?? ''
+    });
+    return histogram;
   }
 
   /**
    * Register a timer
+   * @param name
+   * @param description
    */
   timer(name: string, description?: string): Timer {
-    if (!this.timers.has(name)) {
-      this.timers.set(name, new Timer(name));
-      this.metadata.set(name, {
-        name,
-        type: 'timer',
-        description: description ?? '',
-        unit: 'seconds'
-      });
+    const existing = this.timers.get(name);
+    if (existing) {
+      return existing;
     }
-    return this.timers.get(name)!;
+    const timer = new Timer(name);
+    this.timers.set(name, timer);
+    this.metadata.set(name, {
+      name,
+      type: 'timer',
+      description: description ?? '',
+      unit: 'seconds'
+    });
+    return timer;
   }
 
   /**

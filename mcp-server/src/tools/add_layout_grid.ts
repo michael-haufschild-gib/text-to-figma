@@ -149,10 +149,11 @@ export interface AddLayoutGridResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function addLayoutGrid(input: AddLayoutGridInput): Promise<AddLayoutGridResult> {
   // Validate input
-  const validated = AddLayoutGridInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -160,19 +161,16 @@ export async function addLayoutGrid(input: AddLayoutGridInput): Promise<AddLayou
   // Send command to Figma
   // Note: bridge.sendToFigma validates success at protocol level
   // It only resolves if Figma returns success=true, otherwise rejects
-  await bridge.sendToFigma(
-    'add_layout_grid',
-    {
-      nodeId: validated.nodeId,
-      pattern: validated.pattern,
-      count: validated.count,
-      gutter: validated.gutter,
-      margin: validated.margin,
-      offset: validated.offset,
-      color: validated.color,
-      opacity: validated.opacity
-    }
-  )
+  await bridge.sendToFigmaWithRetry('add_layout_grid', {
+    nodeId: validated.nodeId,
+    pattern: validated.pattern,
+    count: validated.count,
+    gutter: validated.gutter,
+    margin: validated.margin,
+    offset: validated.offset,
+    color: validated.color,
+    opacity: validated.opacity
+  });
 
   // Build CSS equivalent
   let cssEquivalent = '';

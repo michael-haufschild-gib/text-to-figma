@@ -79,10 +79,11 @@ export interface GetPluginDataResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function getPluginData(input: GetPluginDataInput): Promise<GetPluginDataResult> {
   // Validate input
-  const validated = GetPluginDataInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

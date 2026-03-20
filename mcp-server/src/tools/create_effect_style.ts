@@ -146,25 +146,27 @@ export interface CreateEffectStyleResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createEffectStyle(
   input: CreateEffectStyleInput
 ): Promise<CreateEffectStyleResult> {
   // Validate input
-  const validated = CreateEffectStyleInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; styleId?: string; error?: string }>(
-    'create_effect_style',
-    {
-      name: validated.name,
-      effects: validated.effects,
-      description: validated.description
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    styleId?: string;
+    error?: string;
+  }>('create_effect_style', {
+    name: validated.name,
+    effects: validated.effects,
+    description: validated.description
+  });
   // Note: Response validated by bridge at protocol level
 
   return {

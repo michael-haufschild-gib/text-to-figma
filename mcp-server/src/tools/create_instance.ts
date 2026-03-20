@@ -43,7 +43,7 @@ export type PropertyOverride = z.infer<typeof propertyOverrideSchema>;
 /**
  * Input schema for create_instance tool
  */
-export const createInstanceInputSchema = z.object({
+export const CreateInstanceInputSchema = z.object({
   componentId: z.string().min(1).describe('ID of the component to instantiate'),
   name: z.string().optional().describe('Optional name for the instance'),
   x: z.number().optional().describe('X position in pixels (optional)'),
@@ -52,7 +52,7 @@ export const createInstanceInputSchema = z.object({
   overrides: z.array(propertyOverrideSchema).optional().describe('Optional property overrides')
 });
 
-export type CreateInstanceInput = z.infer<typeof createInstanceInputSchema>;
+export type CreateInstanceInput = z.infer<typeof CreateInstanceInputSchema>;
 
 /**
  * Result of creating an instance
@@ -66,10 +66,11 @@ export interface CreateInstanceResult {
 
 /**
  * Creates an instance of a component in Figma
+ * @param input
  */
 export async function createInstance(input: CreateInstanceInput): Promise<CreateInstanceResult> {
   // Validate input
-  const validated = createInstanceInputSchema.parse(input);
+  const validated = input;
 
   // Send to Figma
   const bridge = getFigmaBridge();

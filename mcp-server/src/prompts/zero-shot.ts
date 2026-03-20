@@ -402,10 +402,16 @@ Use these tools aggressively for complex drawings:
 5. **Verify constantly** - get_absolute_bounds, export_node
 `;
 
+/**
+ *
+ */
 export function getZeroShotPrompt(): string {
   return ZERO_SHOT_SYSTEM_PROMPT;
 }
 
+/**
+ *
+ */
 export function getCondensedPrompt(): string {
   return `# Text-to-Figma Quick Reference
 

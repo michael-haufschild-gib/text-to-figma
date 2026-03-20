@@ -126,10 +126,11 @@ export interface SetCornerRadiusResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function setCornerRadius(input: SetCornerRadiusInput): Promise<SetCornerRadiusResult> {
   // Validate input
-  const validated = SetCornerRadiusInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -140,17 +141,14 @@ export async function setCornerRadius(input: SetCornerRadiusInput): Promise<SetC
   // Send command to Figma
   // Note: bridge.sendToFigma validates success at protocol level
   // It only resolves if Figma returns success=true, otherwise rejects
-  await bridge.sendToFigma(
-    'set_corner_radius',
-    {
-      nodeId: validated.nodeId,
-      radius: validated.radius,
-      topLeft: validated.topLeft,
-      topRight: validated.topRight,
-      bottomRight: validated.bottomRight,
-      bottomLeft: validated.bottomLeft
-    }
-  );
+  await bridge.sendToFigmaWithRetry('set_corner_radius', {
+    nodeId: validated.nodeId,
+    radius: validated.radius,
+    topLeft: validated.topLeft,
+    topRight: validated.topRight,
+    bottomRight: validated.bottomRight,
+    bottomLeft: validated.bottomLeft
+  });
 
   // Build CSS equivalent
   let cssEquivalent = '';
@@ -172,10 +170,18 @@ export async function setCornerRadius(input: SetCornerRadiusInput): Promise<SetC
     message = `Set uniform corner radius: ${validated.radius}px`;
   } else {
     const corners: string[] = [];
-    if (validated.topLeft) {corners.push(`TL:${validated.topLeft}px`);}
-    if (validated.topRight) {corners.push(`TR:${validated.topRight}px`);}
-    if (validated.bottomRight) {corners.push(`BR:${validated.bottomRight}px`);}
-    if (validated.bottomLeft) {corners.push(`BL:${validated.bottomLeft}px`);}
+    if (validated.topLeft) {
+      corners.push(`TL:${validated.topLeft}px`);
+    }
+    if (validated.topRight) {
+      corners.push(`TR:${validated.topRight}px`);
+    }
+    if (validated.bottomRight) {
+      corners.push(`BR:${validated.bottomRight}px`);
+    }
+    if (validated.bottomLeft) {
+      corners.push(`BL:${validated.bottomLeft}px`);
+    }
     message = `Set individual corner radii: ${corners.join(', ')}`;
   }
 

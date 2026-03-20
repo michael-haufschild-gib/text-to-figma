@@ -27,7 +27,15 @@ export const SetStrokeInputSchema = z.object({
     .array(z.number())
     .optional()
     .describe('Dash pattern [dash, gap] for dashed strokes'),
-  opacity: z.number().min(0).max(1).optional().default(1).describe('Stroke opacity (0-1)')
+  opacity: z.number().min(0).max(1).optional().default(1).describe('Stroke opacity (0-1)'),
+  strokeJoin: z
+    .enum(['MITER', 'BEVEL', 'ROUND'])
+    .optional()
+    .describe('How corners are rendered (sharp/flat/rounded)'),
+  strokeCap: z
+    .enum(['NONE', 'ROUND', 'SQUARE'])
+    .optional()
+    .describe('How line endings are rendered')
 });
 
 export type SetStrokeInput = z.infer<typeof SetStrokeInputSchema>;
@@ -39,6 +47,15 @@ export const setStrokeToolDefinition = {
   name: 'set_stroke',
   description: `Sets stroke (border/outline) properties on a node.
 
+🎯 WHEN TO USE THIS TOOL:
+- Adding or updating strokes on EXISTING nodes
+- Styling borders, outlines, dividers
+
+⚠️ DON'T use this for:
+- New node creation (set stroke in create_* tools)
+
+CONSOLIDATED TOOL: Now includes strokeJoin and strokeCap (replaces set_stroke_join, set_stroke_cap)
+
 PRIMITIVE: Raw Figma stroke primitive - not a pre-made component.
 Use for: borders, outlines, dividers, emphasis, stroked shapes.
 
@@ -46,6 +63,16 @@ Stroke Alignment:
 - INSIDE: Stroke inside the shape boundary (most common for UI)
 - OUTSIDE: Stroke outside the shape boundary
 - CENTER: Stroke centered on the boundary
+
+Stroke Join (corners):
+- MITER: Sharp pointed corners (default)
+- BEVEL: Flat angled corners
+- ROUND: Rounded corners
+
+Stroke Cap (line endings):
+- NONE: Flat square ending at path endpoint (default)
+- ROUND: Circular rounded ending
+- SQUARE: Square ending that extends beyond path
 
 Example - Solid Border:
 set_stroke({
@@ -62,6 +89,15 @@ set_stroke({
   strokeColor: "#0066FF",
   strokeAlign: "CENTER",
   dashPattern: [5, 3]  // 5px dash, 3px gap
+})
+
+Example - Rounded Corners:
+set_stroke({
+  nodeId: "path-789",
+  strokeWeight: 3,
+  strokeColor: "#FF0000",
+  strokeJoin: "ROUND",
+  strokeCap: "ROUND"
 })
 
 CSS Equivalent (Solid):
@@ -101,6 +137,16 @@ border: 2px dashed #0066FF;`,
         minimum: 0,
         maximum: 1,
         default: 1
+      },
+      strokeJoin: {
+        type: 'string' as const,
+        enum: ['MITER', 'BEVEL', 'ROUND'],
+        description: 'How corners are rendered (optional)'
+      },
+      strokeCap: {
+        type: 'string' as const,
+        enum: ['NONE', 'ROUND', 'SQUARE'],
+        description: 'How line endings are rendered (optional)'
       }
     },
     required: ['nodeId', 'strokeWeight', 'strokeColor']
@@ -121,10 +167,11 @@ export interface SetStrokeResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function setStroke(input: SetStrokeInput): Promise<SetStrokeResult> {
   // Validate input
-  const validated = SetStrokeInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -132,17 +179,16 @@ export async function setStroke(input: SetStrokeInput): Promise<SetStrokeResult>
   // Send command to Figma
   // Note: bridge.sendToFigma validates success at protocol level
   // It only resolves if Figma returns success=true, otherwise rejects
-  await bridge.sendToFigma(
-    'set_stroke',
-    {
+  await bridge.sendToFigmaWithRetry('set_stroke', {
     nodeId: validated.nodeId,
     strokeWeight: validated.strokeWeight,
     strokeColor: validated.strokeColor,
     strokeAlign: validated.strokeAlign,
     dashPattern: validated.dashPattern,
-    opacity: validated.opacity
-  }
-  )
+    opacity: validated.opacity,
+    strokeJoin: validated.strokeJoin,
+    strokeCap: validated.strokeCap
+  });
 
   const isDashed = !!validated.dashPattern;
 

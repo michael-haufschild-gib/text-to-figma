@@ -98,25 +98,27 @@ export interface CreateColorStyleResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createColorStyle(
   input: CreateColorStyleInput
 ): Promise<CreateColorStyleResult> {
   // Validate input
-  const validated = CreateColorStyleInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; styleId?: string; error?: string }>(
-    'create_color_style',
-    {
-      name: validated.name,
-      color: validated.color,
-      description: validated.description
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    styleId?: string;
+    error?: string;
+  }>('create_color_style', {
+    name: validated.name,
+    color: validated.color,
+    description: validated.description
+  });
   // Note: Response validated by bridge at protocol level
 
   return {

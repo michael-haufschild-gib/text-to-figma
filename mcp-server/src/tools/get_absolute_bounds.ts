@@ -35,27 +35,46 @@ export interface BoundsInfo {
  */
 export const getAbsoluteBoundsToolDefinition = {
   name: 'get_absolute_bounds',
-  description: `Gets the absolute bounding box of a node.
+  description: `Gets the exact position and size of a node on the Figma canvas.
 
-PRIMITIVE: Raw Figma bounds primitive - not a pre-made component.
-Use for: measuring positions, collision detection, layout calculations.
+🎯 WHEN TO USE:
+- Positioning new elements relative to existing ones
+- Calculating gaps/spacing between elements
+- Measuring element sizes for documentation
+- Aligning elements that aren't in the same auto-layout
 
-Returns:
-- x, y: Top-left corner in absolute coordinates
-- width, height: Node dimensions
+📋 RETURNS:
+- x: Left edge position on canvas (pixels from origin)
+- y: Top edge position on canvas (pixels from origin)
+- width: Element width in pixels
+- height: Element height in pixels
 
-Example - Get Button Bounds:
-get_absolute_bounds({
-  nodeId: "button-123"
-})
+💡 COMMON PATTERNS:
 
-Use Cases:
-- Measure absolute positions
-- Calculate relative positions
-- Collision detection
-- Layout calculations
-- Positioning adjacent elements
-- Measuring gaps between nodes`,
+1. Position element to the right of another:
+   bounds = get_absolute_bounds({ nodeId: "button-123" })
+   newX = bounds.x + bounds.width + 16  // 16px gap
+   set_transform({ nodeId: "new-element", x: newX, y: bounds.y })
+
+2. Center-align two elements:
+   a = get_absolute_bounds({ nodeId: "element-a" })
+   b = get_absolute_bounds({ nodeId: "element-b" })
+   centerA = a.x + (a.width / 2)
+   newX = centerA - (b.width / 2)
+
+3. Measure gap between elements:
+   top = get_absolute_bounds({ nodeId: "header" })
+   bottom = get_absolute_bounds({ nodeId: "content" })
+   gap = bottom.y - (top.y + top.height)
+
+⚠️ NOTE: These are ABSOLUTE coordinates (relative to canvas origin),
+not relative to parent. For parent-relative positioning, use
+get_relative_bounds or set_transform with x/y.
+
+🔗 RELATED TOOLS:
+- get_relative_bounds: Position relative to another node
+- set_transform: Move/resize nodes
+- align_nodes: Align multiple nodes automatically`,
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -81,12 +100,13 @@ export interface GetAbsoluteBoundsResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function getAbsoluteBounds(
   input: GetAbsoluteBoundsInput
 ): Promise<GetAbsoluteBoundsResult> {
   // Validate input
-  const validated = GetAbsoluteBoundsInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

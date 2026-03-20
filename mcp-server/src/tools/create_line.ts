@@ -150,30 +150,32 @@ export interface CreateLineResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createLine(input: CreateLineInput): Promise<CreateLineResult> {
   // Validate input
-  const validated = CreateLineInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
-    'create_line',
-    {
-      x1: validated.x1,
-      y1: validated.y1,
-      x2: validated.x2,
-      y2: validated.y2,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight,
-      strokeCap: validated.strokeCap,
-      dashPattern: validated.dashPattern,
-      name: validated.name,
-      parentId: validated.parentId
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    nodeId?: string;
+    error?: string;
+  }>('create_line', {
+    x1: validated.x1,
+    y1: validated.y1,
+    x2: validated.x2,
+    y2: validated.y2,
+    strokeColor: validated.strokeColor,
+    strokeWeight: validated.strokeWeight,
+    strokeCap: validated.strokeCap,
+    dashPattern: validated.dashPattern,
+    name: validated.name,
+    parentId: validated.parentId
+  });
   // Note: Response validated by bridge at protocol level
 
   // Calculate line properties

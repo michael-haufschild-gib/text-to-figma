@@ -61,7 +61,7 @@ export interface ToolDefinition {
  * ```typescript
  * export const createFrameHandler: ToolHandler<CreateFrameInput, CreateFrameResult> = {
  *   name: 'create_frame',
- *   schema: createFrameInputSchema,
+ *   schema: CreateFrameInputSchema,
  *   execute: createFrame,
  *   formatResponse: (result) => [{
  *     type: 'text',

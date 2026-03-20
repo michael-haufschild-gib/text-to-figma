@@ -9,6 +9,45 @@
 import WebSocket from 'ws';
 import { z } from 'zod';
 import { getConfig } from './config.js';
+import { ErrorCode, createError, type StructuredError } from './errors/index.js';
+
+/**
+ * Figma Bridge Error with structured error support
+ * (Defined early because CircuitBreaker uses it)
+ */
+export class FigmaBridgeError extends Error {
+  public readonly structuredError: StructuredError;
+
+  constructor(errorOrMessage: StructuredError | string, legacyCode?: string) {
+    if (typeof errorOrMessage === 'string') {
+      // Legacy constructor support: (message, code)
+      const code = (legacyCode as ErrorCode) || ErrorCode.SYS_INTERNAL;
+      const structured = createError(code, errorOrMessage);
+      super(errorOrMessage);
+      this.structuredError = structured;
+    } else {
+      // New constructor: (StructuredError)
+      super(errorOrMessage.message);
+      this.structuredError = errorOrMessage;
+    }
+    this.name = 'FigmaBridgeError';
+  }
+
+  /** Machine-readable error code */
+  get code(): ErrorCode {
+    return this.structuredError.code;
+  }
+
+  /** Suggested action to resolve */
+  get suggestion(): string | undefined {
+    return this.structuredError.suggestion;
+  }
+
+  /** Additional error details */
+  get details(): Record<string, unknown> | undefined {
+    return this.structuredError.details;
+  }
+}
 
 /**
  * Circuit breaker states
@@ -45,7 +84,9 @@ class CircuitBreaker {
         this.state = CircuitState.HALF_OPEN;
         this.successCount = 0;
       } else {
-        throw new Error('Circuit breaker is OPEN - service unavailable');
+        throw new FigmaBridgeError(
+          createError(ErrorCode.SYS_CIRCUIT_OPEN, 'Circuit breaker is OPEN - service unavailable')
+        );
       }
     }
 
@@ -91,16 +132,16 @@ class CircuitBreaker {
 }
 
 /**
- * Request message schema
+ * Request message sent to Figma plugin
  */
-const requestSchema = z.object({
-  id: z.string(),
-  type: z.string(),
-  payload: z.unknown()
-});
+export interface FigmaRequest {
+  id: string;
+  type: string;
+  payload: unknown;
+}
 
 /**
- * Response message schema
+ * Response message schema (used for runtime validation)
  */
 const responseSchema = z.object({
   id: z.string(),
@@ -109,21 +150,7 @@ const responseSchema = z.object({
   error: z.string().optional()
 });
 
-export type FigmaRequest = z.infer<typeof requestSchema>;
 export type FigmaResponse = z.infer<typeof responseSchema>;
-
-/**
- * Figma Bridge Error
- */
-export class FigmaBridgeError extends Error {
-  constructor(
-    message: string,
-    public code: string
-  ) {
-    super(message);
-    this.name = 'FigmaBridgeError';
-  }
-}
 
 /**
  * Pending request tracking
@@ -153,6 +180,7 @@ export class FigmaBridge {
   private reconnectAttempts = 0;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private healthCheckInterval: ReturnType<typeof setInterval> | null = null;
+  private connectingPromise: Promise<void> | null = null;
   private readonly circuitBreaker: CircuitBreaker;
   private readonly maxReconnectAttempts: number;
   private readonly wsUrl: string;
@@ -181,7 +209,12 @@ export class FigmaBridge {
       return;
     }
 
-    return new Promise((resolve, reject) => {
+    // Prevent concurrent connection attempts — return existing promise if one is in flight
+    if (this.connectingPromise) {
+      return this.connectingPromise;
+    }
+
+    this.connectingPromise = new Promise<void>((resolve, reject) => {
       try {
         this.ws = new WebSocket(this.wsUrl);
 
@@ -203,7 +236,11 @@ export class FigmaBridge {
         this.ws.on('error', (error: Error) => {
           console.error('[FigmaBridge] WebSocket error:', error.message);
           if (!this.connected) {
-            reject(new FigmaBridgeError('Failed to connect to Figma plugin', 'CONNECTION_FAILED'));
+            reject(
+              new FigmaBridgeError(
+                createError(ErrorCode.CONN_FAILED, 'Failed to connect to Figma plugin')
+              )
+            );
           }
         });
 
@@ -217,17 +254,22 @@ export class FigmaBridge {
         setTimeout(() => {
           if (!this.connected) {
             this.ws?.close();
-            reject(new FigmaBridgeError('Connection timeout', 'CONNECTION_TIMEOUT'));
+            reject(new FigmaBridgeError(createError(ErrorCode.CONN_TIMEOUT, 'Connection timeout')));
           }
         }, 5000);
       } catch (error) {
         reject(error);
       }
+    }).finally(() => {
+      this.connectingPromise = null;
     });
+
+    return this.connectingPromise;
   }
 
   /**
    * Handles incoming WebSocket messages
+   * @param data
    */
   private handleMessage(data: WebSocket.Data): void {
     try {
@@ -244,7 +286,15 @@ export class FigmaBridge {
         return;
       }
 
-      const message: unknown = JSON.parse(messageStr);
+      const message: Record<string, unknown> = JSON.parse(messageStr) as Record<string, unknown>;
+
+      // Handle connection/info messages (not responses to requests)
+      if (message.type === 'connection' || message.type === 'info') {
+        console.error(`[FigmaBridge] ${message.type}: ${message.message || 'message received'}`);
+        return;
+      }
+
+      // Parse as response message
       const response = responseSchema.parse(message);
 
       const pending = this.pendingRequests.get(response.id);
@@ -254,8 +304,13 @@ export class FigmaBridge {
         pending.resolve(response);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[FigmaBridge] Failed to parse message:', errorMessage);
+      if (error instanceof z.ZodError) {
+        // Schema validation failed — not a response message, safe to ignore
+        console.error('[FigmaBridge] Received non-response message (ignoring)');
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('[FigmaBridge] Failed to parse message:', errorMessage);
+      }
     }
   }
 
@@ -266,7 +321,9 @@ export class FigmaBridge {
     // Reject all pending requests
     for (const [id, pending] of this.pendingRequests.entries()) {
       clearTimeout(pending.timeout);
-      pending.reject(new FigmaBridgeError('Connection lost', 'CONNECTION_LOST'));
+      pending.reject(
+        new FigmaBridgeError(createError(ErrorCode.CONN_LOST, 'Connection lost', { requestId: id }))
+      );
       this.pendingRequests.delete(id);
     }
 
@@ -290,13 +347,18 @@ export class FigmaBridge {
 
   /**
    * Sends a request to Figma and returns a promise for the response
+   * @param type
+   * @param payload
    */
   async sendToFigma<T = unknown>(type: string, payload: unknown): Promise<T> {
     if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      throw new FigmaBridgeError('Not connected to Figma plugin', 'NOT_CONNECTED');
+      throw new FigmaBridgeError(
+        createError(ErrorCode.CONN_NOT_CONNECTED, 'Not connected to Figma plugin')
+      );
     }
 
-    const id = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const ws = this.ws;
+    const id = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     const request: FigmaRequest = { id, type, payload };
 
     return new Promise((resolve, reject) => {
@@ -304,7 +366,11 @@ export class FigmaBridge {
         const pending = this.pendingRequests.get(id);
         if (pending && !pending.aborted) {
           this.pendingRequests.delete(id);
-          reject(new FigmaBridgeError('Request timeout', 'REQUEST_TIMEOUT'));
+          reject(
+            new FigmaBridgeError(
+              createError(ErrorCode.OP_TIMEOUT, 'Request timeout', { requestId: id })
+            )
+          );
         }
       }, this.requestTimeout);
 
@@ -313,7 +379,11 @@ export class FigmaBridge {
           if (response.success) {
             resolve(response.data as T);
           } else {
-            reject(new FigmaBridgeError(response.error || 'Request failed', 'REQUEST_FAILED'));
+            reject(
+              new FigmaBridgeError(
+                createError(ErrorCode.OP_FAILED, response.error || 'Request failed')
+              )
+            );
           }
         },
         reject,
@@ -322,7 +392,7 @@ export class FigmaBridge {
       });
 
       try {
-        this.ws!.send(JSON.stringify(request));
+        ws.send(JSON.stringify(request));
       } catch (error) {
         clearTimeout(timeout);
         this.pendingRequests.delete(id);
@@ -334,16 +404,21 @@ export class FigmaBridge {
   /**
    * Sends a cancellable request to Figma
    * Returns both the promise and an abort controller
+   * @param type
+   * @param payload
    */
   sendToFigmaWithAbort<T = unknown>(
     type: string,
     payload: unknown
   ): { promise: Promise<T>; abort: RequestAbortController } {
     if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      throw new FigmaBridgeError('Not connected to Figma plugin', 'NOT_CONNECTED');
+      throw new FigmaBridgeError(
+        createError(ErrorCode.CONN_NOT_CONNECTED, 'Not connected to Figma plugin')
+      );
     }
 
-    const id = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const ws = this.ws;
+    const id = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
     const request: FigmaRequest = { id, type, payload };
 
     const abortController: RequestAbortController = {
@@ -363,7 +438,11 @@ export class FigmaBridge {
         const pending = this.pendingRequests.get(id);
         if (pending && !pending.aborted) {
           this.pendingRequests.delete(id);
-          reject(new FigmaBridgeError('Request timeout', 'REQUEST_TIMEOUT'));
+          reject(
+            new FigmaBridgeError(
+              createError(ErrorCode.OP_TIMEOUT, 'Request timeout', { requestId: id })
+            )
+          );
         }
       }, this.requestTimeout);
 
@@ -376,7 +455,11 @@ export class FigmaBridge {
           if (response.success) {
             resolve(response.data as T);
           } else {
-            reject(new FigmaBridgeError(response.error || 'Request failed', 'REQUEST_FAILED'));
+            reject(
+              new FigmaBridgeError(
+                createError(ErrorCode.OP_FAILED, response.error || 'Request failed')
+              )
+            );
           }
         },
         reject,
@@ -385,7 +468,7 @@ export class FigmaBridge {
       });
 
       try {
-        this.ws!.send(JSON.stringify(request));
+        ws.send(JSON.stringify(request));
       } catch (error) {
         clearTimeout(timeout);
         this.pendingRequests.delete(id);
@@ -404,6 +487,12 @@ export class FigmaBridge {
   /**
    * Sends a request with automatic retry and exponential backoff
    * Uses circuit breaker to prevent cascading failures
+   * @param type
+   * @param payload
+   * @param options
+   * @param options.maxRetries
+   * @param options.baseDelay
+   * @param options.maxDelay
    */
   async sendToFigmaWithRetry<T = unknown>(
     type: string,
@@ -431,11 +520,11 @@ export class FigmaBridge {
         lastError = error as Error;
 
         // Don't retry on validation errors or if it's the last attempt
-        if (
-          lastError.message.includes('validation') ||
-          lastError.message.includes('Invalid') ||
-          attempt === maxRetries - 1
-        ) {
+        const isValidationError =
+          (lastError instanceof FigmaBridgeError && lastError.code.startsWith('VAL_')) ||
+          lastError.name === 'ZodError' ||
+          lastError.name === 'ValidationError';
+        if (isValidationError || attempt === maxRetries - 1) {
           throw lastError;
         }
 
@@ -460,7 +549,7 @@ export class FigmaBridge {
       }
     }
 
-    throw new Error(lastError?.message ?? 'All retry attempts failed');
+    throw lastError ?? new Error('All retry attempts failed');
   }
 
   /**
@@ -468,6 +557,25 @@ export class FigmaBridge {
    */
   isConnected(): boolean {
     return this.connected && this.ws?.readyState === WebSocket.OPEN;
+  }
+
+  /**
+   * Returns detailed connection status for diagnostics
+   */
+  getConnectionStatus(): {
+    connected: boolean;
+    wsReadyState: number | undefined;
+    pendingRequests: number;
+    circuitBreakerState: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+    reconnectAttempts: number;
+  } {
+    return {
+      connected: this.isConnected(),
+      wsReadyState: this.ws?.readyState,
+      pendingRequests: this.pendingRequests.size,
+      circuitBreakerState: this.circuitBreaker.getState(),
+      reconnectAttempts: this.reconnectAttempts
+    };
   }
 
   /**
@@ -534,7 +642,11 @@ export class FigmaBridge {
     // Reject all pending requests
     for (const [id, pending] of this.pendingRequests.entries()) {
       clearTimeout(pending.timeout);
-      pending.reject(new FigmaBridgeError('Bridge disconnected', 'DISCONNECTED'));
+      pending.reject(
+        new FigmaBridgeError(
+          createError(ErrorCode.CONN_LOST, 'Bridge disconnected', { requestId: id })
+        )
+      );
       this.pendingRequests.delete(id);
     }
   }

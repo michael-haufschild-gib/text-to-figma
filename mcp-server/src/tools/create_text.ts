@@ -11,15 +11,16 @@ import {
   fontSizeSchema,
   fontWeightSchema,
   getRecommendedLineHeight,
-  VALID_FONT_SIZES,
-  type FontSize
+  VALID_FONT_SIZES
 } from '../constraints/typography.js';
 import { getFigmaBridge } from '../figma-bridge.js';
-import {
-  validateParentRelationship,
-  formatValidationError
-} from '../utils/parent-validator.js';
 import { getLogger } from '../monitoring/logger.js';
+import { getNodeRegistry } from '../node-registry.js';
+import {
+  formatValidationError,
+  validateParentRelationship,
+  getHierarchyPatternExamples
+} from '../utils/parent-validator.js';
 
 const logger = getLogger().child({ tool: 'create_text' });
 
@@ -32,7 +33,7 @@ export type TextAlign = z.infer<typeof textAlignSchema>;
 /**
  * Input schema for create_text tool
  */
-export const createTextInputSchema = z.object({
+export const CreateTextInputSchema = z.object({
   content: z.string().min(1).describe('Text content to display'),
   fontSize: fontSizeSchema.default(16).describe('Font size in pixels (must be in type scale)'),
   fontFamily: z.string().default('Inter').describe('Font family name'),
@@ -48,7 +49,7 @@ export const createTextInputSchema = z.object({
   parentId: z.string().optional().describe('Parent frame ID to place this text inside')
 });
 
-export type CreateTextInput = z.infer<typeof createTextInputSchema>;
+export type CreateTextInput = z.infer<typeof CreateTextInputSchema>;
 
 /**
  * Result of creating text
@@ -61,6 +62,8 @@ export interface CreateTextResult {
 
 /**
  * Generates CSS equivalent for text properties
+ * @param input
+ * @param appliedLineHeight
  */
 function generateCssEquivalent(input: CreateTextInput, appliedLineHeight: number): string {
   const fontWeightName =
@@ -88,10 +91,11 @@ function generateCssEquivalent(input: CreateTextInput, appliedLineHeight: number
 
 /**
  * Creates a text node in Figma
+ * @param input
  */
 export async function createText(input: CreateTextInput): Promise<CreateTextResult> {
   // Validate input
-  const validated = createTextInputSchema.parse(input);
+  const validated = input;
 
   // Validate parent relationship - STRICT MODE to enforce hierarchy
   const parentValidation = await validateParentRelationship('text', validated.parentId, {
@@ -102,15 +106,21 @@ export async function createText(input: CreateTextInput): Promise<CreateTextResu
   // Throw error if parent validation failed
   if (!parentValidation.isValid) {
     const errorMessage = formatValidationError(parentValidation);
-    logger.error('Parent validation failed - text must have a parent container', new Error(errorMessage), {
-      input: validated
-    });
-    throw new Error(errorMessage);
+    const patternExamples = getHierarchyPatternExamples('text');
+    const fullError = `${errorMessage}\n\n${patternExamples}`;
+
+    logger.error(
+      'Parent validation failed - text must have a parent container',
+      new Error(errorMessage),
+      {
+        input: validated
+      }
+    );
+    throw new Error(fullError);
   }
 
   // Calculate line height if not provided
-  const appliedLineHeight =
-    validated.lineHeight ?? getRecommendedLineHeight(validated.fontSize as FontSize);
+  const appliedLineHeight = validated.lineHeight ?? getRecommendedLineHeight(validated.fontSize);
 
   // Generate CSS equivalent
   const cssEquivalent = generateCssEquivalent(validated, appliedLineHeight);
@@ -134,6 +144,16 @@ export async function createText(input: CreateTextInput): Promise<CreateTextResu
     throw new Error('Figma plugin returned invalid response: missing nodeId field');
   }
 
+  // Register node in hierarchy registry
+  const registry = getNodeRegistry();
+  registry.register(response.nodeId, {
+    type: 'TEXT',
+    name: validated.content.substring(0, 50), // Use first 50 chars as name
+    parentId: validated.parentId ?? null,
+    children: [],
+    bounds: { x: 0, y: 0, width: 0, height: 0 } // Will be updated on next hierarchy refresh
+  });
+
   return {
     textId: response.nodeId,
     cssEquivalent,
@@ -149,6 +169,19 @@ export const createTextToolDefinition = {
   description: `Creates a text node in Figma with typography constraints.
 
 HTML/CSS Analogy: Like setting text content with CSS font properties.
+
+📋 RECOMMENDED WORKFLOW:
+1. Use get_page_hierarchy to see current structure
+2. Option A (Multi-element): Use create_design to create text + container together
+3. Option B (Single text node):
+   - First: Create or identify parent frame
+   - Then: Create text with parentId
+
+🎯 WHEN TO USE THIS TOOL:
+- Adding a single text element to an existing frame
+- Building UI step-by-step (for simple designs)
+
+⚠️ For designs with text + other elements, prefer create_design instead.
 
 🚨 MANDATORY REQUIREMENT: parentId is REQUIRED
 - Text nodes CANNOT exist at canvas root (just like text can't float outside HTML elements)
@@ -220,30 +253,10 @@ line-height: 29px; // auto-calculated`,
       },
       parentId: {
         type: 'string' as const,
-        description: '⚠️ RECOMMENDED: Parent frame ID to place text inside. Without this, text will be at canvas root.'
+        description:
+          '⚠️ REQUIRED: Parent frame ID to place text inside. Text nodes CANNOT exist at canvas root - you must create a frame first, then place text inside it with parentId.'
       }
     },
-    required: ['content']
+    required: ['content', 'parentId']
   }
-};
-
-/**
- * Handler export for tool registration
- */
-export const createTextHandler: import('../routing/tool-handler.js').ToolHandler<
-  CreateTextInput,
-  CreateTextResult
-> = {
-  name: 'create_text',
-  schema: createTextInputSchema as any,
-  execute: createText,
-  formatResponse: (result) => {
-    let text = `Text Created Successfully\n`;
-    text += `Text ID: ${result.textId}\n`;
-    text += `Applied Line Height: ${result.appliedLineHeight}px\n\n`;
-    text += `CSS Equivalent:\n  ${result.cssEquivalent}\n`;
-
-    return [{ type: 'text', text }];
-  },
-  definition: createTextToolDefinition
 };

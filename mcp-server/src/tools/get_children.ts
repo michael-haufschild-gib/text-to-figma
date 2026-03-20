@@ -41,33 +41,47 @@ export interface ChildNodeInfo {
  */
 export const getChildrenToolDefinition = {
   name: 'get_children',
-  description: `Gets child nodes of a container.
+  description: `Lists all child nodes inside a container (frame, group, component).
 
-PRIMITIVE: Raw Figma node tree primitive - not a pre-made component.
-Use for: navigating hierarchy, batch operations, inspecting structure.
+🎯 WHEN TO USE:
+- Exploring what's inside a frame before modifying it
+- Finding all elements to batch-update (e.g., change all text colors)
+- Understanding component structure before replicating
+- Verifying node creation succeeded
 
-Options:
+📋 PARAMETERS:
+- nodeId: The container to inspect
 - recursive: false (default) = Direct children only
-- recursive: true = All descendants (entire subtree)
+              true = All descendants (entire subtree flattened)
 
-Example - Get Direct Children:
-get_children({
-  nodeId: "card-frame-123",
-  recursive: false
-})
+📋 RETURNS (for each child):
+- nodeId: Use this to target the child in subsequent operations
+- name: Layer name as shown in Figma
+- type: FRAME, TEXT, ELLIPSE, RECTANGLE, GROUP, etc.
+- visible: Whether layer is visible
+- locked: Whether layer is locked
 
-Example - Get All Descendants:
-get_children({
-  nodeId: "page-456",
-  recursive: true
-})
+💡 COMMON PATTERNS:
 
-Use Cases:
-- Inspect component structure
-- Batch update child nodes
-- Navigate design hierarchy
-- Validate layer organization
-- Find nested elements`,
+1. List items in a container:
+   children = get_children({ nodeId: "card-frame-123" })
+   // Returns: [{ nodeId: "...", name: "Title", type: "TEXT" }, ...]
+
+2. Find all text nodes in a design:
+   all = get_children({ nodeId: "page-root", recursive: true })
+   textNodes = all.children.filter(c => c.type === "TEXT")
+
+3. Count elements:
+   result = get_children({ nodeId: "list-container" })
+   console.log(\`Found \${result.childCount} items\`)
+
+⚠️ TIP: Use recursive=false first for performance. Only use recursive=true
+when you need to search through nested hierarchies.
+
+🔗 RELATED TOOLS:
+- get_parent: Navigate UP the tree
+- get_node_info: Get detailed properties of a specific child
+- get_page_hierarchy: See entire page as a tree structure`,
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -97,10 +111,11 @@ export interface GetChildrenResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function getChildren(input: GetChildrenInput): Promise<GetChildrenResult> {
   // Validate input
-  const validated = GetChildrenInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

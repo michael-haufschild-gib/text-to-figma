@@ -83,10 +83,11 @@ export interface ApplyFillStyleResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function applyFillStyle(input: ApplyFillStyleInput): Promise<ApplyFillStyleResult> {
   // Validate input
-  const validated = ApplyFillStyleInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

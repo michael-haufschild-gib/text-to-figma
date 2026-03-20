@@ -10,10 +10,10 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
-import { createScopedLogger } from '../utils/logger.js';
+import { getLogger } from '../monitoring/logger.js';
 import { createToolResult, type ToolResult } from '../utils/tool-result.js';
 
-const log = createScopedLogger('set_layer_order');
+const log = getLogger().child({ tool: 'set_layer_order' });
 
 /**
  * Layer order options
@@ -138,16 +138,17 @@ export type SetLayerOrderResult = ToolResult<SetLayerOrderData>;
 
 /**
  * Implementation
+ * @param input
  */
 export async function setLayerOrder(input: SetLayerOrderInput): Promise<SetLayerOrderResult> {
   const startTime = Date.now();
 
   // Validate input
-  const validated = SetLayerOrderInputSchema.parse(input);
+  const validated = input;
 
   if (validated.action === 'SET_INDEX' && validated.index === undefined) {
     const error = new Error('index is required when action is SET_INDEX');
-    log.error('Validation failed', { error: error.message, input });
+    log.error('Validation failed', error, { input });
     throw error;
   }
 
@@ -190,10 +191,9 @@ export async function setLayerOrder(input: SetLayerOrderInput): Promise<SetLayer
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    log.error('Failed to set layer order', {
+    log.error('Failed to set layer order', error instanceof Error ? error : undefined, {
       nodeId: validated.nodeId,
       action: validated.action,
-      error: errorMessage,
       duration
     });
 

@@ -25,6 +25,7 @@ export const spacingSchema = z
 
 /**
  * Validates if a value conforms to the 8pt grid system
+ * @param value
  */
 export function isValidSpacing(value: number): value is SpacingValue {
   return VALID_SPACING_VALUES.includes(value as SpacingValue);
@@ -32,9 +33,12 @@ export function isValidSpacing(value: number): value is SpacingValue {
 
 /**
  * Snaps a value to the nearest valid spacing value
+ * @param value
  */
 export function snapToGrid(value: number): SpacingValue {
-  if (value <= 0) {return 0;}
+  if (value <= 0) {
+    return 0;
+  }
 
   let closest: SpacingValue = VALID_SPACING_VALUES[0];
   let minDiff = Math.abs(value - closest);
@@ -62,6 +66,7 @@ export interface SpacingConstraintResult {
 
 /**
  * Validates spacing and returns detailed result
+ * @param value
  */
 export function validateSpacing(value: number): SpacingConstraintResult {
   if (isValidSpacing(value)) {

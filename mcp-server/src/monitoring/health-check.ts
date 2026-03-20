@@ -53,6 +53,8 @@ export class HealthCheckRegistry {
 
   /**
    * Register a health checker
+   * @param name
+   * @param checker
    */
   register(name: string, checker: HealthChecker): void {
     this.checkers.set(name, checker);
@@ -60,6 +62,7 @@ export class HealthCheckRegistry {
 
   /**
    * Unregister a health checker
+   * @param name
    */
   unregister(name: string): void {
     this.checkers.delete(name);
@@ -125,6 +128,8 @@ export class HealthCheckRegistry {
 
 /**
  * Memory usage health checker
+ * @param warnThreshold
+ * @param criticalThreshold
  */
 export function createMemoryHealthChecker(
   warnThreshold: number = 0.8,
@@ -165,6 +170,8 @@ export function createMemoryHealthChecker(
 
 /**
  * Error rate health checker
+ * @param warnThreshold
+ * @param criticalThreshold
  */
 export function createErrorRateHealthChecker(
   warnThreshold: number = 10,
@@ -205,6 +212,7 @@ export function createErrorRateHealthChecker(
 
 /**
  * Figma connection health checker
+ * @param checkConnection
  */
 export function createFigmaConnectionHealthChecker(checkConnection: () => boolean): HealthChecker {
   return (): ComponentHealth => {
@@ -224,6 +232,8 @@ export function createFigmaConnectionHealthChecker(checkConnection: () => boolea
 
 /**
  * Cache health checker
+ * @param cache
+ * @param cache.getStatistics
  */
 export function createCacheHealthChecker(cache: {
   getStatistics: () => { hitRate: number; memoryUsage: number; maxMemoryUsage: number };

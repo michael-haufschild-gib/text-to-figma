@@ -164,29 +164,31 @@ export interface CreateTextStyleResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createTextStyle(input: CreateTextStyleInput): Promise<CreateTextStyleResult> {
   // Validate input
-  const validated = CreateTextStyleInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; styleId?: string; error?: string }>(
-    'create_text_style',
-    {
-      name: validated.name,
-      fontFamily: validated.fontFamily,
-      fontSize: validated.fontSize,
-      fontWeight: validated.fontWeight,
-      lineHeight: validated.lineHeight,
-      letterSpacing: validated.letterSpacing,
-      textCase: validated.textCase,
-      textDecoration: validated.textDecoration,
-      description: validated.description
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    styleId?: string;
+    error?: string;
+  }>('create_text_style', {
+    name: validated.name,
+    fontFamily: validated.fontFamily,
+    fontSize: validated.fontSize,
+    fontWeight: validated.fontWeight,
+    lineHeight: validated.lineHeight,
+    letterSpacing: validated.letterSpacing,
+    textCase: validated.textCase,
+    textDecoration: validated.textDecoration,
+    description: validated.description
+  });
   // Note: Response validated by bridge at protocol level
 
   return {

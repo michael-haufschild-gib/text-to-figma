@@ -10,10 +10,10 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
-import { createScopedLogger } from '../utils/logger.js';
+import { getLogger } from '../monitoring/logger.js';
 import { createToolResult, type ToolResult } from '../utils/tool-result.js';
 
-const log = createScopedLogger('align_nodes');
+const log = getLogger().child({ tool: 'align_nodes' });
 
 /**
  * Alignment options
@@ -134,16 +134,17 @@ export type AlignNodesResult = ToolResult<AlignNodesData>;
 
 /**
  * Implementation
+ * @param input
  */
 export async function alignNodes(input: AlignNodesInput): Promise<AlignNodesResult> {
   const startTime = Date.now();
 
   // Validate input
-  const validated = AlignNodesInputSchema.parse(input);
+  const validated = input;
 
   if (validated.nodeIds.length < 2) {
     const error = new Error('Must provide at least 2 nodes to align');
-    log.error('Validation failed', { error: error.message, nodeCount: validated.nodeIds.length });
+    log.error('Validation failed', error, { nodeCount: validated.nodeIds.length });
     throw error;
   }
 
@@ -189,10 +190,9 @@ export async function alignNodes(input: AlignNodesInput): Promise<AlignNodesResu
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    log.error('Failed to align nodes', {
+    log.error('Failed to align nodes', error instanceof Error ? error : undefined, {
       nodeIds: validated.nodeIds,
       alignment: validated.alignment,
-      error: errorMessage,
       duration
     });
 

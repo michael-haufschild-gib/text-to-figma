@@ -16,13 +16,12 @@ import {
   TextSize,
   WCAGLevel
 } from '../constraints/color.js';
-import { monitoredToolExecutionSync } from '../monitoring/tool-wrapper.js';
 import { adjustLightness, rgbToLch } from '../utils/color-converter.js';
 
 /**
  * Input schema for check_wcag_contrast tool
  */
-export const checkWcagContrastInputSchema = z.object({
+export const CheckWcagContrastInputSchema = z.object({
   foreground: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
@@ -40,7 +39,7 @@ export const checkWcagContrastInputSchema = z.object({
     .describe('Font weight (100-900, default: 400)')
 });
 
-export type CheckWcagContrastInput = z.infer<typeof checkWcagContrastInputSchema>;
+export type CheckWcagContrastInput = z.infer<typeof CheckWcagContrastInputSchema>;
 
 /**
  * Compliance status for a specific WCAG level
@@ -77,6 +76,8 @@ export interface CheckWcagContrastResult {
 /**
  * Determines if text is considered "large" according to WCAG
  * Large text: 18pt+ regular or 14pt+ bold
+ * @param fontSize
+ * @param fontWeight
  */
 function isLargeText(fontSize: number, fontWeight: number): boolean {
   if (fontSize >= 18) {
@@ -90,6 +91,9 @@ function isLargeText(fontSize: number, fontWeight: number): boolean {
 
 /**
  * Generates color suggestions to achieve target contrast ratio
+ * @param foreground
+ * @param background
+ * @param targetRatio
  */
 function generateColorSuggestions(
   foreground: RGB,
@@ -198,71 +202,73 @@ function generateColorSuggestions(
 
 /**
  * Checks WCAG contrast compliance
+ * @param input
  */
 export function checkWcagContrast(input: CheckWcagContrastInput): CheckWcagContrastResult {
-  return monitoredToolExecutionSync('check_wcag_contrast', input, (validated) => {
-    // Convert colors to RGB
-    const foreground = hexToRgb(validated.foreground);
-    const background = hexToRgb(validated.background);
+  const validated = input;
 
-    if (!foreground || !background) {
-      throw new Error('Invalid hex color format');
-    }
+  // Convert colors to RGB
+  const foreground = hexToRgb(validated.foreground);
+  const background = hexToRgb(validated.background);
 
-    // Calculate contrast ratio
-    const contrastRatio = getContrastRatio(foreground, background);
+  if (!foreground || !background) {
+    throw new Error('Invalid hex color format');
+  }
 
-    // Determine text size category
-    const largeText = isLargeText(validated.fontSize, validated.fontWeight);
-    const textSize = largeText ? TextSize.Large : TextSize.Normal;
+  // Calculate contrast ratio
+  const contrastRatio = getContrastRatio(foreground, background);
 
-    // Check compliance
-    const aaThreshold = CONTRAST_THRESHOLDS[WCAGLevel.AA][textSize];
-    const aaaThreshold = CONTRAST_THRESHOLDS[WCAGLevel.AAA][textSize];
+  // Determine text size category
+  const largeText = isLargeText(validated.fontSize, validated.fontWeight);
+  const textSize = largeText ? TextSize.Large : TextSize.Normal;
 
-    const aaCompliance: ComplianceStatus = {
-      level: WCAGLevel.AA,
-      passes: contrastRatio >= aaThreshold,
-      threshold: aaThreshold
-    };
+  // Check compliance
+  const aaThreshold = CONTRAST_THRESHOLDS[WCAGLevel.AA][textSize];
+  const aaaThreshold = CONTRAST_THRESHOLDS[WCAGLevel.AAA][textSize];
 
-    const aaaCompliance: ComplianceStatus = {
-      level: WCAGLevel.AAA,
-      passes: contrastRatio >= aaaThreshold,
-      threshold: aaaThreshold
-    };
+  const aaCompliance: ComplianceStatus = {
+    level: WCAGLevel.AA,
+    passes: contrastRatio >= aaThreshold,
+    threshold: aaThreshold
+  };
 
-    // Generate suggestions if not compliant
-    const suggestions: ColorSuggestion[] = [];
-    if (!aaCompliance.passes) {
-      suggestions.push(...generateColorSuggestions(foreground, background, aaThreshold));
-    }
+  const aaaCompliance: ComplianceStatus = {
+    level: WCAGLevel.AAA,
+    passes: contrastRatio >= aaaThreshold,
+    threshold: aaaThreshold
+  };
 
-    // Generate summary
-    let summary: string;
-    if (aaaCompliance.passes) {
-      summary = `Excellent! Passes WCAG AAA (${aaaThreshold}:1 required, ${contrastRatio.toFixed(2)}:1 achieved)`;
-    } else if (aaCompliance.passes) {
-      summary = `Good. Passes WCAG AA (${aaThreshold}:1 required, ${contrastRatio.toFixed(2)}:1 achieved). Does not meet AAA (${aaaThreshold}:1 required).`;
-    } else {
-      summary = `Fails WCAG AA. Minimum ${aaThreshold}:1 required, only ${contrastRatio.toFixed(2)}:1 achieved. See suggestions below.`;
-    }
+  // Generate suggestions if not compliant
+  const suggestions: ColorSuggestion[] = [];
+  if (!aaCompliance.passes) {
+    suggestions.push(...generateColorSuggestions(foreground, background, aaThreshold));
+  }
 
-    return {
-      contrastRatio,
-      isLargeText: largeText,
-      compliance: {
-        aa: aaCompliance,
-        aaa: aaaCompliance
-      },
-      suggestions,
-      summary
-    };
-  });
+  // Generate summary
+  let summary: string;
+  if (aaaCompliance.passes) {
+    summary = `Excellent! Passes WCAG AAA (${aaaThreshold}:1 required, ${contrastRatio.toFixed(2)}:1 achieved)`;
+  } else if (aaCompliance.passes) {
+    summary = `Good. Passes WCAG AA (${aaThreshold}:1 required, ${contrastRatio.toFixed(2)}:1 achieved). Does not meet AAA (${aaaThreshold}:1 required).`;
+  } else {
+    summary = `Fails WCAG AA. Minimum ${aaThreshold}:1 required, only ${contrastRatio.toFixed(2)}:1 achieved. See suggestions below.`;
+  }
+
+  return {
+    contrastRatio,
+    isLargeText: largeText,
+    compliance: {
+      aa: aaCompliance,
+      aaa: aaaCompliance
+    },
+    suggestions,
+    summary
+  };
 }
 
 /**
  * Formats the contrast check result as human-readable text
+ * @param result
  */
 export function formatContrastCheckResult(result: CheckWcagContrastResult): string {
   let text = 'WCAG Contrast Check Results\n';
@@ -343,21 +349,4 @@ Returns:
     },
     required: ['foreground', 'background', 'fontSize']
   }
-};
-
-/**
- * Handler export for tool registration
- */
-export const checkWcagContrastHandler: import('../routing/tool-handler.js').ToolHandler<
-  CheckWcagContrastInput,
-  CheckWcagContrastResult
-> = {
-  name: 'check_wcag_contrast',
-  schema: checkWcagContrastInputSchema as any,
-  execute: async (input) => checkWcagContrast(input),
-  formatResponse: (result) => {
-    const text = formatContrastCheckResult(result);
-    return [{ type: 'text', text }];
-  },
-  definition: checkWcagContrastToolDefinition
 };

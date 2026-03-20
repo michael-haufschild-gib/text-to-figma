@@ -34,6 +34,7 @@ export type FontWeight = (typeof FONT_WEIGHTS)[keyof typeof FONT_WEIGHTS];
 /**
  * Line height recommendations based on font size
  * Generally 1.5x for body text, 1.2x for headings
+ * @param fontSize
  */
 export function getRecommendedLineHeight(fontSize: FontSize): number {
   if (fontSize <= 20) {
@@ -65,6 +66,7 @@ export const fontWeightSchema = z
 
 /**
  * Validates if a value is a valid font size
+ * @param value
  */
 export function isValidFontSize(value: number): value is FontSize {
   return VALID_FONT_SIZES.includes(value as FontSize);
@@ -73,6 +75,7 @@ export function isValidFontSize(value: number): value is FontSize {
 /**
  * Snaps a font size to the nearest valid value in the type scale
  * When distances are equal, rounds up to the larger size
+ * @param value
  */
 export function snapToTypeScale(value: number): FontSize {
   if (value <= VALID_FONT_SIZES[0]) {
@@ -110,6 +113,7 @@ export interface TypographyConstraintResult {
 
 /**
  * Validates typography and returns detailed result
+ * @param fontSize
  */
 export function validateTypography(fontSize: number): TypographyConstraintResult {
   if (isValidFontSize(fontSize)) {

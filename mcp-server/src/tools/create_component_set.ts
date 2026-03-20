@@ -98,12 +98,13 @@ export interface CreateComponentSetResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createComponentSet(
   input: CreateComponentSetInput
 ): Promise<CreateComponentSetResult> {
   // Validate input
-  const validated = CreateComponentSetInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

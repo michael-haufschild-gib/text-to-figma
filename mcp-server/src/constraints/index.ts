@@ -43,8 +43,6 @@ export {
   getRelativeLuminance,
   getContrastRatio,
   validateContrast,
-  meetsWCAG,
-  suggestContrastAdjustment,
   type RGB,
   type ContrastValidationResult
 } from './color.js';

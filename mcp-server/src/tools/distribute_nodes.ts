@@ -10,10 +10,10 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
-import { createScopedLogger } from '../utils/logger.js';
+import { getLogger } from '../monitoring/logger.js';
 import { createToolResult, type ToolResult } from '../utils/tool-result.js';
 
-const log = createScopedLogger('distribute_nodes');
+const log = getLogger().child({ tool: 'distribute_nodes' });
 
 /**
  * Distribution axis
@@ -145,16 +145,17 @@ export type DistributeNodesResult = ToolResult<DistributeNodesData>;
 
 /**
  * Implementation
+ * @param input
  */
 export async function distributeNodes(input: DistributeNodesInput): Promise<DistributeNodesResult> {
   const startTime = Date.now();
 
   // Validate input
-  const validated = DistributeNodesInputSchema.parse(input);
+  const validated = input;
 
   if (validated.nodeIds.length < 3) {
     const error = new Error('Must provide at least 3 nodes to distribute');
-    log.error('Validation failed', { error: error.message, nodeCount: validated.nodeIds.length });
+    log.error('Validation failed', error, { nodeCount: validated.nodeIds.length });
     throw error;
   }
 
@@ -207,10 +208,9 @@ export async function distributeNodes(input: DistributeNodesInput): Promise<Dist
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    log.error('Failed to distribute nodes', {
+    log.error('Failed to distribute nodes', error instanceof Error ? error : undefined, {
       nodeIds: validated.nodeIds,
       axis: validated.axis,
-      error: errorMessage,
       duration
     });
 

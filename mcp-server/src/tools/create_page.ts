@@ -78,10 +78,11 @@ export interface CreatePageResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createPage(input: CreatePageInput): Promise<CreatePageResult> {
   // Validate input
-  const validated = CreatePageInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

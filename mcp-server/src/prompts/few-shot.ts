@@ -360,23 +360,29 @@ create_text({
 **Remember**: ALWAYS think HTML first, then translate to Figma. The width strategy comes naturally from CSS.
 `;
 
+/**
+ *
+ */
 export function getFewShotPrompt(): string {
   return FEW_SHOT_PROMPT;
 }
 
+/**
+ *
+ */
 export function getFewShotExamples() {
   return [
     {
-      title: "Button Component",
-      pattern: "width: fit-content → HUG mode"
+      title: 'Button Component',
+      pattern: 'width: fit-content → HUG mode'
     },
     {
-      title: "Input Field",
-      pattern: "width: 100% → FILL mode"
+      title: 'Input Field',
+      pattern: 'width: 100% → FILL mode'
     },
     {
-      title: "Card Component",
-      pattern: "width: 320px → FIXED (for images)"
+      title: 'Card Component',
+      pattern: 'width: 320px → FIXED (for images)'
     }
   ];
 }

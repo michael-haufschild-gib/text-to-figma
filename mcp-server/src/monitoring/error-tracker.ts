@@ -83,6 +83,8 @@ export type ErrorTrackerConfig = z.infer<typeof errorTrackerConfigSchema>;
 
 /**
  * Generate error fingerprint for deduplication
+ * @param error
+ * @param context
  */
 function generateFingerprint(error: Error, context?: Record<string, unknown>): string {
   const parts: string[] = [
@@ -100,6 +102,7 @@ function generateFingerprint(error: Error, context?: Record<string, unknown>): s
 
 /**
  * Categorize error
+ * @param error
  */
 function categorizeError(error: Error): ErrorCategory {
   const message = error.message.toLowerCase();
@@ -134,6 +137,8 @@ function categorizeError(error: Error): ErrorCategory {
 
 /**
  * Determine error severity
+ * @param error
+ * @param category
  */
 function determineSeverity(error: Error, category: ErrorCategory): ErrorSeverity {
   // Critical errors
@@ -184,9 +189,7 @@ export class ErrorTracker {
     }, this.config.pruneInterval);
 
     // Don't keep the process alive just for pruning
-    if ((this.pruneTimer as unknown as { unref?: () => void }).unref) {
-      (this.pruneTimer as unknown as { unref: () => void }).unref();
-    }
+    this.pruneTimer.unref();
   }
 
   /**
@@ -201,6 +204,10 @@ export class ErrorTracker {
 
   /**
    * Track an error
+   * @param error
+   * @param context
+   * @param severity
+   * @param category
    */
   track(
     error: Error,
@@ -226,7 +233,7 @@ export class ErrorTracker {
     }
 
     // Create new tracked error
-    const id = `err_${now}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `err_${now}_${Math.random().toString(36).substring(2, 11)}`;
     const tracked: TrackedError = {
       id,
       timestamp: now,
@@ -253,6 +260,7 @@ export class ErrorTracker {
 
   /**
    * Get error by ID or fingerprint
+   * @param idOrFingerprint
    */
   get(idOrFingerprint: string): TrackedError | undefined {
     // Try as fingerprint first
@@ -280,6 +288,7 @@ export class ErrorTracker {
 
   /**
    * Get errors by category
+   * @param category
    */
   getByCategory(category: ErrorCategory): TrackedError[] {
     return Array.from(this.errors.values()).filter((e) => e.category === category);
@@ -287,6 +296,7 @@ export class ErrorTracker {
 
   /**
    * Get errors by severity
+   * @param severity
    */
   getBySeverity(severity: ErrorSeverity): TrackedError[] {
     return Array.from(this.errors.values()).filter((e) => e.severity === severity);
@@ -409,6 +419,7 @@ let globalTracker: ErrorTracker | null = null;
 
 /**
  * Get global error tracker
+ * @param config
  */
 export function getErrorTracker(config?: ErrorTrackerConfig): ErrorTracker {
   if (!globalTracker) {
@@ -429,6 +440,10 @@ export function resetErrorTracker(): void {
 
 /**
  * Convenience function to track error
+ * @param error
+ * @param context
+ * @param severity
+ * @param category
  */
 export function trackError(
   error: Error,

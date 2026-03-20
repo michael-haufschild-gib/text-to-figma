@@ -32,25 +32,44 @@ export interface PageInfo {
  */
 export const listPagesToolDefinition = {
   name: 'list_pages',
-  description: `Lists all pages in the Figma document.
+  description: `Lists all pages in the current Figma document.
 
-PRIMITIVE: Raw Figma page listing primitive - not a pre-made component.
-Use for: discovering pages, understanding document structure, page navigation.
+🎯 WHEN TO USE:
+- Starting work on a multi-page document (discover what exists)
+- Finding a specific page to switch to
+- Understanding document organization before creating content
+- Verifying page creation succeeded
 
-Example - List All Pages:
-list_pages({})
+📋 RETURNS (for each page):
+- pageId: Use with set_current_page to navigate
+- name: Page name as shown in Figma's page tabs
+- isCurrent: true if this is the active page
 
-Returns:
-- Page IDs
-- Page names
-- Current page indicator
+💡 COMMON PATTERNS:
 
-Use Cases:
-- Discover available pages
-- Navigate multi-page documents
-- Understand project structure
-- Find specific pages by name
-- Audit document organization`,
+1. Find and switch to a page:
+   pages = list_pages({})
+   designPage = pages.pages.find(p => p.name === "Design System")
+   set_current_page({ pageId: designPage.pageId })
+
+2. Check which page you're on:
+   pages = list_pages({})
+   current = pages.pages.find(p => p.isCurrent)
+   console.log(\`Working on: \${current.name}\`)
+
+3. Verify page exists before navigation:
+   pages = list_pages({})
+   if (pages.pages.some(p => p.name === "Mobile Screens")) {
+     // Page exists, safe to navigate
+   }
+
+⚠️ NOTE: Most operations work on the CURRENT page. Use set_current_page
+to switch pages before creating content on a different page.
+
+🔗 RELATED TOOLS:
+- set_current_page: Navigate to a different page
+- create_page: Add a new page to the document
+- get_page_hierarchy: See node tree on current page`,
   inputSchema: {
     type: 'object' as const,
     properties: {}
@@ -71,10 +90,10 @@ export interface ListPagesResult {
 
 /**
  * Implementation
+ * @param input
  */
-export async function listPages(input: ListPagesInput): Promise<ListPagesResult> {
-  // Validate input
-  ListPagesInputSchema.parse(input);
+export async function listPages(_input: ListPagesInput): Promise<ListPagesResult> {
+  // Input validated by routing layer
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

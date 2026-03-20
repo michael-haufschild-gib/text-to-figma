@@ -25,27 +25,39 @@ export type GetParentInput = z.infer<typeof GetParentInputSchema>;
  */
 export const getParentToolDefinition = {
   name: 'get_parent',
-  description: `Gets the parent node of a given node.
+  description: `Gets the parent container of any node in the Figma hierarchy.
 
-PRIMITIVE: Raw Figma node tree primitive - not a pre-made component.
-Use for: navigating up hierarchy, finding containers, context awareness.
+🎯 WHEN TO USE:
+- Finding what frame/group contains a specific element
+- Navigating UP the node tree (child → parent → grandparent)
+- Understanding context before modifying a node
+- Verifying hierarchy relationships
 
-Example - Find Parent Frame:
-get_parent({
-  nodeId: "text-node-123"
-})
+📋 RETURNS:
+- parentId: ID of the parent node (use for subsequent operations)
+- parentName: Name as shown in Figma layers panel
+- parentType: FRAME, GROUP, COMPONENT, PAGE, etc.
 
-Example - Navigate Up Tree:
-get_parent({
-  nodeId: "button-component-456"
-})
+💡 COMMON PATTERNS:
 
-Use Cases:
-- Find containing frame
-- Navigate to parent component
-- Understand node context
-- Validate hierarchy
-- Climb node tree`,
+1. Find container to add siblings:
+   parent = get_parent({ nodeId: "existing-button-123" })
+   create_frame({ name: "New Button", parentId: parent.parentId })
+
+2. Navigate up multiple levels:
+   child = get_parent({ nodeId: "text-node" })      // → Button frame
+   grandparent = get_parent({ nodeId: child.parentId }) // → Card container
+
+3. Check if node is at root:
+   result = get_parent({ nodeId: "some-node" })
+   if (!result.parentId) { /* node is at page root */ }
+
+⚠️ NOTE: Returns empty parentId for root-level nodes (direct children of the page).
+
+🔗 RELATED TOOLS:
+- get_children: Navigate DOWN the tree
+- get_node_info: Get full details about a node
+- get_page_hierarchy: See entire tree structure`,
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -71,10 +83,11 @@ export interface GetParentResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function getParent(input: GetParentInput): Promise<GetParentResult> {
   // Validate input
-  const validated = GetParentInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

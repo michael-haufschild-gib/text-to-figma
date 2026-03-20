@@ -34,6 +34,7 @@ import type { ToolDefinition, ToolHandler } from './tool-handler.js';
  */
 export class ToolRegistry {
   /** Internal storage for tool handlers */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous handler storage requires type erasure
   private handlers = new Map<string, ToolHandler<any, any>>();
 
   /**
@@ -69,6 +70,7 @@ export class ToolRegistry {
    * }
    * ```
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- returns type-erased handlers
   get(name: string): ToolHandler<any, any> | undefined {
     return this.handlers.get(name);
   }
@@ -84,6 +86,7 @@ export class ToolRegistry {
    * console.log(`Registered ${all.length} tools`);
    * ```
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- returns type-erased handlers
   getAll(): ToolHandler<any, any>[] {
     return Array.from(this.handlers.values());
   }

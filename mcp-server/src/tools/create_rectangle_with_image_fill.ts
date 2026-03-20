@@ -9,6 +9,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { getNodeRegistry } from '../node-registry.js';
 
 /**
  * Input schema for create_rectangle_with_image_fill
@@ -40,6 +41,19 @@ export const createRectangleWithImageFillToolDefinition = {
 PRIMITIVE: This is a raw Figma primitive for displaying images.
 Think of it as <img> tag in HTML or background-image in CSS.
 
+📋 RECOMMENDED WORKFLOW:
+1. Option A (Multi-element): Use create_design to create image + other elements together
+2. Option B (Single image):
+   - Best practice: Create inside a parent frame for organization
+   - Can create at root for standalone images
+
+🎯 WHEN TO USE THIS TOOL:
+- Adding a single image to an existing design
+- Creating product photos, avatars, hero images
+- Building UI step-by-step (for simple designs)
+
+⚠️ For designs with images + other elements, prefer create_design instead.
+
 Scale Modes:
 - FILL: Image fills entire rectangle (may crop, default)
 - FIT: Image fits within rectangle (may have empty space)
@@ -51,7 +65,8 @@ create_rectangle_with_image_fill({
   imageUrl: "https://example.com/photo.jpg",
   width: 320,
   height: 200,
-  scaleMode: "FILL"
+  scaleMode: "FILL",
+  parentId: "card-container"  // ← Recommended for organization
 })
 
 CSS Equivalent:
@@ -90,7 +105,8 @@ CSS Equivalent:
       },
       parentId: {
         type: 'string' as const,
-        description: 'Parent frame ID (optional)'
+        description:
+          'Parent frame ID. RECOMMENDED: Place images inside frame containers for organization. Omit only for standalone hero images.'
       }
     },
     required: ['imageUrl', 'width', 'height']
@@ -112,12 +128,13 @@ export interface CreateRectangleWithImageFillResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createRectangleWithImageFill(
   input: CreateRectangleWithImageFillInput
 ): Promise<CreateRectangleWithImageFillResult> {
   // Validate input
-  const validated = CreateRectangleWithImageFillInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -129,17 +146,18 @@ export async function createRectangleWithImageFill(
   }
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
-    'create_rectangle_with_image_fill',
-    {
-      imageUrl: validated.imageUrl,
-      width: validated.width,
-      height: validated.height,
-      scaleMode: validated.scaleMode,
-      name: validated.name,
-      parentId: validated.parentId
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    nodeId?: string;
+    error?: string;
+  }>('create_rectangle_with_image_fill', {
+    imageUrl: validated.imageUrl,
+    width: validated.width,
+    height: validated.height,
+    scaleMode: validated.scaleMode,
+    name: validated.name,
+    parentId: validated.parentId
+  });
   // Note: Response validated by bridge at protocol level
 
   // Map scale mode to CSS
@@ -156,6 +174,18 @@ export async function createRectangleWithImageFill(
   background-image: url('${validated.imageUrl}');
   ${scaleModeToCSS[validated.scaleMode]}
 }`;
+
+  // Register node in hierarchy registry
+  if (response.nodeId) {
+    const registry = getNodeRegistry();
+    registry.register(response.nodeId, {
+      type: 'RECTANGLE',
+      name: validated.name,
+      parentId: validated.parentId ?? null,
+      children: [],
+      bounds: { x: 0, y: 0, width: validated.width, height: validated.height }
+    });
+  }
 
   return {
     rectangleId: response.nodeId || '',

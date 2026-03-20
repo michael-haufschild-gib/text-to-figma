@@ -203,10 +203,11 @@ export interface CreatePathResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createPath(input: CreatePathInput): Promise<CreatePathResult> {
   // Validate input schema
-  const validated = CreatePathInputSchema.parse(input);
+  const validated = input;
 
   // Use intelligent repair system to normalize and fix common issues
   let normalizedCommands: RepairedPathCommand[];
@@ -216,7 +217,7 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
     normalizedCommands = repairReport.commands;
 
     // Generate repair message if fixes were applied
-    if (repairReport.totalFixed > 0 || repairReport.warnings.length > 0) {
+    if (repairReport.totalFixed > 0) {
       repairMessage = '\n\n' + formatRepairReport(repairReport);
       // MCP: Use console.error to send logs to stderr, not stdout
       console.error(`[create_path] Applied automatic repairs:\n${repairMessage}`);

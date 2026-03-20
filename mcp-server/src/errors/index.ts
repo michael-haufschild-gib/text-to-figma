@@ -1,9 +1,22 @@
 /**
- * Custom Error Hierarchy
+ * Error handling module
  *
- * Standardized error classes for consistent error handling across the MCP server.
- * All errors include tool name, input context, and cause for better debugging.
+ * Re-exports all error-related types and utilities.
  */
+
+// New structured error codes
+export {
+  ErrorCode,
+  createError,
+  createErrorWithSuggestion,
+  formatStructuredError,
+  isStructuredError,
+  type StructuredError
+} from './error-codes.js';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Legacy Error Classes (for backward compatibility)
+// ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * Base error class for all tool execution errors
@@ -20,21 +33,13 @@ export class ToolExecutionError extends Error {
     Error.captureStackTrace?.(this, this.constructor);
   }
 
-  /**
-   * Serialize error to JSON for logging
-   */
   toJSON(): Record<string, unknown> {
     return {
       name: this.name,
       message: this.message,
       tool: this.tool,
       input: this.input,
-      cause: this.cause
-        ? {
-            name: this.cause.name,
-            message: this.cause.message
-          }
-        : undefined,
+      cause: this.cause ? { name: this.cause.name, message: this.cause.message } : undefined,
       stack: this.stack
     };
   }
@@ -133,36 +138,42 @@ export class ConfigurationError extends Error {
   }
 }
 
+// Type guards
 /**
- * Type guard to check if an error is a ToolExecutionError
+ *
+ * @param error
  */
 export function isToolExecutionError(error: unknown): error is ToolExecutionError {
   return error instanceof ToolExecutionError;
 }
 
 /**
- * Type guard to check if an error is a ValidationError
+ *
+ * @param error
  */
 export function isValidationError(error: unknown): error is ValidationError {
   return error instanceof ValidationError;
 }
 
 /**
- * Type guard to check if an error is a FigmaAPIError
+ *
+ * @param error
  */
 export function isFigmaAPIError(error: unknown): error is FigmaAPIError {
   return error instanceof FigmaAPIError;
 }
 
 /**
- * Type guard to check if an error is a NetworkError
+ *
+ * @param error
  */
 export function isNetworkError(error: unknown): error is NetworkError {
   return error instanceof NetworkError;
 }
 
 /**
- * Type guard to check if an error is a ConfigurationError
+ *
+ * @param error
  */
 export function isConfigurationError(error: unknown): error is ConfigurationError {
   return error instanceof ConfigurationError;
@@ -170,6 +181,9 @@ export function isConfigurationError(error: unknown): error is ConfigurationErro
 
 /**
  * Wrap a generic error in a ToolExecutionError if needed
+ * @param error
+ * @param tool
+ * @param input
  */
 export function wrapError(error: unknown, tool: string, input?: unknown): ToolExecutionError {
   if (isToolExecutionError(error)) {

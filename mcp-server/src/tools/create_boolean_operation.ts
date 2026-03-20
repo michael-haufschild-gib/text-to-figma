@@ -117,25 +117,27 @@ export interface CreateBooleanOperationResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createBooleanOperation(
   input: CreateBooleanOperationInput
 ): Promise<CreateBooleanOperationResult> {
   // Validate input
-  const validated = CreateBooleanOperationInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
-    'create_boolean_operation',
-    {
-      nodeIds: validated.nodeIds,
-      operation: validated.operation,
-      name: validated.name
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    nodeId?: string;
+    error?: string;
+  }>('create_boolean_operation', {
+    nodeIds: validated.nodeIds,
+    operation: validated.operation,
+    name: validated.name
+  });
   // Note: Response validated by bridge at protocol level
 
   // Build CSS equivalent and description

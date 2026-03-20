@@ -25,24 +25,47 @@ export type SetCurrentPageInput = z.infer<typeof SetCurrentPageInputSchema>;
  */
 export const setCurrentPageToolDefinition = {
   name: 'set_current_page',
-  description: `Sets the current active page in Figma.
+  description: `Switches to a different page in the Figma document.
 
-PRIMITIVE: Raw Figma page navigation primitive - not a pre-made component.
-Use for: switching between pages, focusing on specific flows, page navigation.
+🎯 WHEN TO USE:
+- Before creating content on a different page
+- Navigating between design flows (login, dashboard, settings)
+- Switching to a component library page
+- Focusing Figma viewport on a specific page
 
-Example - Switch to Page:
-set_current_page({
-  pageId: "page-123"
-})
+📋 IMPORTANT:
+All create_* operations work on the CURRENT page. You MUST switch pages
+before creating content if you want it on a different page.
 
-Use Cases:
-- Navigate to specific user flow
-- Switch between component libraries
-- Focus on mockup page
-- Programmatic page navigation
-- Multi-page workflows
+💡 COMMON PATTERNS:
 
-Note: All subsequent create operations will use the current page.`,
+1. Navigate to a page by name (use with list_pages):
+   pages = list_pages({})
+   target = pages.pages.find(p => p.name === "Mobile Screens")
+   set_current_page({ pageId: target.pageId })
+   // Now create content on Mobile Screens page
+
+2. Create content on multiple pages:
+   // Page 1: Desktop
+   set_current_page({ pageId: desktopPageId })
+   create_design({ spec: desktopLayout })
+
+   // Page 2: Mobile
+   set_current_page({ pageId: mobilePageId })
+   create_design({ spec: mobileLayout })
+
+3. Return to original page after work:
+   original = (await list_pages({})).pages.find(p => p.isCurrent)
+   // ... do work on other pages ...
+   set_current_page({ pageId: original.pageId })
+
+⚠️ NOTE: The Figma UI will visually switch to the target page,
+which is helpful for the user to see your progress.
+
+🔗 RELATED TOOLS:
+- list_pages: Find page IDs to navigate to
+- create_page: Create a new page first
+- get_page_hierarchy: See what's on the current page`,
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -66,10 +89,11 @@ export interface SetCurrentPageResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function setCurrentPage(input: SetCurrentPageInput): Promise<SetCurrentPageResult> {
   // Validate input
-  const validated = SetCurrentPageInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

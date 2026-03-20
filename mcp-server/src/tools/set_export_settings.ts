@@ -122,12 +122,13 @@ export interface SetExportSettingsResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function setExportSettings(
   input: SetExportSettingsInput
 ): Promise<SetExportSettingsResult> {
   // Validate input
-  const validated = SetExportSettingsInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -135,13 +136,10 @@ export async function setExportSettings(
   // Send command to Figma
   // Note: bridge.sendToFigma validates success at protocol level
   // It only resolves if Figma returns success=true, otherwise rejects
-  await bridge.sendToFigma(
-    'set_export_settings',
-    {
-      nodeId: validated.nodeId,
-      settings: validated.settings
-    }
-  )
+  await bridge.sendToFigmaWithRetry('set_export_settings', {
+    nodeId: validated.nodeId,
+    settings: validated.settings
+  });
 
   return {
     nodeId: validated.nodeId,

@@ -79,10 +79,11 @@ export interface SetInstanceSwapResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function setInstanceSwap(input: SetInstanceSwapInput): Promise<SetInstanceSwapResult> {
   // Validate input
-  const validated = SetInstanceSwapInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

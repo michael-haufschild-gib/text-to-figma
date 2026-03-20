@@ -134,6 +134,7 @@ export function isTest(): boolean {
 
 /**
  * Get typed configuration value
+ * @param key
  */
 export function getConfigValue<K extends keyof Config>(key: K): Config[K] {
   return getConfig()[key];

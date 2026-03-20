@@ -120,27 +120,29 @@ export interface CreatePolygonResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createPolygon(input: CreatePolygonInput): Promise<CreatePolygonResult> {
   // Validate input
-  const validated = CreatePolygonInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
-    'create_polygon',
-    {
-      sideCount: validated.sideCount,
-      radius: validated.radius,
-      name: validated.name,
-      parentId: validated.parentId,
-      fillColor: validated.fillColor,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    nodeId?: string;
+    error?: string;
+  }>('create_polygon', {
+    sideCount: validated.sideCount,
+    radius: validated.radius,
+    name: validated.name,
+    parentId: validated.parentId,
+    fillColor: validated.fillColor,
+    strokeColor: validated.strokeColor,
+    strokeWeight: validated.strokeWeight
+  });
   // Note: Response validated by bridge at protocol level
 
   // Determine polygon type

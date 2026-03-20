@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { hexToRgb, rgbSchema, type RGB } from '../constraints/color.js';
+import { hexToRgb, rgbToHex, rgbSchema, type RGB } from '../constraints/color.js';
 import { getFigmaBridge } from '../figma-bridge.js';
 
 /**
@@ -22,7 +22,7 @@ const hexColorSchema = z
 /**
  * Input schema for set_fills tool
  */
-export const setFillsInputSchema = z.object({
+export const SetFillsInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to set fills on'),
   color: z
     .union([hexColorSchema, rgbSchema])
@@ -30,7 +30,7 @@ export const setFillsInputSchema = z.object({
   opacity: z.number().min(0).max(1).default(1).describe('Fill opacity (0-1)')
 });
 
-export type SetFillsInput = z.infer<typeof setFillsInputSchema>;
+export type SetFillsInput = z.infer<typeof SetFillsInputSchema>;
 
 /**
  * Result of setting fills
@@ -43,6 +43,7 @@ export interface SetFillsResult {
 
 /**
  * Normalizes color input to RGB and hex
+ * @param color
  */
 function normalizeColor(color: string | RGB): { rgb: RGB; hex: string } {
   if (typeof color === 'string') {
@@ -58,18 +59,10 @@ function normalizeColor(color: string | RGB): { rgb: RGB; hex: string } {
 }
 
 /**
- * Converts RGB to hex (helper function)
- */
-function rgbToHex(rgb: RGB): string {
-  const toHex = (n: number): string => {
-    const hex = Math.round(n).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  };
-  return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`;
-}
-
-/**
  * Generates CSS equivalent for the fill
+ * @param hex
+ * @param opacity
+ * @param isText
  */
 function generateCssEquivalent(hex: string, opacity: number, isText: boolean): string {
   const property = isText ? 'color' : 'background-color';
@@ -124,7 +117,7 @@ function generateCssEquivalent(hex: string, opacity: number, isText: boolean): s
  */
 export async function setFills(input: SetFillsInput, isText = false): Promise<SetFillsResult> {
   // Validate input
-  const validated = setFillsInputSchema.parse(input);
+  const validated = input;
 
   // Normalize color to RGB and hex
   const { rgb, hex } = normalizeColor(validated.color);
@@ -134,7 +127,7 @@ export async function setFills(input: SetFillsInput, isText = false): Promise<Se
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigma('set_fills', {
+  await bridge.sendToFigmaWithRetry('set_fills', {
     nodeId: validated.nodeId,
     fills: [
       {
@@ -162,6 +155,23 @@ export async function setFills(input: SetFillsInput, isText = false): Promise<Se
 export const setFillsToolDefinition = {
   name: 'set_fills',
   description: `Sets fill colors on frames or text nodes in Figma.
+
+🎯 WHEN TO USE THIS TOOL:
+- Updating color on an EXISTING node
+- Changing background color of an existing frame
+- Changing text color of existing text
+- Styling nodes created by individual create_* tools
+
+⚠️ DON'T use this for:
+- New designs with multiple elements (use create_design with color props instead)
+- Initial color during node creation (set color in create_* tool directly)
+
+ALTERNATIVE: Use create_design to set all properties at once:
+{
+  type: 'frame',
+  props: { fillColor: '#0066FF', ... },
+  children: [...]
+}
 
 HTML/CSS Analogy:
 - For frames: Similar to setting 'background-color' on a div
@@ -232,25 +242,4 @@ to ensure accessibility compliance (WCAG AA/AAA).`,
     },
     required: ['nodeId', 'color']
   }
-};
-
-/**
- * Handler export for tool registration
- */
-export const setFillsHandler: import('../routing/tool-handler.js').ToolHandler<
-  SetFillsInput,
-  SetFillsResult
-> = {
-  name: 'set_fills',
-  schema: setFillsInputSchema as any,
-  execute: (input) => setFills(input),
-  formatResponse: (result) => {
-    let text = `Fills Applied Successfully\n`;
-    text += `Node ID: ${result.nodeId}\n`;
-    text += `Applied Color: ${result.appliedColor}\n\n`;
-    text += `CSS Equivalent:\n  ${result.cssEquivalent}\n`;
-
-    return [{ type: 'text', text }];
-  },
-  definition: setFillsToolDefinition
 };

@@ -54,12 +54,12 @@ export type Effect = z.infer<typeof effectSchema>;
 /**
  * Input schema for apply_effects tool
  */
-export const applyEffectsInputSchema = z.object({
+export const ApplyEffectsInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to apply effects to'),
   effects: z.array(effectSchema).min(1).describe('Array of effects to apply')
 });
 
-export type ApplyEffectsInput = z.infer<typeof applyEffectsInputSchema>;
+export type ApplyEffectsInput = z.infer<typeof ApplyEffectsInputSchema>;
 
 /**
  * Result of applying effects
@@ -73,6 +73,7 @@ export interface ApplyEffectsResult {
 
 /**
  * Generates CSS equivalent for effects
+ * @param effects
  */
 function generateCssEquivalent(effects: Effect[]): string {
   const cssLines: string[] = [];
@@ -121,6 +122,8 @@ function generateCssEquivalent(effects: Effect[]): string {
 
 /**
  * Converts hex color to rgba string
+ * @param hex
+ * @param opacity
  */
 function hexToRgba(hex: string, opacity: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -131,17 +134,18 @@ function hexToRgba(hex: string, opacity: number): string {
 
 /**
  * Applies effects to a node in Figma
+ * @param input
  */
 export async function applyEffects(input: ApplyEffectsInput): Promise<ApplyEffectsResult> {
   // Validate input
-  const validated = applyEffectsInputSchema.parse(input);
+  const validated = input;
 
   // Generate CSS equivalent
   const cssEquivalent = generateCssEquivalent(validated.effects);
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigma('apply_effects', {
+  await bridge.sendToFigmaWithRetry('apply_effects', {
     nodeId: validated.nodeId,
     effects: validated.effects
   });

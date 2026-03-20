@@ -5,7 +5,9 @@
  * across all tools in the MCP server.
  */
 
-import { logger } from './logger.js';
+import { getLogger } from '../monitoring/logger.js';
+
+const logger = getLogger().child({ component: 'tool-result' });
 
 /**
  * Standard tool result structure
@@ -90,9 +92,8 @@ export async function executeToolWithLogging<TInput, TOutput>(
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    logger.error(`[${toolName}] Failed`, {
+    logger.error(`[${toolName}] Failed`, error instanceof Error ? error : undefined, {
       duration,
-      error: errorMessage,
       input
     });
 
@@ -126,7 +127,7 @@ export function createToolError(
   const contextStr = context ? ` | Context: ${JSON.stringify(context)}` : '';
   const error = new Error(`[${toolName}] ${message}${contextStr}`);
 
-  logger.error(`[${toolName}] Error created`, { message, context });
+  logger.error(`[${toolName}] Error created`, undefined, { message, context });
 
   return error;
 }

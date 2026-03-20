@@ -129,10 +129,11 @@ export interface CreateStarResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function createStar(input: CreateStarInput): Promise<CreateStarResult> {
   // Validate input
-  const validated = CreateStarInputSchema.parse(input);
+  const validated = input;
 
   // Calculate inner radius if not provided (golden ratio approximation)
   const innerRadius = validated.innerRadius ?? validated.radius * 0.382;
@@ -141,19 +142,20 @@ export async function createStar(input: CreateStarInput): Promise<CreateStarResu
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{ success: boolean; nodeId?: string; error?: string }>(
-    'create_star',
-    {
-      pointCount: validated.pointCount,
-      radius: validated.radius,
-      innerRadius,
-      name: validated.name,
-      parentId: validated.parentId,
-      fillColor: validated.fillColor,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight
-    }
-  );
+  const response = await bridge.sendToFigmaWithRetry<{
+    success: boolean;
+    nodeId?: string;
+    error?: string;
+  }>('create_star', {
+    pointCount: validated.pointCount,
+    radius: validated.radius,
+    innerRadius,
+    name: validated.name,
+    parentId: validated.parentId,
+    fillColor: validated.fillColor,
+    strokeColor: validated.strokeColor,
+    strokeWeight: validated.strokeWeight
+  });
   // Note: Response validated by bridge at protocol level
 
   // Build CSS equivalent

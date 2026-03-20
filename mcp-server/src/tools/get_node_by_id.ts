@@ -25,33 +25,45 @@ export type GetNodeByIdInput = z.infer<typeof GetNodeByIdInputSchema>;
  */
 export const getNodeByIdToolDefinition = {
   name: 'get_node_by_id',
-  description: `Retrieves node information by its ID.
+  description: `Retrieves basic information about a node when you have its ID.
 
-PRIMITIVE: Raw Figma node access primitive - not a pre-made component.
-Use for: finding nodes, inspecting properties, verifying existence.
+🎯 WHEN TO USE:
+- Verifying a node still exists before modifying it
+- Getting basic properties (type, name, dimensions) quickly
+- Checking if a nodeId from a previous operation is valid
+- Quick lookup when you already know the ID
 
-Returns:
-- Node type (FRAME, TEXT, ELLIPSE, etc.)
-- Node name
-- Basic properties (width, height, x, y)
-- Parent information
-- Children count
+📋 RETURNS:
+- type: FRAME, TEXT, ELLIPSE, RECTANGLE, GROUP, COMPONENT, etc.
+- name: Layer name as shown in Figma
+- width, height: Dimensions in pixels
+- x, y: Position coordinates
+- parentId: ID of containing node
+- childrenCount: Number of direct children
 
-Example - Find Node:
-get_node_by_id({
-  nodeId: "123:456"
-})
+💡 COMMON PATTERNS:
 
-Example - Verify Node Exists:
-get_node_by_id({
-  nodeId: "frame-abc-123"
-})
+1. Verify node before modification:
+   node = get_node_by_id({ nodeId: "123:456" })
+   if (node.type === "TEXT") {
+     set_text_properties({ nodeId: node.nodeId, ... })
+   }
 
-Use Cases:
-- Verify node creation
-- Inspect node properties before modifying
-- Navigate node tree
-- Validate references`,
+2. Check dimensions before positioning:
+   node = get_node_by_id({ nodeId: targetId })
+   newX = node.x + node.width + 16  // Position to the right
+
+3. Validate references from create_design:
+   result = create_design({ spec: {...} })
+   node = get_node_by_id({ nodeId: result.rootNodeId })
+   // Confirms creation succeeded
+
+⚠️ THROWS ERROR if node doesn't exist. Use try/catch if ID might be invalid.
+
+🔗 RELATED TOOLS:
+- get_node_by_name: Find nodes when you don't know the ID
+- get_node_info: Get MORE detailed properties (fills, strokes, etc.)
+- get_selection: Get info about user-selected nodes`,
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -84,10 +96,11 @@ export interface GetNodeByIdResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function getNodeById(input: GetNodeByIdInput): Promise<GetNodeByIdResult> {
   // Validate input
-  const validated = GetNodeByIdInputSchema.parse(input);
+  const validated = input;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();

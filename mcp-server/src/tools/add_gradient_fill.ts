@@ -149,10 +149,11 @@ export interface AddGradientFillResult {
 
 /**
  * Implementation
+ * @param input
  */
 export async function addGradientFill(input: AddGradientFillInput): Promise<AddGradientFillResult> {
   // Validate input
-  const validated = AddGradientFillInputSchema.parse(input);
+  const validated = input;
 
   // Ensure at least 2 stops
   if (validated.stops.length < 2) {
@@ -165,16 +166,13 @@ export async function addGradientFill(input: AddGradientFillInput): Promise<AddG
   // Send command to Figma
   // Note: bridge.sendToFigma validates success at protocol level
   // It only resolves if Figma returns success=true, otherwise rejects
-  await bridge.sendToFigma(
-    'add_gradient_fill',
-    {
-      nodeId: validated.nodeId,
-      type: validated.type,
-      stops: validated.stops,
-      angle: validated.angle,
-      opacity: validated.opacity
-    }
-  )
+  await bridge.sendToFigmaWithRetry('add_gradient_fill', {
+    nodeId: validated.nodeId,
+    type: validated.type,
+    stops: validated.stops,
+    angle: validated.angle,
+    opacity: validated.opacity
+  });
 
   // Build CSS equivalent
   let cssEquivalent = '';
