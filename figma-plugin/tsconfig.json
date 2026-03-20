@@ -2,14 +2,13 @@
   "compilerOptions": {
     "target": "ES2017",
     "lib": ["ES2020"],
-    "outDir": "./",
-    "strict": false,
+    "module": "ES2020",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
     "skipLibCheck": true,
-    "noImplicitAny": false
+    "esModuleInterop": true
   },
-  "include": ["code.ts"],
-  "exclude": ["node_modules", "*.js"],
-  "files": [
-    "../node_modules/@figma/plugin-typings/index.d.ts"
-  ]
+  "include": ["src/**/*.ts"],
+  "files": ["../node_modules/@figma/plugin-typings/index.d.ts"]
 }

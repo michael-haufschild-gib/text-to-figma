@@ -2,20 +2,16 @@
   "name": "figma-text-to-design-plugin",
   "version": "1.0.0",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc --watch",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix",
-    "format": "prettier --check \"*.ts\"",
-    "format:fix": "prettier --write \"*.ts\"",
+    "build": "esbuild src/main.ts --bundle --outfile=code.js --target=es2017 --format=iife",
+    "watch": "esbuild src/main.ts --bundle --outfile=code.js --target=es2017 --format=iife --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --check \"src/**/*.ts\"",
+    "format:fix": "prettier --write \"src/**/*.ts\"",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@figma/plugin-typings": "^1.118.0",
-    "@typescript-eslint/eslint-plugin": "^6.19.0",
-    "@typescript-eslint/parser": "^6.19.0",
-    "eslint": "^8.56.0",
-    "prettier": "^3.2.4",
-    "typescript": "^5.3.0"
+    "@figma/plugin-typings": "^1.123.0",
+    "esbuild": "^0.27.4"
   }
 }
