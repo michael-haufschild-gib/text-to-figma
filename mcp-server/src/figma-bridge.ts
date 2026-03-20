@@ -6,48 +6,14 @@
  * and circuit breaker pattern.
  */
 
+import { randomUUID } from 'node:crypto';
 import WebSocket from 'ws';
 import { z } from 'zod';
 import { getConfig } from './config.js';
-import { ErrorCode, createError, type StructuredError } from './errors/index.js';
+import { ErrorCode, FigmaBridgeError, createError } from './errors/index.js';
 
-/**
- * Figma Bridge Error with structured error support
- * (Defined early because CircuitBreaker uses it)
- */
-export class FigmaBridgeError extends Error {
-  public readonly structuredError: StructuredError;
-
-  constructor(errorOrMessage: StructuredError | string, legacyCode?: string) {
-    if (typeof errorOrMessage === 'string') {
-      // Legacy constructor support: (message, code)
-      const code = (legacyCode as ErrorCode) || ErrorCode.SYS_INTERNAL;
-      const structured = createError(code, errorOrMessage);
-      super(errorOrMessage);
-      this.structuredError = structured;
-    } else {
-      // New constructor: (StructuredError)
-      super(errorOrMessage.message);
-      this.structuredError = errorOrMessage;
-    }
-    this.name = 'FigmaBridgeError';
-  }
-
-  /** Machine-readable error code */
-  get code(): ErrorCode {
-    return this.structuredError.code;
-  }
-
-  /** Suggested action to resolve */
-  get suggestion(): string | undefined {
-    return this.structuredError.suggestion;
-  }
-
-  /** Additional error details */
-  get details(): Record<string, unknown> | undefined {
-    return this.structuredError.details;
-  }
-}
+// Re-export for backward compatibility — consumers may import from figma-bridge
+export { FigmaBridgeError } from './errors/index.js';
 
 /**
  * Circuit breaker states
@@ -66,6 +32,7 @@ class CircuitBreaker {
   private failures = 0;
   private lastFailureTime = 0;
   private successCount = 0;
+  private halfOpenProbeInFlight = false;
 
   constructor(
     private readonly threshold: number,
@@ -81,13 +48,28 @@ class CircuitBreaker {
 
     if (this.state === CircuitState.OPEN) {
       if (Date.now() - this.lastFailureTime > this.resetTimeout) {
+        // Transition to HALF_OPEN, but only allow one probe request through
+        if (this.halfOpenProbeInFlight) {
+          throw new FigmaBridgeError(
+            createError(
+              ErrorCode.SYS_CIRCUIT_OPEN,
+              'Circuit breaker is HALF_OPEN - probe in progress'
+            )
+          );
+        }
         this.state = CircuitState.HALF_OPEN;
         this.successCount = 0;
+        this.halfOpenProbeInFlight = true;
       } else {
         throw new FigmaBridgeError(
           createError(ErrorCode.SYS_CIRCUIT_OPEN, 'Circuit breaker is OPEN - service unavailable')
         );
       }
+    } else if (this.state === CircuitState.HALF_OPEN && this.halfOpenProbeInFlight) {
+      // Another request while HALF_OPEN probe is in flight — reject
+      throw new FigmaBridgeError(
+        createError(ErrorCode.SYS_CIRCUIT_OPEN, 'Circuit breaker is HALF_OPEN - probe in progress')
+      );
     }
 
     try {
@@ -102,6 +84,7 @@ class CircuitBreaker {
 
   private onSuccess(): void {
     this.failures = 0;
+    this.halfOpenProbeInFlight = false;
 
     if (this.state === CircuitState.HALF_OPEN) {
       this.successCount++;
@@ -114,8 +97,9 @@ class CircuitBreaker {
   private onFailure(): void {
     this.failures++;
     this.lastFailureTime = Date.now();
+    this.halfOpenProbeInFlight = false;
 
-    if (this.failures >= this.threshold) {
+    if (this.state === CircuitState.HALF_OPEN || this.failures >= this.threshold) {
       this.state = CircuitState.OPEN;
     }
   }
@@ -128,6 +112,7 @@ class CircuitBreaker {
     this.state = CircuitState.CLOSED;
     this.failures = 0;
     this.successCount = 0;
+    this.halfOpenProbeInFlight = false;
   }
 }
 
@@ -225,6 +210,9 @@ export class FigmaBridge {
 
           // Reset circuit breaker on successful connection
           this.circuitBreaker.reset();
+
+          // Restart health check in case it was stopped during disconnect
+          this.startHealthCheck();
 
           resolve();
         });
@@ -346,11 +334,11 @@ export class FigmaBridge {
   }
 
   /**
-   * Sends a request to Figma and returns a promise for the response
-   * @param type
-   * @param payload
+   * Shared request lifecycle: creates a request, registers it as pending,
+   * sends it over the WebSocket, and returns a promise for the response.
+   * Both sendToFigma and sendToFigmaWithAbort delegate here.
    */
-  async sendToFigma<T = unknown>(type: string, payload: unknown): Promise<T> {
+  private dispatchRequest<T>(type: string, payload: unknown): { id: string; promise: Promise<T> } {
     if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new FigmaBridgeError(
         createError(ErrorCode.CONN_NOT_CONNECTED, 'Not connected to Figma plugin')
@@ -358,80 +346,8 @@ export class FigmaBridge {
     }
 
     const ws = this.ws;
-    const id = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    const id = `req_${randomUUID()}`;
     const request: FigmaRequest = { id, type, payload };
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        const pending = this.pendingRequests.get(id);
-        if (pending && !pending.aborted) {
-          this.pendingRequests.delete(id);
-          reject(
-            new FigmaBridgeError(
-              createError(ErrorCode.OP_TIMEOUT, 'Request timeout', { requestId: id })
-            )
-          );
-        }
-      }, this.requestTimeout);
-
-      this.pendingRequests.set(id, {
-        resolve: (response: FigmaResponse) => {
-          if (response.success) {
-            resolve(response.data as T);
-          } else {
-            reject(
-              new FigmaBridgeError(
-                createError(ErrorCode.OP_FAILED, response.error || 'Request failed')
-              )
-            );
-          }
-        },
-        reject,
-        timeout,
-        aborted: false
-      });
-
-      try {
-        ws.send(JSON.stringify(request));
-      } catch (error) {
-        clearTimeout(timeout);
-        this.pendingRequests.delete(id);
-        reject(error);
-      }
-    });
-  }
-
-  /**
-   * Sends a cancellable request to Figma
-   * Returns both the promise and an abort controller
-   * @param type
-   * @param payload
-   */
-  sendToFigmaWithAbort<T = unknown>(
-    type: string,
-    payload: unknown
-  ): { promise: Promise<T>; abort: RequestAbortController } {
-    if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      throw new FigmaBridgeError(
-        createError(ErrorCode.CONN_NOT_CONNECTED, 'Not connected to Figma plugin')
-      );
-    }
-
-    const ws = this.ws;
-    const id = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-    const request: FigmaRequest = { id, type, payload };
-
-    const abortController: RequestAbortController = {
-      abort: () => {
-        const pending = this.pendingRequests.get(id);
-        if (pending && !pending.aborted) {
-          pending.aborted = true;
-          clearTimeout(pending.timeout);
-          this.pendingRequests.delete(id);
-        }
-      },
-      aborted: false
-    };
 
     const promise = new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -475,6 +391,42 @@ export class FigmaBridge {
         reject(error);
       }
     });
+
+    return { id, promise };
+  }
+
+  /**
+   * Sends a request to Figma and returns a promise for the response
+   * @param type
+   * @param payload
+   */
+  async sendToFigma<T = unknown>(type: string, payload: unknown): Promise<T> {
+    return this.dispatchRequest<T>(type, payload).promise;
+  }
+
+  /**
+   * Sends a cancellable request to Figma
+   * Returns both the promise and an abort controller
+   * @param type
+   * @param payload
+   */
+  sendToFigmaWithAbort<T = unknown>(
+    type: string,
+    payload: unknown
+  ): { promise: Promise<T>; abort: RequestAbortController } {
+    const { id, promise } = this.dispatchRequest<T>(type, payload);
+
+    const abortController: RequestAbortController = {
+      abort: () => {
+        const pending = this.pendingRequests.get(id);
+        if (pending && !pending.aborted) {
+          pending.aborted = true;
+          clearTimeout(pending.timeout);
+          this.pendingRequests.delete(id);
+        }
+      },
+      aborted: false
+    };
 
     // Link abort controller aborted property
     promise.catch(() => {

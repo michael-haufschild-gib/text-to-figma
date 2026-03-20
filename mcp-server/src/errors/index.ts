@@ -5,6 +5,8 @@
  */
 
 // New structured error codes
+import { ErrorCode, createError, type StructuredError } from './error-codes.js';
+
 export {
   ErrorCode,
   createError,
@@ -15,21 +17,26 @@ export {
 } from './error-codes.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Legacy Error Classes (for backward compatibility)
+// Tool Error Classes — integrated with structured ErrorCode system
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Base error class for all tool execution errors
+ * Base error class for all tool execution errors.
+ * Carries an optional ErrorCode for machine-readable classification.
  */
 export class ToolExecutionError extends Error {
+  public readonly errorCode: ErrorCode;
+
   constructor(
     message: string,
     public readonly tool: string,
     public readonly input?: unknown,
-    public readonly cause?: Error
+    public readonly cause?: Error,
+    errorCode?: ErrorCode
   ) {
     super(message);
     this.name = 'ToolExecutionError';
+    this.errorCode = errorCode ?? ErrorCode.OP_FAILED;
     Error.captureStackTrace?.(this, this.constructor);
   }
 
@@ -37,6 +44,7 @@ export class ToolExecutionError extends Error {
     return {
       name: this.name,
       message: this.message,
+      code: this.errorCode,
       tool: this.tool,
       input: this.input,
       cause: this.cause ? { name: this.cause.name, message: this.cause.message } : undefined,
@@ -53,9 +61,10 @@ export class ValidationError extends ToolExecutionError {
     message: string,
     tool: string,
     input?: unknown,
-    public readonly validationErrors?: unknown
+    public readonly validationErrors?: unknown,
+    errorCode?: ErrorCode
   ) {
-    super(message, tool, input);
+    super(message, tool, input, undefined, errorCode ?? ErrorCode.VAL_FAILED);
     this.name = 'ValidationError';
   }
 
@@ -76,9 +85,10 @@ export class FigmaAPIError extends ToolExecutionError {
     tool: string,
     public readonly operation: string,
     input?: unknown,
-    cause?: Error
+    cause?: Error,
+    errorCode?: ErrorCode
   ) {
-    super(message, tool, input, cause);
+    super(message, tool, input, cause, errorCode ?? ErrorCode.OP_FAILED);
     this.name = 'FigmaAPIError';
   }
 
@@ -99,9 +109,10 @@ export class NetworkError extends ToolExecutionError {
     tool: string,
     public readonly endpoint?: string,
     input?: unknown,
-    cause?: Error
+    cause?: Error,
+    errorCode?: ErrorCode
   ) {
-    super(message, tool, input, cause);
+    super(message, tool, input, cause, errorCode ?? ErrorCode.CONN_FAILED);
     this.name = 'NetworkError';
   }
 
@@ -136,6 +147,52 @@ export class ConfigurationError extends Error {
       stack: this.stack
     };
   }
+}
+
+/**
+ * Figma Bridge error - thrown when Figma bridge operations fail
+ * Wraps a StructuredError for machine-readable error codes
+ */
+export class FigmaBridgeError extends Error {
+  public readonly structuredError: StructuredError;
+
+  constructor(errorOrMessage: StructuredError | string, legacyCode?: string) {
+    if (typeof errorOrMessage === 'string') {
+      // Legacy constructor support: (message, code)
+      const code = (legacyCode as ErrorCode) || ErrorCode.SYS_INTERNAL;
+      const structured = createError(code, errorOrMessage);
+      super(errorOrMessage);
+      this.structuredError = structured;
+    } else {
+      // New constructor: (StructuredError)
+      super(errorOrMessage.message);
+      this.structuredError = errorOrMessage;
+    }
+    this.name = 'FigmaBridgeError';
+  }
+
+  /** Machine-readable error code */
+  get code(): ErrorCode {
+    return this.structuredError.code;
+  }
+
+  /** Suggested action to resolve */
+  get suggestion(): string | undefined {
+    return this.structuredError.suggestion;
+  }
+
+  /** Additional error details */
+  get details(): Record<string, unknown> | undefined {
+    return this.structuredError.details;
+  }
+}
+
+/**
+ * Type guard for FigmaBridgeError
+ * @param error
+ */
+export function isFigmaBridgeError(error: unknown): error is FigmaBridgeError {
+  return error instanceof FigmaBridgeError;
 }
 
 // Type guards

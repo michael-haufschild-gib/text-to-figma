@@ -166,7 +166,6 @@ function determineSeverity(error: Error, category: ErrorCategory): ErrorSeverity
 export class ErrorTracker {
   private errors: Map<string, TrackedError> = new Map();
   private readonly config: Required<ErrorTrackerConfig>;
-  private errorCount: number = 0;
   private pruneTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(config?: Partial<ErrorTrackerConfig>) {
@@ -248,7 +247,6 @@ export class ErrorTracker {
     };
 
     this.errors.set(fingerprint, tracked);
-    this.errorCount++;
 
     // Prune old errors if needed
     if (this.errors.size > this.config.maxErrors) {
@@ -338,8 +336,15 @@ export class ErrorTracker {
         message: e.error.message
       }));
 
+    // Compute total from currently tracked errors (not the monotonic counter,
+    // which drifts after pruning removes old entries)
+    let total = 0;
+    for (const error of this.errors.values()) {
+      total += error.count;
+    }
+
     return {
-      total: this.errorCount,
+      total,
       byCategory,
       bySeverity,
       uniqueErrors: this.errors.size,
@@ -352,7 +357,6 @@ export class ErrorTracker {
    */
   clear(): void {
     this.errors.clear();
-    this.errorCount = 0;
     this.stopPruneTimer();
     this.startPruneTimer(); // Restart timer for future errors
   }
@@ -363,7 +367,6 @@ export class ErrorTracker {
   destroy(): void {
     this.stopPruneTimer();
     this.errors.clear();
-    this.errorCount = 0;
   }
 
   /**

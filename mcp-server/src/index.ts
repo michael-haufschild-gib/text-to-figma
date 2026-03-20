@@ -18,6 +18,12 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { getConfig, loadConfig } from './config.js';
+import {
+  isToolExecutionError,
+  isFigmaBridgeError,
+  formatStructuredError,
+  createError
+} from './errors/index.js';
 import { getFigmaBridge } from './figma-bridge.js';
 import { startHealthCheck, stopHealthCheck } from './health.js';
 import { getFewShotPrompt } from './prompts/few-shot.js';
@@ -128,9 +134,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
     const content = await routeToolCall(name, args);
     return { content };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // Format error with structured code when available
+    let errorText: string;
+
+    if (isFigmaBridgeError(error)) {
+      errorText = formatStructuredError(error.structuredError);
+    } else if (isToolExecutionError(error)) {
+      const structured = createError(error.errorCode, error.message);
+      errorText = formatStructuredError(structured);
+    } else {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      errorText = `Error: ${errorMessage}`;
+    }
+
     return {
-      content: [{ type: 'text', text: `Error: ${errorMessage}` }]
+      content: [{ type: 'text', text: errorText }],
+      isError: true
     };
   }
 });

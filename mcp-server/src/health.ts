@@ -12,7 +12,7 @@ import { getFigmaBridge } from './figma-bridge.js';
 /**
  * Health status
  */
-export interface HealthStatus {
+export interface HttpHealthStatus {
   status: 'healthy' | 'unhealthy' | 'degraded';
   timestamp: number;
   uptime: number;
@@ -47,7 +47,7 @@ export class HealthCheckServer {
   /**
    * Get current health status
    */
-  getHealthStatus(): HealthStatus {
+  getHttpHealthStatus(): HttpHealthStatus {
     const bridge = getFigmaBridge();
     const memoryUsage = process.memoryUsage();
     const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
@@ -123,7 +123,7 @@ export class HealthCheckServer {
 
       // Health check endpoint
       if (req.url === '/health' || req.url === '/healthz') {
-        const health = this.getHealthStatus();
+        const health = this.getHttpHealthStatus();
         const statusCode = health.status === 'healthy' ? 200 : 503;
 
         res.writeHead(statusCode, { 'Content-Type': 'application/json' });
@@ -133,7 +133,7 @@ export class HealthCheckServer {
 
       // Readiness probe - checks if service is ready to accept traffic
       if (req.url === '/ready' || req.url === '/readiness') {
-        const health = this.getHealthStatus();
+        const health = this.getHttpHealthStatus();
         const ready = health.status === 'healthy';
         const statusCode = ready ? 200 : 503;
 
@@ -153,7 +153,7 @@ export class HealthCheckServer {
 
       // Liveness probe - checks if service is alive (less strict)
       if (req.url === '/live' || req.url === '/liveness') {
-        const health = this.getHealthStatus();
+        const health = this.getHttpHealthStatus();
         // Service is alive if not completely unhealthy
         const alive = health.status !== 'unhealthy';
         const statusCode = alive ? 200 : 503;

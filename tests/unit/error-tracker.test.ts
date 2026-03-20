@@ -249,10 +249,10 @@ describe('ErrorTracker', () => {
       tracker.track(err);
 
       const stats = tracker.getStatistics();
-      // errorCount increments only on new (unique) entries, not dedupes
-      expect(stats.total).toBe(1);
+      // total reflects all occurrences (including deduped repeats)
+      expect(stats.total).toBe(3);
       expect(stats.uniqueErrors).toBe(1);
-      // But individual error.count tracks all occurrences
+      // individual error.count also tracks all occurrences
       const all = tracker.getAll();
       expect(all[0].count).toBe(3);
     });
