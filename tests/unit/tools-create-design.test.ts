@@ -1,9 +1,8 @@
 /**
  * create_design Tool Tests
  *
- * Tests execute function behavior: batch creation, auto-correction, response
- * validation (type guard), node registry integration, and error handling
- * (returns { success: false } instead of throwing).
+ * Tests execute function behavior: batch creation, auto-correction, Zod response
+ * validation, node registry integration, and error propagation.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -44,7 +43,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
 const { createDesign } = await import('../../mcp-server/src/tools/create_design.js');
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
   __mockBridge: {
-    sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
   };
 };
 
@@ -194,7 +193,7 @@ describe('createDesign', () => {
   beforeEach(() => {
     loadConfig();
     resetNodeRegistry();
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(validResponse());
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(validResponse());
   });
 
   afterEach(() => {
@@ -242,23 +241,19 @@ describe('createDesign', () => {
     expect(textNode?.parentId).toBe('10:1');
   });
 
-  it('returns success:false when response fails type guard', async () => {
-    // Missing rootNodeId → fails isValidCreateDesignResponse
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
-      nodeIds: {},
-      totalNodes: 0
-    });
+  it('throws ZodError when response fails schema validation', async () => {
+    // Missing rootNodeId → Zod rejects the response
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(
+      new Error('Expected string, received undefined at "rootNodeId"')
+    );
 
-    const result = await createDesign({
-      spec: { type: 'frame', name: 'Test' }
-    });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Invalid response');
+    await expect(createDesign({ spec: { type: 'frame', name: 'Test' } })).rejects.toThrow(
+      'rootNodeId'
+    );
   });
 
   it('propagates bridge errors to the router for tracking', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('WebSocket connection lost'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('WebSocket connection lost'));
 
     await expect(
       createDesign({
@@ -309,16 +304,17 @@ describe('createDesign', () => {
       parentId: 'existing-frame-99'
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith(
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
       'create_design',
       expect.objectContaining({
         parentId: 'existing-frame-99'
-      })
+      }),
+      expect.anything()
     );
   });
 
   it('handles response with no nodes array gracefully', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       rootNodeId: '20:1',
       nodeIds: { Frame: '20:1' },
       totalNodes: 1,
@@ -338,26 +334,20 @@ describe('createDesign', () => {
     expect(registry.getNode('20:1')).toBeNull();
   });
 
-  it('returns success:false when response is null', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(null);
+  it('throws when response is null (Zod rejects it)', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(
+      new Error('Expected object, received null')
+    );
 
-    const result = await createDesign({
-      spec: { type: 'frame', name: 'Null' }
-    });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Invalid response');
+    await expect(createDesign({ spec: { type: 'frame', name: 'Null' } })).rejects.toThrow();
   });
 
-  it('returns success:false when response is undefined', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+  it('throws when response is undefined (Zod rejects it)', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(
+      new Error('Expected object, received undefined')
+    );
 
-    const result = await createDesign({
-      spec: { type: 'frame', name: 'Undef' }
-    });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Invalid response');
+    await expect(createDesign({ spec: { type: 'frame', name: 'Undef' } })).rejects.toThrow();
   });
 
   it('handles deeply nested spec with multiple correction points', async () => {
@@ -392,7 +382,7 @@ describe('createDesign', () => {
 
   it('propagates Figma-internal errors with original message', async () => {
     const specificError = 'FIGMA_INTERNAL: Maximum node count exceeded for this file';
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error(specificError));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error(specificError));
 
     await expect(
       createDesign({
@@ -401,18 +391,16 @@ describe('createDesign', () => {
     ).rejects.toThrow(specificError);
   });
 
-  it('returns success:false when response has wrong shape (number instead of object)', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(42);
+  it('throws when response has wrong shape (number instead of object)', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(
+      new Error('Expected object, received number')
+    );
 
-    const result = await createDesign({
-      spec: { type: 'frame', name: 'BadShape' }
-    });
-
-    expect(result.success).toBe(false);
+    await expect(createDesign({ spec: { type: 'frame', name: 'BadShape' } })).rejects.toThrow();
   });
 
   it('registers nodes with correct parent-child relationships from response', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(
       validResponse({
         nodes: [
           {

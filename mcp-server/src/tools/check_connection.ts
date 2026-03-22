@@ -5,18 +5,19 @@
  * Returns detailed connection information including latency, file info, and circuit breaker state.
  */
 
+import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 
 /**
- * Connection status response from Figma plugin ping
+ * Zod schema for Figma plugin ping response validation
  */
-interface FigmaPingResponse {
-  pong: boolean;
-  timestamp: number;
-  pluginVersion: string;
-  fileName: string;
-  currentPage: string;
-}
+const FigmaPingResponseSchema = z.object({
+  pong: z.boolean(),
+  timestamp: z.number(),
+  pluginVersion: z.string(),
+  fileName: z.string(),
+  currentPage: z.string()
+});
 
 /**
  * Result of connection check
@@ -72,7 +73,7 @@ export async function checkConnection(): Promise<CheckConnectionResult> {
   const startTime = Date.now();
 
   try {
-    const pingResponse = await bridge.sendToFigma<FigmaPingResponse>('ping', {});
+    const pingResponse = await bridge.sendToFigmaValidated('ping', {}, FigmaPingResponseSchema);
     const latencyMs = Date.now() - startTime;
 
     return {

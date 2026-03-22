@@ -41,6 +41,7 @@ const { checkConnection } = await import('../../mcp-server/src/tools/check_conne
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
   __mockBridge: {
     sendToFigma: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
     sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
     isConnected: ReturnType<typeof vi.fn>;
     getConnectionStatus: ReturnType<typeof vi.fn>;
@@ -69,7 +70,7 @@ describe('checkConnection', () => {
     expect(result.circuitBreakerState).toBe('OPEN');
     expect(result.message).toContain('Not connected');
     // Should not attempt ping when disconnected
-    expect(__mockBridge.sendToFigma).not.toHaveBeenCalled();
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
   });
 
   it('does not attempt ping when disconnected — returns immediately', async () => {
@@ -86,7 +87,7 @@ describe('checkConnection', () => {
     expect(result.connected).toBe(false);
     expect(result.wsReadyStateText).toBe('CONNECTING');
     expect(result.latencyMs).toBeUndefined();
-    expect(__mockBridge.sendToFigma).not.toHaveBeenCalled();
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
   });
 
   it('returns full connection info when ping succeeds', async () => {
@@ -97,7 +98,7 @@ describe('checkConnection', () => {
       circuitBreakerState: 'CLOSED',
       reconnectAttempts: 0
     });
-    __mockBridge.sendToFigma.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       pong: true,
       timestamp: Date.now(),
       pluginVersion: '1.2.0',
@@ -127,7 +128,7 @@ describe('checkConnection', () => {
       circuitBreakerState: 'CLOSED',
       reconnectAttempts: 0
     });
-    __mockBridge.sendToFigma.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       pong: true,
       timestamp: Date.now(),
       pluginVersion: '1.0.0',
@@ -137,7 +138,7 @@ describe('checkConnection', () => {
 
     await checkConnection();
 
-    expect(__mockBridge.sendToFigma).toHaveBeenCalledWith('ping', {});
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith('ping', {}, expect.anything());
   });
 
   it('returns connected=true with error when ping fails (WebSocket up but plugin unresponsive)', async () => {
@@ -148,7 +149,7 @@ describe('checkConnection', () => {
       circuitBreakerState: 'CLOSED',
       reconnectAttempts: 0
     });
-    __mockBridge.sendToFigma.mockRejectedValue(new Error('Ping timeout'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Ping timeout'));
 
     const result = await checkConnection();
 
@@ -169,7 +170,7 @@ describe('checkConnection', () => {
       circuitBreakerState: 'CLOSED',
       reconnectAttempts: 0
     });
-    __mockBridge.sendToFigma.mockRejectedValue('raw string error');
+    __mockBridge.sendToFigmaValidated.mockRejectedValue('raw string error');
 
     const result = await checkConnection();
 
@@ -234,7 +235,7 @@ describe('checkConnection', () => {
       circuitBreakerState: 'HALF_OPEN',
       reconnectAttempts: 0
     });
-    __mockBridge.sendToFigma.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       pong: true,
       timestamp: Date.now(),
       pluginVersion: '1.0.0',

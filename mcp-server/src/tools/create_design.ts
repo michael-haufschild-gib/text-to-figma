@@ -112,38 +112,30 @@ export interface CreateDesignResult {
 }
 
 /**
- * Response from Figma plugin for create_design
+ * Zod schema for Figma plugin create_design response validation
  */
-interface FigmaCreateDesignResponse {
-  rootNodeId: string;
-  nodeIds: Record<string, string>;
-  totalNodes: number;
-  message: string;
-  nodes?: Array<{
-    nodeId: string;
-    type: string;
-    name: string;
-    parentId: string | null;
-    bounds: { x: number; y: number; width: number; height: number };
-  }>;
-}
-
-/**
- * Type guard to validate Figma response structure
- * @param response
- */
-function isValidCreateDesignResponse(response: unknown): response is FigmaCreateDesignResponse {
-  if (response === null || response === undefined || typeof response !== 'object') {
-    return false;
-  }
-  const r = response as Record<string, unknown>;
-  return (
-    typeof r.rootNodeId === 'string' &&
-    typeof r.nodeIds === 'object' &&
-    r.nodeIds !== null &&
-    typeof r.totalNodes === 'number'
-  );
-}
+const CreateDesignResponseSchema = z.object({
+  rootNodeId: z.string(),
+  nodeIds: z.record(z.string()),
+  totalNodes: z.number(),
+  message: z.string().optional(),
+  nodes: z
+    .array(
+      z.object({
+        nodeId: z.string(),
+        type: z.string(),
+        name: z.string(),
+        parentId: z.string().nullable(),
+        bounds: z.object({
+          x: z.number(),
+          y: z.number(),
+          width: z.number(),
+          height: z.number()
+        })
+      })
+    )
+    .optional()
+});
 
 /**
  * Creates an entire design hierarchy in a single atomic operation.
@@ -171,33 +163,27 @@ export async function createDesign(params: CreateDesignParams): Promise<CreateDe
 
   // Bridge errors (connection, timeout, circuit breaker) propagate to the
   // router, which records them in metrics and error tracking.
-  const response = await bridge.sendToFigmaWithRetry('create_design', {
-    spec: specToUse,
-    parentId: params.parentId
-  });
-
-  // Validate response structure — a malformed response is a protocol error,
-  // not a transient failure, so we return success:false rather than throwing.
-  if (!isValidCreateDesignResponse(response)) {
-    return {
-      success: false,
-      error: 'Invalid response from Figma plugin: missing required fields'
-    };
-  }
+  // Zod validates the response structure — malformed responses throw ZodError.
+  const response = await bridge.sendToFigmaValidated(
+    'create_design',
+    {
+      spec: specToUse,
+      parentId: params.parentId
+    },
+    CreateDesignResponseSchema
+  );
 
   // Register all created nodes in the node registry
   const registry = getNodeRegistry();
-  if (Array.isArray(response.nodes)) {
+  if (response.nodes) {
     for (const nodeInfo of response.nodes) {
-      if (typeof nodeInfo.nodeId === 'string') {
-        registry.register(nodeInfo.nodeId, {
-          type: typeof nodeInfo.type === 'string' ? nodeInfo.type : 'UNKNOWN',
-          name: typeof nodeInfo.name === 'string' ? nodeInfo.name : 'Unnamed',
-          parentId: nodeInfo.parentId,
-          children: [],
-          bounds: nodeInfo.bounds
-        });
-      }
+      registry.register(nodeInfo.nodeId, {
+        type: nodeInfo.type,
+        name: nodeInfo.name,
+        parentId: nodeInfo.parentId,
+        children: [],
+        bounds: nodeInfo.bounds
+      });
     }
     logger.info(`Registered ${response.nodes.length} nodes in registry`);
   }
@@ -207,8 +193,7 @@ export async function createDesign(params: CreateDesignParams): Promise<CreateDe
     rootNodeId: response.rootNodeId,
     nodeIds: response.nodeIds,
     totalNodes: response.totalNodes,
-    message:
-      typeof response.message === 'string' ? response.message : 'Design created successfully',
+    message: response.message ?? 'Design created successfully',
     autoCorrections: corrections.length > 0 ? corrections : undefined
   };
 }
