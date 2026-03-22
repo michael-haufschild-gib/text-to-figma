@@ -276,5 +276,40 @@ describe('HealthCheckServer HTTP endpoints', () => {
       await server.stop();
       await expect(server.stop()).resolves.toBeUndefined();
     });
+
+    it('resolves without starting when port is already in use', async () => {
+      // server is already listening from beforeEach on `port`
+      // Start another server on the SAME port — should resolve (non-fatal)
+      const duplicate = new HealthCheckServer(port);
+      await expect(duplicate.start()).resolves.toBeUndefined();
+      // The duplicate did not actually start — stop is safe
+      await duplicate.stop();
+    });
+  });
+});
+
+const {
+  startHealthCheck: _startHealthCheck,
+  stopHealthCheck: _stopHealthCheck,
+  getHealthCheckServer: _getHealthCheckServer
+} = await import('../../mcp-server/src/health.js');
+
+describe('Module-level health check functions', () => {
+  afterEach(async () => {
+    await _stopHealthCheck();
+    resetConfig();
+    resetHealthCheck();
+  });
+
+  it('startHealthCheck creates and starts server when enabled', async () => {
+    loadConfig();
+    await _startHealthCheck();
+    const hcServer = _getHealthCheckServer();
+    expect(hcServer).toBeInstanceOf(HealthCheckServer);
+  });
+
+  it('stopHealthCheck is safe when no server exists', async () => {
+    loadConfig();
+    await expect(_stopHealthCheck()).resolves.toBeUndefined();
   });
 });

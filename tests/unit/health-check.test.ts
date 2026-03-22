@@ -16,6 +16,10 @@ import {
   resetHealthCheck,
   checkHealth
 } from '../../mcp-server/src/monitoring/health-check.js';
+import {
+  getErrorTracker,
+  resetErrorTracker
+} from '../../mcp-server/src/monitoring/error-tracker.js';
 
 describe('HealthCheckRegistry', () => {
   describe('register and check', () => {
@@ -257,6 +261,51 @@ describe('HealthCheckRegistry advanced', () => {
       const checker = createErrorRateHealthChecker(5, 20);
       const result = checker();
       expect(result.status).toBe('healthy');
+    });
+
+    it('returns unhealthy when critical errors are present', () => {
+      const tracker = getErrorTracker();
+      tracker.track(new Error('fatal crash'), {}, 'critical');
+      try {
+        const checker = createErrorRateHealthChecker();
+        const result = checker();
+        expect(result.status).toBe('unhealthy');
+        expect(result.message).toContain('critical errors detected');
+      } finally {
+        resetErrorTracker();
+      }
+    });
+
+    it('returns unhealthy when high-severity errors exceed critical threshold', () => {
+      const tracker = getErrorTracker();
+      // Track enough unique high-severity errors to exceed critical threshold (50)
+      for (let i = 0; i < 51; i++) {
+        tracker.track(new Error(`high error ${i}`), {}, 'high', 'internal');
+      }
+      try {
+        const checker = createErrorRateHealthChecker(10, 50);
+        const result = checker();
+        expect(result.status).toBe('unhealthy');
+        expect(result.message).toContain('High error rate');
+      } finally {
+        resetErrorTracker();
+      }
+    });
+
+    it('returns degraded when high-severity errors exceed warn threshold but not critical', () => {
+      const tracker = getErrorTracker();
+      // Track enough unique high-severity errors to exceed warn (10) but not critical (50)
+      for (let i = 0; i < 11; i++) {
+        tracker.track(new Error(`elevated error ${i}`), {}, 'high', 'internal');
+      }
+      try {
+        const checker = createErrorRateHealthChecker(10, 50);
+        const result = checker();
+        expect(result.status).toBe('degraded');
+        expect(result.message).toContain('Elevated error rate');
+      } finally {
+        resetErrorTracker();
+      }
     });
   });
 
