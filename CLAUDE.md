@@ -14,7 +14,7 @@ Text-to-Figma is a **three-tier MCP server** that gives LLM agents 61 tools to c
 ### 1. FIGMA PLUGIN (`figma-plugin/`)
 
 - Executes Figma API operations inside the Figma desktop app
-- Handlers organized by domain: `creation`, `styling`, `query`, `layout`, `text`, `transform`, `components`, `styles`, `utility`, `design`
+- Handlers organized by domain: `creation`, `styling`, `query`, `layout`, `spatial`, `text`, `transform`, `components`, `styles`, `utility`, `design`
 - Built with esbuild, target ES2017
 
 ### 2. WEBSOCKET SERVER (`websocket-server/`)
@@ -26,8 +26,10 @@ Text-to-Figma is a **three-tier MCP server** that gives LLM agents 61 tools to c
 ### 3. MCP SERVER (`mcp-server/`)
 
 - Exposes tools via Model Context Protocol (stdio transport)
-- Routing: `routing/register-tools.ts` → `routing/tool-router.ts` → individual tool files
-- Handler groups in `routing/handlers-*.ts` define which tools exist
+- Registration: `routing/register-tools.ts` → `routing/tool-registry.ts` (stores handlers)
+- Execution: `routing/tool-router.ts` → `routing/tool-registry.ts` → `handler.execute()`
+- Handler contract: `routing/tool-handler.ts` defines `ToolHandler<TInput, TResult>` interface
+- Handler groups in `routing/handlers-*.ts` wire tools via `defineHandler()` from `handler-utils.ts`
 - Each tool in `tools/*.ts` exports: schema, execute function, tool definition
 - Design constraints: 8pt spacing grid, modular type scale, WCAG contrast
 - Node registry tracks created hierarchy across tool calls
