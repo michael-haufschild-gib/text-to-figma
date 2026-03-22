@@ -22,9 +22,9 @@ RUN npm prune --production
 # Expose health check port
 EXPOSE 8081
 
-# Health check
+# Health check — wget is built into Alpine, no CJS/ESM concerns
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8081/health', (res) => process.exit(res.statusCode === 200 ? 0 : 1))"
+  CMD wget -q -O /dev/null http://localhost:8081/health || exit 1
 
 # Start server
 CMD ["node", "dist/index.js"]

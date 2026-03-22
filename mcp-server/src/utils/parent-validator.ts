@@ -59,18 +59,18 @@ export function validateParentId(
   }
 
   if (!parentId) {
-    const message = `❌ HIERARCHY VIOLATION: ${nodeType} nodes must have a parent container.
+    const message = `HIERARCHY VIOLATION: ${nodeType} nodes must have a parent container.
 
-🤔 WHY THIS MATTERS:
+WHY THIS MATTERS:
 - Like HTML, design elements should be organized in containers
 - Creating ${nodeType} at root level breaks the hierarchy
 - This leads to disorganized designs and lost elements
 
-📋 HOW TO FIX:
+HOW TO FIX:
 1. First, create a parent frame: create_frame({ name: "Container", ... })
 2. Then, use the frame ID as parentId: create_${nodeType}({ ..., parentId: "frame-id" })
 
-💡 BETTER APPROACH:
+BETTER APPROACH:
 Use create_design tool for multi-element designs - it handles hierarchy automatically!
 
 Example:
@@ -142,19 +142,19 @@ export async function validateParentExists(
     if (!response.exists) {
       return {
         isValid: false,
-        error: `❌ PARENT NOT FOUND: Node with ID "${parentId}" does not exist.
+        error: `PARENT NOT FOUND: Node with ID "${parentId}" does not exist.
 
-🤔 COMMON CAUSES:
+COMMON CAUSES:
 - Using an incorrect or outdated node ID
 - Parent was deleted or never created
 - Typo in the parentId value
 
-📋 HOW TO FIX:
+HOW TO FIX:
 1. Use get_page_hierarchy to see all existing nodes and their IDs
 2. Create the parent frame first if it doesn't exist
 3. Use the correct ID from the creation response
 
-💡 WORKFLOW EXAMPLE:
+WORKFLOW EXAMPLE:
 Step 1: const frame = await create_frame({ name: "Container" })
 Step 2: await create_text({ content: "Hello", parentId: frame.frameId })
 
@@ -176,25 +176,25 @@ OR use create_design to avoid this error entirely!`,
     if (!isValidContainer) {
       return {
         isValid: false,
-        error: `❌ INVALID PARENT TYPE: Node "${parentId}" is type "${parentType}", which cannot contain children.
+        error: `INVALID PARENT TYPE: Node "${parentId}" is type "${parentType}", which cannot contain children.
 
-🤔 WHY THIS FAILS:
+WHY THIS FAILS:
 - Only container types (frames, components) can have children
 - ${parentType} nodes are leaf nodes - they don't support nesting
 - This is like trying to put HTML elements inside an <img> tag
 
-📋 VALID PARENT TYPES:
-✅ frame - Most common container (like <div>)
-✅ component - Reusable component container
-✅ component_set - Variant container
-✅ page - Top-level page container
+VALID PARENT TYPES:
+- frame: Most common container (like <div>)
+- component: Reusable component container
+- component_set: Variant container
+- page: Top-level page container
 
-❌ INVALID PARENT TYPES:
-❌ text - Cannot contain children
-❌ ellipse, rectangle, polygon - Shape primitives only
-❌ line - Single line element
+INVALID PARENT TYPES:
+- text: Cannot contain children
+- ellipse, rectangle, polygon: Shape primitives only
+- line: Single line element
 
-💡 HOW TO FIX:
+HOW TO FIX:
 1. Create a frame first: create_frame({ name: "Container" })
 2. Use the frame ID as parent, not a ${parentType} ID
 3. Or use create_design to handle hierarchy automatically`,
@@ -290,7 +290,7 @@ export function formatValidationError(result: ParentValidationResult): string {
  */
 export function getHierarchyPatternExamples(nodeType: string): string {
   const patterns: Record<string, string> = {
-    text: `📚 COMMON TEXT PATTERNS:
+    text: `COMMON TEXT PATTERNS:
 
 1. Button with Text:
    create_design({
@@ -317,7 +317,7 @@ export function getHierarchyPatternExamples(nodeType: string): string {
      }
    })`,
 
-    ellipse: `📚 COMMON SHAPE PATTERNS:
+    ellipse: `COMMON SHAPE PATTERNS:
 
 1. Icon with Circle Background:
    create_design({
@@ -343,7 +343,7 @@ export function getHierarchyPatternExamples(nodeType: string): string {
      }
    })`,
 
-    rectangle: `📚 COMMON RECTANGLE PATTERNS:
+    rectangle: `COMMON RECTANGLE PATTERNS:
 
 1. Card Background:
    create_design({

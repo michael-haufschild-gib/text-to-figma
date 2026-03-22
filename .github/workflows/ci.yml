@@ -44,10 +44,23 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Run benchmarks
+        if: matrix.node-version == 22
+        run: npm run bench -- --reporter=json --outputFile=benchmark-results.json
+        continue-on-error: true
+
       - name: Upload coverage
         if: matrix.node-version == 22
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
+          retention-days: 14
+
+      - name: Upload benchmark results
+        if: matrix.node-version == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results.json
           retention-days: 14
