@@ -28,11 +28,13 @@ import {
   handleSetLayoutSizing,
   handleSetConstraints,
   handleSetLayerOrder,
-  handleAlignNodes,
-  handleDistributeNodes,
-  handleConnectShapes,
   handleAddLayoutGrid
 } from './handlers/layout.js';
+import {
+  handleAlignNodes,
+  handleDistributeNodes,
+  handleConnectShapes
+} from './handlers/spatial.js';
 import {
   handleGetNodeById,
   handleGetNodeByName,
@@ -235,11 +237,12 @@ async function handleMessage(msg: Record<string, unknown>): Promise<void> {
   }
 
   try {
-    if (!(type in handlers)) {
+    const handler = handlers[type];
+    if (!handler) {
       throw new Error(`Unknown command type: ${type}`);
     }
 
-    const result = await handlers[type](payload ?? {});
+    const result = await handler(payload ?? {});
 
     figma.ui.postMessage({ id: requestId, success: true, data: result });
   } catch (error) {

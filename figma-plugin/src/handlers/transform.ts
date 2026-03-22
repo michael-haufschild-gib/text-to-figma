@@ -5,8 +5,14 @@
  */
 
 import { getNode } from '../helpers.js';
+import { validatePayload, type ValidationRule } from '../validate.js';
+
+const setTransformRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
 
 export function handleSetTransform(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, setTransformRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 

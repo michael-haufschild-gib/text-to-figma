@@ -5,6 +5,9 @@
  */
 
 import { cacheNode, hexToRgb, loadFont, convertEffects } from '../helpers.js';
+import { validatePayload, type ValidationRule } from '../validate.js';
+
+const createDesignRules: ValidationRule[] = [{ field: 'spec', type: 'object', required: true }];
 
 interface NodeSpec {
   type: string;
@@ -102,6 +105,9 @@ function buildDesignResponse(
 }
 
 export async function handleCreateDesign(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, createDesignRules);
+  if (error !== null) throw new Error(error);
+
   const spec = payload.spec as NodeSpec;
   const nodeMap = new Map<string, SceneNode>();
 

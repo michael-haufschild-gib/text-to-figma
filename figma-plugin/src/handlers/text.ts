@@ -6,8 +6,14 @@
  */
 
 import { getNode } from '../helpers.js';
+import { validatePayload, type ValidationRule } from '../validate.js';
+
+const nodeIdRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
 
 export async function handleSetTextProperties(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
@@ -32,6 +38,9 @@ export async function handleSetTextProperties(payload: Record<string, unknown>):
 }
 
 export function handleSetTextDecoration(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
@@ -44,6 +53,9 @@ export function handleSetTextDecoration(payload: Record<string, unknown>): unkno
 }
 
 export function handleSetTextCase(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
@@ -56,6 +68,9 @@ export function handleSetTextCase(payload: Record<string, unknown>): unknown {
 }
 
 export function handleSetLetterSpacing(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
@@ -71,6 +86,9 @@ export function handleSetLetterSpacing(payload: Record<string, unknown>): unknow
 }
 
 export function handleSetParagraphSpacing(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 

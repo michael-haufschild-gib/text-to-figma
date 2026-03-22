@@ -8,8 +8,24 @@
  */
 
 import { getNode, hexToRgb, resolveParent } from '../helpers.js';
+import { validatePayload, type ValidationRule } from '../validate.js';
+
+const nodeIdRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
+const pluginDataRules: ValidationRule[] = [
+  { field: 'nodeId', type: 'string', required: true },
+  { field: 'key', type: 'string', required: true }
+];
+const setPluginDataRules: ValidationRule[] = [
+  { field: 'nodeId', type: 'string', required: true },
+  { field: 'key', type: 'string', required: true },
+  { field: 'value', type: 'string', required: true }
+];
+const pageIdRules: ValidationRule[] = [{ field: 'pageId', type: 'string', required: true }];
 
 export function handleSetVisible(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
   node.visible = payload.visible as boolean;
@@ -21,6 +37,9 @@ export function handleSetVisible(payload: Record<string, unknown>): unknown {
 }
 
 export function handleSetLocked(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
   node.locked = payload.locked as boolean;
@@ -28,6 +47,9 @@ export function handleSetLocked(payload: Record<string, unknown>): unknown {
 }
 
 export function handleSetExportSettings(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 
@@ -51,6 +73,9 @@ export function handleSetExportSettings(payload: Record<string, unknown>): unkno
 }
 
 export async function handleExportNode(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 
@@ -78,6 +103,9 @@ export async function handleExportNode(payload: Record<string, unknown>): Promis
 }
 
 export function handleSetPluginData(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, setPluginDataRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 
@@ -86,6 +114,9 @@ export function handleSetPluginData(payload: Record<string, unknown>): unknown {
 }
 
 export function handleGetPluginData(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, pluginDataRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 
@@ -114,6 +145,9 @@ export function handleListPages(): unknown {
 }
 
 export async function handleSetCurrentPage(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, pageIdRules);
+  if (error !== null) throw new Error(error);
+
   const page = figma.root.children.find((p) => p.id === payload.pageId);
   if (!page) throw new Error('Page not found');
   await figma.setCurrentPageAsync(page);
@@ -121,6 +155,9 @@ export async function handleSetCurrentPage(payload: Record<string, unknown>): Pr
 }
 
 export function handleSetStrokeJoin(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node || !('strokeJoin' in node)) throw new Error('Node does not support stroke join');
   (node as GeometryMixin).strokeJoin = payload.strokeJoin as StrokeJoin;
@@ -132,6 +169,9 @@ export function handleSetStrokeJoin(payload: Record<string, unknown>): unknown {
 }
 
 export function handleSetStrokeCap(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node || !('strokeCap' in node)) throw new Error('Node does not support stroke cap');
   (node as GeometryMixin).strokeCap = payload.strokeCap as StrokeCap;
@@ -143,6 +183,9 @@ export function handleSetStrokeCap(payload: Record<string, unknown>): unknown {
 }
 
 export function handleSetClippingMask(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, nodeIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node || !('clipsContent' in node)) throw new Error('Node does not support clipping');
   (node as FrameNode).clipsContent = payload.enabled as boolean;
@@ -162,7 +205,8 @@ export function handleCreatePath(payload: Record<string, unknown>): unknown {
   if (!Array.isArray(commands) || commands.length === 0) {
     throw new Error('Path requires at least one command');
   }
-  if (commands[0].type !== 'M') throw new Error('Path must start with M (Move) command');
+  const firstCmd = commands[0];
+  if (firstCmd?.type !== 'M') throw new Error('Path must start with M (Move) command');
 
   const pathData = buildPathData(commands);
   const finalPath = payload.closed === true && !pathData.includes('Z') ? pathData + ' Z' : pathData;
@@ -196,6 +240,9 @@ function buildPathData(commands: Array<Record<string, unknown>>): string {
 
   for (let i = 0; i < commands.length; i++) {
     const cmd = commands[i];
+    if (!cmd) {
+      continue;
+    }
     switch (cmd.type) {
       case 'M':
         validateCoord(cmd, 'x', i);
@@ -208,11 +255,15 @@ function buildPathData(commands: Array<Record<string, unknown>>): string {
         pathData += `L ${String(cmd.x)} ${String(cmd.y)} `;
         break;
       case 'C':
-        for (const k of ['x1', 'y1', 'x2', 'y2', 'x', 'y']) validateCoord(cmd, k, i);
+        for (const k of ['x1', 'y1', 'x2', 'y2', 'x', 'y']) {
+          validateCoord(cmd, k, i);
+        }
         pathData += `C ${String(cmd.x1)} ${String(cmd.y1)} ${String(cmd.x2)} ${String(cmd.y2)} ${String(cmd.x)} ${String(cmd.y)} `;
         break;
       case 'Q':
-        for (const k of ['x1', 'y1', 'x', 'y']) validateCoord(cmd, k, i);
+        for (const k of ['x1', 'y1', 'x', 'y']) {
+          validateCoord(cmd, k, i);
+        }
         pathData += `Q ${String(cmd.x1)} ${String(cmd.y1)} ${String(cmd.x)} ${String(cmd.y)} `;
         break;
       case 'Z':

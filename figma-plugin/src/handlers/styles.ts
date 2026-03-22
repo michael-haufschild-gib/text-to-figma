@@ -6,8 +6,29 @@
  */
 
 import { convertEffects, getNode, hexToRgb, loadFont } from '../helpers.js';
+import { validatePayload, type ValidationRule } from '../validate.js';
+
+const createColorStyleRules: ValidationRule[] = [
+  { field: 'name', type: 'string', required: true },
+  { field: 'color', type: 'string', required: true }
+];
+const createTextStyleRules: ValidationRule[] = [
+  { field: 'name', type: 'string', required: true },
+  { field: 'fontSize', type: 'number', required: true }
+];
+const createEffectStyleRules: ValidationRule[] = [
+  { field: 'name', type: 'string', required: true },
+  { field: 'effects', type: 'array', required: true }
+];
+const applyStyleRules: ValidationRule[] = [
+  { field: 'nodeId', type: 'string', required: true },
+  { field: 'styleName', type: 'string', required: true }
+];
 
 export function handleCreateColorStyle(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, createColorStyleRules);
+  if (error !== null) throw new Error(error);
+
   const paintStyle = figma.createPaintStyle();
   paintStyle.name = payload.name as string;
   paintStyle.paints = [{ type: 'SOLID', color: hexToRgb(payload.color as string) }];
@@ -24,6 +45,9 @@ export function handleCreateColorStyle(payload: Record<string, unknown>): unknow
 }
 
 export async function handleCreateTextStyle(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, createTextStyleRules);
+  if (error !== null) throw new Error(error);
+
   const textStyle = figma.createTextStyle();
   textStyle.name = payload.name as string;
 
@@ -59,6 +83,9 @@ export async function handleCreateTextStyle(payload: Record<string, unknown>): P
 }
 
 export function handleCreateEffectStyle(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, createEffectStyleRules);
+  if (error !== null) throw new Error(error);
+
   const effectStyle = figma.createEffectStyle();
   effectStyle.name = payload.name as string;
 
@@ -77,6 +104,9 @@ export function handleCreateEffectStyle(payload: Record<string, unknown>): unkno
 }
 
 export async function handleApplyFillStyle(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, applyStyleRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node || !('fillStyleId' in node)) throw new Error('Node does not support fill styles');
 
@@ -98,6 +128,9 @@ export async function handleApplyFillStyle(payload: Record<string, unknown>): Pr
 }
 
 export async function handleApplyTextStyle(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, applyStyleRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
@@ -114,6 +147,9 @@ export async function handleApplyTextStyle(payload: Record<string, unknown>): Pr
 }
 
 export async function handleApplyEffectStyle(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, applyStyleRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node || !('effectStyleId' in node)) throw new Error('Node does not support effect styles');
 

@@ -6,8 +6,33 @@
  */
 
 import { cacheNode, getNode, resolveParent } from '../helpers.js';
+import { validatePayload, type ValidationRule } from '../validate.js';
+
+const createComponentRules: ValidationRule[] = [
+  { field: 'frameId', type: 'string', required: true }
+];
+const createInstanceRules: ValidationRule[] = [
+  { field: 'componentId', type: 'string', required: true }
+];
+const createComponentSetRules: ValidationRule[] = [
+  { field: 'variantIds', type: 'array', required: true }
+];
+const setComponentPropertiesRules: ValidationRule[] = [
+  { field: 'componentId', type: 'string', required: true }
+];
+const addVariantPropertyRules: ValidationRule[] = [
+  { field: 'componentSetId', type: 'string', required: true },
+  { field: 'propertyName', type: 'string', required: true }
+];
+const setInstanceSwapRules: ValidationRule[] = [
+  { field: 'instanceId', type: 'string', required: true },
+  { field: 'newComponentId', type: 'string', required: true }
+];
 
 export function handleCreateComponent(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, createComponentRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.frameId as string);
   if (node?.type !== 'FRAME') throw new Error('Node must be a frame to convert to component');
 
@@ -36,6 +61,9 @@ export function handleCreateComponent(payload: Record<string, unknown>): unknown
 }
 
 export function handleCreateInstance(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, createInstanceRules);
+  if (error !== null) throw new Error(error);
+
   const component = getNode(payload.componentId as string);
   if (component?.type !== 'COMPONENT') throw new Error('Node is not a component');
 
@@ -58,6 +86,9 @@ export function handleCreateInstance(payload: Record<string, unknown>): unknown 
 }
 
 export function handleCreateComponentSet(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, createComponentSetRules);
+  if (error !== null) throw new Error(error);
+
   const variantIds = payload.variantIds as string[];
   if (!Array.isArray(variantIds) || variantIds.length === 0)
     throw new Error('Component set requires at least one component');
@@ -91,6 +122,9 @@ export function handleCreateComponentSet(payload: Record<string, unknown>): unkn
 }
 
 export function handleSetComponentProperties(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, setComponentPropertiesRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.componentId as string);
   if (node?.type !== 'COMPONENT') throw new Error('Node is not a component');
 
@@ -114,6 +148,9 @@ export function handleSetComponentProperties(payload: Record<string, unknown>): 
 }
 
 export function handleAddVariantProperty(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, addVariantPropertyRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.componentSetId as string);
   if (node?.type !== 'COMPONENT_SET') throw new Error('Node is not a component set');
 
@@ -127,6 +164,9 @@ export function handleAddVariantProperty(payload: Record<string, unknown>): unkn
 }
 
 export async function handleSetInstanceSwap(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, setInstanceSwapRules);
+  if (error !== null) throw new Error(error);
+
   const instance = getNode(payload.instanceId as string);
   if (instance?.type !== 'INSTANCE') throw new Error('Node is not an instance');
 

@@ -6,8 +6,20 @@
  */
 
 import { convertEffects, getNode, hexToRgb } from '../helpers.js';
+import { validatePayload } from '../validate.js';
+import type { ValidationRule } from '../validate.js';
+
+const setFillsRules: ValidationRule[] = [
+  { field: 'nodeId', type: 'string', required: true },
+  { field: 'color', type: 'string' },
+  { field: 'fills', type: 'array' },
+  { field: 'opacity', type: 'number' }
+];
 
 export function handleSetFills(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, setFillsRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node || !('fills' in node)) throw new Error('Node not found or does not support fills');
 
@@ -79,8 +91,10 @@ export function handleSetAppearance(payload: Record<string, unknown>): unknown {
     const frameNode = node as FrameNode;
     if (clipping.useMask === true) {
       frameNode.clipsContent = true;
-      if ('children' in node && (node as FrameNode).children.length > 0) {
-        ((node as FrameNode).children[0] as SceneNode & { isMask: boolean }).isMask = true;
+      const children = (node as FrameNode).children;
+      const firstChild = children.length > 0 ? children[0] : undefined;
+      if (firstChild && 'isMask' in firstChild) {
+        (firstChild as SceneNode & { isMask: boolean }).isMask = true;
       }
     } else {
       frameNode.clipsContent = clipping.enabled as boolean;

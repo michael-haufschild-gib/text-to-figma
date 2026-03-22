@@ -6,6 +6,8 @@
  */
 
 import { cacheNode, hexToRgb, loadFont, resolveParent } from '../helpers.js';
+import { validatePayload } from '../validate.js';
+import type { ValidationRule } from '../validate.js';
 
 function applyLayoutSizing(frame: FrameNode, payload: Record<string, unknown>): void {
   if (
@@ -27,7 +29,24 @@ function applyLayoutSizing(frame: FrameNode, payload: Record<string, unknown>): 
   }
 }
 
+const createFrameRules: ValidationRule[] = [
+  { field: 'name', type: 'string' },
+  { field: 'x', type: 'number' },
+  { field: 'y', type: 'number' },
+  { field: 'width', type: 'number' },
+  { field: 'height', type: 'number' },
+  { field: 'layoutMode', type: 'string' },
+  { field: 'itemSpacing', type: 'number' },
+  { field: 'padding', type: 'number' },
+  { field: 'parentId', type: 'string' },
+  { field: 'horizontalSizing', type: 'string' },
+  { field: 'verticalSizing', type: 'string' }
+];
+
 export function handleCreateFrame(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, createFrameRules);
+  if (error !== null) throw new Error(error);
+
   const frame = figma.createFrame();
   frame.name = typeof payload.name === 'string' ? payload.name : 'Frame';
   frame.x = typeof payload.x === 'number' ? payload.x : 0;
@@ -59,7 +78,25 @@ export function handleCreateFrame(payload: Record<string, unknown>): unknown {
   return { nodeId: frame.id, message: `Frame created: ${frame.name}` };
 }
 
+const createTextRules: ValidationRule[] = [
+  { field: 'content', type: 'string' },
+  { field: 'name', type: 'string' },
+  { field: 'x', type: 'number' },
+  { field: 'y', type: 'number' },
+  { field: 'fontFamily', type: 'string' },
+  { field: 'fontWeight', type: 'number' },
+  { field: 'fontSize', type: 'number' },
+  { field: 'color', type: 'string' },
+  { field: 'textAlign', type: 'string' },
+  { field: 'lineHeight', type: 'number' },
+  { field: 'letterSpacing', type: 'number' },
+  { field: 'parentId', type: 'string' }
+];
+
 export async function handleCreateText(payload: Record<string, unknown>): Promise<unknown> {
+  const error = validatePayload(payload, createTextRules);
+  if (error !== null) throw new Error(error);
+
   const fontFamily = typeof payload.fontFamily === 'string' ? payload.fontFamily : 'Inter';
   const fontWeight = typeof payload.fontWeight === 'number' ? payload.fontWeight : 400;
   const fontName = await loadFont(fontFamily, fontWeight);

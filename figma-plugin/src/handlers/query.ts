@@ -6,8 +6,15 @@
  */
 
 import { getNode, getNodeDimensions } from '../helpers.js';
+import { validatePayload } from '../validate.js';
+import type { ValidationRule } from '../validate.js';
+
+const getNodeByIdRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
 
 export function handleGetNodeById(payload: Record<string, unknown>): unknown {
+  const error = validatePayload(payload, getNodeByIdRules);
+  if (error !== null) throw new Error(error);
+
   const node = getNode(payload.nodeId as string);
   if (!node) {
     return { exists: false, error: 'Node not found' };
