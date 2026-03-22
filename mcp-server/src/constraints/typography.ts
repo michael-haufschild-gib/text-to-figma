@@ -78,9 +78,7 @@ export function isValidFontSize(value: number): value is FontSize {
  * @param value
  */
 export function snapToTypeScale(value: number): FontSize {
-  // VALID_FONT_SIZES is a compile-time constant array — index 0 and last always exist
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const first = VALID_FONT_SIZES[0] ?? (12 as FontSize);
+  const first = VALID_FONT_SIZES[0];
 
   const last = VALID_FONT_SIZES[VALID_FONT_SIZES.length - 1] ?? (64 as FontSize);
 

@@ -85,19 +85,26 @@ function generateCssEquivalent(effects: Effect[]): string {
   let backgroundBlur: string | null = null;
 
   for (const effect of effects) {
-    if (effect.type === 'DROP_SHADOW') {
-      const rgba = hexToRgba(effect.color, effect.opacity);
-      dropShadows.push(`${effect.x}px ${effect.y}px ${effect.blur}px ${effect.spread}px ${rgba}`);
-    } else if (effect.type === 'INNER_SHADOW') {
-      const rgba = hexToRgba(effect.color, effect.opacity);
-      innerShadows.push(
-        `inset ${effect.x}px ${effect.y}px ${effect.blur}px ${effect.spread}px ${rgba}`
-      );
-    } else if (effect.type === 'LAYER_BLUR') {
-      layerBlur = `blur(${effect.radius}px)`;
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- needed for TypeScript type narrowing
-    } else if (effect.type === 'BACKGROUND_BLUR') {
-      backgroundBlur = `blur(${String(effect.radius)}px)`;
+    switch (effect.type) {
+      case 'DROP_SHADOW': {
+        const rgba = hexToRgba(effect.color, effect.opacity);
+        const shadow = `${effect.x}px ${effect.y}px ${effect.blur}px ${effect.spread}px ${rgba}`;
+        dropShadows.push(shadow);
+        break;
+      }
+      case 'INNER_SHADOW': {
+        const rgba = hexToRgba(effect.color, effect.opacity);
+        innerShadows.push(
+          `inset ${effect.x}px ${effect.y}px ${effect.blur}px ${effect.spread}px ${rgba}`
+        );
+        break;
+      }
+      case 'LAYER_BLUR':
+        layerBlur = `blur(${effect.radius}px)`;
+        break;
+      case 'BACKGROUND_BLUR':
+        backgroundBlur = `blur(${String(effect.radius)}px)`;
+        break;
     }
   }
 
