@@ -29,7 +29,8 @@ export interface RequestMessage {
 export interface ResponseMessage {
   id: string;
   success: boolean;
-  [key: string]: unknown;
+  data?: unknown;
+  error?: string;
 }
 
 export type BridgeMessage = FigmaHelloMessage | RequestMessage | ResponseMessage;
@@ -90,11 +91,7 @@ export function handleFigmaRegistration(
   clientId: string,
   ws: WebSocket
 ): boolean {
-  if (
-    message.type !== 'figma_hello' ||
-    !('source' in message) ||
-    message.source !== 'figma-plugin'
-  ) {
+  if (!('type' in message) || message.type !== 'figma_hello') {
     return false;
   }
 
@@ -124,16 +121,17 @@ export function handleFigmaRegistration(
 /**
  * Route a request message from an MCP client to the Figma plugin.
  */
-export function routeRequest(state: ServerState, message: BridgeMessage, clientId: string): void {
-  console.log(`[REQUEST] MCP -> Figma (${clientId}):`, message);
+export function routeRequest(state: ServerState, message: RequestMessage, clientId: string): void {
+  console.log(
+    `[REQUEST] MCP -> Figma (${clientId}): type=${message.type} id=${message.id ?? 'none'}`
+  );
   const client = state.clients.get(clientId);
   if (client) {
     client.isMCP = true;
   }
   // Track which MCP client originated this request for response routing
-  const requestMsg = message as RequestMessage;
-  if (typeof requestMsg.id === 'string') {
-    state.pendingRequestOrigins.set(requestMsg.id, clientId);
+  if (typeof message.id === 'string') {
+    state.pendingRequestOrigins.set(message.id, clientId);
   }
   if (state.figmaPluginClient && state.clients.has(state.figmaPluginClient)) {
     const figmaClient = state.clients.get(state.figmaPluginClient);
@@ -154,7 +152,9 @@ export function routeResponse(
   message: ResponseMessage,
   clientId: string
 ): void {
-  console.log(`[RESPONSE] Figma -> MCP (${clientId}):`, message);
+  console.log(
+    `[RESPONSE] Figma -> MCP (${clientId}): id=${message.id} success=${String(message.success)}`
+  );
   if (state.figmaPluginClient && clientId !== state.figmaPluginClient) {
     console.warn(`  Ignoring response from unregistered client ${clientId}`);
     return;
@@ -178,17 +178,27 @@ export function routeResponse(
   }
 }
 
+/** Type guard: message is a ResponseMessage (has id + success) */
+function isResponseMessage(msg: BridgeMessage): msg is ResponseMessage {
+  return 'id' in msg && 'success' in msg;
+}
+
+/** Type guard: message is a RequestMessage (has type + payload) */
+function isRequestMessage(msg: BridgeMessage): msg is RequestMessage {
+  return 'type' in msg && 'payload' in msg;
+}
+
 /**
  * Classify a message and route it to the appropriate handler.
  */
 export function routeMessage(state: ServerState, message: BridgeMessage, clientId: string): void {
-  const isRequest = 'type' in message && 'payload' in message;
-  const isResponse = 'id' in message && 'success' in message;
-
-  if (isRequest) {
-    routeRequest(state, message, clientId);
-  } else if (isResponse) {
+  // Check response first — a response always has {id, success} and is more specific.
+  // A message with {type, payload, id, success} must be treated as a response,
+  // not a request, because the 'success' field is the Figma plugin's reply signal.
+  if (isResponseMessage(message)) {
     routeResponse(state, message, clientId);
+  } else if (isRequestMessage(message)) {
+    routeRequest(state, message, clientId);
   } else {
     console.log(`[UNKNOWN] Message from ${clientId}:`, message);
   }
