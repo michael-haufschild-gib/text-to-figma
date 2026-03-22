@@ -28,6 +28,9 @@ enum CircuitState {
  * Circuit breaker for preventing cascading failures
  */
 class CircuitBreaker {
+  /** Number of consecutive successes needed in HALF_OPEN state to close the circuit */
+  private static readonly HALF_OPEN_SUCCESS_THRESHOLD = 2;
+
   private state: CircuitState = CircuitState.CLOSED;
   private failures = 0;
   private lastFailureTime = 0;
@@ -88,7 +91,7 @@ class CircuitBreaker {
 
     if (this.state === CircuitState.HALF_OPEN) {
       this.successCount++;
-      if (this.successCount >= 2) {
+      if (this.successCount >= CircuitBreaker.HALF_OPEN_SUCCESS_THRESHOLD) {
         this.state = CircuitState.CLOSED;
       }
     }
@@ -171,6 +174,7 @@ export class FigmaBridge {
   private readonly wsUrl: string;
   private readonly requestTimeout: number;
   private readonly healthCheckIntervalMs = 10000; // 10 seconds
+  private static readonly CONNECTION_TIMEOUT_MS = 5000;
 
   constructor() {
     const config = getConfig();
@@ -181,9 +185,8 @@ export class FigmaBridge {
       config.CIRCUIT_BREAKER_THRESHOLD,
       config.CIRCUIT_BREAKER_RESET_TIMEOUT
     );
-
-    // Start periodic health check
-    this.startHealthCheck();
+    // Health check starts on first successful connection (in 'open' handler),
+    // not eagerly in the constructor, to avoid reconnection noise before connect().
   }
 
   /**
@@ -203,7 +206,16 @@ export class FigmaBridge {
       try {
         this.ws = new WebSocket(this.wsUrl);
 
+        // Connection timeout — cleared on success or first error
+        const connectionTimeout = setTimeout(() => {
+          if (!this.connected) {
+            this.ws?.close();
+            reject(new FigmaBridgeError(createError(ErrorCode.CONN_TIMEOUT, 'Connection timeout')));
+          }
+        }, FigmaBridge.CONNECTION_TIMEOUT_MS);
+
         this.ws.on('open', () => {
+          clearTimeout(connectionTimeout);
           this.connected = true;
           this.reconnectAttempts = 0;
           console.error('[FigmaBridge] Connected to Figma plugin');
@@ -222,6 +234,7 @@ export class FigmaBridge {
         });
 
         this.ws.on('error', (error: Error) => {
+          clearTimeout(connectionTimeout);
           console.error('[FigmaBridge] WebSocket error:', error.message);
           if (!this.connected) {
             reject(
@@ -237,14 +250,6 @@ export class FigmaBridge {
           console.error('[FigmaBridge] Disconnected from Figma plugin');
           this.handleDisconnect();
         });
-
-        // Connection timeout
-        setTimeout(() => {
-          if (!this.connected) {
-            this.ws?.close();
-            reject(new FigmaBridgeError(createError(ErrorCode.CONN_TIMEOUT, 'Connection timeout')));
-          }
-        }, 5000);
       } catch (error) {
         reject(error);
       }
@@ -339,6 +344,11 @@ export class FigmaBridge {
    * Shared request lifecycle: creates a request, registers it as pending,
    * sends it over the WebSocket, and returns a promise for the response.
    * Both sendToFigma and sendToFigmaWithAbort delegate here.
+   *
+   * TRUST BOUNDARY: The response `data` field is cast to `T` without runtime validation.
+   * The bridge is intentionally type-agnostic — it routes messages, not interprets them.
+   * Callers (individual tool execute functions) are responsible for validating response shape.
+   * This matches the architecture: bridge = transport, tools = business logic + validation.
    */
   private dispatchRequest<T>(type: string, payload: unknown): { id: string; promise: Promise<T> } {
     if (!this.connected || this.ws?.readyState !== WebSocket.OPEN) {
@@ -420,6 +430,7 @@ export class FigmaBridge {
 
     const abortController: RequestAbortController = {
       abort: () => {
+        abortController.aborted = true;
         const pending = this.pendingRequests.get(id);
         if (pending && !pending.aborted) {
           pending.aborted = true;
@@ -430,7 +441,7 @@ export class FigmaBridge {
       aborted: false
     };
 
-    // Link abort controller aborted property
+    // Sync aborted flag on promise rejection (e.g., timeout or disconnect)
     promise.catch(() => {
       abortController.aborted = true;
     });
@@ -471,7 +482,7 @@ export class FigmaBridge {
           return await this.sendToFigma<T>(type, payload);
         });
       } catch (error) {
-        lastError = error as Error;
+        lastError = error instanceof Error ? error : new Error(String(error));
 
         // Don't retry on validation errors or if it's the last attempt
         const isValidationError =
@@ -504,6 +515,28 @@ export class FigmaBridge {
     }
 
     throw lastError ?? new Error('All retry attempts failed');
+  }
+
+  /**
+   * Sends a request with retry and validates the response against a Zod schema.
+   *
+   * Combines sendToFigmaWithRetry (retry + circuit breaker) with runtime
+   * validation of the response data. Use this when the response shape matters
+   * for correctness and you want to catch Figma protocol mismatches early.
+   *
+   * @param type - Message type for Figma plugin
+   * @param payload - Request payload
+   * @param responseSchema - Zod schema to validate response data
+   * @returns Validated response data
+   * @throws {z.ZodError} When response data does not match the schema
+   */
+  async sendToFigmaValidated<T>(
+    type: string,
+    payload: unknown,
+    responseSchema: z.ZodSchema<T>
+  ): Promise<T> {
+    const raw = await this.sendToFigmaWithRetry<unknown>(type, payload);
+    return responseSchema.parse(raw);
   }
 
   /**

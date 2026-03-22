@@ -6,7 +6,6 @@
 
 import { z } from 'zod';
 import { defineHandler, formatHierarchyTree, textResponse } from './handler-utils.js';
-import type { ToolHandler } from './tool-handler.js';
 
 import {
   getPageHierarchy,
@@ -79,8 +78,7 @@ import {
   type GetPluginDataResult
 } from '../tools/get_plugin_data.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous handler list
-export const navigationHandlers: ToolHandler<any, any>[] = [
+export const navigationHandlers = [
   defineHandler<GetPageHierarchyInput, GetPageHierarchyResult>({
     name: 'get_page_hierarchy',
     schema: GetPageHierarchyInputSchema as z.ZodSchema<GetPageHierarchyInput>,

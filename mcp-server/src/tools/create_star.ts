@@ -141,22 +141,21 @@ export async function createStar(input: CreateStarInput): Promise<CreateStarResu
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    nodeId?: string;
-    error?: string;
-  }>('create_star', {
-    pointCount: validated.pointCount,
-    radius: validated.radius,
-    innerRadius,
-    name: validated.name,
-    parentId: validated.parentId,
-    fillColor: validated.fillColor,
-    strokeColor: validated.strokeColor,
-    strokeWeight: validated.strokeWeight
-  });
-  // Note: Response validated by bridge at protocol level
+  // Send command to Figma with response validation
+  const response = await bridge.sendToFigmaValidated(
+    'create_star',
+    {
+      pointCount: validated.pointCount,
+      radius: validated.radius,
+      innerRadius,
+      name: validated.name,
+      parentId: validated.parentId,
+      fillColor: validated.fillColor,
+      strokeColor: validated.strokeColor,
+      strokeWeight: validated.strokeWeight
+    },
+    z.object({ nodeId: z.string().optional(), error: z.string().optional() })
+  );
 
   // Build CSS equivalent
   const cssEquivalent = `/* ${validated.pointCount}-point star requires SVG or clip-path */

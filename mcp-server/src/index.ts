@@ -26,18 +26,20 @@ import {
 } from './errors/index.js';
 import { getFigmaBridge } from './figma-bridge.js';
 import { startHealthCheck, stopHealthCheck } from './health.js';
+import { getLogger } from './monitoring/logger.js';
 import { getFewShotPrompt } from './prompts/few-shot.js';
 import { getZeroShotPrompt } from './prompts/zero-shot.js';
 import { registerAllTools } from './routing/register-tools.js';
 import { routeToolCall } from './routing/tool-router.js';
 import { getToolRegistry } from './routing/tool-registry.js';
+import { VERSION } from './version.js';
 import { ensureWebSocketServer, stopWebSocketServer } from './websocket-spawner.js';
 
 /**
  * Initialize MCP Server
  */
 const server = new Server(
-  { name: 'text-to-figma', version: '0.1.0' },
+  { name: 'text-to-figma', version: VERSION },
   { capabilities: { tools: {}, prompts: {} } }
 );
 
@@ -162,14 +164,21 @@ async function main(): Promise<void> {
 
   // Load configuration
   loadConfig();
+  const configValues = getConfig();
   console.error('[MCP Server] Configuration loaded');
+
+  // Sync logger with configured LOG_LEVEL.
+  // Module-level loggers are created before loadConfig() runs (ESM import order).
+  // Because child loggers share the root config by reference, updating the root
+  // propagates to all existing loggers.
+  getLogger().setConfig({ level: configValues.LOG_LEVEL });
 
   // Register all tools
   registerAllTools();
 
   // Start health check server if enabled
   try {
-    startHealthCheck();
+    await startHealthCheck();
     const config = getConfig();
     if (config.HEALTH_CHECK_ENABLED) {
       console.error(`[MCP Server] Health check server started on port ${config.HEALTH_CHECK_PORT}`);
@@ -251,10 +260,16 @@ async function main(): Promise<void> {
   };
 
   process.on('SIGINT', () => {
-    void shutdown('SIGINT');
+    shutdown('SIGINT').catch((err: unknown) => {
+      console.error('[MCP Server] Shutdown error:', err);
+      process.exit(1);
+    });
   });
   process.on('SIGTERM', () => {
-    void shutdown('SIGTERM');
+    shutdown('SIGTERM').catch((err: unknown) => {
+      console.error('[MCP Server] Shutdown error:', err);
+      process.exit(1);
+    });
   });
 }
 

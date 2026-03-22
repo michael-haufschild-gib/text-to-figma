@@ -4,6 +4,7 @@
  * Aggregates and reports errors for monitoring and debugging.
  */
 
+import { randomUUID } from 'node:crypto';
 import { clearInterval, setInterval } from 'node:timers';
 import { z } from 'zod';
 
@@ -229,7 +230,7 @@ export class ErrorTracker {
     }
 
     // Create new tracked error
-    const id = `err_${now}_${Math.random().toString(36).substring(2, 11)}`;
+    const id = `err_${randomUUID()}`;
     const tracked: TrackedError = {
       id,
       timestamp: now,

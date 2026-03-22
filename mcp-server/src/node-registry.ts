@@ -5,9 +5,36 @@
  * Allows Claude to query and understand the complete hierarchy at any time.
  */
 
+import { z } from 'zod';
 import { getLogger } from './monitoring/logger.js';
 
 const logger = getLogger().child({ component: 'node-registry' });
+
+/**
+ * Zod schema for validating imported registry data
+ */
+const nodeInfoSchema = z.object({
+  nodeId: z.string(),
+  type: z.string(),
+  name: z.string(),
+  parentId: z.string().nullable(),
+  children: z.array(z.string()),
+  bounds: z
+    .object({
+      x: z.number(),
+      y: z.number(),
+      width: z.number(),
+      height: z.number()
+    })
+    .optional(),
+  createdAt: z.number(),
+  metadata: z.record(z.unknown()).optional()
+});
+
+const registryDataSchema = z.object({
+  nodes: z.array(z.tuple([z.string(), nodeInfoSchema])),
+  rootNodes: z.array(z.string())
+});
 
 /**
  * Information about a node in the Figma tree
@@ -57,10 +84,25 @@ export class NodeRegistry {
    * @param info
    */
   register(nodeId: string, info: Omit<NodeInfo, 'nodeId' | 'createdAt'>): void {
+    // If re-registering an existing node, clean up old parent's children list
+    const existing = this.nodes.get(nodeId);
+    if (existing) {
+      if (existing.parentId && existing.parentId !== info.parentId) {
+        const oldParent = this.nodes.get(existing.parentId);
+        if (oldParent) {
+          oldParent.children = oldParent.children.filter((id) => id !== nodeId);
+        }
+      }
+      if (!existing.parentId && info.parentId) {
+        // Moving from root to child — remove from root nodes
+        this.rootNodes = this.rootNodes.filter((id) => id !== nodeId);
+      }
+    }
+
     const nodeInfo: NodeInfo = {
       ...info,
       nodeId,
-      createdAt: Date.now()
+      createdAt: existing?.createdAt ?? Date.now()
     };
 
     this.nodes.set(nodeId, nodeInfo);
@@ -123,14 +165,29 @@ export class NodeRegistry {
   /**
    * Get all descendants of a node (recursive)
    * @param nodeId
+   * @param maxDepth Maximum recursion depth (default 50)
+   * @param visited Tracks visited nodes to prevent cycles (internal use)
    */
-  getDescendants(nodeId: string): NodeInfo[] {
+  getDescendants(nodeId: string, maxDepth = 50, visited?: Set<string>): NodeInfo[] {
+    const seen = visited ?? new Set<string>();
+
+    if (seen.has(nodeId)) {
+      logger.warn(`Cycle detected in node hierarchy at node: ${nodeId}`);
+      return [];
+    }
+    seen.add(nodeId);
+
+    if (maxDepth <= 0) {
+      logger.warn(`Max depth exceeded in getDescendants at node: ${nodeId}`);
+      return [];
+    }
+
     const descendants: NodeInfo[] = [];
     const children = this.getChildren(nodeId);
 
     for (const child of children) {
       descendants.push(child);
-      descendants.push(...this.getDescendants(child.nodeId));
+      descendants.push(...this.getDescendants(child.nodeId, maxDepth - 1, seen));
     }
 
     return descendants;
@@ -283,19 +340,13 @@ export class NodeRegistry {
    * @param json
    */
   fromJSON(json: string): void {
-    try {
-      const data = JSON.parse(json) as {
-        nodes: [string, NodeInfo][];
-        rootNodes: string[];
-      };
+    const raw: unknown = JSON.parse(json);
+    const data = registryDataSchema.parse(raw);
 
-      this.nodes = new Map(data.nodes);
-      this.rootNodes = data.rootNodes;
+    this.nodes = new Map(data.nodes);
+    this.rootNodes = data.rootNodes;
 
-      logger.info(`Imported ${this.nodes.size} nodes`);
-    } catch (error) {
-      logger.error('Failed to import JSON', error instanceof Error ? error : undefined);
-    }
+    logger.info(`Imported ${this.nodes.size} nodes`);
   }
 }
 

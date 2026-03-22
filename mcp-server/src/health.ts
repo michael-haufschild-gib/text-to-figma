@@ -2,32 +2,29 @@
  * Health Check Server
  *
  * HTTP endpoint for health checks and readiness probes.
- * Useful for Kubernetes, load balancers, and monitoring systems.
+ * Delegates to HealthCheckRegistry for component health status,
+ * ensuring a single source of truth for health computations.
  */
 
 import http from 'node:http';
 import { getConfig } from './config.js';
 import { getFigmaBridge } from './figma-bridge.js';
+import {
+  createFigmaConnectionHealthChecker,
+  getHealthCheck,
+  type HealthStatus
+} from './monitoring/health-check.js';
 
 /**
- * Health status
+ * Health status exposed over HTTP.
+ *
+ * Derived from HealthCheckRegistry results.
  */
 export interface HttpHealthStatus {
-  status: 'healthy' | 'unhealthy' | 'degraded';
+  status: HealthStatus;
   timestamp: number;
   uptime: number;
-  checks: {
-    figma_bridge: {
-      connected: boolean;
-      status: 'pass' | 'fail';
-    };
-    memory: {
-      used: number;
-      total: number;
-      percentage: number;
-      status: 'pass' | 'warn' | 'fail';
-    };
-  };
+  checks: Record<string, { status: string; [key: string]: unknown }>;
 }
 
 /**
@@ -37,6 +34,7 @@ export class HealthCheckServer {
   private server: http.Server | null = null;
   private readonly port: number;
   private readonly startTime: number;
+  private registryInitialized = false;
 
   constructor(port?: number) {
     const config = getConfig();
@@ -45,60 +43,59 @@ export class HealthCheckServer {
   }
 
   /**
-   * Get current health status
+   * Ensure the Figma connection checker is registered in the health registry.
+   * Called once on first health status request to avoid startup-order issues.
    */
-  getHttpHealthStatus(): HttpHealthStatus {
+  private ensureRegistryInitialized(): void {
+    if (this.registryInitialized) {
+      return;
+    }
+    this.registryInitialized = true;
+
+    const registry = getHealthCheck();
     const bridge = getFigmaBridge();
-    const memoryUsage = process.memoryUsage();
-    const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
-    const memoryTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
-    const memoryPercentage = Math.round((memoryUsedMB / memoryTotalMB) * 100);
+    registry.register(
+      'figma_connection',
+      createFigmaConnectionHealthChecker(() => bridge.isConnected())
+    );
+  }
 
-    // Determine memory status
-    let memoryStatus: 'pass' | 'warn' | 'fail' = 'pass';
-    if (memoryPercentage > 90) {
-      memoryStatus = 'fail';
-    } else if (memoryPercentage > 75) {
-      memoryStatus = 'warn';
-    }
+  /**
+   * Get current health status by delegating to HealthCheckRegistry.
+   *
+   * Transforms the registry's component array into a keyed object
+   * for the HTTP response format.
+   */
+  async getHttpHealthStatus(): Promise<HttpHealthStatus> {
+    this.ensureRegistryInitialized();
 
-    // Determine overall status
-    const figmaConnected = bridge.isConnected();
-    let overallStatus: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
+    const result = await getHealthCheck().check();
 
-    if (!figmaConnected) {
-      overallStatus = 'degraded';
-    }
-
-    if (memoryStatus === 'fail') {
-      overallStatus = 'unhealthy';
+    // Transform components array into keyed object for HTTP response
+    const checks: Record<string, { status: string; [key: string]: unknown }> = {};
+    for (const component of result.components) {
+      const { name, ...rest } = component;
+      checks[name] = { ...rest, status: rest.status };
+      // Flatten metrics into the check object for backward compatibility
+      if (rest.metrics) {
+        Object.assign(checks[name], rest.metrics);
+      }
     }
 
     return {
-      status: overallStatus,
-      timestamp: Date.now(),
+      status: result.status,
+      timestamp: result.timestamp,
       uptime: Math.floor((Date.now() - this.startTime) / 1000),
-      checks: {
-        figma_bridge: {
-          connected: figmaConnected,
-          status: figmaConnected ? 'pass' : 'fail'
-        },
-        memory: {
-          used: memoryUsedMB,
-          total: memoryTotalMB,
-          percentage: memoryPercentage,
-          status: memoryStatus
-        }
-      }
+      checks
     };
   }
 
   /**
    * Start the health check server
    */
-  start(): void {
+  start(): Promise<void> {
     if (this.server) {
-      return;
+      return Promise.resolve();
     }
 
     this.server = http.createServer((req, res) => {
@@ -121,78 +118,107 @@ export class HealthCheckServer {
         return;
       }
 
-      // Health check endpoint
-      if (req.url === '/health' || req.url === '/healthz') {
-        const health = this.getHttpHealthStatus();
-        const statusCode = health.status === 'healthy' ? 200 : 503;
+      // All health endpoints are async — delegate to handler
+      this.handleHealthRequest(req, res).catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : 'Internal server error';
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: message }));
+      });
+    });
 
-        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(health, null, 2));
+    return new Promise<void>((resolve, reject) => {
+      const server = this.server;
+      if (!server) {
+        resolve();
         return;
       }
 
-      // Readiness probe - checks if service is ready to accept traffic
-      if (req.url === '/ready' || req.url === '/readiness') {
-        const health = this.getHttpHealthStatus();
-        const ready = health.status === 'healthy';
-        const statusCode = ready ? 200 : 503;
+      server.on('error', (error: NodeJS.ErrnoException) => {
+        if (error.code === 'EADDRINUSE') {
+          console.error(
+            `[HealthCheck] Port ${this.port} already in use — health check server not started (another instance may be running)`
+          );
+          this.server = null;
+          resolve(); // Non-fatal: server just won't start
+          return;
+        }
+        console.error('[HealthCheck] Server error:', error);
+        reject(error);
+      });
 
-        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify(
-            {
-              ready,
-              timestamp: health.timestamp
-            },
-            null,
-            2
-          )
-        );
-        return;
-      }
+      server.listen(this.port, () => {
+        console.error(`[HealthCheck] Health check server started on port ${this.port}`);
+        resolve();
+      });
+    });
+  }
 
-      // Liveness probe - checks if service is alive (less strict)
-      if (req.url === '/live' || req.url === '/liveness') {
-        const health = this.getHttpHealthStatus();
-        // Service is alive if not completely unhealthy
-        const alive = health.status !== 'unhealthy';
-        const statusCode = alive ? 200 : 503;
+  /**
+   * Handle health check HTTP requests (async to support registry checks).
+   */
+  private async handleHealthRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse
+  ): Promise<void> {
+    // Health check endpoint
+    if (req.url === '/health' || req.url === '/healthz') {
+      const health = await this.getHttpHealthStatus();
+      const statusCode = health.status === 'healthy' ? 200 : 503;
 
-        res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify(
-            {
-              alive,
-              timestamp: health.timestamp
-            },
-            null,
-            2
-          )
-        );
-        return;
-      }
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(health, null, 2));
+      return;
+    }
 
-      // Default 404
-      res.writeHead(404, { 'Content-Type': 'application/json' });
+    // Readiness probe - checks if service is ready to accept traffic
+    if (req.url === '/ready' || req.url === '/readiness') {
+      const health = await this.getHttpHealthStatus();
+      const ready = health.status === 'healthy';
+      const statusCode = ready ? 200 : 503;
+
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
       res.end(
-        JSON.stringify({
-          error: 'Not found',
-          available_endpoints: ['/health', '/ready', '/live']
-        })
+        JSON.stringify(
+          {
+            ready,
+            timestamp: health.timestamp
+          },
+          null,
+          2
+        )
       );
-    });
+      return;
+    }
 
-    this.server.listen(this.port, () => {
-      console.error(`[HealthCheck] Health check server started on port ${this.port}`);
-    });
+    // Liveness probe - checks if service is alive (less strict)
+    if (req.url === '/live' || req.url === '/liveness') {
+      const health = await this.getHttpHealthStatus();
+      // Service is alive if not completely unhealthy
+      const alive = health.status !== 'unhealthy';
+      const statusCode = alive ? 200 : 503;
 
-    this.server.on('error', (error: NodeJS.ErrnoException) => {
-      if (error.code === 'EADDRINUSE') {
-        // Port already in use - silently skip (another instance is running)
-        return;
-      }
-      console.error('[HealthCheck] Server error:', error);
-    });
+      res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify(
+          {
+            alive,
+            timestamp: health.timestamp
+          },
+          null,
+          2
+        )
+      );
+      return;
+    }
+
+    // Default 404
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(
+      JSON.stringify({
+        error: 'Not found',
+        available_endpoints: ['/health', '/ready', '/live']
+      })
+    );
   }
 
   /**
@@ -230,13 +256,13 @@ export function getHealthCheckServer(): HealthCheckServer {
 /**
  * Start the health check server
  */
-export function startHealthCheck(): void {
+export async function startHealthCheck(): Promise<void> {
   const config = getConfig();
   if (!config.HEALTH_CHECK_ENABLED) {
     return;
   }
 
-  getHealthCheckServer().start();
+  await getHealthCheckServer().start();
 }
 
 /**

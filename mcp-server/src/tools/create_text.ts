@@ -125,24 +125,23 @@ export async function createText(input: CreateTextInput): Promise<CreateTextResu
   // Generate CSS equivalent
   const cssEquivalent = generateCssEquivalent(validated, appliedLineHeight);
 
-  // Send to Figma
+  // Send to Figma with response validation
   const bridge = getFigmaBridge();
-  const response = await bridge.sendToFigmaWithRetry<{ nodeId: string }>('create_text', {
-    content: validated.content,
-    fontSize: validated.fontSize,
-    fontFamily: validated.fontFamily,
-    fontWeight: validated.fontWeight,
-    lineHeight: appliedLineHeight,
-    textAlign: validated.textAlign,
-    color: validated.color,
-    letterSpacing: validated.letterSpacing,
-    parentId: validated.parentId
-  });
-
-  // Validate response contains nodeId
-  if (response.nodeId === '') {
-    throw new Error('Figma plugin returned invalid response: missing nodeId field');
-  }
+  const response = await bridge.sendToFigmaValidated(
+    'create_text',
+    {
+      content: validated.content,
+      fontSize: validated.fontSize,
+      fontFamily: validated.fontFamily,
+      fontWeight: validated.fontWeight,
+      lineHeight: appliedLineHeight,
+      textAlign: validated.textAlign,
+      color: validated.color,
+      letterSpacing: validated.letterSpacing,
+      parentId: validated.parentId
+    },
+    z.object({ nodeId: z.string().min(1) })
+  );
 
   // Register node in hierarchy registry
   const registry = getNodeRegistry();

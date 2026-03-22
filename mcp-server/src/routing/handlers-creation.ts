@@ -6,7 +6,6 @@
 
 import { z } from 'zod';
 import { defineHandler, textResponse } from './handler-utils.js';
-import type { ToolHandler } from './tool-handler.js';
 
 import {
   checkConnection,
@@ -126,8 +125,7 @@ import {
   type SetInstanceSwapResult
 } from '../tools/set_instance_swap.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous handler list
-export const creationHandlers: ToolHandler<any, any>[] = [
+export const creationHandlers = [
   // ─── Connection / Design ────────────────────────────────────────────────
   defineHandler<Record<string, never>, CheckConnectionResult>({
     name: 'check_connection',

@@ -5,22 +5,30 @@
  */
 
 import type { z } from 'zod';
-import type { ResponseContent, ToolHandler } from './tool-handler.js';
+import type {
+  AnyToolHandler,
+  ResponseContent,
+  ToolDefinition,
+  ToolHandler
+} from './tool-handler.js';
 
 /**
  * Build a ToolHandler from its constituent parts.
  *
- * Provides a concise factory that enforces the ToolHandler contract
- * without requiring explicit generic annotations at every call site.
+ * Generic parameters enforce type safety within the handler pipeline
+ * (schema.parse → execute → formatResponse). The return type is
+ * AnyToolHandler because handler arrays are heterogeneous — callers
+ * store handlers with different TInput/TResult in the same collection.
+ * This eliminates the need for `as AnyToolHandler[]` casts at call sites.
  */
 export function defineHandler<TInput, TResult>(opts: {
   name: string;
   schema: z.ZodSchema<TInput>;
   execute: (input: TInput) => Promise<TResult>;
   formatResponse: (result: TResult) => ResponseContent[];
-  definition: ToolHandler<TInput, TResult>['definition'];
-}): ToolHandler<TInput, TResult> {
-  return opts;
+  definition: ToolDefinition;
+}): AnyToolHandler {
+  return opts as ToolHandler<unknown, unknown>;
 }
 
 /**

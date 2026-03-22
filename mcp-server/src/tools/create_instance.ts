@@ -74,14 +74,18 @@ export async function createInstance(input: CreateInstanceInput): Promise<Create
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  const response = await bridge.sendToFigmaWithRetry<{ instanceId: string }>('create_instance', {
-    componentId: validated.componentId,
-    name: validated.name,
-    x: validated.x,
-    y: validated.y,
-    parentId: validated.parentId,
-    overrides: validated.overrides
-  });
+  const response = await bridge.sendToFigmaValidated(
+    'create_instance',
+    {
+      componentId: validated.componentId,
+      name: validated.name,
+      x: validated.x,
+      y: validated.y,
+      parentId: validated.parentId,
+      overrides: validated.overrides
+    },
+    z.object({ instanceId: z.string() })
+  );
 
   const overridesCount = validated.overrides?.length ?? 0;
 

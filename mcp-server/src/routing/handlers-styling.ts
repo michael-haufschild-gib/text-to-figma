@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import { defineHandler, textResponse } from './handler-utils.js';
-import type { ToolHandler } from './tool-handler.js';
 
 import {
   setFills,
@@ -115,8 +114,7 @@ import {
   type ApplyEffectStyleResult
 } from '../tools/apply_effect_style.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous handler list
-export const stylingHandlers: ToolHandler<any, any>[] = [
+export const stylingHandlers = [
   // ─── Fills & Stroke ─────────────────────────────────────────────────────
   defineHandler<SetFillsInput, SetFillsResult>({
     name: 'set_fills',

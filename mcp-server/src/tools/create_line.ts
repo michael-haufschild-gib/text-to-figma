@@ -159,24 +159,23 @@ export async function createLine(input: CreateLineInput): Promise<CreateLineResu
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    nodeId?: string;
-    error?: string;
-  }>('create_line', {
-    x1: validated.x1,
-    y1: validated.y1,
-    x2: validated.x2,
-    y2: validated.y2,
-    strokeColor: validated.strokeColor,
-    strokeWeight: validated.strokeWeight,
-    strokeCap: validated.strokeCap,
-    dashPattern: validated.dashPattern,
-    name: validated.name,
-    parentId: validated.parentId
-  });
-  // Note: Response validated by bridge at protocol level
+  // Send command to Figma with response validation
+  const response = await bridge.sendToFigmaValidated(
+    'create_line',
+    {
+      x1: validated.x1,
+      y1: validated.y1,
+      x2: validated.x2,
+      y2: validated.y2,
+      strokeColor: validated.strokeColor,
+      strokeWeight: validated.strokeWeight,
+      strokeCap: validated.strokeCap,
+      dashPattern: validated.dashPattern,
+      name: validated.name,
+      parentId: validated.parentId
+    },
+    z.object({ nodeId: z.string().optional(), error: z.string().optional() })
+  );
 
   // Calculate line properties
   const dx = validated.x2 - validated.x1;

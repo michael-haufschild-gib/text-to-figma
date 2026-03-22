@@ -91,7 +91,7 @@ export async function getSelection(_input: GetSelectionInput): Promise<GetSelect
   // Input validated by routing layer
 
   const bridge = getFigmaBridge();
-  const response = await bridge.sendToFigma<GetSelectionResult>('get_selection', {});
+  const response = await bridge.sendToFigmaWithRetry<GetSelectionResult>('get_selection', {});
 
   return response;
 }

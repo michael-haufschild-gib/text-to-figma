@@ -114,6 +114,21 @@ export default [
       ...strictTypeScriptRules,
       ...codeQualityRules,
       'no-console': ['warn', { allow: ['error', 'warn'] }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../../websocket-server/*'],
+              message: 'mcp-server must not import websocket-server internals'
+            },
+            {
+              group: ['../../figma-plugin/*'],
+              message: 'mcp-server must not import figma-plugin internals'
+            }
+          ]
+        }
+      ],
       'prettier/prettier': ['error', { endOfLine: 'auto', tabWidth: 2, useTabs: false }]
     }
   },
@@ -141,6 +156,21 @@ export default [
       ...strictTypeScriptRules,
       ...codeQualityRules,
       'no-console': 'off',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../../mcp-server/*'],
+              message: 'websocket-server must not import mcp-server internals'
+            },
+            {
+              group: ['../../figma-plugin/*'],
+              message: 'websocket-server must not import figma-plugin internals'
+            }
+          ]
+        }
+      ],
       'prettier/prettier': ['error', { endOfLine: 'auto', tabWidth: 2, useTabs: false }]
     }
   },

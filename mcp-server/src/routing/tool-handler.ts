@@ -104,3 +104,13 @@ export interface ToolHandler<TInput = unknown, TResult = unknown> {
   /** MCP tool definition for ListTools response */
   definition: ToolDefinition;
 }
+
+/**
+ * Type-erased handler for heterogeneous storage
+ *
+ * Used by ToolRegistry and handler arrays where handlers with different
+ * TInput/TResult types are stored together. The pipeline (schema.parse →
+ * execute → formatResponse) is internally type-safe; the erasure is only
+ * at the container level.
+ */
+export type AnyToolHandler = ToolHandler<unknown, unknown>;

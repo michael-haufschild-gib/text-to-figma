@@ -212,7 +212,9 @@ OR use create_design to avoid this error entirely!`,
       parentNode: response.node
     };
   } catch (error) {
-    logger.error('Parent validation failed', error as Error, { parentId });
+    logger.error('Parent validation failed', error instanceof Error ? error : undefined, {
+      parentId
+    });
 
     return {
       isValid: false,

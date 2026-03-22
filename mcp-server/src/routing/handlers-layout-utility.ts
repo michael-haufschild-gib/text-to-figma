@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import { defineHandler, textResponse } from './handler-utils.js';
-import type { ToolHandler } from './tool-handler.js';
 
 import {
   setLayoutProperties,
@@ -145,8 +144,7 @@ import {
   type SetPluginDataResult
 } from '../tools/set_plugin_data.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous handler list
-export const layoutUtilityHandlers: ToolHandler<any, any>[] = [
+export const layoutUtilityHandlers = [
   // ─── Layout ─────────────────────────────────────────────────────────────
   defineHandler<SetLayoutPropertiesInput, SetLayoutPropertiesResult>({
     name: 'set_layout_properties',

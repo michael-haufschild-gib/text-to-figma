@@ -5,7 +5,7 @@
  * for global tool storage with duplicate detection.
  */
 
-import type { ToolDefinition, ToolHandler } from './tool-handler.js';
+import type { AnyToolHandler, ToolDefinition, ToolHandler } from './tool-handler.js';
 
 /**
  * Tool Registry Class
@@ -34,8 +34,7 @@ import type { ToolDefinition, ToolHandler } from './tool-handler.js';
  */
 export class ToolRegistry {
   /** Internal storage for tool handlers */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous handler storage requires type erasure
-  private handlers = new Map<string, ToolHandler<any, any>>();
+  private handlers = new Map<string, AnyToolHandler>();
 
   /**
    * Register a tool handler
@@ -53,7 +52,7 @@ export class ToolRegistry {
     if (this.handlers.has(handler.name)) {
       throw new Error(`Tool '${handler.name}' is already registered`);
     }
-    this.handlers.set(handler.name, handler);
+    this.handlers.set(handler.name, handler as AnyToolHandler);
   }
 
   /**
@@ -70,8 +69,7 @@ export class ToolRegistry {
    * }
    * ```
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- returns type-erased handlers
-  get(name: string): ToolHandler<any, any> | undefined {
+  get(name: string): AnyToolHandler | undefined {
     return this.handlers.get(name);
   }
 
@@ -86,8 +84,7 @@ export class ToolRegistry {
    * console.log(`Registered ${all.length} tools`);
    * ```
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- returns type-erased handlers
-  getAll(): ToolHandler<any, any>[] {
+  getAll(): AnyToolHandler[] {
     return Array.from(this.handlers.values());
   }
 

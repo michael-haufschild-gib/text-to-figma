@@ -61,14 +61,16 @@ export async function routeToolCall(toolName: string, args: unknown): Promise<Re
     // Execute tool
     const result: unknown = await handler.execute(validatedInput);
 
-    // Record success
+    // Format response — must succeed before recording metrics as success
+    const response = handler.formatResponse(result);
+
+    // Record success only after both execute and formatResponse complete
     const duration = Date.now() - startTime;
     durations.observe(duration);
     successes.inc(1, { tool: toolName });
     logger.info('Tool call succeeded', { tool: toolName, duration });
 
-    // Format response
-    return handler.formatResponse(result);
+    return response;
   } catch (error) {
     const duration = Date.now() - startTime;
     durations.observe(duration);

@@ -91,7 +91,10 @@ export async function getPageHierarchy(
     logger.info('Refreshing hierarchy from Figma...');
 
     const bridge = getFigmaBridge();
-    const response = await bridge.sendToFigma<FigmaHierarchyResponse>('get_page_hierarchy', {});
+    const response = await bridge.sendToFigmaWithRetry<FigmaHierarchyResponse>(
+      'get_page_hierarchy',
+      {}
+    );
 
     // Clear and rebuild registry
     registry.clear();

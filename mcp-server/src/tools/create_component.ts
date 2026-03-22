@@ -39,11 +39,15 @@ export async function createComponent(input: CreateComponentInput): Promise<Crea
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  const response = await bridge.sendToFigmaWithRetry<{ componentId: string }>('create_component', {
-    frameId: validated.frameId,
-    name: validated.name,
-    description: validated.description
-  });
+  const response = await bridge.sendToFigmaValidated(
+    'create_component',
+    {
+      frameId: validated.frameId,
+      name: validated.name,
+      description: validated.description
+    },
+    z.object({ componentId: z.string() })
+  );
 
   return {
     componentId: response.componentId,

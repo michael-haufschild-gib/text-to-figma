@@ -195,43 +195,27 @@ export function isFigmaBridgeError(error: unknown): error is FigmaBridgeError {
   return error instanceof FigmaBridgeError;
 }
 
-// Type guards
-/**
- *
- * @param error
- */
+/** Type guard for ToolExecutionError (base class of all tool errors) */
 export function isToolExecutionError(error: unknown): error is ToolExecutionError {
   return error instanceof ToolExecutionError;
 }
 
-/**
- *
- * @param error
- */
+/** Type guard for ValidationError */
 export function isValidationError(error: unknown): error is ValidationError {
   return error instanceof ValidationError;
 }
 
-/**
- *
- * @param error
- */
+/** Type guard for FigmaAPIError */
 export function isFigmaAPIError(error: unknown): error is FigmaAPIError {
   return error instanceof FigmaAPIError;
 }
 
-/**
- *
- * @param error
- */
+/** Type guard for NetworkError */
 export function isNetworkError(error: unknown): error is NetworkError {
   return error instanceof NetworkError;
 }
 
-/**
- *
- * @param error
- */
+/** Type guard for ConfigurationError */
 export function isConfigurationError(error: unknown): error is ConfigurationError {
   return error instanceof ConfigurationError;
 }

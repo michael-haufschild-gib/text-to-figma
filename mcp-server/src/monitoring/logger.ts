@@ -57,17 +57,30 @@ export class Logger {
   private readonly config: Required<LoggerConfig>;
   private readonly context: Record<string, unknown>;
 
-  constructor(config?: Partial<LoggerConfig>, context: Record<string, unknown> = {}) {
-    this.config = loggerConfigSchema.parse(config ?? {});
+  /**
+   * @param config - Logger configuration (parsed and stored). If a pre-parsed
+   *   config object is passed, it is shared by reference — allowing child
+   *   loggers to see config updates (e.g., setConfig) from the parent.
+   * @param context - Structured context merged into every log entry.
+   * @param sharedConfig - Internal flag: when true, `config` is already
+   *   parsed and should be shared by reference (used by child()).
+   */
+  constructor(
+    config?: Partial<LoggerConfig>,
+    context: Record<string, unknown> = {},
+    sharedConfig?: Required<LoggerConfig>
+  ) {
+    this.config = sharedConfig ?? loggerConfigSchema.parse(config ?? {});
     this.context = context;
   }
 
   /**
-   * Create child logger with additional context
-   * @param context
+   * Create child logger with additional context.
+   * Child loggers share the parent's config by reference,
+   * so setConfig() on the root logger propagates to all children.
    */
   child(context: Record<string, unknown>): Logger {
-    return new Logger(this.config, { ...this.context, ...context });
+    return new Logger(undefined, { ...this.context, ...context }, this.config);
   }
 
   /**
@@ -98,7 +111,12 @@ export class Logger {
   }
 
   /**
-   * Log error message
+   * Log error message.
+   *
+   * DESIGN: Bypasses the configured level check intentionally.
+   * Errors must always be visible regardless of LOG_LEVEL setting.
+   * Only debug/info/warn are subject to level filtering.
+   *
    * @param message
    * @param error
    * @param context
@@ -123,7 +141,11 @@ export class Logger {
   }
 
   /**
-   * Log fatal message
+   * Log fatal message.
+   *
+   * DESIGN: Bypasses the configured level check intentionally.
+   * Fatal conditions must always be visible. See error() note.
+   *
    * @param message
    * @param error
    * @param context
@@ -246,7 +268,8 @@ export class Logger {
    * @param config
    */
   setConfig(config: Partial<LoggerConfig>): void {
-    Object.assign(this.config, config);
+    const validated = loggerConfigSchema.parse({ ...this.config, ...config });
+    Object.assign(this.config, validated);
   }
 
   /**

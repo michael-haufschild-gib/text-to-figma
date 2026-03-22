@@ -146,73 +146,71 @@ function isValidCreateDesignResponse(response: unknown): response is FigmaCreate
 }
 
 /**
+ * Creates an entire design hierarchy in a single atomic operation.
  *
- * @param params
+ * Bridge/network errors propagate to the router for proper error tracking
+ * and metrics. Only response validation failures return `{ success: false }`.
  */
 export async function createDesign(params: CreateDesignParams): Promise<CreateDesignResult> {
-  try {
-    const bridge = getFigmaBridge();
+  const bridge = getFigmaBridge();
 
-    // Apply auto-correction unless explicitly disabled
-    const shouldAutoCorrect = params.autoCorrect !== false;
-    let specToUse = params.spec;
-    let corrections: Correction[] = [];
+  // Apply auto-correction unless explicitly disabled
+  const shouldAutoCorrect = params.autoCorrect !== false;
+  let specToUse = params.spec;
+  let corrections: Correction[] = [];
 
-    if (shouldAutoCorrect) {
-      const correctionResult = autoCorrectSpec(params.spec);
-      specToUse = correctionResult.corrected;
-      corrections = correctionResult.corrections;
+  if (shouldAutoCorrect) {
+    const correctionResult = autoCorrectSpec(params.spec);
+    specToUse = correctionResult.corrected;
+    corrections = correctionResult.corrections;
 
-      if (corrections.length > 0) {
-        logger.info(`Applied ${corrections.length} auto-correction(s)`);
-      }
+    if (corrections.length > 0) {
+      logger.info(`Applied ${corrections.length} auto-correction(s)`);
     }
+  }
 
-    const response = await bridge.sendToFigmaWithRetry('create_design', {
-      spec: specToUse,
-      parentId: params.parentId // Pass parentId to Figma plugin
-    });
+  // Bridge errors (connection, timeout, circuit breaker) propagate to the
+  // router, which records them in metrics and error tracking.
+  const response = await bridge.sendToFigmaWithRetry('create_design', {
+    spec: specToUse,
+    parentId: params.parentId
+  });
 
-    // Validate response structure
-    if (!isValidCreateDesignResponse(response)) {
-      return {
-        success: false,
-        error: 'Invalid response from Figma plugin: missing required fields'
-      };
-    }
-
-    // Register all created nodes in the node registry
-    const registry = getNodeRegistry();
-    if (Array.isArray(response.nodes)) {
-      for (const nodeInfo of response.nodes) {
-        if (typeof nodeInfo.nodeId === 'string') {
-          registry.register(nodeInfo.nodeId, {
-            type: typeof nodeInfo.type === 'string' ? nodeInfo.type : 'UNKNOWN',
-            name: typeof nodeInfo.name === 'string' ? nodeInfo.name : 'Unnamed',
-            parentId: nodeInfo.parentId,
-            children: [], // Will be populated as we register children
-            bounds: nodeInfo.bounds
-          });
-        }
-      }
-      logger.info(`Registered ${response.nodes.length} nodes in registry`);
-    }
-
-    return {
-      success: true,
-      rootNodeId: response.rootNodeId,
-      nodeIds: response.nodeIds,
-      totalNodes: response.totalNodes,
-      message:
-        typeof response.message === 'string' ? response.message : 'Design created successfully',
-      autoCorrections: corrections.length > 0 ? corrections : undefined
-    };
-  } catch (error) {
+  // Validate response structure — a malformed response is a protocol error,
+  // not a transient failure, so we return success:false rather than throwing.
+  if (!isValidCreateDesignResponse(response)) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: 'Invalid response from Figma plugin: missing required fields'
     };
   }
+
+  // Register all created nodes in the node registry
+  const registry = getNodeRegistry();
+  if (Array.isArray(response.nodes)) {
+    for (const nodeInfo of response.nodes) {
+      if (typeof nodeInfo.nodeId === 'string') {
+        registry.register(nodeInfo.nodeId, {
+          type: typeof nodeInfo.type === 'string' ? nodeInfo.type : 'UNKNOWN',
+          name: typeof nodeInfo.name === 'string' ? nodeInfo.name : 'Unnamed',
+          parentId: nodeInfo.parentId,
+          children: [],
+          bounds: nodeInfo.bounds
+        });
+      }
+    }
+    logger.info(`Registered ${response.nodes.length} nodes in registry`);
+  }
+
+  return {
+    success: true,
+    rootNodeId: response.rootNodeId,
+    nodeIds: response.nodeIds,
+    totalNodes: response.totalNodes,
+    message:
+      typeof response.message === 'string' ? response.message : 'Design created successfully',
+    autoCorrections: corrections.length > 0 ? corrections : undefined
+  };
 }
 
 /**

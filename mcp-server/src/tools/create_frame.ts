@@ -7,7 +7,13 @@
 
 import { z } from 'zod';
 import { spacingSchema, VALID_SPACING_VALUES } from '../constraints/spacing.js';
-import { FigmaAPIError, NetworkError, ValidationError, wrapError } from '../errors/index.js';
+import {
+  FigmaAPIError,
+  FigmaBridgeError,
+  NetworkError,
+  ValidationError,
+  wrapError
+} from '../errors/index.js';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
 import { getNodeRegistry } from '../node-registry.js';
@@ -55,6 +61,11 @@ export const CreateFrameInputSchema = z.object({
 });
 
 export type CreateFrameInput = z.infer<typeof CreateFrameInputSchema>;
+
+/**
+ * Response schema for Figma bridge create_frame response
+ */
+const CreateFrameResponseSchema = z.object({ nodeId: z.string() });
 
 /**
  * Result of creating a frame
@@ -128,77 +139,75 @@ function generateHtmlAnalogy(input: CreateFrameInput): {
 export async function createFrame(input: CreateFrameInput): Promise<CreateFrameResult> {
   logger.info('Creating frame', { input });
 
-  // Input is already validated by the routing layer (tool-router.ts)
-  const validated = input;
-
   // Validate parent relationship if parentId provided
-  if (validated.parentId !== undefined) {
-    const parentValidation = await validateParentRelationship('frame', validated.parentId, {
+  if (input.parentId !== undefined) {
+    const parentValidation = await validateParentRelationship('frame', input.parentId, {
       strict: true,
       checkExists: true
     });
 
     if (!parentValidation.isValid) {
-      throw new ValidationError(
-        formatValidationError(parentValidation),
-        'create_frame',
-        validated,
-        [{ message: parentValidation.error ?? 'Parent validation failed' }]
-      );
+      throw new ValidationError(formatValidationError(parentValidation), 'create_frame', input, [
+        { message: parentValidation.error ?? 'Parent validation failed' }
+      ]);
     }
   }
 
   // Generate HTML analogy
-  const { htmlAnalogy, cssEquivalent } = generateHtmlAnalogy(validated);
+  const { htmlAnalogy, cssEquivalent } = generateHtmlAnalogy(input);
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  let response: { nodeId: string };
+  let response: z.infer<typeof CreateFrameResponseSchema>;
 
   try {
-    response = await bridge.sendToFigmaWithRetry<{ nodeId: string }>('create_frame', {
-      name: validated.name,
-      width: validated.width,
-      height: validated.height,
-      layoutMode: validated.layoutMode,
-      itemSpacing: validated.itemSpacing,
-      padding: validated.padding,
-      parentId: validated.parentId,
-      horizontalSizing: validated.horizontalSizing,
-      verticalSizing: validated.verticalSizing
-    });
+    response = await bridge.sendToFigmaValidated(
+      'create_frame',
+      {
+        name: input.name,
+        width: input.width,
+        height: input.height,
+        layoutMode: input.layoutMode,
+        itemSpacing: input.itemSpacing,
+        padding: input.padding,
+        parentId: input.parentId,
+        horizontalSizing: input.horizontalSizing,
+        verticalSizing: input.verticalSizing
+      },
+      CreateFrameResponseSchema
+    );
   } catch (error) {
+    if (error instanceof FigmaBridgeError && error.code.startsWith('CONN_')) {
+      throw new NetworkError(
+        'Failed to communicate with Figma',
+        'create_frame',
+        'figma-bridge',
+        input,
+        error
+      );
+    }
     if (error instanceof Error) {
-      if (error.message.includes('Not connected') || error.message.includes('Connection')) {
-        throw new NetworkError(
-          'Failed to communicate with Figma',
-          'create_frame',
-          'figma-bridge',
-          validated,
-          error
-        );
-      }
       throw new FigmaAPIError(
         'Figma frame creation failed',
         'create_frame',
         'create_frame',
-        validated,
+        input,
         error
       );
     }
-    throw wrapError(error, 'create_frame', validated);
+    throw wrapError(error, 'create_frame', input);
   }
 
   // Register node in hierarchy registry
   const registry = getNodeRegistry();
   registry.register(response.nodeId, {
     type: 'FRAME',
-    name: validated.name,
-    parentId: validated.parentId ?? null,
+    name: input.name,
+    parentId: input.parentId ?? null,
     children: [],
     bounds:
-      validated.width !== undefined && validated.height !== undefined
-        ? { x: 0, y: 0, width: validated.width, height: validated.height }
+      input.width !== undefined && input.height !== undefined
+        ? { x: 0, y: 0, width: input.width, height: input.height }
         : undefined
   });
 

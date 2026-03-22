@@ -14,15 +14,6 @@ export const metricTypeSchema = z.enum(['counter', 'gauge', 'histogram', 'timer'
 export type MetricType = z.infer<typeof metricTypeSchema>;
 
 /**
- * Metric data point
- */
-export interface MetricDataPoint {
-  timestamp: number;
-  value: number;
-  labels?: Record<string, string>;
-}
-
-/**
  * Histogram bucket
  */
 export interface HistogramBucket {
@@ -56,6 +47,17 @@ export interface Metric {
 }
 
 /**
+ * Serializes a label set into a deterministic cache key.
+ * Shared by Counter and Gauge for labeled metric lookup.
+ */
+function getLabelKey(labels: Record<string, string>): string {
+  return Object.entries(labels)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}="${v}"`)
+    .join(',');
+}
+
+/**
  * Counter metric - monotonically increasing value
  */
 class Counter {
@@ -72,7 +74,7 @@ class Counter {
     }
 
     if (labels) {
-      const key = this.getLabelKey(labels);
+      const key = getLabelKey(labels);
       const current = this.labels.get(key) ?? 0;
       this.labels.set(key, current + amount);
     } else {
@@ -82,7 +84,7 @@ class Counter {
 
   get(labels?: Record<string, string>): number {
     if (labels) {
-      const key = this.getLabelKey(labels);
+      const key = getLabelKey(labels);
       return this.labels.get(key) ?? 0;
     }
     return this.value;
@@ -91,13 +93,6 @@ class Counter {
   reset(): void {
     this.value = 0;
     this.labels.clear();
-  }
-
-  private getLabelKey(labels: Record<string, string>): string {
-    return Object.entries(labels)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}="${v}"`)
-      .join(',');
   }
 }
 
@@ -114,7 +109,7 @@ class Gauge {
 
   set(value: number, labels?: Record<string, string>): void {
     if (labels) {
-      const key = this.getLabelKey(labels);
+      const key = getLabelKey(labels);
       this.labels.set(key, value);
     } else {
       this.value = value;
@@ -123,7 +118,7 @@ class Gauge {
 
   inc(amount: number = 1, labels?: Record<string, string>): void {
     if (labels) {
-      const key = this.getLabelKey(labels);
+      const key = getLabelKey(labels);
       const current = this.labels.get(key) ?? 0;
       this.labels.set(key, current + amount);
     } else {
@@ -137,7 +132,7 @@ class Gauge {
 
   get(labels?: Record<string, string>): number {
     if (labels) {
-      const key = this.getLabelKey(labels);
+      const key = getLabelKey(labels);
       return this.labels.get(key) ?? 0;
     }
     return this.value;
@@ -146,13 +141,6 @@ class Gauge {
   reset(): void {
     this.value = 0;
     this.labels.clear();
-  }
-
-  private getLabelKey(labels: Record<string, string>): string {
-    return Object.entries(labels)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}="${v}"`)
-      .join(',');
   }
 }
 
