@@ -61,11 +61,12 @@ function getLabelKey(labels: Record<string, string>): string {
  * Counter metric - monotonically increasing value
  */
 class Counter {
+  readonly name: string;
   private value: number = 0;
   private readonly labels: Map<string, number> = new Map();
 
-  constructor(_name: string) {
-    // Name stored for reference but not actively used
+  constructor(name: string) {
+    this.name = name;
   }
 
   inc(amount: number = 1, labels?: Record<string, string>): void {
@@ -100,11 +101,12 @@ class Counter {
  * Gauge metric - value that can go up and down
  */
 class Gauge {
+  readonly name: string;
   private value: number = 0;
   private readonly labels: Map<string, number> = new Map();
 
-  constructor(_name: string) {
-    // Name stored for reference but not actively used
+  constructor(name: string) {
+    this.name = name;
   }
 
   set(value: number, labels?: Record<string, string>): void {
@@ -148,19 +150,24 @@ class Gauge {
  * Histogram metric - distribution of values
  */
 class Histogram {
-  private readonly buckets: number[];
+  readonly name: string;
+  private readonly bucketBoundaries: number[];
   private readonly counts: Map<number, number> = new Map();
   private sum: number = 0;
   private count: number = 0;
-  private values: number[] = [];
   private static readonly MAX_VALUES = 10000;
 
-  constructor(_name: string, buckets?: number[]) {
-    // Name stored for reference but not actively used
-    this.buckets = buckets ?? [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
+  /** Ring buffer for recent observations — fixed allocation, O(1) insert */
+  private readonly buffer: Float64Array = new Float64Array(Histogram.MAX_VALUES);
+  private writeIndex: number = 0;
+  private bufferSize: number = 0;
+
+  constructor(name: string, buckets?: number[]) {
+    this.name = name;
+    this.bucketBoundaries = buckets ?? [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
 
     // Initialize bucket counts
-    for (const bucket of this.buckets) {
+    for (const bucket of this.bucketBoundaries) {
       this.counts.set(bucket, 0);
     }
   }
@@ -168,15 +175,16 @@ class Histogram {
   observe(value: number): void {
     this.sum += value;
     this.count++;
-    this.values.push(value);
 
-    // Evict oldest values to prevent unbounded memory growth
-    if (this.values.length > Histogram.MAX_VALUES) {
-      this.values = this.values.slice(-Histogram.MAX_VALUES);
+    // Ring buffer: overwrite oldest entry when full, no allocation
+    this.buffer[this.writeIndex] = value;
+    this.writeIndex = (this.writeIndex + 1) % Histogram.MAX_VALUES;
+    if (this.bufferSize < Histogram.MAX_VALUES) {
+      this.bufferSize++;
     }
 
     // Update bucket counts
-    for (const bucket of this.buckets) {
+    for (const bucket of this.bucketBoundaries) {
       if (value <= bucket) {
         const current = this.counts.get(bucket) ?? 0;
         this.counts.set(bucket, current + 1);
@@ -185,7 +193,7 @@ class Histogram {
   }
 
   getStatistics(): MetricStatistics {
-    if (this.values.length === 0) {
+    if (this.bufferSize === 0) {
       return {
         count: 0,
         sum: 0,
@@ -198,7 +206,7 @@ class Histogram {
       };
     }
 
-    const sorted = [...this.values].sort((a, b) => a - b);
+    const sorted = Array.from(this.buffer.subarray(0, this.bufferSize)).sort((a, b) => a - b);
     const min = sorted[0] ?? 0;
     const max = sorted[sorted.length - 1] ?? 0;
     const mean = this.sum / this.count;
@@ -219,7 +227,7 @@ class Histogram {
   }
 
   getBuckets(): HistogramBucket[] {
-    return this.buckets.map((le) => ({
+    return this.bucketBoundaries.map((le) => ({
       le,
       count: this.counts.get(le) ?? 0
     }));
@@ -228,8 +236,9 @@ class Histogram {
   reset(): void {
     this.sum = 0;
     this.count = 0;
-    this.values = [];
-    for (const bucket of this.buckets) {
+    this.writeIndex = 0;
+    this.bufferSize = 0;
+    for (const bucket of this.bucketBoundaries) {
       this.counts.set(bucket, 0);
     }
   }
@@ -252,9 +261,11 @@ class Histogram {
  * Timer metric - measures operation duration
  */
 class Timer {
+  readonly name: string;
   private readonly histogram: Histogram;
 
   constructor(name: string) {
+    this.name = name;
     this.histogram = new Histogram(name, [0.01, 0.05, 0.1, 0.5, 1, 5, 10, 30, 60]);
   }
 
@@ -428,6 +439,7 @@ export class MetricsRegistry {
 
     for (const [name, counter] of this.counters.entries()) {
       result[name] = {
+        name: counter.name,
         type: 'counter',
         value: counter.get()
       };
@@ -435,6 +447,7 @@ export class MetricsRegistry {
 
     for (const [name, gauge] of this.gauges.entries()) {
       result[name] = {
+        name: gauge.name,
         type: 'gauge',
         value: gauge.get()
       };
@@ -442,6 +455,7 @@ export class MetricsRegistry {
 
     for (const [name, histogram] of this.histograms.entries()) {
       result[name] = {
+        name: histogram.name,
         type: 'histogram',
         statistics: histogram.getStatistics(),
         buckets: histogram.getBuckets()
@@ -450,6 +464,7 @@ export class MetricsRegistry {
 
     for (const [name, timer] of this.timers.entries()) {
       result[name] = {
+        name: timer.name,
         type: 'timer',
         statistics: timer.getStatistics()
       };

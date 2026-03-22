@@ -88,11 +88,7 @@ export type ErrorTrackerConfig = z.infer<typeof errorTrackerConfigSchema>;
  * @param context
  */
 function generateFingerprint(error: Error, context?: Record<string, unknown>): string {
-  const parts: string[] = [
-    error.name,
-    error.message,
-    error.stack?.split('\n')[1] ?? '' // First stack frame
-  ];
+  const parts: string[] = [error.name, error.message];
 
   if (context?.operation !== undefined) {
     parts.push(String(context.operation));

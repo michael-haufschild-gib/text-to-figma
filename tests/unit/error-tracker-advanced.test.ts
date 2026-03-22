@@ -89,16 +89,15 @@ describe('ErrorTracker pruning', () => {
       vi.useRealTimers();
     });
 
-    it('fingerprint includes first stack frame', () => {
+    it('same name and message deduplicate regardless of source', () => {
       tracker = new ErrorTracker();
-      // Two errors with same message but different call sites have different stacks
       function makeError(msg: string) {
         return new Error(msg);
       }
       const err1 = makeError('test');
       const err2 = makeError('test');
 
-      // Same function, same message — should deduplicate (same first stack frame)
+      // Same error name + message → same fingerprint, regardless of call site
       tracker.track(err1);
       tracker.track(err2);
       expect(tracker.getAll()).toHaveLength(1);
@@ -353,7 +352,7 @@ describe('ErrorTracker advanced behavior', () => {
   });
 
   describe('fingerprint differentiation', () => {
-    it('errors from different call sites produce different fingerprints', () => {
+    it('errors from different call sites with same name+message deduplicate', () => {
       tracker = new ErrorTracker();
 
       function callSiteA() {
@@ -366,9 +365,9 @@ describe('ErrorTracker advanced behavior', () => {
       tracker.track(callSiteA());
       tracker.track(callSiteB());
 
-      // Same message but different first stack frame → different fingerprints
-      // Both should be tracked separately
-      expect(tracker.getAll()).toHaveLength(2);
+      // Fingerprint uses name+message only (not stack frames), so these deduplicate
+      expect(tracker.getAll()).toHaveLength(1);
+      expect(tracker.getAll()[0].count).toBe(2);
     });
 
     it('error name is part of the fingerprint', () => {

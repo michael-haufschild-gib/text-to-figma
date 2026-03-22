@@ -25,7 +25,7 @@ describe('ErrorTracker', () => {
       expect(id).toMatch(/^err_[0-9a-f-]+$/);
     });
 
-    it('deduplicates identical errors by fingerprint (same message + stack)', () => {
+    it('deduplicates identical errors by fingerprint (same name + message)', () => {
       tracker = new ErrorTracker();
       const err = new Error('duplicate');
       const id1 = tracker.track(err);
