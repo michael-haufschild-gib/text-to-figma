@@ -12,5 +12,8 @@ package-lock.json
 **/package-lock.json
 *.tsbuildinfo
 
+# Generated reports
+reports/
+
 # Screenshots and binaries
 screenshots/

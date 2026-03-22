@@ -60,6 +60,9 @@ tests/node_modules/
 websocket-server/node_modules/
 websocket-server/dist/
 
+# Generated reports
+reports/
+
 # Logs
 logs/
 *.log
@@ -70,8 +73,6 @@ npm-debug.log*
 .temp/
 *.tmp
 *.temp
-task_state.md
-
-# Stryker mutation testing
-.stryker-tmp/
-reports/mutation/
+task_*.md
+godmode_*.md
+market_readiness_*.md
