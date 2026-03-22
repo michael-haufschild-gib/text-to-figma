@@ -105,6 +105,26 @@ Use Cases:
 };
 
 /**
+ * Response schema for Figma bridge get_node_by_name response
+ */
+const GetNodeByNameResponseSchema = z
+  .object({
+    nodes: z
+      .array(
+        z
+          .object({
+            nodeId: z.string(),
+            name: z.string(),
+            type: z.string(),
+            parentId: z.string().optional()
+          })
+          .passthrough()
+      )
+      .optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface GetNodeByNameResult {
@@ -125,16 +145,15 @@ export async function getNodeByName(input: GetNodeByNameInput): Promise<GetNodeB
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    nodes?: NodeInfo[];
-    error?: string;
-  }>('get_node_by_name', {
-    name: validated.name,
-    findAll: validated.findAll,
-    exactMatch: validated.exactMatch
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'get_node_by_name',
+    {
+      name: validated.name,
+      findAll: validated.findAll,
+      exactMatch: validated.exactMatch
+    },
+    GetNodeByNameResponseSchema
+  );
 
   const nodes = response.nodes ?? [];
   const matchType = validated.exactMatch ? 'exact' : 'partial';

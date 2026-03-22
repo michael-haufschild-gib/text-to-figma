@@ -79,6 +79,15 @@ which is helpful for the user to see your progress.
 };
 
 /**
+ * Response schema for Figma bridge set_current_page response
+ */
+const SetCurrentPageResponseSchema = z
+  .object({
+    pageName: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface SetCurrentPageResult {
@@ -99,14 +108,11 @@ export async function setCurrentPage(input: SetCurrentPageInput): Promise<SetCur
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    pageName?: string;
-    error?: string;
-  }>('set_current_page', {
-    pageId: validated.pageId
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'set_current_page',
+    { pageId: validated.pageId },
+    SetCurrentPageResponseSchema
+  );
 
   return {
     pageId: validated.pageId,

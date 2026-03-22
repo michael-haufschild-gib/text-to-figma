@@ -105,6 +105,15 @@ Note: Order matters for SUBTRACT (first shape is the base)`,
 };
 
 /**
+ * Response schema for Figma bridge create_boolean_operation response
+ */
+const CreateBooleanOperationResponseSchema = z
+  .object({
+    nodeId: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface CreateBooleanOperationResult {
@@ -129,16 +138,15 @@ export async function createBooleanOperation(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    nodeId?: string;
-    error?: string;
-  }>('create_boolean_operation', {
-    nodeIds: validated.nodeIds,
-    operation: validated.operation,
-    name: validated.name
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'create_boolean_operation',
+    {
+      nodeIds: validated.nodeIds,
+      operation: validated.operation,
+      name: validated.name
+    },
+    CreateBooleanOperationResponseSchema
+  );
 
   // Build CSS equivalent and description
   const operationLabel = {

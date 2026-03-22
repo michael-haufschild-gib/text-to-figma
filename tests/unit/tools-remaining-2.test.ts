@@ -47,6 +47,7 @@ const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) 
   __mockBridge: {
     sendToFigma: ReturnType<typeof vi.fn>;
     sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
     isConnected: ReturnType<typeof vi.fn>;
     getConnectionStatus: ReturnType<typeof vi.fn>;
   };
@@ -251,7 +252,7 @@ describe('createRectangleWithImageFill', () => {
   });
 
   it('creates a rectangle with image fill and registers in node registry', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       nodeId: 'img-123'
     });
@@ -294,7 +295,7 @@ describe('createRectangleWithImageFill', () => {
   });
 
   it('handles FIT scale mode CSS', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       nodeId: 'img-456'
     });
@@ -311,7 +312,7 @@ describe('createRectangleWithImageFill', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Image load failed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Image load failed'));
 
     await expect(
       createRectangleWithImageFill({
@@ -395,7 +396,7 @@ describe('createBooleanOperation', () => {
   });
 
   it('sends correct payload to bridge', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true, nodeId: 'bool-1' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true, nodeId: 'bool-1' });
 
     await createBooleanOperation({
       nodeIds: ['circle-1', 'circle-2'],
@@ -403,18 +404,19 @@ describe('createBooleanOperation', () => {
       name: 'Merged Shape'
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith(
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
       'create_boolean_operation',
       expect.objectContaining({
         nodeIds: ['circle-1', 'circle-2'],
         operation: 'UNION',
         name: 'Merged Shape'
-      })
+      }),
+      expect.anything()
     );
   });
 
   it('creates a UNION boolean operation', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       nodeId: 'bool-1'
     });
@@ -441,7 +443,7 @@ describe('createBooleanOperation', () => {
     ];
 
     for (const [op, keyword] of ops) {
-      __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true, nodeId: 'b' });
+      __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true, nodeId: 'b' });
       const result = await createBooleanOperation({
         nodeIds: ['a', 'b'],
         operation: op as 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE',
@@ -452,7 +454,7 @@ describe('createBooleanOperation', () => {
   });
 
   it('creates a SUBTRACT boolean operation with 3 shapes', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       nodeId: 'bool-2'
     });
@@ -469,7 +471,7 @@ describe('createBooleanOperation', () => {
   });
 
   it('handles missing nodeId in response gracefully', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true
     });
 
@@ -484,7 +486,7 @@ describe('createBooleanOperation', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Nodes not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Nodes not found'));
 
     await expect(
       createBooleanOperation({

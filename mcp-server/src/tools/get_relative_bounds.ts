@@ -12,6 +12,44 @@ import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 
 /**
+ * Response schema for Figma bridge get_relative_bounds response
+ */
+const pointSchema = z.object({ x: z.number(), y: z.number() }).passthrough();
+
+const GetRelativeBoundsResponseSchema = z
+  .object({
+    relativeBounds: z
+      .object({
+        relativeX: z.number(),
+        relativeY: z.number(),
+        distanceFromRight: z.number(),
+        distanceFromLeft: z.number(),
+        distanceFromTop: z.number(),
+        distanceFromBottom: z.number(),
+        centerDistanceX: z.number(),
+        centerDistanceY: z.number(),
+        width: z.number(),
+        height: z.number(),
+        referencePoints: z
+          .object({
+            topLeft: pointSchema,
+            topCenter: pointSchema,
+            topRight: pointSchema,
+            centerLeft: pointSchema,
+            center: pointSchema,
+            centerRight: pointSchema,
+            bottomLeft: pointSchema,
+            bottomCenter: pointSchema,
+            bottomRight: pointSchema
+          })
+          .passthrough()
+      })
+      .passthrough(),
+    message: z.string()
+  })
+  .passthrough();
+
+/**
  * Input schema
  */
 export const GetRelativeBoundsInputSchema = z.object({
@@ -135,14 +173,14 @@ export async function getRelativeBounds(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: Bridge unwraps response, returns data on success, throws on failure
-  const response = await bridge.sendToFigmaWithRetry<{
-    relativeBounds: RelativeBoundsInfo;
-    message: string;
-  }>('get_relative_bounds', {
-    targetNodeId: validated.targetNodeId,
-    referenceNodeId: validated.referenceNodeId
-  });
+  const response = await bridge.sendToFigmaValidated(
+    'get_relative_bounds',
+    {
+      targetNodeId: validated.targetNodeId,
+      referenceNodeId: validated.referenceNodeId
+    },
+    GetRelativeBoundsResponseSchema
+  );
 
   const rb = response.relativeBounds;
 

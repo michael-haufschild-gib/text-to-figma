@@ -66,6 +66,17 @@ Note: The new page becomes the current page after creation.`,
 };
 
 /**
+ * Response schema for Figma bridge create_page response
+ */
+const CreatePageResponseSchema = z
+  .object({
+    pageId: z.string().optional(),
+    name: z.string().optional(),
+    message: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface CreatePageResult {
@@ -88,18 +99,15 @@ export async function createPage(input: CreatePageInput): Promise<CreatePageResu
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: Bridge unwraps response, returns data on success, throws on failure
-  const response = await bridge.sendToFigmaWithRetry<{
-    pageId: string;
-    name: string;
-    message: string;
-  }>('create_page', {
-    name: validated.name
-  });
+  const response = await bridge.sendToFigmaValidated(
+    'create_page',
+    { name: validated.name },
+    CreatePageResponseSchema
+  );
 
   return {
     success: true as const,
-    pageId: response.pageId,
+    pageId: response.pageId ?? '',
     name: validated.name,
     message: `Page "${validated.name}" created successfully`,
     timestamp: new Date().toISOString()

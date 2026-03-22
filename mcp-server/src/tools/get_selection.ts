@@ -68,6 +68,54 @@ export interface GetSelectionResult {
 }
 
 /**
+ * Response schema for Figma bridge get_selection response.
+ * Uses z.lazy() for recursive children in FigmaNodeSnapshot.
+ */
+const figmaNodeSnapshotSchema: z.ZodType<FigmaNodeSnapshot> = z.lazy(() =>
+  z
+    .object({
+      nodeId: z.string(),
+      type: z.string(),
+      name: z.string(),
+      bounds: z
+        .object({
+          x: z.number(),
+          y: z.number(),
+          width: z.number(),
+          height: z.number()
+        })
+        .passthrough(),
+      fills: z.array(z.object({ type: z.string() }).passthrough()).optional(),
+      strokes: z.array(z.object({ type: z.string() }).passthrough()).optional(),
+      strokeWeight: z.number().optional(),
+      strokeAlign: z.string().optional(),
+      cornerRadius: z.number().optional(),
+      opacity: z.number().optional(),
+      layoutMode: z.string().optional(),
+      itemSpacing: z.number().optional(),
+      paddingTop: z.number().optional(),
+      paddingRight: z.number().optional(),
+      paddingBottom: z.number().optional(),
+      paddingLeft: z.number().optional(),
+      characters: z.string().optional(),
+      fontName: z.object({ family: z.string(), style: z.string() }).passthrough().optional(),
+      fontSize: z.number().optional(),
+      fontWeight: z.number().optional(),
+      textCase: z.string().optional(),
+      textDecoration: z.string().optional(),
+      children: z.array(figmaNodeSnapshotSchema).optional()
+    })
+    .passthrough()
+);
+
+const GetSelectionResponseSchema = z
+  .object({
+    selection: z.array(figmaNodeSnapshotSchema),
+    count: z.number()
+  })
+  .passthrough();
+
+/**
  * Gets currently selected nodes in Figma with detailed properties
  *
  * Returns comprehensive information about selected layers including fills,
@@ -91,7 +139,11 @@ export async function getSelection(_input: GetSelectionInput): Promise<GetSelect
   // Input validated by routing layer
 
   const bridge = getFigmaBridge();
-  const response = await bridge.sendToFigmaWithRetry<GetSelectionResult>('get_selection', {});
+  const response = await bridge.sendToFigmaValidated(
+    'get_selection',
+    {},
+    GetSelectionResponseSchema
+  );
 
   return response;
 }

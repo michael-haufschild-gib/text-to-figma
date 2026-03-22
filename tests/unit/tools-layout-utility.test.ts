@@ -42,6 +42,7 @@ const { distributeNodes } = await import('../../mcp-server/src/tools/distribute_
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
   __mockBridge: {
     sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
   };
 };
 
@@ -289,7 +290,7 @@ describe('setLayerOrder', () => {
   });
 
   it('brings node to front and returns new index', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       newIndex: 5,
       message: 'Moved to front'
     });
@@ -307,7 +308,7 @@ describe('setLayerOrder', () => {
   });
 
   it('sets specific index', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       newIndex: 2,
       message: 'Index set'
     });
@@ -328,7 +329,7 @@ describe('setLayerOrder', () => {
   });
 
   it('wraps bridge errors with context', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Node locked'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Node locked'));
 
     await expect(setLayerOrder({ nodeId: 'locked-1', action: 'BRING_TO_FRONT' })).rejects.toThrow(
       'Failed to set layer order for node locked-1: Node locked'
@@ -342,7 +343,7 @@ describe('alignNodes', () => {
   });
 
   it('aligns nodes to top edge', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       message: 'Aligned'
     });
 
@@ -361,7 +362,7 @@ describe('alignNodes', () => {
   });
 
   it('defaults alignTo to SELECTION_BOUNDS', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ message: 'Aligned' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ message: 'Aligned' });
 
     const result = await alignNodes({
       nodeIds: ['a', 'b'],
@@ -372,7 +373,7 @@ describe('alignNodes', () => {
   });
 
   it('wraps bridge errors with context', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Nodes not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Nodes not found'));
 
     await expect(alignNodes({ nodeIds: ['a', 'b'], alignment: 'LEFT' })).rejects.toThrow(
       'Failed to align nodes: Nodes not found'
@@ -386,7 +387,7 @@ describe('distributeNodes', () => {
   });
 
   it('distributes nodes horizontally with SPACING method', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       spacing: 20,
       message: 'Distributed'
     });
@@ -405,7 +406,7 @@ describe('distributeNodes', () => {
   });
 
   it('distributes with custom spacing', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       message: 'Distributed'
     });
 
@@ -421,7 +422,7 @@ describe('distributeNodes', () => {
   });
 
   it('distributes with CENTERS method', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       message: 'Distributed'
     });
 
@@ -436,7 +437,7 @@ describe('distributeNodes', () => {
   });
 
   it('wraps bridge errors with context', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Invalid nodes'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Invalid nodes'));
 
     await expect(distributeNodes({ nodeIds: ['a', 'b', 'c'], axis: 'HORIZONTAL' })).rejects.toThrow(
       'Failed to distribute nodes: Invalid nodes'

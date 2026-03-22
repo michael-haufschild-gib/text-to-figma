@@ -73,6 +73,15 @@ Note: Style must exist in the file (created via create_text_style).`,
 };
 
 /**
+ * Response schema for Figma bridge apply_text_style response
+ */
+const ApplyTextStyleResponseSchema = z
+  .object({
+    styleName: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface ApplyTextStyleResult {
@@ -93,15 +102,14 @@ export async function applyTextStyle(input: ApplyTextStyleInput): Promise<ApplyT
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    styleName?: string;
-    error?: string;
-  }>('apply_text_style', {
-    nodeId: validated.nodeId,
-    styleNameOrId: validated.styleNameOrId
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'apply_text_style',
+    {
+      nodeId: validated.nodeId,
+      styleNameOrId: validated.styleNameOrId
+    },
+    ApplyTextStyleResponseSchema
+  );
 
   return {
     nodeId: validated.nodeId,

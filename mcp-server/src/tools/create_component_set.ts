@@ -87,6 +87,15 @@ After creating, use add_variant_property to define variant properties.`,
 };
 
 /**
+ * Response schema for Figma bridge create_component_set response
+ */
+const CreateComponentSetResponseSchema = z
+  .object({
+    componentSetId: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface CreateComponentSetResult {
@@ -110,16 +119,15 @@ export async function createComponentSet(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    componentSetId?: string;
-    error?: string;
-  }>('create_component_set', {
-    componentIds: validated.componentIds,
-    name: validated.name,
-    description: validated.description
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'create_component_set',
+    {
+      componentIds: validated.componentIds,
+      name: validated.name,
+      description: validated.description
+    },
+    CreateComponentSetResponseSchema
+  );
 
   return {
     componentSetId: response.componentSetId ?? '',

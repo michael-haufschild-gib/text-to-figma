@@ -44,6 +44,7 @@ const { setCurrentPage } = await import('../../mcp-server/src/tools/set_current_
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
   __mockBridge: {
     sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
   };
 };
 
@@ -172,7 +173,7 @@ describe('exportNode', () => {
   });
 
   it('exports a node and returns base64 data', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       base64Data: 'iVBORw0KGgoAAAANSUhEUg=='
     });
@@ -192,7 +193,7 @@ describe('exportNode', () => {
   });
 
   it('reports 1x scale label when scale is 1', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       base64Data: 'data'
     });
@@ -208,7 +209,7 @@ describe('exportNode', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Export failed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Export failed'));
 
     await expect(
       exportNode({ nodeId: 'x', format: 'PNG', scale: 1, returnBase64: true })
@@ -257,7 +258,7 @@ describe('getPluginData', () => {
   });
 
   it('retrieves plugin data with a value', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       value: 'color.text.primary'
     });
@@ -271,7 +272,7 @@ describe('getPluginData', () => {
   });
 
   it('returns empty string when key does not exist', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       value: undefined
     });
@@ -283,7 +284,7 @@ describe('getPluginData', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Read failed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Read failed'));
 
     await expect(getPluginData({ nodeId: 'x', key: 'k' })).rejects.toThrow('Read failed');
   });
@@ -297,7 +298,7 @@ describe('createPage', () => {
   });
 
   it('creates a page and returns page info with timestamp', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       pageId: 'page-abc',
       name: 'User Flow',
       message: 'Created'
@@ -313,7 +314,7 @@ describe('createPage', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Cannot create page'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Cannot create page'));
 
     await expect(createPage({ name: 'Test' })).rejects.toThrow('Cannot create page');
   });
@@ -331,7 +332,7 @@ describe('listPages', () => {
       { pageId: 'p1', name: 'Home', isCurrent: true },
       { pageId: 'p2', name: 'Settings', isCurrent: false }
     ];
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       pages: mockPages,
       message: 'OK'
     });
@@ -349,7 +350,7 @@ describe('listPages', () => {
   });
 
   it('handles empty document with zero pages', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       pages: [],
       message: 'OK'
     });
@@ -362,7 +363,7 @@ describe('listPages', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Plugin unavailable'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Plugin unavailable'));
 
     await expect(listPages({})).rejects.toThrow('Plugin unavailable');
   });
@@ -376,7 +377,7 @@ describe('setCurrentPage', () => {
   });
 
   it('switches page and returns page name from response', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       pageName: 'Mobile Screens'
     });
@@ -389,7 +390,7 @@ describe('setCurrentPage', () => {
   });
 
   it('returns generic message when pageName is absent', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true
     });
 
@@ -401,7 +402,7 @@ describe('setCurrentPage', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Page not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Page not found'));
 
     await expect(setCurrentPage({ pageId: 'bad' })).rejects.toThrow('Page not found');
   });

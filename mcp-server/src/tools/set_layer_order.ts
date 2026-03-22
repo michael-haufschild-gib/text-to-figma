@@ -126,6 +126,16 @@ Common Drawing Pattern:
 };
 
 /**
+ * Response schema for Figma bridge set_layer_order response
+ */
+const SetLayerOrderResponseSchema = z
+  .object({
+    newIndex: z.number().optional(),
+    message: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface SetLayerOrderData {
@@ -159,15 +169,15 @@ export async function setLayerOrder(input: SetLayerOrderInput): Promise<SetLayer
 
   try {
     // Send command to Figma
-    // Note: Bridge unwraps response, returns data on success, throws on failure
-    const response = await bridge.sendToFigmaWithRetry<{
-      newIndex: number;
-      message: string;
-    }>('set_layer_order', {
-      nodeId: validated.nodeId,
-      action: validated.action,
-      index: validated.index
-    });
+    const response = await bridge.sendToFigmaValidated(
+      'set_layer_order',
+      {
+        nodeId: validated.nodeId,
+        action: validated.action,
+        index: validated.index
+      },
+      SetLayerOrderResponseSchema
+    );
 
     const duration = Date.now() - startTime;
     const message = `Set layer order: ${validated.action} (now at index ${String(response.newIndex)})`;

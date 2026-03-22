@@ -73,6 +73,15 @@ Note: Style must exist in the file (created via create_effect_style).`,
 };
 
 /**
+ * Response schema for Figma bridge apply_effect_style response
+ */
+const ApplyEffectStyleResponseSchema = z
+  .object({
+    styleName: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface ApplyEffectStyleResult {
@@ -95,15 +104,14 @@ export async function applyEffectStyle(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    styleName?: string;
-    error?: string;
-  }>('apply_effect_style', {
-    nodeId: validated.nodeId,
-    styleNameOrId: validated.styleNameOrId
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'apply_effect_style',
+    {
+      nodeId: validated.nodeId,
+      styleNameOrId: validated.styleNameOrId
+    },
+    ApplyEffectStyleResponseSchema
+  );
 
   return {
     nodeId: validated.nodeId,

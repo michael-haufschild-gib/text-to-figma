@@ -100,6 +100,27 @@ when you need to search through nested hierarchies.
 };
 
 /**
+ * Response schema for Figma bridge get_children response
+ */
+const GetChildrenResponseSchema = z
+  .object({
+    children: z
+      .array(
+        z
+          .object({
+            nodeId: z.string(),
+            name: z.string(),
+            type: z.string(),
+            visible: z.boolean(),
+            locked: z.boolean()
+          })
+          .passthrough()
+      )
+      .optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface GetChildrenResult {
@@ -121,15 +142,14 @@ export async function getChildren(input: GetChildrenInput): Promise<GetChildrenR
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    children?: ChildNodeInfo[];
-    error?: string;
-  }>('get_children', {
-    nodeId: validated.nodeId,
-    recursive: validated.recursive
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'get_children',
+    {
+      nodeId: validated.nodeId,
+      recursive: validated.recursive
+    },
+    GetChildrenResponseSchema
+  );
 
   const children = response.children ?? [];
   const scope = validated.recursive ? 'descendants' : 'direct children';

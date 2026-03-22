@@ -87,6 +87,15 @@ After creating styles, use apply_fill_style to apply them to nodes.`,
 };
 
 /**
+ * Response schema for Figma bridge create_color_style response
+ */
+const CreateColorStyleResponseSchema = z
+  .object({
+    styleId: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface CreateColorStyleResult {
@@ -110,16 +119,15 @@ export async function createColorStyle(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    styleId?: string;
-    error?: string;
-  }>('create_color_style', {
-    name: validated.name,
-    color: validated.color,
-    description: validated.description
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'create_color_style',
+    {
+      name: validated.name,
+      color: validated.color,
+      description: validated.description
+    },
+    CreateColorStyleResponseSchema
+  );
 
   return {
     styleId: response.styleId ?? '',

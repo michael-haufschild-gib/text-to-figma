@@ -192,6 +192,16 @@ Use Cases:
 };
 
 /**
+ * Response schema for Figma bridge create_path response
+ */
+const CreatePathResponseSchema = z
+  .object({
+    pathId: z.string().optional(),
+    message: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface CreatePathResult {
@@ -235,20 +245,21 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
   const closed = validated.closed ?? false;
 
   // Send command to Figma with normalized commands
-  const response = await bridge.sendToFigmaWithRetry<{
-    pathId: string;
-    message: string;
-  }>('create_path', {
-    name,
-    commands: normalizedCommands,
-    fillColor: validated.fillColor,
-    strokeColor: validated.strokeColor,
-    strokeWeight: validated.strokeWeight,
-    closed,
-    parentId: validated.parentId
-  });
+  const response = await bridge.sendToFigmaValidated(
+    'create_path',
+    {
+      name,
+      commands: normalizedCommands,
+      fillColor: validated.fillColor,
+      strokeColor: validated.strokeColor,
+      strokeWeight: validated.strokeWeight,
+      closed,
+      parentId: validated.parentId
+    },
+    CreatePathResponseSchema
+  );
 
-  if (response.pathId === '') {
+  if (!response.pathId) {
     throw new Error('Failed to create path: No pathId returned');
   }
 

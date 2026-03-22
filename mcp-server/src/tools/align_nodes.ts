@@ -122,6 +122,11 @@ Use Cases:
 };
 
 /**
+ * Response schema for Figma bridge align_nodes response
+ */
+const AlignNodesResponseSchema = z.object({}).passthrough();
+
+/**
  * Result type
  */
 export interface AlignNodesData {
@@ -158,14 +163,15 @@ export async function alignNodes(input: AlignNodesInput): Promise<AlignNodesResu
     const bridge = getFigmaBridge();
 
     // Send command to Figma
-    // Note: Bridge unwraps response, returns data on success, throws on failure
-    await bridge.sendToFigmaWithRetry<{
-      message: string;
-    }>('align_nodes', {
-      nodeIds: validated.nodeIds,
-      alignment: validated.alignment,
-      alignTo: validated.alignTo ?? 'SELECTION_BOUNDS'
-    });
+    await bridge.sendToFigmaValidated(
+      'align_nodes',
+      {
+        nodeIds: validated.nodeIds,
+        alignment: validated.alignment,
+        alignTo: validated.alignTo ?? 'SELECTION_BOUNDS'
+      },
+      AlignNodesResponseSchema
+    );
 
     const duration = Date.now() - startTime;
     const alignTo = validated.alignTo ?? 'SELECTION_BOUNDS';

@@ -44,13 +44,14 @@ const { createPath } = await import('../../mcp-server/src/tools/create_path.js')
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
   __mockBridge: {
     sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
   };
 };
 
 describe('createPath', () => {
   beforeEach(() => {
     loadConfig();
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       pathId: '7:60',
       message: 'Path created'
     });
@@ -136,7 +137,7 @@ describe('createPath', () => {
       parentId: 'frame-15'
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith(
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
       'create_path',
       expect.objectContaining({
         name: 'Custom Path',
@@ -145,11 +146,12 @@ describe('createPath', () => {
         strokeWeight: 3,
         closed: true,
         parentId: 'frame-15'
-      })
+      }),
+      expect.anything()
     );
 
     // Verify commands are passed through (after repair normalization)
-    const callArgs = __mockBridge.sendToFigmaWithRetry.mock.calls[0]?.[1] as Record<
+    const callArgs = __mockBridge.sendToFigmaValidated.mock.calls[0]?.[1] as Record<
       string,
       unknown
     >;
@@ -162,7 +164,7 @@ describe('createPath', () => {
   });
 
   it('throws when bridge returns empty pathId', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       pathId: '',
       message: 'Failed'
     });
@@ -189,7 +191,7 @@ describe('createPath', () => {
   });
 
   it('propagates bridge errors without wrapping', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Figma plugin disconnected'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Figma plugin disconnected'));
 
     await expect(
       createPath({

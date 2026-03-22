@@ -135,6 +135,15 @@ After creating styles, use apply_effect_style to apply them to nodes.`,
 };
 
 /**
+ * Response schema for Figma bridge create_effect_style response
+ */
+const CreateEffectStyleResponseSchema = z
+  .object({
+    styleId: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface CreateEffectStyleResult {
@@ -158,16 +167,15 @@ export async function createEffectStyle(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    styleId?: string;
-    error?: string;
-  }>('create_effect_style', {
-    name: validated.name,
-    effects: validated.effects,
-    description: validated.description
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'create_effect_style',
+    {
+      name: validated.name,
+      effects: validated.effects,
+      description: validated.description
+    },
+    CreateEffectStyleResponseSchema
+  );
 
   return {
     styleId: response.styleId ?? '',

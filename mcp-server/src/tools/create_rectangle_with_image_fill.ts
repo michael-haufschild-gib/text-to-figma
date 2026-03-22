@@ -114,6 +114,15 @@ CSS Equivalent:
 };
 
 /**
+ * Response schema for Figma bridge create_rectangle_with_image_fill response
+ */
+const CreateRectangleWithImageFillResponseSchema = z
+  .object({
+    nodeId: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface CreateRectangleWithImageFillResult {
@@ -146,19 +155,18 @@ export async function createRectangleWithImageFill(
   }
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    nodeId?: string;
-    error?: string;
-  }>('create_rectangle_with_image_fill', {
-    imageUrl: validated.imageUrl,
-    width: validated.width,
-    height: validated.height,
-    scaleMode: validated.scaleMode,
-    name: validated.name,
-    parentId: validated.parentId
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'create_rectangle_with_image_fill',
+    {
+      imageUrl: validated.imageUrl,
+      width: validated.width,
+      height: validated.height,
+      scaleMode: validated.scaleMode,
+      name: validated.name,
+      parentId: validated.parentId
+    },
+    CreateRectangleWithImageFillResponseSchema
+  );
 
   // Map scale mode to CSS
   const scaleModeToCSS: Record<string, string> = {

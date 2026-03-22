@@ -77,6 +77,15 @@ to switch pages before creating content on a different page.
 };
 
 /**
+ * Response schema for Figma bridge list_pages response
+ */
+const ListPagesResponseSchema = z
+  .object({
+    pages: z.array(z.record(z.unknown()))
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface ListPagesResult {
@@ -99,16 +108,12 @@ export async function listPages(_input: ListPagesInput): Promise<ListPagesResult
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: Bridge unwraps response, returns data on success, throws on failure
-  const response = await bridge.sendToFigmaWithRetry<{
-    pages: PageInfo[];
-    message: string;
-  }>('list_pages', {});
+  const response = await bridge.sendToFigmaValidated('list_pages', {}, ListPagesResponseSchema);
 
   return {
     success: true as const,
     pageCount: response.pages.length,
-    pages: response.pages,
+    pages: response.pages as unknown as PageInfo[],
     message: `Found ${response.pages.length} page(s)`,
     timestamp: new Date().toISOString()
   };

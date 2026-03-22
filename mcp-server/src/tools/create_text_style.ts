@@ -152,6 +152,15 @@ After creating styles, use apply_text_style to apply them to text nodes.`,
 };
 
 /**
+ * Response schema for Figma bridge create_text_style response
+ */
+const CreateTextStyleResponseSchema = z
+  .object({
+    styleId: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface CreateTextStyleResult {
@@ -174,22 +183,21 @@ export async function createTextStyle(input: CreateTextStyleInput): Promise<Crea
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    styleId?: string;
-    error?: string;
-  }>('create_text_style', {
-    name: validated.name,
-    fontFamily: validated.fontFamily,
-    fontSize: validated.fontSize,
-    fontWeight: validated.fontWeight,
-    lineHeight: validated.lineHeight,
-    letterSpacing: validated.letterSpacing,
-    textCase: validated.textCase,
-    textDecoration: validated.textDecoration,
-    description: validated.description
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'create_text_style',
+    {
+      name: validated.name,
+      fontFamily: validated.fontFamily,
+      fontSize: validated.fontSize,
+      fontWeight: validated.fontWeight,
+      lineHeight: validated.lineHeight,
+      letterSpacing: validated.letterSpacing,
+      textCase: validated.textCase,
+      textDecoration: validated.textDecoration,
+      description: validated.description
+    },
+    CreateTextStyleResponseSchema
+  );
 
   return {
     styleId: response.styleId ?? '',

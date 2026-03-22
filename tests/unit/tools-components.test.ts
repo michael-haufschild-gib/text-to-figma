@@ -148,7 +148,7 @@ describe('createInstance', () => {
 
 describe('createComponentSet', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       componentSetId: 'set-99'
     });
@@ -172,7 +172,7 @@ describe('createComponentSet', () => {
   });
 
   it('falls back to empty string when bridge returns no componentSetId', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
 
     const result = await createComponentSet({
       componentIds: ['comp-a', 'comp-b'],
@@ -184,7 +184,7 @@ describe('createComponentSet', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Figma crashed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Figma crashed'));
 
     await expect(
       createComponentSet({
@@ -275,7 +275,7 @@ describe('addVariantProperty', () => {
 
 describe('setInstanceSwap', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       oldComponentId: 'comp-old'
     });
@@ -298,7 +298,7 @@ describe('setInstanceSwap', () => {
   });
 
   it('handles missing oldComponentId from bridge response', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
 
     const result = await setInstanceSwap({
       instanceId: 'inst-2',
@@ -310,7 +310,7 @@ describe('setInstanceSwap', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Swap failed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Swap failed'));
 
     await expect(
       setInstanceSwap({ instanceId: 'inst-3', newComponentId: 'comp-fail' })

@@ -340,6 +340,17 @@ function defaultCommandHandler(command: FigmaCommand): SuccessResponse {
   const layoutResult = handleLayoutTool(type, payload);
   if (layoutResult) return layoutResult;
 
+  // create_path returns pathId instead of nodeId
+  if (type === 'create_path') {
+    return {
+      success: true,
+      data: {
+        pathId: `path_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        message: 'Path created'
+      }
+    };
+  }
+
   // Other creation tools return a nodeId
   if (type.startsWith('create_')) {
     return {

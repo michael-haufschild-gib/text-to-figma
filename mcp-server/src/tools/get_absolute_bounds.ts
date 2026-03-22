@@ -88,6 +88,22 @@ get_relative_bounds or set_transform with x/y.
 };
 
 /**
+ * Response schema for Figma bridge get_absolute_bounds response
+ */
+const GetAbsoluteBoundsResponseSchema = z
+  .object({
+    bounds: z
+      .object({
+        x: z.number(),
+        y: z.number(),
+        width: z.number(),
+        height: z.number()
+      })
+      .passthrough()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface GetAbsoluteBoundsResult {
@@ -112,14 +128,11 @@ export async function getAbsoluteBounds(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: Bridge unwraps response, returns data on success, throws on failure
-  const response = await bridge.sendToFigmaWithRetry<{
-    nodeId: string;
-    bounds: BoundsInfo;
-    message: string;
-  }>('get_absolute_bounds', {
-    nodeId: validated.nodeId
-  });
+  const response = await bridge.sendToFigmaValidated(
+    'get_absolute_bounds',
+    { nodeId: validated.nodeId },
+    GetAbsoluteBoundsResponseSchema
+  );
 
   return {
     success: true as const,

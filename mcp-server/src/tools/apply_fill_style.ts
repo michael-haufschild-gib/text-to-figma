@@ -73,6 +73,15 @@ Note: Style must exist in the file (created via create_color_style).`,
 };
 
 /**
+ * Response schema for Figma bridge apply_fill_style response
+ */
+const ApplyFillStyleResponseSchema = z
+  .object({
+    styleName: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface ApplyFillStyleResult {
@@ -93,15 +102,14 @@ export async function applyFillStyle(input: ApplyFillStyleInput): Promise<ApplyF
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    styleName?: string;
-    error?: string;
-  }>('apply_fill_style', {
-    nodeId: validated.nodeId,
-    styleNameOrId: validated.styleNameOrId
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'apply_fill_style',
+    {
+      nodeId: validated.nodeId,
+      styleNameOrId: validated.styleNameOrId
+    },
+    ApplyFillStyleResponseSchema
+  );
 
   return {
     nodeId: validated.nodeId,

@@ -71,6 +71,22 @@ export const getParentToolDefinition = {
 };
 
 /**
+ * Response schema for Figma bridge get_parent response
+ */
+const GetParentResponseSchema = z
+  .object({
+    parent: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        type: z.string()
+      })
+      .passthrough()
+      .optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface GetParentResult {
@@ -93,18 +109,11 @@ export async function getParent(input: GetParentInput): Promise<GetParentResult>
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    parent?: {
-      id: string;
-      name: string;
-      type: string;
-    };
-    error?: string;
-  }>('get_parent', {
-    nodeId: validated.nodeId
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'get_parent',
+    { nodeId: validated.nodeId },
+    GetParentResponseSchema
+  );
 
   if (!response.parent) {
     return {

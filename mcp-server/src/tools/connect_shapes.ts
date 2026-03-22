@@ -190,6 +190,16 @@ Common Drawing Pattern:
 };
 
 /**
+ * Response schema for Figma bridge connect_shapes response
+ */
+const ConnectShapesResponseSchema = z
+  .object({
+    merged: z.boolean().optional(),
+    newNodeId: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface ConnectShapesResult {
@@ -219,20 +229,19 @@ export async function connectShapes(input: ConnectShapesInput): Promise<ConnectS
   const unionResult = validated.unionResult !== false; // Default true
 
   // Send command to Figma
-  // Note: Bridge unwraps response, returns data on success, throws on failure
-  const response = await bridge.sendToFigmaWithRetry<{
-    merged?: boolean;
-    newNodeId?: string;
-    message: string;
-  }>('connect_shapes', {
-    sourceNodeId: validated.sourceNodeId,
-    targetNodeId: validated.targetNodeId,
-    sourceAnchor: validated.sourceAnchor,
-    targetAnchor: validated.targetAnchor,
-    method,
-    overlap,
-    unionResult
-  });
+  const response = await bridge.sendToFigmaValidated(
+    'connect_shapes',
+    {
+      sourceNodeId: validated.sourceNodeId,
+      targetNodeId: validated.targetNodeId,
+      sourceAnchor: validated.sourceAnchor,
+      targetAnchor: validated.targetAnchor,
+      method,
+      overlap,
+      unionResult
+    },
+    ConnectShapesResponseSchema
+  );
 
   const merged = response.merged ?? false;
 

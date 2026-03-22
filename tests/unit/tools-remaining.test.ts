@@ -46,6 +46,7 @@ const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) 
   __mockBridge: {
     sendToFigma: ReturnType<typeof vi.fn>;
     sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
     isConnected: ReturnType<typeof vi.fn>;
     getConnectionStatus: ReturnType<typeof vi.fn>;
   };
@@ -140,7 +141,7 @@ describe('connectShapes', () => {
   });
 
   it('sends correct payload to bridge with defaults applied', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ merged: false, message: 'ok' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ merged: false, message: 'ok' });
 
     await connectShapes({
       sourceNodeId: 'head-1',
@@ -149,19 +150,23 @@ describe('connectShapes', () => {
       targetAnchor: 'TOP'
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith('connect_shapes', {
-      sourceNodeId: 'head-1',
-      targetNodeId: 'neck-1',
-      sourceAnchor: 'BOTTOM',
-      targetAnchor: 'TOP',
-      method: 'POSITION_OVERLAP',
-      overlap: 5,
-      unionResult: true
-    });
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
+      'connect_shapes',
+      {
+        sourceNodeId: 'head-1',
+        targetNodeId: 'neck-1',
+        sourceAnchor: 'BOTTOM',
+        targetAnchor: 'TOP',
+        method: 'POSITION_OVERLAP',
+        overlap: 5,
+        unionResult: true
+      },
+      expect.anything()
+    );
   });
 
   it('defaults method to POSITION_OVERLAP, overlap to 5, unionResult to true', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ merged: false, message: 'ok' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ merged: false, message: 'ok' });
 
     const result = await connectShapes({
       sourceNodeId: 'head-1',
@@ -177,7 +182,7 @@ describe('connectShapes', () => {
   });
 
   it('uses custom overlap value when provided', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ merged: false, message: 'ok' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ merged: false, message: 'ok' });
 
     const result = await connectShapes({
       sourceNodeId: 'a',
@@ -188,12 +193,12 @@ describe('connectShapes', () => {
     });
 
     expect(result.message).toContain('20px overlap');
-    const payload = __mockBridge.sendToFigmaWithRetry.mock.calls[0][1] as Record<string, unknown>;
+    const payload = __mockBridge.sendToFigmaValidated.mock.calls[0][1] as Record<string, unknown>;
     expect(payload.overlap).toBe(20);
   });
 
   it('merged=true changes message format to include newNodeId', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       merged: true,
       newNodeId: 'merged-99',
       message: 'Merged'
@@ -215,7 +220,7 @@ describe('connectShapes', () => {
   });
 
   it('POSITION_ONLY message does not mention overlap', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ merged: false, message: 'ok' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ merged: false, message: 'ok' });
 
     const result = await connectShapes({
       sourceNodeId: 'leg-1',
@@ -231,7 +236,7 @@ describe('connectShapes', () => {
   });
 
   it('bridge response with no merged field defaults merged to false', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ message: 'done' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ message: 'done' });
 
     const result = await connectShapes({
       sourceNodeId: 'a',
@@ -245,7 +250,7 @@ describe('connectShapes', () => {
   });
 
   it('unionResult=false is sent when explicitly set', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ merged: false, message: 'ok' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ merged: false, message: 'ok' });
 
     await connectShapes({
       sourceNodeId: 'a',
@@ -256,12 +261,12 @@ describe('connectShapes', () => {
       unionResult: false
     });
 
-    const payload = __mockBridge.sendToFigmaWithRetry.mock.calls[0][1] as Record<string, unknown>;
+    const payload = __mockBridge.sendToFigmaValidated.mock.calls[0][1] as Record<string, unknown>;
     expect(payload.unionResult).toBe(false);
   });
 
   it('propagates bridge errors without wrapping', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Node not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Node not found'));
 
     await expect(
       connectShapes({
@@ -274,7 +279,7 @@ describe('connectShapes', () => {
   });
 
   it('propagates non-Error thrown values from bridge', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue('string error');
+    __mockBridge.sendToFigmaValidated.mockRejectedValue('string error');
 
     await expect(
       connectShapes({

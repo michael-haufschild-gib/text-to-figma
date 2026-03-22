@@ -45,6 +45,7 @@ const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) 
   __mockBridge: {
     sendToFigma: ReturnType<typeof vi.fn>;
     sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
   };
 };
 
@@ -54,7 +55,7 @@ describe('getNodeById', () => {
   });
 
   it('returns node info when node exists', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       exists: true,
       node: {
         id: '1:42',
@@ -84,7 +85,7 @@ describe('getNodeById', () => {
   });
 
   it('throws when node does not exist', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       exists: false,
       error: 'Node not found'
     });
@@ -93,7 +94,7 @@ describe('getNodeById', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Connection refused'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Connection refused'));
 
     await expect(getNodeById({ nodeId: '1:42' })).rejects.toThrow('Connection refused');
   });
@@ -105,7 +106,7 @@ describe('getNodeByName', () => {
   });
 
   it('returns matching nodes on success', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       nodes: [
         { nodeId: '1:10', name: 'Button Primary', type: 'FRAME', parentId: '0:1' },
@@ -123,7 +124,7 @@ describe('getNodeByName', () => {
   });
 
   it('returns empty array when no matches found', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       nodes: []
     });
@@ -137,7 +138,7 @@ describe('getNodeByName', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Timeout'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Timeout'));
 
     await expect(
       getNodeByName({ name: 'Test', findAll: false, exactMatch: false })
@@ -151,7 +152,7 @@ describe('getChildren', () => {
   });
 
   it('returns direct children', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       children: [
         { nodeId: '2:1', name: 'Title', type: 'TEXT', visible: true, locked: false },
@@ -171,7 +172,7 @@ describe('getChildren', () => {
   });
 
   it('returns descendants when recursive is true', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       children: [
         { nodeId: '2:1', name: 'Child', type: 'FRAME', visible: true, locked: false },
@@ -186,7 +187,7 @@ describe('getChildren', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Node not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Node not found'));
 
     await expect(getChildren({ nodeId: 'bad-id', recursive: false })).rejects.toThrow(
       'Node not found'
@@ -200,7 +201,7 @@ describe('getParent', () => {
   });
 
   it('returns parent info when parent exists', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       parent: { id: '0:1', name: 'Page 1', type: 'PAGE' }
     });
@@ -215,7 +216,7 @@ describe('getParent', () => {
   });
 
   it('returns no parent for root nodes', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true
       // no parent field
     });
@@ -228,7 +229,7 @@ describe('getParent', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Disconnected'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Disconnected'));
 
     await expect(getParent({ nodeId: '1:42' })).rejects.toThrow('Disconnected');
   });
@@ -259,11 +260,11 @@ describe('getPageHierarchy', () => {
     expect(result.source).toBe('cache');
     expect(result.stats.totalNodes).toBe(1);
     // Bridge should NOT have been called
-    expect(__mockBridge.sendToFigmaWithRetry).not.toHaveBeenCalled();
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
   });
 
   it('refreshes from Figma when refresh is true', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       hierarchy: [
         {
           nodeId: '1:1',
@@ -295,7 +296,7 @@ describe('getPageHierarchy', () => {
   });
 
   it('propagates bridge errors on refresh', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Plugin not connected'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Plugin not connected'));
 
     await expect(getPageHierarchy({ refresh: true })).rejects.toThrow('Plugin not connected');
   });
@@ -320,7 +321,7 @@ describe('getSelection', () => {
       ],
       count: 1
     };
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(selectionData);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(selectionData);
 
     const result = await getSelection({});
 
@@ -331,7 +332,7 @@ describe('getSelection', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('No selection'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('No selection'));
 
     await expect(getSelection({})).rejects.toThrow('No selection');
   });
@@ -343,7 +344,7 @@ describe('getAbsoluteBounds', () => {
   });
 
   it('returns bounds for a node', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       nodeId: '1:42',
       bounds: { x: 100, y: 200, width: 300, height: 150 },
       message: 'Bounds retrieved'
@@ -363,7 +364,7 @@ describe('getAbsoluteBounds', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Node deleted'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Node deleted'));
 
     await expect(getAbsoluteBounds({ nodeId: 'gone-1' })).rejects.toThrow('Node deleted');
   });
@@ -399,7 +400,7 @@ describe('getRelativeBounds', () => {
       }
     };
 
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       relativeBounds,
       message: 'Relative bounds calculated'
     });
@@ -420,7 +421,7 @@ describe('getRelativeBounds', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Target node missing'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Target node missing'));
 
     await expect(
       getRelativeBounds({ targetNodeId: 'bad', referenceNodeId: 'ref' })

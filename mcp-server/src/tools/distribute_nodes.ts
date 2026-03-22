@@ -132,6 +132,15 @@ Use Cases:
 };
 
 /**
+ * Response schema for Figma bridge distribute_nodes response
+ */
+const DistributeNodesResponseSchema = z
+  .object({
+    spacing: z.number().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface DistributeNodesData {
@@ -171,17 +180,16 @@ export async function distributeNodes(input: DistributeNodesInput): Promise<Dist
     const method = validated.method ?? 'SPACING';
 
     // Send command to Figma
-    // Send command to Figma
-    // Note: Bridge unwraps response, returns data on success, throws on failure
-    const response = await bridge.sendToFigmaWithRetry<{
-      spacing?: number;
-      message: string;
-    }>('distribute_nodes', {
-      nodeIds: validated.nodeIds,
-      axis: validated.axis,
-      method,
-      spacing: validated.spacing
-    });
+    const response = await bridge.sendToFigmaValidated(
+      'distribute_nodes',
+      {
+        nodeIds: validated.nodeIds,
+        axis: validated.axis,
+        method,
+        spacing: validated.spacing
+      },
+      DistributeNodesResponseSchema
+    );
 
     const duration = Date.now() - startTime;
     const actualSpacing = validated.spacing ?? response.spacing;

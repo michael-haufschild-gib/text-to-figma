@@ -68,6 +68,15 @@ Note: Preserves overrides when possible.`,
 };
 
 /**
+ * Response schema for Figma bridge set_instance_swap response
+ */
+const SetInstanceSwapResponseSchema = z
+  .object({
+    oldComponentId: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface SetInstanceSwapResult {
@@ -89,15 +98,14 @@ export async function setInstanceSwap(input: SetInstanceSwapInput): Promise<SetI
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    oldComponentId?: string;
-    error?: string;
-  }>('set_instance_swap', {
-    instanceId: validated.instanceId,
-    newComponentId: validated.newComponentId
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'set_instance_swap',
+    {
+      instanceId: validated.instanceId,
+      newComponentId: validated.newComponentId
+    },
+    SetInstanceSwapResponseSchema
+  );
 
   return {
     instanceId: validated.instanceId,

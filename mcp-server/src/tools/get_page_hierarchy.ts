@@ -40,13 +40,36 @@ export interface GetPageHierarchyResult {
 }
 
 /**
- * Figma response with hierarchy data
+ * Response schema for Figma bridge get_page_hierarchy response.
+ * Uses z.lazy() for recursive HierarchyNode children.
  */
-interface FigmaHierarchyResponse {
-  hierarchy: HierarchyNode[];
-  pageId: string;
-  pageName: string;
-}
+const hierarchyNodeSchema: z.ZodType<HierarchyNode> = z.lazy(() =>
+  z
+    .object({
+      nodeId: z.string(),
+      type: z.string(),
+      name: z.string(),
+      bounds: z
+        .object({
+          x: z.number(),
+          y: z.number(),
+          width: z.number(),
+          height: z.number()
+        })
+        .passthrough()
+        .optional(),
+      children: z.array(hierarchyNodeSchema)
+    })
+    .passthrough()
+);
+
+const GetPageHierarchyResponseSchema = z
+  .object({
+    hierarchy: z.array(hierarchyNodeSchema),
+    pageId: z.string(),
+    pageName: z.string()
+  })
+  .passthrough();
 
 /**
  * Gets the complete Figma page hierarchy
@@ -91,9 +114,10 @@ export async function getPageHierarchy(
     logger.info('Refreshing hierarchy from Figma...');
 
     const bridge = getFigmaBridge();
-    const response = await bridge.sendToFigmaWithRetry<FigmaHierarchyResponse>(
+    const response = await bridge.sendToFigmaValidated(
       'get_page_hierarchy',
-      {}
+      {},
+      GetPageHierarchyResponseSchema
     );
 
     // Clear and rebuild registry

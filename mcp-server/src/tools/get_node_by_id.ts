@@ -12,6 +12,30 @@ import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 
 /**
+ * Response schema for Figma bridge get_node_by_id response
+ */
+const GetNodeByIdResponseSchema = z
+  .object({
+    exists: z.boolean(),
+    node: z
+      .object({
+        id: z.string(),
+        name: z.string(),
+        type: z.string(),
+        width: z.number().optional(),
+        height: z.number().optional(),
+        x: z.number().optional(),
+        y: z.number().optional(),
+        parentId: z.string().optional(),
+        childrenCount: z.number().optional()
+      })
+      .passthrough()
+      .optional(),
+    error: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Input schema
  */
 export const GetNodeByIdInputSchema = z.object({
@@ -106,24 +130,11 @@ export async function getNodeById(input: GetNodeByIdInput): Promise<GetNodeByIdR
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: Bridge unwraps response, returns data on success, throws on failure
-  const response = await bridge.sendToFigmaWithRetry<{
-    exists: boolean;
-    node?: {
-      id: string;
-      name: string;
-      type: string;
-      width?: number;
-      height?: number;
-      x?: number;
-      y?: number;
-      parentId?: string;
-      childrenCount?: number;
-    };
-    error?: string;
-  }>('get_node_by_id', {
-    nodeId: validated.nodeId
-  });
+  const response = await bridge.sendToFigmaValidated(
+    'get_node_by_id',
+    { nodeId: validated.nodeId },
+    GetNodeByIdResponseSchema
+  );
 
   if (response.exists !== true || response.node === undefined) {
     throw new Error(response.error ?? 'Node not found');

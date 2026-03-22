@@ -68,6 +68,15 @@ Use set_plugin_data to store data.`,
 };
 
 /**
+ * Response schema for Figma bridge get_plugin_data response
+ */
+const GetPluginDataResponseSchema = z
+  .object({
+    value: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface GetPluginDataResult {
@@ -89,15 +98,14 @@ export async function getPluginData(input: GetPluginDataInput): Promise<GetPlugi
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    value?: string;
-    error?: string;
-  }>('get_plugin_data', {
-    nodeId: validated.nodeId,
-    key: validated.key
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'get_plugin_data',
+    {
+      nodeId: validated.nodeId,
+      key: validated.key
+    },
+    GetPluginDataResponseSchema
+  );
 
   const value = response.value ?? '';
   const hasValue = value.length > 0;

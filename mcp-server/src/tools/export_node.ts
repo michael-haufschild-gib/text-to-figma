@@ -109,6 +109,16 @@ Use Cases:
 };
 
 /**
+ * Response schema for Figma bridge export_node response
+ */
+const ExportNodeResponseSchema = z
+  .object({
+    base64Data: z.string().optional(),
+    filePath: z.string().optional()
+  })
+  .passthrough();
+
+/**
  * Result type
  */
 export interface ExportNodeResult {
@@ -132,18 +142,16 @@ export async function exportNode(input: ExportNodeInput): Promise<ExportNodeResu
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  const response = await bridge.sendToFigmaWithRetry<{
-    success: boolean;
-    base64Data?: string;
-    filePath?: string;
-    error?: string;
-  }>('export_node', {
-    nodeId: validated.nodeId,
-    format: validated.format,
-    scale: validated.scale,
-    returnBase64: validated.returnBase64
-  });
-  // Note: Response validated by bridge at protocol level
+  const response = await bridge.sendToFigmaValidated(
+    'export_node',
+    {
+      nodeId: validated.nodeId,
+      format: validated.format,
+      scale: validated.scale,
+      returnBase64: validated.returnBase64
+    },
+    ExportNodeResponseSchema
+  );
 
   const scaleLabel = validated.scale === 1 ? '1x' : `${validated.scale}x`;
 

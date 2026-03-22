@@ -41,12 +41,13 @@ const { applyEffectStyle } = await import('../../mcp-server/src/tools/apply_effe
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
   __mockBridge: {
     sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
   };
 };
 
 describe('createColorStyle', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       styleId: 'style-color-1'
     });
@@ -76,15 +77,19 @@ describe('createColorStyle', () => {
       description: 'Error state color'
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith('create_color_style', {
-      name: 'Error',
-      color: '#CC0000',
-      description: 'Error state color'
-    });
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
+      'create_color_style',
+      {
+        name: 'Error',
+        color: '#CC0000',
+        description: 'Error state color'
+      },
+      expect.anything()
+    );
   });
 
   it('falls back to empty string when bridge returns no styleId', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
 
     const result = await createColorStyle({
       name: 'Gray/500',
@@ -96,7 +101,7 @@ describe('createColorStyle', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Style creation failed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Style creation failed'));
 
     await expect(createColorStyle({ name: 'Fail', color: '#000000' })).rejects.toThrow(
       'Style creation failed'
@@ -106,7 +111,7 @@ describe('createColorStyle', () => {
 
 describe('createTextStyle', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       styleId: 'style-text-1'
     });
@@ -136,7 +141,7 @@ describe('createTextStyle', () => {
   });
 
   it('falls back to empty string when bridge returns no styleId', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
 
     const result = await createTextStyle({
       name: 'Body',
@@ -151,7 +156,7 @@ describe('createTextStyle', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Font not available'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Font not available'));
 
     await expect(
       createTextStyle({
@@ -168,7 +173,7 @@ describe('createTextStyle', () => {
 
 describe('createEffectStyle', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       styleId: 'style-effect-1'
     });
@@ -215,7 +220,7 @@ describe('createEffectStyle', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Effect limit reached'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Effect limit reached'));
 
     await expect(
       createEffectStyle({
@@ -228,7 +233,7 @@ describe('createEffectStyle', () => {
 
 describe('applyFillStyle', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       styleName: 'Primary'
     });
@@ -250,7 +255,7 @@ describe('applyFillStyle', () => {
   });
 
   it('falls back to styleNameOrId when bridge returns no styleName', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
 
     const result = await applyFillStyle({
       nodeId: 'frame-1',
@@ -262,7 +267,7 @@ describe('applyFillStyle', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Style not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Style not found'));
 
     await expect(
       applyFillStyle({ nodeId: 'node-1', styleNameOrId: 'NonExistent' })
@@ -272,7 +277,7 @@ describe('applyFillStyle', () => {
 
 describe('applyTextStyle', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       styleName: 'H1'
     });
@@ -294,7 +299,7 @@ describe('applyTextStyle', () => {
   });
 
   it('falls back to styleNameOrId when bridge returns no styleName', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
 
     const result = await applyTextStyle({
       nodeId: 'paragraph-1',
@@ -306,7 +311,7 @@ describe('applyTextStyle', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Text style not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Text style not found'));
 
     await expect(applyTextStyle({ nodeId: 'text-1', styleNameOrId: 'Missing' })).rejects.toThrow(
       'Text style not found'
@@ -316,7 +321,7 @@ describe('applyTextStyle', () => {
 
 describe('applyEffectStyle', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
       styleName: 'Elevation/2'
     });
@@ -338,7 +343,7 @@ describe('applyEffectStyle', () => {
   });
 
   it('falls back to styleNameOrId when bridge returns no styleName', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ success: true });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
 
     const result = await applyEffectStyle({
       nodeId: 'button-1',
@@ -350,7 +355,7 @@ describe('applyEffectStyle', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Effect style not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Effect style not found'));
 
     await expect(
       applyEffectStyle({ nodeId: 'node-1', styleNameOrId: 'NonExistent' })
