@@ -237,7 +237,9 @@ describe('Auto-Validator — validateSpec and utilities', () => {
       expect(formatted).toContain('2 auto-correction');
     });
   });
+});
 
+describe('Auto-Validator — Edge Cases', () => {
   describe('edge cases', () => {
     it('autoCorrectSpec handles deeply nested children (3 levels)', () => {
       const result = autoCorrectSpec({
@@ -401,6 +403,134 @@ describe('Auto-Validator — validateSpec and utilities', () => {
       });
       const childCorrections = result.corrections.filter((c) => c.path.includes('children'));
       expect(childCorrections.length).toBeGreaterThan(0);
+    });
+
+    it('autoCorrectSpec corrects individual padding fields (paddingLeft/Right/Top/Bottom)', () => {
+      const result = autoCorrectSpec({
+        type: 'frame',
+        name: 'test',
+        props: { paddingLeft: 10, paddingRight: 15, paddingTop: 7, paddingBottom: 33 }
+      });
+
+      expect(result.wasModified).toBe(true);
+      expect(result.corrected.props?.paddingLeft).toBe(8);
+      expect(result.corrected.props?.paddingRight).toBe(16);
+      expect(result.corrected.props?.paddingTop).toBe(8);
+      expect(result.corrected.props?.paddingBottom).toBe(32);
+    });
+
+    it('autoCorrectSpec corrects gap field to 8pt grid', () => {
+      const result = autoCorrectSpec({
+        type: 'frame',
+        name: 'test',
+        props: { gap: 12 }
+      });
+
+      expect(result.wasModified).toBe(true);
+      const gapCorrection = result.corrections.find((c) => c.field === 'gap');
+      expect(gapCorrection?.originalValue).toBe(12);
+      // 12 snaps to either 8 or 16 — check it's one of them
+      expect([8, 16]).toContain(gapCorrection?.correctedValue);
+    });
+
+    it('autoCorrectSpec correction paths include correct child indices', () => {
+      const result = autoCorrectSpec({
+        type: 'frame',
+        name: 'root',
+        props: { padding: 16 },
+        children: [
+          { type: 'text', name: 'first', props: { fontSize: 16 } },
+          { type: 'frame', name: 'second', props: { itemSpacing: 10 } }
+        ]
+      });
+
+      const childCorrections = result.corrections.filter((c) => c.path.includes('children'));
+      // The correction for itemSpacing=10 in child index 1
+      expect(childCorrections.some((c) => c.path === 'root.children[1]')).toBe(true);
+    });
+
+    it('autoCorrectSpec deep clone does not share references with original', () => {
+      const original = {
+        type: 'frame' as const,
+        name: 'test',
+        props: { padding: 15, nested: { deep: true } }
+      };
+
+      const result = autoCorrectSpec(original);
+
+      // Mutating corrected should not affect original
+      result.corrected.props!.padding = 999;
+      expect(original.props.padding).toBe(15);
+    });
+
+    it('validateSpec warns on off-grid fontSize', () => {
+      const result = validateSpec({
+        type: 'text',
+        name: 'label',
+        props: { content: 'Hello', fontSize: 14 }
+      });
+
+      const fontWarning = result.issues.find((i) => i.field === 'fontSize');
+      expect(fontWarning?.severity).toBe('warning');
+      expect(fontWarning?.message).toContain('14');
+    });
+
+    it('validateSpec reports error for invalid node type', () => {
+      // TypeScript prevents this normally, but runtime data could have invalid types
+      const result = validateSpec({
+        type: 'image' as 'frame', // force invalid type at runtime
+        name: 'bad-type'
+      });
+
+      const typeError = result.issues.find((i) => i.field === 'type');
+      expect(typeError?.severity).toBe('error');
+      expect(result.valid).toBe(false);
+    });
+
+    it('autoCorrectSpec handles 0.5 boundary for rounding dimensions', () => {
+      const result = autoCorrectSpec({
+        type: 'frame',
+        name: 'test',
+        props: { width: 100.5, height: 99.4, x: 50.5, y: 25.49 }
+      });
+
+      // Math.round(100.5) = 101 (rounds to even in some JS engines, but Math.round rounds up for .5)
+      expect(result.corrected.props?.width).toBe(101);
+      expect(result.corrected.props?.height).toBe(99);
+      expect(result.corrected.props?.x).toBe(51);
+      expect(result.corrected.props?.y).toBe(25);
+    });
+
+    it('autoCorrectSpec handles spec with no name', () => {
+      const result = autoCorrectSpec({
+        type: 'frame',
+        props: { padding: 15 }
+      });
+      expect(result.wasModified).toBe(true);
+      expect(result.corrected.props?.padding).toBe(16);
+    });
+
+    it('validateSpec warns on text node with whitespace-only content', () => {
+      const result = validateSpec({
+        type: 'text',
+        name: 'spaces',
+        props: { content: '   ' }
+      });
+
+      const contentWarning = result.issues.find((i) => i.field === 'content');
+      expect(contentWarning?.severity).toBe('warning');
+    });
+
+    it('validateSpec accepts text node with "text" prop as alternative to "content"', () => {
+      const result = validateSpec({
+        type: 'text',
+        name: 'alt',
+        props: { text: 'Hello' }
+      });
+
+      // Should not warn about missing content since 'text' prop exists
+      const contentWarning = result.issues.find((i) => i.field === 'content');
+      expect(contentWarning).toBeUndefined();
     });
 
     it('formatCorrections handles corrections with different reasons', () => {

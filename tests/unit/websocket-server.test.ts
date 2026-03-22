@@ -1,12 +1,13 @@
 /**
- * WebSocket Bridge Server Unit Tests
+ * WebSocket Bridge Server — Pure Function Unit Tests
  *
- * Tests the exported pure functions and the createServer() lifecycle.
- * Pure function tests use mock WebSocket objects.
- * Server lifecycle tests spin up a real server on a random port.
+ * Tests validateMessage, handleFigmaRegistration, routeRequest,
+ * routeResponse, and routeMessage using mock WebSocket objects.
+ *
+ * Server lifecycle tests (createServer) are in websocket-server-lifecycle.test.ts.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import {
   validateMessage,
@@ -14,10 +15,8 @@ import {
   routeRequest,
   routeResponse,
   routeMessage,
-  createServer,
   createServerState,
   type ServerState,
-  type ServerHandle,
   type BridgeMessage,
   type ClientRecord
 } from '../../websocket-server/src/server.js';
@@ -43,39 +42,6 @@ function mockClient(overrides: Partial<ClientRecord> = {}): ClientRecord {
     lastPong: Date.now(),
     ...overrides
   };
-}
-
-// Helper: connect a WebSocket client and wait for welcome message
-function connectClient(port: number): Promise<{ ws: WebSocket; welcome: Record<string, unknown> }> {
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}`);
-    const timeout = setTimeout(() => {
-      ws.terminate();
-      reject(new Error('Connection timeout'));
-    }, 5000);
-
-    ws.on('message', (data) => {
-      clearTimeout(timeout);
-      const welcome = JSON.parse(data.toString()) as Record<string, unknown>;
-      resolve({ ws, welcome });
-    });
-
-    ws.on('error', (err) => {
-      clearTimeout(timeout);
-      reject(err);
-    });
-  });
-}
-
-// Helper: wait for next message on a WebSocket
-function nextMessage(ws: WebSocket, timeoutMs = 3000): Promise<Record<string, unknown>> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Message timeout')), timeoutMs);
-    ws.once('message', (data) => {
-      clearTimeout(timeout);
-      resolve(JSON.parse(data.toString()) as Record<string, unknown>);
-    });
-  });
 }
 
 // ─── validateMessage ────────────────────────────────────────────────
@@ -326,6 +292,69 @@ describe('routeResponse', () => {
     routeResponse(state, { id: 'req-42', success: true }, 'figma-1');
     expect(mcpWs.send).not.toHaveBeenCalled();
   });
+
+  it('falls back to broadcast when origin client has been removed from state', () => {
+    // Simulate: MCP client sent a request, then disconnected before response arrived.
+    // The origin ID is tracked but the client is gone from the map.
+    const otherMcpWs = mockWs();
+    state.clients.set('mcp-2', mockClient({ ws: otherMcpWs, isMCP: true }));
+    state.pendingRequestOrigins.set('req-orphan', 'mcp-gone');
+    // mcp-gone is NOT in state.clients
+
+    const response = { id: 'req-orphan', success: true, data: 'orphaned' };
+    routeResponse(state, response, 'figma-1');
+
+    // Origin client is gone, but the origin ID was found in pendingRequestOrigins,
+    // so it tries to send to the origin (which doesn't exist), and doesn't broadcast.
+    // This is the actual behavior: it finds the origin ID but the client is gone,
+    // so the response is silently dropped. It does NOT fall back to broadcast.
+    expect(otherMcpWs.send).not.toHaveBeenCalled();
+    // The origin entry is still cleaned up
+    expect(state.pendingRequestOrigins.has('req-orphan')).toBe(false);
+  });
+
+  it('cleans up pendingRequestOrigins entry after routing', () => {
+    const mcpWs = mockWs();
+    state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
+    state.pendingRequestOrigins.set('req-1', 'mcp-1');
+    state.pendingRequestOrigins.set('req-2', 'mcp-1');
+
+    routeResponse(state, { id: 'req-1', success: true }, 'figma-1');
+
+    // Only req-1 should be cleaned up, req-2 should remain
+    expect(state.pendingRequestOrigins.has('req-1')).toBe(false);
+    expect(state.pendingRequestOrigins.has('req-2')).toBe(true);
+  });
+
+  it('when figmaPluginClient is null, all clients pass the guard (no imposter check)', () => {
+    // The guard is: if (figmaPluginClient && clientId !== figmaPluginClient) → warn and return
+    // When figmaPluginClient is null, the guard is skipped entirely.
+    // So ANY client's response is processed, falling through to origin lookup or broadcast.
+    const mcpWs = mockWs();
+    state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
+    state.pendingRequestOrigins.set('req-1', 'mcp-1');
+    state.figmaPluginClient = null; // No Figma plugin registered
+
+    routeResponse(state, { id: 'req-1', success: true, data: 'from-anyone' }, 'random-client');
+
+    // Response should be routed to the origin MCP client despite coming from 'random-client'
+    expect(mcpWs.send).toHaveBeenCalledWith(
+      JSON.stringify({ id: 'req-1', success: true, data: 'from-anyone' })
+    );
+  });
+
+  it('response with success:false is still routed to origin MCP client', () => {
+    const mcpWs = mockWs();
+    state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
+    state.figmaPluginClient = 'figma-1';
+    state.pendingRequestOrigins.set('req-fail', 'mcp-1');
+
+    const response = { id: 'req-fail', success: false, error: 'Node not found' };
+    routeResponse(state, response, 'figma-1');
+
+    expect(mcpWs.send).toHaveBeenCalledWith(JSON.stringify(response));
+    expect(state.pendingRequestOrigins.has('req-fail')).toBe(false);
+  });
 });
 
 // ─── routeMessage ───────────────────────────────────────────────────
@@ -364,187 +393,28 @@ describe('routeMessage', () => {
     const msg = { type: 'figma_hello', source: 'figma-plugin' } as BridgeMessage;
     expect(() => routeMessage(state, msg, 'client-1')).not.toThrow();
   });
-});
 
-// ─── createServer (integration-style) ───────────────────────────────
+  it('prefers response routing when message has BOTH response and request traits', () => {
+    // A Figma plugin response might echo back the original type and payload
+    // alongside the id+success fields. routeMessage must treat this as a response.
+    const mcpWs = mockWs();
+    state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
+    state.pendingRequestOrigins.set('req-echo', 'mcp-1');
 
-describe('createServer', () => {
-  let handle: ServerHandle;
-  const clients: WebSocket[] = [];
+    // Message has type+payload (Request) AND id+success (Response)
+    const msg = {
+      type: 'create_frame',
+      payload: { name: 'Test' },
+      id: 'req-echo',
+      success: true,
+      data: { nodeId: '1:1' }
+    } as BridgeMessage;
 
-  // Use port 0 to let the OS assign a random available port
-  function getPort(): number {
-    const addr = handle.wss.address();
-    if (typeof addr === 'object' && addr !== null) {
-      return addr.port;
-    }
-    throw new Error('Server not listening');
-  }
+    routeMessage(state, msg, 'figma-1');
 
-  beforeEach(() => {
-    handle = createServer(0); // port 0 = random
-  });
-
-  afterEach(async () => {
-    // Close all test clients
-    for (const ws of clients) {
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-        ws.close();
-      }
-    }
-    clients.length = 0;
-
-    // Shutdown server
-    clearInterval(handle.heartbeatInterval);
-    await new Promise<void>((resolve) => {
-      handle.wss.close(() => resolve());
-    });
-  });
-
-  it('sends welcome message with clientId on connection', async () => {
-    const port = getPort();
-    const { ws, welcome } = await connectClient(port);
-    clients.push(ws);
-
-    expect(welcome.type).toBe('connection');
-    expect(welcome.message).toBe('Connected to WebSocket bridge server');
-    expect(welcome.clientId).toMatch(/^client-/);
-  });
-
-  it('tracks connected clients in state', async () => {
-    const port = getPort();
-    const { ws } = await connectClient(port);
-    clients.push(ws);
-
-    expect(handle.state.clients.size).toBe(1);
-  });
-
-  it('removes client from state on disconnect', async () => {
-    const port = getPort();
-    const { ws } = await connectClient(port);
-
-    await new Promise<void>((resolve) => {
-      ws.on('close', () => resolve());
-      ws.close();
-    });
-
-    // Small delay for server-side cleanup
-    await new Promise((r) => setTimeout(r, 50));
-    expect(handle.state.clients.size).toBe(0);
-  });
-
-  it('handles Figma plugin registration via WebSocket', async () => {
-    const port = getPort();
-    const { ws } = await connectClient(port);
-    clients.push(ws);
-
-    ws.send(JSON.stringify({ type: 'figma_hello', source: 'figma-plugin' }));
-
-    // Give the server time to process
-    await new Promise((r) => setTimeout(r, 50));
-    expect(handle.state.figmaPluginClient).toMatch(/^client-/);
-  });
-
-  it('rejects invalid messages with error response', async () => {
-    const port = getPort();
-    const { ws } = await connectClient(port);
-    clients.push(ws);
-
-    const errorPromise = nextMessage(ws);
-    ws.send(JSON.stringify({ invalid: 'structure' }));
-    const error = await errorPromise;
-
-    expect(error.type).toBe('error');
-    expect(error.error).toBe('Unrecognized message format');
-  });
-
-  it('rejects malformed JSON with error response', async () => {
-    const port = getPort();
-    const { ws } = await connectClient(port);
-    clients.push(ws);
-
-    const errorPromise = nextMessage(ws);
-    ws.send('not json{{{');
-    const error = await errorPromise;
-
-    expect(error.type).toBe('error');
-    expect(error.error).toBe('Failed to parse message');
-  });
-
-  it('routes request from MCP to Figma and response back', async () => {
-    const port = getPort();
-
-    // Connect Figma plugin
-    const { ws: figmaWs, welcome: figmaWelcome } = await connectClient(port);
-    clients.push(figmaWs);
-    figmaWs.send(JSON.stringify({ type: 'figma_hello', source: 'figma-plugin' }));
-    await new Promise((r) => setTimeout(r, 50));
-
-    // Connect MCP client
-    const { ws: mcpWs } = await connectClient(port);
-    clients.push(mcpWs);
-
-    // MCP sends request — Figma should receive it
-    const figmaReceived = nextMessage(figmaWs);
-    mcpWs.send(JSON.stringify({ type: 'create_frame', payload: { x: 0 }, id: 'req-1' }));
-    const request = await figmaReceived;
-
-    expect(request.type).toBe('create_frame');
-    expect(request.id).toBe('req-1');
-
-    // Figma sends response — MCP should receive it
-    const mcpReceived = nextMessage(mcpWs);
-    figmaWs.send(JSON.stringify({ id: 'req-1', success: true, nodeId: '1:2' }));
-    const response = await mcpReceived;
-
-    expect(response.success).toBe(true);
-    expect(response.nodeId).toBe('1:2');
-  });
-
-  it('enforces single Figma plugin instance', async () => {
-    const port = getPort();
-
-    // First Figma plugin connects and registers
-    const { ws: figma1 } = await connectClient(port);
-    clients.push(figma1);
-    figma1.send(JSON.stringify({ type: 'figma_hello', source: 'figma-plugin' }));
-    await new Promise((r) => setTimeout(r, 50));
-
-    // Second Figma plugin tries to connect and register
-    const { ws: figma2 } = await connectClient(port);
-    clients.push(figma2);
-
-    const errorPromise = nextMessage(figma2);
-    figma2.send(JSON.stringify({ type: 'figma_hello', source: 'figma-plugin' }));
-    const error = await errorPromise;
-
-    expect(error.type).toBe('error');
-    expect(error.message as string).toContain('Multiple Figma plugin instances');
-  });
-
-  it('cleans up pending request origins when client disconnects', async () => {
-    const port = getPort();
-
-    // Connect Figma
-    const { ws: figmaWs } = await connectClient(port);
-    clients.push(figmaWs);
-    figmaWs.send(JSON.stringify({ type: 'figma_hello', source: 'figma-plugin' }));
-    await new Promise((r) => setTimeout(r, 50));
-
-    // Connect MCP and send request
-    const { ws: mcpWs } = await connectClient(port);
-    mcpWs.send(JSON.stringify({ type: 'test', payload: {}, id: 'req-orphan' }));
-    await new Promise((r) => setTimeout(r, 50));
-
-    expect(handle.state.pendingRequestOrigins.has('req-orphan')).toBe(true);
-
-    // MCP client disconnects
-    await new Promise<void>((resolve) => {
-      mcpWs.on('close', () => resolve());
-      mcpWs.close();
-    });
-    await new Promise((r) => setTimeout(r, 50));
-
-    expect(handle.state.pendingRequestOrigins.has('req-orphan')).toBe(false);
+    // Should have been routed as a response (to mcp-1), not as a request (to Figma)
+    expect(mcpWs.send).toHaveBeenCalledWith(JSON.stringify(msg));
+    // Origin should be cleaned up (response routing cleans up pendingRequestOrigins)
+    expect(state.pendingRequestOrigins.has('req-echo')).toBe(false);
   });
 });

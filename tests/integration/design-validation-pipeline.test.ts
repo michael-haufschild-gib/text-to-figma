@@ -178,7 +178,9 @@ describe('Design Validation Pipeline', () => {
       expect(tokenReport.colors.passesAA).toBe(0);
     });
   });
+});
 
+describe('Design Validation Pipeline — Design System', () => {
   describe('end-to-end design system validation', () => {
     it('validates a complete Bootstrap-like design system', () => {
       const report = validateDesignTokens({
@@ -321,6 +323,74 @@ describe('Design Validation Pipeline', () => {
 
       for (const val of allSpacingValues) {
         expect(isValidSpacing(val)).toBe(true);
+      }
+    });
+
+    it('auto-correction is idempotent: correcting an already-corrected spec makes no changes', () => {
+      const badSpec = {
+        type: 'frame' as const,
+        name: 'Card',
+        props: { padding: 15, itemSpacing: 10, cornerRadius: 6 },
+        children: [
+          { type: 'text' as const, name: 'Title', props: { fontSize: 14, content: 'Hello' } }
+        ]
+      };
+
+      const firstPass = autoCorrectSpec(badSpec);
+      expect(firstPass.wasModified).toBe(true);
+
+      // Second pass on already-corrected spec should make no changes
+      const secondPass = autoCorrectSpec(firstPass.corrected);
+      expect(secondPass.wasModified).toBe(false);
+      expect(secondPass.corrections).toHaveLength(0);
+    });
+
+    it('validates that every VALID_SPACING_VALUE passes the spacing schema', () => {
+      for (const value of VALID_SPACING_VALUES) {
+        const spec = {
+          type: 'frame' as const,
+          name: 'test',
+          props: { padding: value }
+        };
+        const result = validateSpec(spec);
+        const spacingIssues = result.issues.filter(
+          (i) => i.field === 'padding' && i.severity === 'warning'
+        );
+        expect(spacingIssues).toHaveLength(0);
+      }
+    });
+
+    it('validates that every VALID_FONT_SIZE passes typography validation', () => {
+      for (const size of VALID_FONT_SIZES) {
+        const spec = {
+          type: 'text' as const,
+          name: 'test',
+          props: { fontSize: size, content: 'Test' }
+        };
+        const result = validateSpec(spec);
+        const fontIssues = result.issues.filter(
+          (i) => i.field === 'fontSize' && i.severity === 'warning'
+        );
+        expect(fontIssues).toHaveLength(0);
+      }
+    });
+
+    it('auto-correction + design token validation agree on every corrected value', () => {
+      // Test with a wide range of off-grid values
+      const offGridValues = [1, 3, 5, 7, 9, 10, 12, 13, 15, 17, 19, 20, 25, 30, 50, 100, 200];
+
+      for (const val of offGridValues) {
+        const corrected = autoCorrectSpec({
+          type: 'frame' as const,
+          name: 'test',
+          props: { padding: val }
+        });
+
+        const correctedPadding = corrected.corrected.props?.padding as number;
+
+        // The corrected value should pass design token validation
+        const tokenReport = validateDesignTokens({ spacing: [correctedPadding] });
+        expect(tokenReport.spacing.invalid).toBe(0);
       }
     });
   });

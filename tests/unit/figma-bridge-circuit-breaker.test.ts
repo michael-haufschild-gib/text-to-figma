@@ -181,6 +181,83 @@ describe('FigmaBridge circuit breaker', () => {
     expect(bridge.getConnectionStatus().circuitBreakerState).toBe('CLOSED');
   });
 
+  it('returns to OPEN when probe fails in HALF_OPEN state', async () => {
+    const ws = await connectBridge();
+    await tripCircuitBreaker(ws);
+    expect(bridge.getConnectionStatus().circuitBreakerState).toBe('OPEN');
+
+    // Wait for reset timeout to transition to HALF_OPEN
+    vi.advanceTimersByTime(31000);
+
+    // Send a probe that fails
+    const probePromise = bridge.sendToFigmaWithRetry('probe', {}, { maxRetries: 1, baseDelay: 1 });
+    const sentData = JSON.parse(
+      ws.send.mock.calls[ws.send.mock.calls.length - 1][0] as string
+    ) as Record<string, unknown>;
+    ws.simulateMessage(JSON.stringify({ id: sentData.id, success: false, error: 'still broken' }));
+
+    await probePromise.catch(() => {});
+
+    // Circuit should be back to OPEN after probe failure
+    expect(bridge.getConnectionStatus().circuitBreakerState).toBe('OPEN');
+  });
+
+  it('requires exactly 2 successes in HALF_OPEN — 1 success is not enough', async () => {
+    const ws = await connectBridge();
+    await tripCircuitBreaker(ws);
+    vi.advanceTimersByTime(31000);
+
+    // First success (probe)
+    const p1 = bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 1, baseDelay: 1 });
+    const sentData = JSON.parse(
+      ws.send.mock.calls[ws.send.mock.calls.length - 1][0] as string
+    ) as Record<string, unknown>;
+    ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'ok1' }));
+    await p1;
+
+    // After 1 success: state must be HALF_OPEN (not CLOSED — need 2 successes)
+    expect(bridge.getConnectionStatus().circuitBreakerState).toBe('HALF_OPEN');
+  });
+
+  it('success count resets when re-entering HALF_OPEN after a failed probe', async () => {
+    const ws = await connectBridge();
+    await tripCircuitBreaker(ws);
+    vi.advanceTimersByTime(31000);
+
+    // First probe succeeds — successCount = 1, still HALF_OPEN
+    const p1 = bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 1, baseDelay: 1 });
+    let sentData = JSON.parse(
+      ws.send.mock.calls[ws.send.mock.calls.length - 1][0] as string
+    ) as Record<string, unknown>;
+    ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'ok1' }));
+    await p1;
+    expect(bridge.getConnectionStatus().circuitBreakerState).toBe('HALF_OPEN');
+
+    // Second request fails — should go back to OPEN
+    const p2 = bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 1, baseDelay: 1 });
+    sentData = JSON.parse(ws.send.mock.calls[ws.send.mock.calls.length - 1][0] as string) as Record<
+      string,
+      unknown
+    >;
+    ws.simulateMessage(JSON.stringify({ id: sentData.id, success: false, error: 'fail' }));
+    await p2.catch(() => {});
+    expect(bridge.getConnectionStatus().circuitBreakerState).toBe('OPEN');
+
+    // Wait for another reset timeout, enter HALF_OPEN again
+    vi.advanceTimersByTime(31000);
+
+    // Now need 2 fresh successes (count was reset on HALF_OPEN entry)
+    const p3 = bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 1, baseDelay: 1 });
+    sentData = JSON.parse(ws.send.mock.calls[ws.send.mock.calls.length - 1][0] as string) as Record<
+      string,
+      unknown
+    >;
+    ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'ok3' }));
+    await p3;
+    // Only 1 success in this HALF_OPEN cycle — should still be HALF_OPEN
+    expect(bridge.getConnectionStatus().circuitBreakerState).toBe('HALF_OPEN');
+  });
+
   it('bypasses circuit breaker when disabled in config', async () => {
     bridge.disconnect();
     resetConfig();

@@ -1,54 +1,19 @@
 /**
- * Figma Bridge Unit Tests
+ * Figma Bridge Unit Tests — Connection & Request Handling
  *
- * Tests the full FigmaBridge lifecycle: connection, message handling,
- * circuit breaker state machine, retry with backoff, abort, disconnect,
- * and reconnection. Uses a mock WebSocket that emits events to simulate
- * the real WebSocket connection without a server.
+ * Tests connection lifecycle, message handling, request/response routing,
+ * and abort support. Uses a mock WebSocket that emits events to simulate
+ * the real connection without a server.
+ *
+ * Related test files:
+ * - figma-bridge-lifecycle.test.ts: disconnect, reconnection, retry, validation
+ * - figma-bridge-circuit-breaker.test.ts: circuit breaker state machine
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EventEmitter } from 'events';
-import { ErrorCode, createError } from '../../mcp-server/src/errors/error-codes.js';
+import { ErrorCode } from '../../mcp-server/src/errors/error-codes.js';
 import { loadConfig, resetConfig } from '../../mcp-server/src/config.js';
-
-// Track all created MockWebSocket instances so tests can interact with them
-let mockWsInstances: MockWebSocket[] = [];
-
-class MockWebSocket extends EventEmitter {
-  static OPEN = 1;
-  static CLOSED = 3;
-  static CONNECTING = 0;
-  readyState = 0; // Start as CONNECTING
-  send = vi.fn();
-  // close() sets readyState but does NOT emit 'close' —
-  // the real WebSocket fires 'close' asynchronously. Tests that need
-  // to simulate unexpected disconnect call emit('close') directly.
-  close = vi.fn(function (this: MockWebSocket) {
-    this.readyState = 3;
-  });
-
-  constructor(_url: string) {
-    super();
-    mockWsInstances.push(this);
-  }
-
-  /** Test helper: simulate successful connection */
-  simulateOpen(): void {
-    this.readyState = 1; // OPEN
-    this.emit('open');
-  }
-
-  /** Test helper: simulate incoming message */
-  simulateMessage(data: string | Buffer): void {
-    this.emit('message', data);
-  }
-
-  /** Test helper: simulate connection error */
-  simulateError(message: string): void {
-    this.emit('error', new Error(message));
-  }
-}
+import { MockWebSocket, mockWsInstances, resetMockWsInstances } from '../helpers/mock-websocket.js';
 
 vi.mock('ws', () => ({
   default: MockWebSocket,
@@ -65,7 +30,7 @@ describe('FigmaBridge', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    mockWsInstances = [];
+    resetMockWsInstances();
     loadConfig();
     bridge = new FigmaBridge();
   });
@@ -190,6 +155,33 @@ describe('FigmaBridge', () => {
       await expect(promise).rejects.toThrow('Request timeout');
     });
 
+    it('resolves each concurrent request to its own response by ID', async () => {
+      const ws = await connectBridge();
+
+      // Fire three concurrent requests
+      const p1 = bridge.sendToFigma('op_a', { key: 'a' });
+      const p2 = bridge.sendToFigma('op_b', { key: 'b' });
+      const p3 = bridge.sendToFigma('op_c', { key: 'c' });
+
+      // Extract request IDs from sent messages
+      const ids = ws.send.mock.calls.map(
+        (call: unknown[]) => (JSON.parse(call[0] as string) as { id: string }).id
+      );
+      expect(ids).toHaveLength(3);
+      // All IDs should be unique
+      expect(new Set(ids).size).toBe(3);
+
+      // Respond OUT OF ORDER: respond to p3 first, then p1, then p2
+      ws.simulateMessage(JSON.stringify({ id: ids[2], success: true, data: 'result_c' }));
+      ws.simulateMessage(JSON.stringify({ id: ids[0], success: true, data: 'result_a' }));
+      ws.simulateMessage(JSON.stringify({ id: ids[1], success: true, data: 'result_b' }));
+
+      // Each promise should resolve to its own result despite out-of-order responses
+      await expect(p1).resolves.toBe('result_a');
+      await expect(p2).resolves.toBe('result_b');
+      await expect(p3).resolves.toBe('result_c');
+    });
+
     it('rejects when ws.send throws', async () => {
       const ws = await connectBridge();
       ws.send.mockImplementation(() => {
@@ -288,10 +280,6 @@ describe('FigmaBridge', () => {
 
       // The pending request was removed, so pending count should be 0
       expect(bridge.getConnectionStatus().pendingRequests).toBe(0);
-
-      // Promise will neither resolve nor reject after abort — it stays pending
-      // We can't easily test "stays pending" but we can verify the request was cleaned up
-      // and the abort controller reflects aborted state
     });
 
     it('abort removes the pending request from tracking', async () => {
@@ -309,182 +297,92 @@ describe('FigmaBridge', () => {
       abort.abort();
       expect(() => abort.abort()).not.toThrow();
     });
-  });
 
-  describe('disconnect', () => {
-    it('is safe to call multiple times', () => {
-      expect(() => {
-        bridge.disconnect();
-        bridge.disconnect();
-        bridge.disconnect();
-      }).not.toThrow();
+    it('abort sets aborted flag on the controller', async () => {
+      await connectBridge();
+      const { abort } = bridge.sendToFigmaWithAbort('test', {});
+      expect(abort.aborted).toBe(false);
+      abort.abort();
+      expect(abort.aborted).toBe(true);
     });
 
-    it('rejects all pending requests with CONN_LOST', async () => {
+    it('abort controller aborted flag is synced on promise rejection (e.g., timeout)', async () => {
+      await connectBridge();
+      const { promise, abort } = bridge.sendToFigmaWithAbort('slow', {});
+
+      expect(abort.aborted).toBe(false);
+
+      // Let the request timeout
+      vi.advanceTimersByTime(31000);
+      await promise.catch(() => {});
+
+      // After timeout rejection, the abort controller should be marked as aborted
+      expect(abort.aborted).toBe(true);
+    });
+  });
+
+  describe('dispatchRequest edge cases', () => {
+    it('sendToFigma throws synchronously if ws is not connected', async () => {
+      // Bridge was never connected
+      await expect(bridge.sendToFigma('test', {})).rejects.toThrow();
+    });
+
+    it('sendToFigma throws if ws.readyState is not OPEN despite connected flag', async () => {
       const ws = await connectBridge();
 
-      const p1 = bridge.sendToFigma('op1', {});
-      const p2 = bridge.sendToFigma('op2', {});
+      // Manually set readyState to CLOSED (simulates race condition)
+      ws.readyState = 3;
+
+      // The isConnected() check uses both this.connected AND ws.readyState
+      expect(bridge.isConnected()).toBe(false);
+      await expect(bridge.sendToFigma('test', {})).rejects.toThrow();
+    });
+
+    it('multiple requests share the same ws connection (no new WS created)', async () => {
+      const ws = await connectBridge();
+      const instancesBefore = mockWsInstances.length;
+
+      // Fire 5 concurrent requests
+      const promises = Array.from({ length: 5 }, (_, i) =>
+        bridge.sendToFigma(`op_${i}`, { index: i })
+      );
+
+      // All 5 should use the same WS (no new instances)
+      expect(mockWsInstances.length).toBe(instancesBefore);
+
+      // Clean up: resolve all
+      for (let i = 0; i < 5; i++) {
+        const sentData = JSON.parse(ws.send.mock.calls[i][0] as string) as Record<string, unknown>;
+        ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: i }));
+      }
+      await Promise.all(promises);
+    });
+
+    it('getConnectionStatus reflects accurate pending request count during rapid fire', async () => {
+      const ws = await connectBridge();
+
+      // Fire requests rapidly
+      const p1 = bridge.sendToFigma('a', {});
+      const p2 = bridge.sendToFigma('b', {});
+      const p3 = bridge.sendToFigma('c', {});
+
+      expect(bridge.getConnectionStatus().pendingRequests).toBe(3);
+
+      // Resolve first
+      const id1 = (JSON.parse(ws.send.mock.calls[0][0] as string) as { id: string }).id;
+      ws.simulateMessage(JSON.stringify({ id: id1, success: true, data: 'a' }));
+      await p1;
 
       expect(bridge.getConnectionStatus().pendingRequests).toBe(2);
 
-      bridge.disconnect();
+      // Resolve remaining
+      const id2 = (JSON.parse(ws.send.mock.calls[1][0] as string) as { id: string }).id;
+      const id3 = (JSON.parse(ws.send.mock.calls[2][0] as string) as { id: string }).id;
+      ws.simulateMessage(JSON.stringify({ id: id2, success: true, data: 'b' }));
+      ws.simulateMessage(JSON.stringify({ id: id3, success: true, data: 'c' }));
+      await Promise.all([p2, p3]);
 
-      await expect(p1).rejects.toThrow('Bridge disconnected');
-      await expect(p2).rejects.toThrow('Bridge disconnected');
+      expect(bridge.getConnectionStatus().pendingRequests).toBe(0);
     });
-
-    it('closes the WebSocket and resets connection state', async () => {
-      const ws = await connectBridge();
-      expect(bridge.isConnected()).toBe(true);
-
-      bridge.disconnect();
-      expect(bridge.isConnected()).toBe(false);
-      expect(ws.close).toHaveBeenCalled();
-    });
-
-    it('resets reconnect attempts', async () => {
-      await connectBridge();
-      bridge.disconnect();
-      expect(bridge.getConnectionStatus().reconnectAttempts).toBe(0);
-    });
-  });
-
-  describe('handleDisconnect (reconnection)', () => {
-    it('rejects all pending requests on unexpected disconnect', async () => {
-      const ws = await connectBridge();
-      const promise = bridge.sendToFigma('test', {});
-
-      // Simulate unexpected close (not via disconnect())
-      ws.readyState = 3;
-      ws.emit('close');
-
-      await expect(promise).rejects.toThrow('Connection lost');
-    });
-
-    it('attempts reconnection with exponential backoff', async () => {
-      const ws = await connectBridge();
-
-      // Simulate unexpected disconnect
-      ws.readyState = 3;
-      ws.emit('close');
-
-      // After first disconnect, reconnect should be scheduled with 2s delay (1000 * 2^1)
-      expect(mockWsInstances).toHaveLength(1); // No reconnect yet
-
-      vi.advanceTimersByTime(2001);
-
-      // A new WebSocket instance should have been created for reconnection
-      expect(mockWsInstances.length).toBeGreaterThan(1);
-    });
-  });
-
-  describe('sendToFigmaWithRetry', () => {
-    it('returns on first success without retry', async () => {
-      const ws = await connectBridge();
-      const promise = bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 3, baseDelay: 10 });
-
-      const sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
-      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: true, data: 'first-try' }));
-
-      await expect(promise).resolves.toBe('first-try');
-      // Only 1 send call = no retries
-      expect(ws.send).toHaveBeenCalledOnce();
-    });
-
-    it('does not retry FigmaBridgeError with VAL_ code prefix', async () => {
-      const ws = await connectBridge();
-
-      // Override send to throw a VAL_ error directly (simulating validation layer)
-      let callCount = 0;
-      ws.send.mockImplementation(() => {
-        callCount++;
-        const structured = createError(ErrorCode.VAL_FAILED, 'Validation failed');
-        throw new FigmaBridgeError(structured);
-      });
-
-      await expect(
-        bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 3, baseDelay: 10 })
-      ).rejects.toThrow('Validation failed');
-
-      // Should have only tried once (no retry for VAL_ errors)
-      expect(callCount).toBe(1);
-    });
-
-    it('does not retry ZodError (validation)', async () => {
-      const ws = await connectBridge();
-
-      // Make sendToFigma throw a ZodError-named error
-      ws.send.mockImplementation(() => {
-        const err = new Error('Validation failed');
-        err.name = 'ZodError';
-        throw err;
-      });
-
-      await expect(
-        bridge.sendToFigmaWithRetry('test', {}, { maxRetries: 3, baseDelay: 10 })
-      ).rejects.toThrow('Validation failed');
-
-      // Should have only tried once (no retry for validation errors)
-      expect(ws.send).toHaveBeenCalledOnce();
-    });
-
-    it('exhausts all retries and throws last error', async () => {
-      const ws = await connectBridge();
-
-      const promise = bridge.sendToFigmaWithRetry(
-        'test',
-        {},
-        {
-          maxRetries: 2,
-          baseDelay: 10,
-          maxDelay: 100
-        }
-      );
-
-      // First attempt
-      let sentData = JSON.parse(ws.send.mock.calls[0][0] as string) as Record<string, unknown>;
-      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: false, error: 'Figma busy' }));
-
-      // Wait for retry delay
-      await vi.advanceTimersByTimeAsync(200);
-
-      // Second attempt (last)
-      sentData = JSON.parse(ws.send.mock.calls[1][0] as string) as Record<string, unknown>;
-      ws.simulateMessage(JSON.stringify({ id: sentData.id, success: false, error: 'Still busy' }));
-
-      await expect(promise).rejects.toThrow('Still busy');
-    });
-  });
-});
-
-// Circuit breaker tests are in figma-bridge-circuit-breaker.test.ts
-
-describe('resetFigmaBridge', () => {
-  // Import singleton functions after mock
-  let getFigmaBridge: typeof import('../../mcp-server/src/figma-bridge.js').getFigmaBridge;
-  let resetFigmaBridge: typeof import('../../mcp-server/src/figma-bridge.js').resetFigmaBridge;
-
-  beforeEach(async () => {
-    loadConfig();
-    const mod = await import('../../mcp-server/src/figma-bridge.js');
-    getFigmaBridge = mod.getFigmaBridge;
-    resetFigmaBridge = mod.resetFigmaBridge;
-  });
-
-  afterEach(() => {
-    resetConfig();
-    vi.restoreAllMocks();
-  });
-
-  it('creates a fresh instance after reset', () => {
-    const first = getFigmaBridge();
-    const sameInstance = getFigmaBridge();
-    expect(first).toBe(sameInstance);
-
-    resetFigmaBridge();
-
-    const fresh = getFigmaBridge();
-    expect(fresh).not.toBe(first);
   });
 });

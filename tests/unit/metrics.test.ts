@@ -392,6 +392,58 @@ describe('MetricsRegistry histogram advanced', () => {
       expect(stats.max).toBe(1);
       expect(stats.min).toBe(1);
     });
+
+    it('mean drifts after eviction because sum includes evicted values (known bug)', () => {
+      // BUG: After MAX_VALUES eviction, sum still includes evicted values
+      // but count also includes them. Mean = sum/count uses total sum and total count,
+      // which is correct for the lifetime aggregate. However, if someone expects
+      // mean to reflect only the retained window, it will be wrong.
+      // This test documents the current behavior.
+      const registry = new MetricsRegistry();
+      const hist = registry.histogram('mean_drift', 'test', [1000]);
+
+      // Add 50 values of 1000, then 10001 values of 1
+      for (let i = 0; i < 50; i++) {
+        hist.observe(1000);
+      }
+      for (let i = 0; i < 10001; i++) {
+        hist.observe(1);
+      }
+
+      const stats = hist.getStatistics();
+      // sum = 50*1000 + 10001*1 = 60001
+      // count = 10051
+      // mean = 60001/10051 ≈ 5.97
+      // But the retained window only has values of 1, so the "windowed mean" would be 1.
+      // The reported mean includes the evicted 1000-values in sum/count.
+      expect(stats.mean).toBeCloseTo(60001 / 10051, 1);
+      // This is technically correct as a lifetime aggregate, but may surprise consumers
+      // who expect stats to reflect only the retained observation window.
+      // The min/max/median correctly reflect only the retained window:
+      expect(stats.min).toBe(1);
+      expect(stats.max).toBe(1);
+      expect(stats.median).toBe(1);
+    });
+
+    it('bucket counts are monotonic and never evicted', () => {
+      // Bucket counts track all-time observations, not just the retained window.
+      // This is consistent with Prometheus-style histograms.
+      const registry = new MetricsRegistry();
+      const hist = registry.histogram('bucket_monotonic', 'test', [10, 100]);
+
+      for (let i = 0; i < 50; i++) {
+        hist.observe(5); // ≤10 and ≤100
+      }
+      for (let i = 0; i < 10001; i++) {
+        hist.observe(50); // ≤100 only
+      }
+
+      const buckets = hist.getBuckets();
+      // ≤10 bucket should count all 50 observations of value 5
+      expect(buckets[0].count).toBe(50);
+      // ≤100 bucket should count all 10051 observations
+      expect(buckets[1].count).toBe(10051);
+    });
   });
 
   describe('histogram p95 and p99', () => {

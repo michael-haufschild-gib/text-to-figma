@@ -15,6 +15,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
     isConnected: vi.fn(() => true),
     sendToFigma: vi.fn(),
     sendToFigmaWithRetry: vi.fn(),
+    sendToFigmaValidated: vi.fn(),
     sendToFigmaWithAbort: vi.fn(),
     getConnectionStatus: vi.fn(() => ({
       connected: true,
@@ -49,7 +50,10 @@ vi.mock('../../mcp-server/src/utils/parent-validator.js', () => ({
 const { CreateFrameInputSchema, createFrame } =
   await import('../../mcp-server/src/tools/create_frame.js');
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
-  __mockBridge: { sendToFigmaWithRetry: ReturnType<typeof vi.fn> };
+  __mockBridge: {
+    sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
+  };
 };
 
 describe('CreateFrameInputSchema', () => {
@@ -137,7 +141,7 @@ describe('createFrame', () => {
   beforeEach(() => {
     loadConfig();
     resetNodeRegistry();
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ nodeId: '1:42' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ nodeId: '1:42' });
   });
 
   afterEach(() => {
@@ -227,8 +231,17 @@ describe('createFrame', () => {
     expect(node!.parentId).toBe('parent-1');
   });
 
-  it('wraps connection errors as NetworkError', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Not connected to Figma plugin'));
+  it('wraps FigmaBridgeError with CONN_ code as NetworkError', async () => {
+    const {
+      FigmaBridgeError: RealBridgeError,
+      createError,
+      ErrorCode
+    } = await import('../../mcp-server/src/errors/index.js');
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(
+      new RealBridgeError(
+        createError(ErrorCode.CONN_NOT_CONNECTED, 'Not connected to Figma plugin')
+      )
+    );
 
     await expect(
       createFrame({
@@ -240,8 +253,8 @@ describe('createFrame', () => {
     ).rejects.toThrow('Failed to communicate with Figma');
   });
 
-  it('wraps other errors as FigmaAPIError', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Internal Figma error'));
+  it('wraps non-bridge errors as FigmaAPIError', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Internal Figma error'));
 
     await expect(
       createFrame({
@@ -251,6 +264,37 @@ describe('createFrame', () => {
         padding: 16
       })
     ).rejects.toThrow('Figma frame creation failed');
+  });
+
+  it('wraps Figma API errors containing "Connection" correctly as FigmaAPIError (not NetworkError)', async () => {
+    // Previously a bug: broad string matching on 'Connection' misclassified
+    // Figma API errors about node connections as NetworkError.
+    // Now fixed: only FigmaBridgeError with CONN_* codes are NetworkErrors.
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(
+      new Error('Connection between nodes is not supported for this type')
+    );
+
+    await expect(
+      createFrame({
+        name: 'FixedBug',
+        layoutMode: 'VERTICAL',
+        itemSpacing: 16,
+        padding: 16
+      })
+    ).rejects.toThrow('Figma frame creation failed');
+  });
+
+  it('wraps non-Error thrown values via wrapError', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue('string error value');
+
+    await expect(
+      createFrame({
+        name: 'NonError',
+        layoutMode: 'VERTICAL',
+        itemSpacing: 16,
+        padding: 16
+      })
+    ).rejects.toThrow();
   });
 
   it('sends correct payload to bridge', async () => {
@@ -265,7 +309,7 @@ describe('createFrame', () => {
       verticalSizing: 'HUG'
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith(
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
       'create_frame',
       expect.objectContaining({
         name: 'PayloadTest',
@@ -276,7 +320,8 @@ describe('createFrame', () => {
         padding: 24,
         horizontalSizing: 'FILL',
         verticalSizing: 'HUG'
-      })
+      }),
+      expect.any(Object)
     );
   });
 });

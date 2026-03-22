@@ -231,5 +231,40 @@ describe('Tool Schema Validation', () => {
         }
       }
     });
+
+    it('Zod schema rejects empty input when inputSchema declares required fields', () => {
+      const tools = getToolRegistry().getAll();
+      for (const tool of tools) {
+        const required = (tool.definition.inputSchema as { required?: string[] }).required ?? [];
+        if (required.length > 0) {
+          // If the inputSchema says fields are required, the Zod schema must reject {}
+          const result = tool.schema.safeParse({});
+          expect(
+            result.success,
+            `Tool "${tool.name}" has required fields [${required.join(', ')}] in inputSchema but Zod schema accepts {}`
+          ).toBe(false);
+        }
+      }
+    });
+
+    it('inputSchema property keys are a superset of Zod-required keys', () => {
+      const tools = getToolRegistry().getAll();
+      for (const tool of tools) {
+        const inputSchemaProps = Object.keys(
+          (tool.definition.inputSchema.properties ?? {}) as Record<string, unknown>
+        );
+        // Zod shape keys are accessible if the schema is a ZodObject
+        const zodShape = (tool.schema as { shape?: Record<string, unknown> }).shape;
+        if (zodShape) {
+          const zodKeys = Object.keys(zodShape);
+          for (const key of zodKeys) {
+            expect(
+              inputSchemaProps,
+              `Tool "${tool.name}": Zod schema has key "${key}" not present in inputSchema.properties`
+            ).toContain(key);
+          }
+        }
+      }
+    });
   });
 });

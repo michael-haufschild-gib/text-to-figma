@@ -197,4 +197,30 @@ describe('ToolRegistry edge cases', () => {
     const retrieved = registry.get('test_tool_1');
     expect(retrieved).toBe(mockToolHandler1);
   });
+
+  it('clear makes all previously registered tools unreachable', () => {
+    const registry = new ToolRegistry();
+    registry.register(mockToolHandler1);
+    registry.register(mockToolHandler2);
+
+    registry.clear();
+
+    expect(registry.get('test_tool_1')).toBeUndefined();
+    expect(registry.get('test_tool_2')).toBeUndefined();
+    expect(registry.getAll()).toHaveLength(0);
+    expect(registry.listDefinitions()).toHaveLength(0);
+  });
+
+  it('duplicate tool name with different handler object still throws', () => {
+    const registry = new ToolRegistry();
+    registry.register(mockToolHandler1);
+
+    // Create a different handler with same name
+    const duplicate: ToolHandler<TestInput1, TestResult1> = {
+      ...mockToolHandler1,
+      execute: (input) => ({ result: input.value * 3 })
+    };
+
+    expect(() => registry.register(duplicate)).toThrow("Tool 'test_tool_1' is already registered");
+  });
 });

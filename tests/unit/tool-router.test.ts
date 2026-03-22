@@ -269,6 +269,45 @@ describe('routeToolCall', () => {
     expect(result[0].text).toBe('Result: 21');
   });
 
+  it('concurrent calls to different tools track independent metrics', async () => {
+    const handlerA: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'tool_a',
+      execute: async (input) => {
+        await new Promise((r) => setTimeout(r, 1));
+        return { result: input.value + 1 };
+      },
+      definition: { ...testHandler.definition, name: 'tool_a' }
+    };
+
+    const handlerB: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'tool_b',
+      execute: (input) => ({ result: input.value + 2 }),
+      definition: { ...testHandler.definition, name: 'tool_b' }
+    };
+
+    getToolRegistry().register(handlerA);
+    getToolRegistry().register(handlerB);
+    resetMetrics();
+    const metrics = getMetrics();
+    const invocations = metrics.counter('tool_invocations_total');
+
+    // Fire concurrently
+    const results = await Promise.all([
+      routeToolCall('tool_a', { value: 10 }),
+      routeToolCall('tool_b', { value: 20 }),
+      routeToolCall('tool_a', { value: 30 })
+    ]);
+
+    expect(results[0][0].text).toBe('Result: 11');
+    expect(results[1][0].text).toBe('Result: 22');
+    expect(results[2][0].text).toBe('Result: 31');
+
+    expect(invocations.get({ tool: 'tool_a' })).toBe(2);
+    expect(invocations.get({ tool: 'tool_b' })).toBe(1);
+  });
+
   it('propagates error when formatResponse throws', async () => {
     const badFormatHandler: ToolHandler<TestInput, TestResult> = {
       ...testHandler,
@@ -281,5 +320,50 @@ describe('routeToolCall', () => {
 
     getToolRegistry().register(badFormatHandler);
     await expect(routeToolCall('bad_format_tool', { value: 1 })).rejects.toThrow('format exploded');
+  });
+
+  it('records "unknown" error_type when error name is empty string', async () => {
+    const emptyNameHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'empty_name_tool',
+      execute: () => {
+        const err = new Error('nameless');
+        err.name = '';
+        throw err;
+      },
+      definition: { ...testHandler.definition, name: 'empty_name_tool' }
+    };
+
+    getToolRegistry().register(emptyNameHandler);
+    resetMetrics();
+    const metrics = getMetrics();
+    const errors = metrics.counter('tool_errors_total');
+
+    await routeToolCall('empty_name_tool', { value: 1 }).catch(() => {});
+
+    expect(errors.get({ tool: 'empty_name_tool', error_type: 'unknown' })).toBe(1);
+  });
+
+  it('formatResponse error increments only error counter, not success counter', async () => {
+    const formatFailHandler: ToolHandler<TestInput, TestResult> = {
+      ...testHandler,
+      name: 'format_error_metrics',
+      formatResponse: () => {
+        throw new Error('bad format');
+      },
+      definition: { ...testHandler.definition, name: 'format_error_metrics' }
+    };
+
+    getToolRegistry().register(formatFailHandler);
+    resetMetrics();
+    const metrics = getMetrics();
+    const successes = metrics.counter('tool_success_total');
+    const errors = metrics.counter('tool_errors_total');
+
+    await routeToolCall('format_error_metrics', { value: 1 }).catch(() => {});
+
+    // formatResponse failure must NOT count as success
+    expect(successes.get({ tool: 'format_error_metrics' })).toBe(0);
+    expect(errors.get({ tool: 'format_error_metrics', error_type: 'Error' })).toBe(1);
   });
 });

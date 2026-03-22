@@ -14,11 +14,14 @@ describe('registerAllTools', () => {
     resetToolRegistry();
   });
 
-  it('registers more than 40 tools', () => {
+  it('registers the expected number of tools (guards against accidentally dropping a handler)', () => {
     registerAllTools();
     const registry = getToolRegistry();
     const all = registry.getAll();
-    expect(all.length).toBeGreaterThan(40);
+    // If this fails after adding/removing tools, update the count.
+    // Catching both accidental additions and accidental deletions.
+    expect(all.length).toBeGreaterThanOrEqual(50);
+    expect(all.length).toBeLessThanOrEqual(70);
   });
 
   it('every registered handler has name, schema, execute, formatResponse, and definition', () => {

@@ -12,13 +12,16 @@ import {
   FigmaAPIError,
   NetworkError,
   ConfigurationError,
+  FigmaBridgeError,
   isToolExecutionError,
   isValidationError,
   isFigmaAPIError,
   isNetworkError,
   isConfigurationError,
+  isFigmaBridgeError,
   wrapError
 } from '../../mcp-server/src/errors/index.js';
+import { ErrorCode, createError } from '../../mcp-server/src/errors/error-codes.js';
 
 describe('ToolExecutionError', () => {
   it('stores tool name and message', () => {
@@ -300,6 +303,56 @@ describe('NetworkError edge cases', () => {
     const json = err.toJSON();
     expect(json.endpoint).toBe('ws://localhost:8080');
     expect(json.name).toBe('NetworkError');
+  });
+});
+
+describe('FigmaBridgeError', () => {
+  it('constructs from StructuredError (new-style)', () => {
+    const structured = createError(ErrorCode.CONN_TIMEOUT, 'Connection timed out');
+    const err = new FigmaBridgeError(structured);
+
+    expect(err.message).toBe('Connection timed out');
+    expect(err.code).toBe(ErrorCode.CONN_TIMEOUT);
+    expect(err.name).toBe('FigmaBridgeError');
+    expect(err.suggestion).toContain('timed out');
+  });
+
+  it('constructs from string (legacy-style)', () => {
+    const err = new FigmaBridgeError('Old-style error');
+
+    expect(err.message).toBe('Old-style error');
+    expect(err.code).toBe(ErrorCode.SYS_INTERNAL); // default for legacy
+    expect(err.name).toBe('FigmaBridgeError');
+  });
+
+  it('constructs from string with legacy code', () => {
+    const err = new FigmaBridgeError('Network failure', ErrorCode.CONN_FAILED);
+
+    expect(err.message).toBe('Network failure');
+    expect(err.code).toBe(ErrorCode.CONN_FAILED);
+  });
+
+  it('exposes structuredError property', () => {
+    const structured = createError(ErrorCode.OP_TIMEOUT, 'Timeout', { requestId: 'r1' });
+    const err = new FigmaBridgeError(structured);
+
+    expect(err.structuredError).toBe(structured);
+    expect(err.details).toEqual({ requestId: 'r1' });
+  });
+
+  it('isFigmaBridgeError type guard works correctly', () => {
+    const structured = createError(ErrorCode.OP_FAILED, 'Failed');
+    const bridgeErr = new FigmaBridgeError(structured);
+
+    expect(isFigmaBridgeError(bridgeErr)).toBe(true);
+    expect(isFigmaBridgeError(new Error('plain'))).toBe(false);
+    expect(isFigmaBridgeError(null)).toBe(false);
+    expect(isFigmaBridgeError('string')).toBe(false);
+  });
+
+  it('is instanceof Error', () => {
+    const err = new FigmaBridgeError('test');
+    expect(err).toBeInstanceOf(Error);
   });
 });
 

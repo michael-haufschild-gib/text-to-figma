@@ -278,8 +278,7 @@ describe('NodeRegistry edge cases', () => {
       expect(registry.getRootNodes()).toHaveLength(1);
     });
 
-    it('re-registering child under different parent leaves orphan entry in old parent children list', () => {
-      // This tests actual behavior: Map.set overwrites the node but doesn't clean old parent
+    it('re-registering child under different parent cleans up old parent children list', () => {
       registry.register('p1', { type: 'FRAME', name: 'P1', parentId: null, children: [] });
       registry.register('p2', { type: 'FRAME', name: 'P2', parentId: null, children: [] });
       registry.register('child', { type: 'TEXT', name: 'C', parentId: 'p1', children: [] });
@@ -287,14 +286,28 @@ describe('NodeRegistry edge cases', () => {
       const p1Before = registry.getNode('p1');
       expect(p1Before?.children).toContain('child');
 
-      // Re-register under p2 — production code does NOT clean up p1.children
+      // Re-register under p2 — should clean up p1.children
       registry.register('child', { type: 'TEXT', name: 'C', parentId: 'p2', children: [] });
 
       const p1After = registry.getNode('p1');
       const p2After = registry.getNode('p2');
-      // Bug exposure: p1 still has 'child' in its children despite child now pointing to p2
-      expect(p1After?.children).toContain('child');
+      // Old parent should no longer list the child
+      expect(p1After?.children).not.toContain('child');
+      // New parent should have the child
       expect(p2After?.children).toContain('child');
+    });
+
+    it('re-registering root node as child removes it from rootNodes', () => {
+      registry.register('node1', { type: 'FRAME', name: 'Root', parentId: null, children: [] });
+      expect(registry.getRootNodes()).toHaveLength(1);
+
+      registry.register('parent', { type: 'FRAME', name: 'Parent', parentId: null, children: [] });
+      registry.register('node1', { type: 'FRAME', name: 'Root', parentId: 'parent', children: [] });
+
+      // node1 should no longer be a root
+      const roots = registry.getRootNodes();
+      expect(roots.map((r) => r.nodeId)).not.toContain('node1');
+      expect(roots.map((r) => r.nodeId)).toContain('parent');
     });
 
     it('getHierarchy with multiple roots', () => {
@@ -340,8 +353,8 @@ describe('NodeRegistry edge cases', () => {
       expect(registry.getNode('leaf')).toBeNull();
     });
 
-    it('fromJSON with invalid JSON does not crash', () => {
-      expect(() => registry.fromJSON('not valid json')).not.toThrow();
+    it('fromJSON with invalid JSON throws SyntaxError', () => {
+      expect(() => registry.fromJSON('not valid json')).toThrow(SyntaxError);
       expect(registry.getAllNodes()).toHaveLength(0);
     });
 
@@ -539,63 +552,5 @@ describe('NodeRegistry advanced edge cases', () => {
   });
 });
 
-describe('NodeRegistry JSON serialization', () => {
-  it('toJSON produces valid JSON string', () => {
-    const registry = new NodeRegistry();
-    registry.register('n1', { type: 'FRAME', name: 'F', parentId: null, children: [] });
-
-    const json = registry.toJSON();
-    expect(() => JSON.parse(json) as unknown).not.toThrow();
-  });
-
-  it('empty registry serializes and deserializes', () => {
-    const registry = new NodeRegistry();
-    const json = registry.toJSON();
-
-    const restored = new NodeRegistry();
-    restored.fromJSON(json);
-    expect(restored.getAllNodes()).toHaveLength(0);
-  });
-
-  it('fromJSON with invalid JSON preserves existing state', () => {
-    const registry = new NodeRegistry();
-    registry.register('n1', { type: 'FRAME', name: 'F', parentId: null, children: [] });
-
-    registry.fromJSON('invalid json');
-    // Failed import logs error but preserves existing state
-    expect(registry.getAllNodes()).toHaveLength(1);
-    expect(registry.getNode('n1')?.name).toBe('F');
-  });
-
-  it('round-trip preserves node count and hierarchy', () => {
-    const registry = new NodeRegistry();
-    registry.register('root', { type: 'FRAME', name: 'Root', parentId: null, children: [] });
-    registry.register('child', { type: 'TEXT', name: 'Child', parentId: 'root', children: [] });
-
-    const json = registry.toJSON();
-    const restored = new NodeRegistry();
-    restored.fromJSON(json);
-
-    expect(restored.getAllNodes()).toHaveLength(2);
-    expect(restored.getRootNodes()).toHaveLength(1);
-    expect(restored.getNode('root')?.name).toBe('Root');
-    expect(restored.getNode('child')?.parentId).toBe('root');
-  });
-
-  it('round-trip preserves bounds data', () => {
-    const registry = new NodeRegistry();
-    registry.register('n1', {
-      type: 'FRAME',
-      name: 'F',
-      parentId: null,
-      children: [],
-      bounds: { x: 10, y: 20, width: 300, height: 200 }
-    });
-
-    const json = registry.toJSON();
-    const restored = new NodeRegistry();
-    restored.fromJSON(json);
-
-    expect(restored.getNode('n1')?.bounds).toEqual({ x: 10, y: 20, width: 300, height: 200 });
-  });
-});
+// Cycle detection, depth limits, and JSON serialization tests
+// are in node-registry-advanced.test.ts

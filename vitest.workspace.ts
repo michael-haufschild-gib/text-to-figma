@@ -18,6 +18,16 @@ export default defineConfig({
           include: ['tests/integration/**/*.test.ts'],
           environment: 'node'
         }
+      }),
+      defineProject({
+        extends: './vitest.config.ts',
+        test: {
+          name: 'e2e',
+          include: ['tests/e2e/**/*.test.ts'],
+          environment: 'node',
+          testTimeout: 30000,
+          hookTimeout: 15000
+        }
       })
     ]
   }
