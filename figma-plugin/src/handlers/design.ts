@@ -5,7 +5,14 @@
  */
 
 import { cacheNode, hexToRgb, loadFont, convertEffects } from '../helpers.js';
-import { validatePayload, type ValidationRule } from '../validate.js';
+import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
+
+const LAYOUT_MODES = ['HORIZONTAL', 'VERTICAL'] as const;
+const SIZING_VALUES = ['FIXED', 'HUG', 'FILL'] as const;
+const STROKE_ALIGNS = ['INSIDE', 'OUTSIDE', 'CENTER'] as const;
+const PRIMARY_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'SPACE_BETWEEN'] as const;
+const COUNTER_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'BASELINE'] as const;
+const TEXT_ALIGNS = ['LEFT', 'CENTER', 'RIGHT', 'JUSTIFIED'] as const;
 
 const createDesignRules: ValidationRule[] = [{ field: 'spec', type: 'object', required: true }];
 
@@ -51,11 +58,13 @@ async function buildNodeTree(
     figma.currentPage.appendChild(node);
   }
 
-  if (props.horizontalSizing !== undefined && 'layoutSizingHorizontal' in node) {
-    (node as FrameNode).layoutSizingHorizontal = props.horizontalSizing as 'FIXED' | 'HUG' | 'FILL';
+  const hSizing = checkEnum(props.horizontalSizing, SIZING_VALUES);
+  if (hSizing !== undefined && 'layoutSizingHorizontal' in node) {
+    (node as FrameNode).layoutSizingHorizontal = hSizing;
   }
-  if (props.verticalSizing !== undefined && 'layoutSizingVertical' in node) {
-    (node as FrameNode).layoutSizingVertical = props.verticalSizing as 'FIXED' | 'HUG' | 'FILL';
+  const vSizing = checkEnum(props.verticalSizing, SIZING_VALUES);
+  if (vSizing !== undefined && 'layoutSizingVertical' in node) {
+    (node as FrameNode).layoutSizingVertical = vSizing;
   }
 
   cacheNode(node);
@@ -144,36 +153,40 @@ function applyFrameStroke(frame: FrameNode, props: Record<string, unknown>): voi
     if (typeof props.strokeWeight === 'number') {
       frame.strokeWeight = props.strokeWeight;
     }
-    if (typeof props.strokeAlign === 'string') {
-      frame.strokeAlign = props.strokeAlign as 'INSIDE' | 'OUTSIDE' | 'CENTER';
+    const strokeAlign = checkEnum(props.strokeAlign, STROKE_ALIGNS);
+    if (strokeAlign !== undefined) {
+      frame.strokeAlign = strokeAlign;
     }
   }
 }
 
 function applyFrameLayout(frame: FrameNode, props: Record<string, unknown>): void {
-  if (typeof props.layoutMode === 'string' && props.layoutMode !== 'NONE') {
-    frame.layoutMode = props.layoutMode as 'HORIZONTAL' | 'VERTICAL';
+  const layoutMode = checkEnum(props.layoutMode, LAYOUT_MODES);
+  if (layoutMode !== undefined) {
+    frame.layoutMode = layoutMode;
   }
-  if (props.itemSpacing !== undefined) {
-    frame.itemSpacing = props.itemSpacing as number;
+  if (typeof props.itemSpacing === 'number') {
+    frame.itemSpacing = props.itemSpacing;
   }
-  if (props.primaryAxisAlignItems !== undefined) {
-    frame.primaryAxisAlignItems = props.primaryAxisAlignItems as FrameNode['primaryAxisAlignItems'];
+  const primaryAxisAlignItems = checkEnum(props.primaryAxisAlignItems, PRIMARY_AXIS_ALIGNS);
+  if (primaryAxisAlignItems !== undefined) {
+    frame.primaryAxisAlignItems = primaryAxisAlignItems;
   }
-  if (props.counterAxisAlignItems !== undefined) {
-    frame.counterAxisAlignItems = props.counterAxisAlignItems as FrameNode['counterAxisAlignItems'];
+  const counterAxisAlignItems = checkEnum(props.counterAxisAlignItems, COUNTER_AXIS_ALIGNS);
+  if (counterAxisAlignItems !== undefined) {
+    frame.counterAxisAlignItems = counterAxisAlignItems;
   }
 }
 
 function applyFramePadding(frame: FrameNode, props: Record<string, unknown>): void {
-  if (props.padding !== undefined) {
-    const p = props.padding as number;
+  if (typeof props.padding === 'number') {
+    const p = props.padding;
     frame.paddingLeft = frame.paddingRight = frame.paddingTop = frame.paddingBottom = p;
   }
-  if (props.paddingLeft !== undefined) frame.paddingLeft = props.paddingLeft as number;
-  if (props.paddingRight !== undefined) frame.paddingRight = props.paddingRight as number;
-  if (props.paddingTop !== undefined) frame.paddingTop = props.paddingTop as number;
-  if (props.paddingBottom !== undefined) frame.paddingBottom = props.paddingBottom as number;
+  if (typeof props.paddingLeft === 'number') frame.paddingLeft = props.paddingLeft;
+  if (typeof props.paddingRight === 'number') frame.paddingRight = props.paddingRight;
+  if (typeof props.paddingTop === 'number') frame.paddingTop = props.paddingTop;
+  if (typeof props.paddingBottom === 'number') frame.paddingBottom = props.paddingBottom;
 }
 
 function createFrameNode(name: string, props: Record<string, unknown>): FrameNode {
@@ -189,7 +202,7 @@ function createFrameNode(name: string, props: Record<string, unknown>): FrameNod
   applyFrameLayout(frame, props);
   applyFramePadding(frame, props);
   applyFrameFills(frame, props);
-  if (props.cornerRadius !== undefined) frame.cornerRadius = props.cornerRadius as number;
+  if (typeof props.cornerRadius === 'number') frame.cornerRadius = props.cornerRadius;
   applyFrameStroke(frame, props);
   if (Array.isArray(props.effects)) {
     frame.effects = convertEffects(props.effects as Array<Record<string, unknown>>);
@@ -214,8 +227,9 @@ async function createTextNode(name: string, props: Record<string, unknown>): Pro
   if (typeof props.color === 'string') {
     text.fills = [{ type: 'SOLID', color: hexToRgb(props.color) }];
   }
-  if (typeof props.textAlign === 'string') {
-    text.textAlignHorizontal = props.textAlign as TextNode['textAlignHorizontal'];
+  const textAlign = checkEnum(props.textAlign, TEXT_ALIGNS);
+  if (textAlign !== undefined) {
+    text.textAlignHorizontal = textAlign;
   }
   if (typeof props.lineHeight === 'number') {
     text.lineHeight = { value: props.lineHeight, unit: 'PIXELS' };
@@ -257,8 +271,8 @@ function createRectangleNode(name: string, props: Record<string, unknown>): Rect
   if (typeof props.fillColor === 'string') {
     rect.fills = [{ type: 'SOLID', color: hexToRgb(props.fillColor) }];
   }
-  if (props.cornerRadius !== undefined) {
-    rect.cornerRadius = props.cornerRadius as number;
+  if (typeof props.cornerRadius === 'number') {
+    rect.cornerRadius = props.cornerRadius;
   }
   if (typeof props.strokeColor === 'string') {
     rect.strokes = [{ type: 'SOLID', color: hexToRgb(props.strokeColor) }];

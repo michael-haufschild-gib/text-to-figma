@@ -6,7 +6,18 @@
  */
 
 import { getNode } from '../helpers.js';
-import { validatePayload, type ValidationRule } from '../validate.js';
+import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
+
+const TEXT_DECORATIONS = ['NONE', 'UNDERLINE', 'STRIKETHROUGH'] as const;
+const TEXT_CASES = [
+  'ORIGINAL',
+  'UPPER',
+  'LOWER',
+  'TITLE',
+  'SMALL_CAPS',
+  'SMALL_CAPS_FORCED'
+] as const;
+const SPACING_UNITS = ['PIXELS', 'PERCENT'] as const;
 
 const nodeIdRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
 
@@ -19,20 +30,24 @@ export async function handleSetTextProperties(payload: Record<string, unknown>):
 
   await figma.loadFontAsync(node.fontName as FontName);
 
-  if (typeof payload.decoration === 'string') {
-    node.textDecoration = payload.decoration as TextDecoration;
+  const decoration = checkEnum(payload.decoration, TEXT_DECORATIONS);
+  if (decoration !== undefined) {
+    node.textDecoration = decoration;
   }
-  if (payload.letterSpacing !== undefined) {
-    const ls = payload.letterSpacing as { value: number; unit: string };
-    node.letterSpacing = { value: ls.value, unit: ls.unit as 'PIXELS' | 'PERCENT' };
+  if (typeof payload.letterSpacing === 'object' && payload.letterSpacing !== null) {
+    const ls = payload.letterSpacing as Record<string, unknown>;
+    const unit = checkEnum(ls.unit, SPACING_UNITS) ?? 'PIXELS';
+    if (typeof ls.value === 'number') {
+      node.letterSpacing = { value: ls.value, unit };
+    }
   }
-  if (typeof payload.textCase === 'string') {
-    node.textCase = payload.textCase as TextCase;
+  const textCase = checkEnum(payload.textCase, TEXT_CASES);
+  if (textCase !== undefined) {
+    node.textCase = textCase;
   }
-  if (payload.paragraphSpacing !== undefined)
-    node.paragraphSpacing = payload.paragraphSpacing as number;
-  if (payload.paragraphIndent !== undefined)
-    node.paragraphIndent = payload.paragraphIndent as number;
+  if (typeof payload.paragraphSpacing === 'number')
+    node.paragraphSpacing = payload.paragraphSpacing;
+  if (typeof payload.paragraphIndent === 'number') node.paragraphIndent = payload.paragraphIndent;
 
   return { nodeId: payload.nodeId, message: 'Text properties set successfully' };
 }
@@ -44,7 +59,10 @@ export function handleSetTextDecoration(payload: Record<string, unknown>): unkno
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  node.textDecoration = payload.decoration as TextDecoration;
+  const decoration = checkEnum(payload.decoration, TEXT_DECORATIONS);
+  if (decoration === undefined)
+    throw new Error(`Invalid decoration: ${String(payload.decoration)}`);
+  node.textDecoration = decoration;
   return {
     nodeId: payload.nodeId,
     decoration: payload.decoration,
@@ -59,7 +77,9 @@ export function handleSetTextCase(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  node.textCase = payload.textCase as TextCase;
+  const textCase = checkEnum(payload.textCase, TEXT_CASES);
+  if (textCase === undefined) throw new Error(`Invalid textCase: ${String(payload.textCase)}`);
+  node.textCase = textCase;
   return {
     nodeId: payload.nodeId,
     textCase: payload.textCase,
@@ -74,9 +94,9 @@ export function handleSetLetterSpacing(payload: Record<string, unknown>): unknow
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  const unit =
-    typeof payload.unit === 'string' ? (payload.unit as 'PIXELS' | 'PERCENT') : 'PERCENT';
-  node.letterSpacing = { value: payload.value as number, unit };
+  const unit = checkEnum(payload.unit, SPACING_UNITS) ?? 'PERCENT';
+  if (typeof payload.value !== 'number') throw new Error('value must be a number');
+  node.letterSpacing = { value: payload.value, unit };
   return {
     nodeId: payload.nodeId,
     value: payload.value,
@@ -92,10 +112,9 @@ export function handleSetParagraphSpacing(payload: Record<string, unknown>): unk
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  if (payload.paragraphSpacing !== undefined)
-    node.paragraphSpacing = payload.paragraphSpacing as number;
-  if (payload.paragraphIndent !== undefined)
-    node.paragraphIndent = payload.paragraphIndent as number;
+  if (typeof payload.paragraphSpacing === 'number')
+    node.paragraphSpacing = payload.paragraphSpacing;
+  if (typeof payload.paragraphIndent === 'number') node.paragraphIndent = payload.paragraphIndent;
 
   return { nodeId: payload.nodeId, message: 'Paragraph spacing set successfully' };
 }

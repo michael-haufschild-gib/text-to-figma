@@ -6,8 +6,22 @@
  */
 
 import { cacheNode, hexToRgb, loadFont, resolveParent } from '../helpers.js';
-import { validatePayload } from '../validate.js';
+import { checkEnum, validatePayload } from '../validate.js';
 import type { ValidationRule } from '../validate.js';
+
+const SIZING_VALUES = ['FIXED', 'HUG', 'FILL'] as const;
+const LAYOUT_MODES = ['HORIZONTAL', 'VERTICAL'] as const;
+const TEXT_ALIGNS = ['LEFT', 'CENTER', 'RIGHT', 'JUSTIFIED'] as const;
+const STROKE_CAPS: readonly string[] = [
+  'NONE',
+  'ROUND',
+  'SQUARE',
+  'ARROW_LINES',
+  'ARROW_EQUILATERAL',
+  'DIAMOND_FILLED',
+  'TRIANGLE_FILLED',
+  'CIRCLE_FILLED'
+];
 
 function applyLayoutSizing(frame: FrameNode, payload: Record<string, unknown>): void {
   if (
@@ -17,13 +31,15 @@ function applyLayoutSizing(frame: FrameNode, payload: Record<string, unknown>): 
   ) {
     return;
   }
-  if (payload.horizontalSizing !== undefined) {
-    frame.layoutSizingHorizontal = payload.horizontalSizing as 'FIXED' | 'HUG' | 'FILL';
+  const hSizing = checkEnum(payload.horizontalSizing, SIZING_VALUES);
+  if (hSizing !== undefined) {
+    frame.layoutSizingHorizontal = hSizing;
   } else if (payload.width === undefined) {
     frame.layoutSizingHorizontal = 'FILL';
   }
-  if (payload.verticalSizing !== undefined) {
-    frame.layoutSizingVertical = payload.verticalSizing as 'FIXED' | 'HUG' | 'FILL';
+  const vSizing = checkEnum(payload.verticalSizing, SIZING_VALUES);
+  if (vSizing !== undefined) {
+    frame.layoutSizingVertical = vSizing;
   } else if (payload.height === undefined) {
     frame.layoutSizingVertical = 'HUG';
   }
@@ -35,12 +51,12 @@ const createFrameRules: ValidationRule[] = [
   { field: 'y', type: 'number' },
   { field: 'width', type: 'number' },
   { field: 'height', type: 'number' },
-  { field: 'layoutMode', type: 'string' },
+  { field: 'layoutMode', type: 'string', enum: ['HORIZONTAL', 'VERTICAL', 'NONE'] },
   { field: 'itemSpacing', type: 'number' },
   { field: 'padding', type: 'number' },
   { field: 'parentId', type: 'string' },
-  { field: 'horizontalSizing', type: 'string' },
-  { field: 'verticalSizing', type: 'string' }
+  { field: 'horizontalSizing', type: 'string', enum: SIZING_VALUES },
+  { field: 'verticalSizing', type: 'string', enum: SIZING_VALUES }
 ];
 
 export function handleCreateFrame(payload: Record<string, unknown>): unknown {
@@ -57,18 +73,19 @@ export function handleCreateFrame(payload: Record<string, unknown>): unknown {
     frame.resize(payload.width, payload.height);
   }
 
-  if (typeof payload.layoutMode === 'string' && payload.layoutMode !== 'NONE') {
-    frame.layoutMode = payload.layoutMode as 'HORIZONTAL' | 'VERTICAL';
+  const layoutMode = checkEnum(payload.layoutMode, LAYOUT_MODES);
+  if (layoutMode !== undefined) {
+    frame.layoutMode = layoutMode;
   }
-  if (payload.itemSpacing !== undefined) {
-    frame.itemSpacing = payload.itemSpacing as number;
+  if (typeof payload.itemSpacing === 'number') {
+    frame.itemSpacing = payload.itemSpacing;
   }
-  if (payload.padding !== undefined) {
-    const p = payload.padding as number;
+  if (typeof payload.padding === 'number') {
+    const p = payload.padding;
     frame.paddingLeft = frame.paddingRight = frame.paddingTop = frame.paddingBottom = p;
   }
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(frame);
   applyLayoutSizing(frame, payload);
 
@@ -87,7 +104,7 @@ const createTextRules: ValidationRule[] = [
   { field: 'fontWeight', type: 'number' },
   { field: 'fontSize', type: 'number' },
   { field: 'color', type: 'string' },
-  { field: 'textAlign', type: 'string' },
+  { field: 'textAlign', type: 'string', enum: TEXT_ALIGNS },
   { field: 'lineHeight', type: 'number' },
   { field: 'letterSpacing', type: 'number' },
   { field: 'parentId', type: 'string' }
@@ -114,8 +131,9 @@ export async function handleCreateText(payload: Record<string, unknown>): Promis
   if (typeof payload.color === 'string') {
     textNode.fills = [{ type: 'SOLID', color: hexToRgb(payload.color) }];
   }
-  if (typeof payload.textAlign === 'string') {
-    textNode.textAlignHorizontal = payload.textAlign as TextNode['textAlignHorizontal'];
+  const textAlign = checkEnum(payload.textAlign, TEXT_ALIGNS);
+  if (textAlign !== undefined) {
+    textNode.textAlignHorizontal = textAlign;
   }
   if (typeof payload.lineHeight === 'number') {
     textNode.lineHeight = { value: payload.lineHeight, unit: 'PIXELS' };
@@ -124,7 +142,7 @@ export async function handleCreateText(payload: Record<string, unknown>): Promis
     textNode.letterSpacing = { value: payload.letterSpacing, unit: 'PIXELS' };
   }
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(textNode);
   cacheNode(textNode);
   figma.viewport.scrollAndZoomIntoView([textNode]);
@@ -149,7 +167,7 @@ export function handleCreateEllipse(payload: Record<string, unknown>): unknown {
     ellipse.strokeWeight = payload.strokeWeight;
   }
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(ellipse);
   cacheNode(ellipse);
   figma.viewport.scrollAndZoomIntoView([ellipse]);
@@ -176,14 +194,17 @@ export function handleCreateLine(payload: Record<string, unknown>): unknown {
   if (typeof payload.strokeWeight === 'number') {
     line.strokeWeight = payload.strokeWeight;
   }
-  if (typeof payload.strokeCap === 'string') {
+  if (typeof payload.strokeCap === 'string' && STROKE_CAPS.includes(payload.strokeCap)) {
     line.strokeCap = payload.strokeCap as StrokeCap;
   }
-  if (Array.isArray(payload.dashPattern)) {
-    line.dashPattern = payload.dashPattern as number[];
+  if (
+    Array.isArray(payload.dashPattern) &&
+    payload.dashPattern.every((el: unknown) => typeof el === 'number')
+  ) {
+    line.dashPattern = payload.dashPattern;
   }
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(line);
   cacheNode(line);
   figma.viewport.scrollAndZoomIntoView([line]);
@@ -208,7 +229,7 @@ export function handleCreatePolygon(payload: Record<string, unknown>): unknown {
     polygon.strokeWeight = payload.strokeWeight;
   }
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(polygon);
   cacheNode(polygon);
 
@@ -235,7 +256,7 @@ export function handleCreateStar(payload: Record<string, unknown>): unknown {
     star.strokeWeight = payload.strokeWeight;
   }
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(star);
   cacheNode(star);
 
@@ -252,7 +273,7 @@ export function handleCreateRectangleWithImageFill(payload: Record<string, unkno
   rect.resize(w, h);
   rect.fills = [{ type: 'SOLID', color: { r: 0.9, g: 0.9, b: 0.9 } }];
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(rect);
   cacheNode(rect);
 

@@ -7,6 +7,7 @@ export interface ValidationRule {
   field: string;
   type: 'string' | 'number' | 'boolean' | 'object' | 'array';
   required?: boolean;
+  enum?: readonly string[];
 }
 
 export function validatePayload(
@@ -30,7 +31,20 @@ export function validatePayload(
     } else if (typeof value !== rule.type) {
       return `Field '${rule.field}' must be ${rule.type}, got ${typeof value}`;
     }
+
+    if (rule.enum !== undefined && typeof value === 'string') {
+      if (!rule.enum.includes(value)) {
+        return `Field '${rule.field}' must be one of [${rule.enum.join(', ')}], got '${value}'`;
+      }
+    }
   }
 
   return null;
+}
+
+/** Validate a string is a member of an allowed set. Returns the value or undefined. */
+export function checkEnum<T extends string>(value: unknown, allowed: readonly T[]): T | undefined {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : undefined;
 }

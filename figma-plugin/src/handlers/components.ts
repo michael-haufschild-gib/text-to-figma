@@ -74,7 +74,7 @@ export function handleCreateInstance(payload: Record<string, unknown>): unknown 
     instance.name = payload.name;
   }
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(instance);
   cacheNode(instance);
 
@@ -89,9 +89,14 @@ export function handleCreateComponentSet(payload: Record<string, unknown>): unkn
   const error = validatePayload(payload, createComponentSetRules);
   if (error !== null) throw new Error(error);
 
-  const variantIds = payload.variantIds as string[];
-  if (!Array.isArray(variantIds) || variantIds.length === 0)
-    throw new Error('Component set requires at least one component');
+  const variantIds = payload.variantIds;
+  if (
+    !Array.isArray(variantIds) ||
+    variantIds.length === 0 ||
+    !variantIds.every((el: unknown) => typeof el === 'string')
+  ) {
+    throw new Error('Component set requires a non-empty array of string IDs');
+  }
 
   const components = variantIds
     .map((id) => getNode(id))
@@ -131,12 +136,12 @@ export function handleSetComponentProperties(payload: Record<string, unknown>): 
   const component = node;
   const updated: string[] = [];
 
-  if (payload.description !== undefined) {
-    component.description = payload.description as string;
+  if (typeof payload.description === 'string') {
+    component.description = payload.description;
     updated.push('description');
   }
-  if (payload.name !== undefined) {
-    component.name = payload.name as string;
+  if (typeof payload.name === 'string') {
+    component.name = payload.name;
     updated.push('name');
   }
 
@@ -154,7 +159,10 @@ export function handleAddVariantProperty(payload: Record<string, unknown>): unkn
   const node = getNode(payload.componentSetId as string);
   if (node?.type !== 'COMPONENT_SET') throw new Error('Node is not a component set');
 
-  const values = Array.isArray(payload.values) ? (payload.values as string[]) : [];
+  const values =
+    Array.isArray(payload.values) && payload.values.every((el: unknown) => typeof el === 'string')
+      ? payload.values
+      : [];
   return {
     componentSetId: payload.componentSetId,
     propertyName: payload.propertyName,

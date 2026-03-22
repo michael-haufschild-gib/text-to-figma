@@ -6,12 +6,20 @@
  */
 
 import { getNode, hexToRgb } from '../helpers.js';
-import { validatePayload } from '../validate.js';
+import { checkEnum, validatePayload } from '../validate.js';
 import type { ValidationRule } from '../validate.js';
+
+const LAYOUT_MODES = ['HORIZONTAL', 'VERTICAL'] as const;
+const SIZING_VALUES = ['FIXED', 'HUG', 'FILL'] as const;
+const PRIMARY_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'SPACE_BETWEEN'] as const;
+const COUNTER_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'BASELINE'] as const;
+const CONSTRAINT_TYPES = ['MIN', 'CENTER', 'MAX', 'STRETCH', 'SCALE'] as const;
+const GRID_PATTERNS = ['COLUMNS', 'ROWS', 'GRID'] as const;
+const GRID_ALIGNS = ['MIN', 'MAX', 'STRETCH', 'CENTER'] as const;
 
 const setLayoutPropertiesRules: ValidationRule[] = [
   { field: 'nodeId', type: 'string', required: true },
-  { field: 'layoutMode', type: 'string' },
+  { field: 'layoutMode', type: 'string', enum: LAYOUT_MODES },
   { field: 'itemSpacing', type: 'number' },
   { field: 'padding', type: 'number' }
 ];
@@ -24,12 +32,13 @@ export function handleSetLayoutProperties(payload: Record<string, unknown>): unk
   if (!node || !('layoutMode' in node)) throw new Error('Node does not support auto-layout');
 
   const frame = node as FrameNode;
-  if (typeof payload.layoutMode === 'string') {
-    frame.layoutMode = payload.layoutMode as 'HORIZONTAL' | 'VERTICAL';
+  const layoutMode = checkEnum(payload.layoutMode, LAYOUT_MODES);
+  if (layoutMode !== undefined) {
+    frame.layoutMode = layoutMode;
   }
-  if (payload.itemSpacing !== undefined) frame.itemSpacing = payload.itemSpacing as number;
-  if (payload.padding !== undefined) {
-    const p = payload.padding as number;
+  if (typeof payload.itemSpacing === 'number') frame.itemSpacing = payload.itemSpacing;
+  if (typeof payload.padding === 'number') {
+    const p = payload.padding;
     frame.paddingLeft = frame.paddingRight = frame.paddingTop = frame.paddingBottom = p;
   }
 
@@ -42,11 +51,13 @@ export function handleSetLayoutAlign(payload: Record<string, unknown>): unknown 
     throw new Error('Node does not support layout alignment');
 
   const frame = node as FrameNode;
-  if (typeof payload.primaryAxis === 'string') {
-    frame.primaryAxisAlignItems = payload.primaryAxis as FrameNode['primaryAxisAlignItems'];
+  const primaryAxis = checkEnum(payload.primaryAxis, PRIMARY_AXIS_ALIGNS);
+  if (primaryAxis !== undefined) {
+    frame.primaryAxisAlignItems = primaryAxis;
   }
-  if (typeof payload.counterAxis === 'string') {
-    frame.counterAxisAlignItems = payload.counterAxis as FrameNode['counterAxisAlignItems'];
+  const counterAxis = checkEnum(payload.counterAxis, COUNTER_AXIS_ALIGNS);
+  if (counterAxis !== undefined) {
+    frame.counterAxisAlignItems = counterAxis;
   }
 
   return { nodeId: payload.nodeId, message: 'Layout alignment set successfully' };
@@ -58,11 +69,13 @@ export function handleSetLayoutSizing(payload: Record<string, unknown>): unknown
     throw new Error('Node does not support layout sizing');
 
   const frame = node as FrameNode;
-  if (typeof payload.horizontal === 'string') {
-    frame.layoutSizingHorizontal = payload.horizontal as 'FIXED' | 'HUG' | 'FILL';
+  const horizontal = checkEnum(payload.horizontal, SIZING_VALUES);
+  if (horizontal !== undefined) {
+    frame.layoutSizingHorizontal = horizontal;
   }
-  if (typeof payload.vertical === 'string') {
-    frame.layoutSizingVertical = payload.vertical as 'FIXED' | 'HUG' | 'FILL';
+  const vertical = checkEnum(payload.vertical, SIZING_VALUES);
+  if (vertical !== undefined) {
+    frame.layoutSizingVertical = vertical;
   }
 
   return { nodeId: payload.nodeId, message: 'Layout sizing set successfully' };
@@ -72,13 +85,10 @@ export function handleSetConstraints(payload: Record<string, unknown>): unknown 
   const node = getNode(payload.nodeId as string);
   if (!node || !('constraints' in node)) throw new Error('Node does not support constraints');
 
-  const h = typeof payload.horizontal === 'string' ? payload.horizontal : 'MIN';
-  const v = typeof payload.vertical === 'string' ? payload.vertical : 'MIN';
+  const h = checkEnum(payload.horizontal, CONSTRAINT_TYPES) ?? 'MIN';
+  const v = checkEnum(payload.vertical, CONSTRAINT_TYPES) ?? 'MIN';
 
-  (node as ConstraintMixin).constraints = {
-    horizontal: h as ConstraintType,
-    vertical: v as ConstraintType
-  };
+  (node as ConstraintMixin).constraints = { horizontal: h, vertical: v };
 
   return {
     nodeId: payload.nodeId,
@@ -115,8 +125,9 @@ export function handleSetLayerOrder(payload: Record<string, unknown>): unknown {
       (parent as FrameNode).insertChild(0, node);
       break;
     case 'SET_INDEX':
+      if (typeof payload.index !== 'number') throw new Error('index must be a number');
       (parent as FrameNode).insertChild(
-        Math.max(0, Math.min(payload.index as number, (parent as FrameNode).children.length - 1)),
+        Math.max(0, Math.min(payload.index, (parent as FrameNode).children.length - 1)),
         node
       );
       break;
@@ -135,7 +146,7 @@ export function handleAddLayoutGrid(payload: Record<string, unknown>): unknown {
   if (!node || !('layoutGrids' in node)) throw new Error('Node does not support layout grids');
 
   const frame = node as FrameNode;
-  const pattern = typeof payload.pattern === 'string' ? payload.pattern : 'COLUMNS';
+  const pattern = checkEnum(payload.pattern, GRID_PATTERNS) ?? 'COLUMNS';
   const gridColor =
     typeof payload.color === 'string'
       ? { ...hexToRgb(payload.color), a: 0.1 }
@@ -157,13 +168,10 @@ export function handleAddLayoutGrid(payload: Record<string, unknown>): unknown {
     const count = typeof payload.count === 'number' ? payload.count : 12;
     const gutterSize = typeof payload.gutter === 'number' ? payload.gutter : 16;
     const offset = typeof payload.margin === 'number' ? payload.margin : 0;
-    const alignment =
-      typeof payload.alignment === 'string'
-        ? (payload.alignment as RowsColsLayoutGrid['alignment'])
-        : 'MIN';
+    const alignment = checkEnum(payload.alignment, GRID_ALIGNS) ?? 'MIN';
 
     grid = {
-      pattern: pattern as 'COLUMNS' | 'ROWS',
+      pattern,
       sectionSize: typeof payload.sectionSize === 'number' ? payload.sectionSize : 64,
       visible: payload.visible !== false,
       color: gridColor,

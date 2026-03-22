@@ -6,7 +6,17 @@
  */
 
 import { convertEffects, getNode, hexToRgb, loadFont } from '../helpers.js';
-import { validatePayload, type ValidationRule } from '../validate.js';
+import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
+
+const TEXT_CASES = [
+  'ORIGINAL',
+  'UPPER',
+  'LOWER',
+  'TITLE',
+  'SMALL_CAPS',
+  'SMALL_CAPS_FORCED'
+] as const;
+const TEXT_DECORATIONS = ['NONE', 'UNDERLINE', 'STRIKETHROUGH'] as const;
 
 const createColorStyleRules: ValidationRule[] = [
   { field: 'name', type: 'string', required: true },
@@ -63,11 +73,13 @@ export async function handleCreateTextStyle(payload: Record<string, unknown>): P
   if (typeof payload.letterSpacing === 'number') {
     textStyle.letterSpacing = { value: payload.letterSpacing, unit: 'PIXELS' };
   }
-  if (typeof payload.textCase === 'string') {
-    textStyle.textCase = payload.textCase as TextCase;
+  const textCase = checkEnum(payload.textCase, TEXT_CASES);
+  if (textCase !== undefined) {
+    textStyle.textCase = textCase;
   }
-  if (typeof payload.textDecoration === 'string') {
-    textStyle.textDecoration = payload.textDecoration as TextDecoration;
+  const textDecoration = checkEnum(payload.textDecoration, TEXT_DECORATIONS);
+  if (textDecoration !== undefined) {
+    textStyle.textDecoration = textDecoration;
   }
   if (typeof payload.description === 'string') {
     textStyle.description = payload.description;

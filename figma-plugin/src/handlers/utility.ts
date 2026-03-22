@@ -8,7 +8,20 @@
  */
 
 import { getNode, hexToRgb, resolveParent } from '../helpers.js';
-import { validatePayload, type ValidationRule } from '../validate.js';
+import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
+
+const STROKE_JOINS = ['MITER', 'BEVEL', 'ROUND'] as const;
+const STROKE_CAPS: readonly string[] = [
+  'NONE',
+  'ROUND',
+  'SQUARE',
+  'ARROW_LINES',
+  'ARROW_EQUILATERAL',
+  'DIAMOND_FILLED',
+  'TRIANGLE_FILLED',
+  'CIRCLE_FILLED'
+];
+const BOOLEAN_OPS = ['UNION', 'INTERSECT', 'SUBTRACT', 'EXCLUDE'] as const;
 
 const nodeIdRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
 const pluginDataRules: ValidationRule[] = [
@@ -28,7 +41,8 @@ export function handleSetVisible(payload: Record<string, unknown>): unknown {
 
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
-  node.visible = payload.visible as boolean;
+  if (typeof payload.visible !== 'boolean') throw new Error('visible must be a boolean');
+  node.visible = payload.visible;
   return {
     nodeId: payload.nodeId,
     visible: payload.visible,
@@ -42,7 +56,8 @@ export function handleSetLocked(payload: Record<string, unknown>): unknown {
 
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
-  node.locked = payload.locked as boolean;
+  if (typeof payload.locked !== 'boolean') throw new Error('locked must be a boolean');
+  node.locked = payload.locked;
   return { nodeId: payload.nodeId, locked: payload.locked, message: 'Lock state set successfully' };
 }
 
@@ -53,15 +68,21 @@ export function handleSetExportSettings(payload: Record<string, unknown>): unkno
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 
+  if (!Array.isArray(payload.settings)) throw new Error('settings must be an array');
   const settings: ExportSettings[] = (payload.settings as Array<Record<string, unknown>>).map(
-    (s) => ({
-      format: typeof s.format === 'string' ? (s.format as ExportSettings['format']) : 'PNG',
-      constraint:
-        s.constraint !== undefined
+    (s) => {
+      const fmt = typeof s.format === 'string' ? s.format : 'PNG';
+      const constraint =
+        typeof s.constraint === 'object' && s.constraint !== null
           ? (s.constraint as ExportSettingsConstraints)
-          : { type: 'SCALE', value: 1 },
-      suffix: typeof s.suffix === 'string' ? s.suffix : ''
-    })
+          : { type: 'SCALE' as const, value: 1 };
+      const suffix = typeof s.suffix === 'string' ? s.suffix : '';
+
+      if (fmt === 'SVG') return { format: 'SVG' as const, constraint, suffix } as ExportSettings;
+      if (fmt === 'PDF') return { format: 'PDF' as const, constraint, suffix } as ExportSettings;
+      if (fmt === 'JPG') return { format: 'JPG' as const, constraint, suffix } as ExportSettings;
+      return { format: 'PNG' as const, constraint, suffix } as ExportSettings;
+    }
   );
 
   node.exportSettings = settings;
@@ -160,7 +181,10 @@ export function handleSetStrokeJoin(payload: Record<string, unknown>): unknown {
 
   const node = getNode(payload.nodeId as string);
   if (!node || !('strokeJoin' in node)) throw new Error('Node does not support stroke join');
-  (node as GeometryMixin).strokeJoin = payload.strokeJoin as StrokeJoin;
+  const strokeJoin = checkEnum(payload.strokeJoin, STROKE_JOINS);
+  if (strokeJoin === undefined)
+    throw new Error(`Invalid strokeJoin: ${String(payload.strokeJoin)}`);
+  (node as GeometryMixin).strokeJoin = strokeJoin;
   return {
     nodeId: payload.nodeId,
     strokeJoin: payload.strokeJoin,
@@ -174,6 +198,9 @@ export function handleSetStrokeCap(payload: Record<string, unknown>): unknown {
 
   const node = getNode(payload.nodeId as string);
   if (!node || !('strokeCap' in node)) throw new Error('Node does not support stroke cap');
+  if (typeof payload.strokeCap !== 'string' || !STROKE_CAPS.includes(payload.strokeCap)) {
+    throw new Error(`Invalid strokeCap: ${String(payload.strokeCap)}`);
+  }
   (node as GeometryMixin).strokeCap = payload.strokeCap as StrokeCap;
   return {
     nodeId: payload.nodeId,
@@ -188,7 +215,7 @@ export function handleSetClippingMask(payload: Record<string, unknown>): unknown
 
   const node = getNode(payload.nodeId as string);
   if (!node || !('clipsContent' in node)) throw new Error('Node does not support clipping');
-  (node as FrameNode).clipsContent = payload.enabled as boolean;
+  (node as FrameNode).clipsContent = payload.enabled === true;
   return {
     nodeId: payload.nodeId,
     enabled: payload.enabled,
@@ -201,8 +228,11 @@ export function handleCreatePath(payload: Record<string, unknown>): unknown {
   const vectorNode = figma.createVector();
   vectorNode.name = typeof payload.name === 'string' ? payload.name : 'Path';
 
+  if (!Array.isArray(payload.commands)) {
+    throw new Error('Path requires a commands array');
+  }
   const commands = payload.commands as Array<Record<string, unknown>>;
-  if (!Array.isArray(commands) || commands.length === 0) {
+  if (commands.length === 0) {
     throw new Error('Path requires at least one command');
   }
   const firstCmd = commands[0];
@@ -225,7 +255,7 @@ export function handleCreatePath(payload: Record<string, unknown>): unknown {
     vectorNode.strokeWeight = typeof payload.strokeWeight === 'number' ? payload.strokeWeight : 1;
   }
 
-  const parent = resolveParent(payload.parentId as string | undefined);
+  const parent = resolveParent(typeof payload.parentId === 'string' ? payload.parentId : undefined);
   parent.appendChild(vectorNode);
   figma.viewport.scrollAndZoomIntoView([vectorNode]);
 
@@ -290,19 +320,21 @@ function validateCoord(cmd: Record<string, unknown>, key: string, index: number)
 }
 
 export function handleCreateBooleanOperation(payload: Record<string, unknown>): unknown {
-  const nodeIds = payload.nodeIds as string[];
-  if (!Array.isArray(nodeIds) || nodeIds.length < 2)
-    throw new Error('Boolean operation requires at least 2 nodes');
+  if (
+    !Array.isArray(payload.nodeIds) ||
+    !payload.nodeIds.every((el: unknown) => typeof el === 'string')
+  ) {
+    throw new Error('nodeIds must be an array of strings');
+  }
+  const nodeIds: string[] = payload.nodeIds;
+  if (nodeIds.length < 2) throw new Error('Boolean operation requires at least 2 nodes');
 
   const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 2) throw new Error('Could not find all nodes for boolean operation');
 
   const booleanNode = figma.createBooleanOperation();
   booleanNode.name = typeof payload.name === 'string' ? payload.name : 'Boolean';
-  booleanNode.booleanOperation =
-    typeof payload.operation === 'string'
-      ? (payload.operation as 'UNION' | 'INTERSECT' | 'SUBTRACT' | 'EXCLUDE')
-      : 'UNION';
+  booleanNode.booleanOperation = checkEnum(payload.operation, BOOLEAN_OPS) ?? 'UNION';
 
   for (const node of nodes) {
     booleanNode.appendChild(node);

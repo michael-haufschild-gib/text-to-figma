@@ -132,8 +132,13 @@ export function convertEffects(effects: Array<Record<string, unknown>>): Effect[
         visible: true
       } as BlurEffect;
     }
-    return effect as unknown as Effect;
+    throw new Error(`Unknown effect type: ${type}`);
   });
+}
+
+/** Clear the node cache. Used for test isolation. */
+export function resetNodeCache(): void {
+  nodeCache.clear();
 }
 
 /** Get width/height safely from any node type */

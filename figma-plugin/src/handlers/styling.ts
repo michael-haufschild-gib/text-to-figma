@@ -6,8 +6,32 @@
  */
 
 import { convertEffects, getNode, hexToRgb } from '../helpers.js';
-import { validatePayload } from '../validate.js';
+import { checkEnum, validatePayload } from '../validate.js';
 import type { ValidationRule } from '../validate.js';
+
+const STROKE_ALIGNS = ['INSIDE', 'OUTSIDE', 'CENTER'] as const;
+const SCALE_MODES = ['FILL', 'FIT', 'CROP', 'TILE'] as const;
+const BLEND_MODES = [
+  'PASS_THROUGH',
+  'NORMAL',
+  'DARKEN',
+  'MULTIPLY',
+  'LINEAR_BURN',
+  'COLOR_BURN',
+  'LIGHTEN',
+  'SCREEN',
+  'LINEAR_DODGE',
+  'COLOR_DODGE',
+  'OVERLAY',
+  'SOFT_LIGHT',
+  'HARD_LIGHT',
+  'DIFFERENCE',
+  'EXCLUSION',
+  'HUE',
+  'SATURATION',
+  'COLOR',
+  'LUMINOSITY'
+] as const;
 
 const setFillsRules: ValidationRule[] = [
   { field: 'nodeId', type: 'string', required: true },
@@ -41,14 +65,13 @@ export function handleSetCornerRadius(payload: Record<string, unknown>): unknown
     throw new Error(`Node does not support corner radius (type: ${node.type})`);
 
   const rectNode = node as RectangleNode | FrameNode;
-  if (payload.radius !== undefined) {
-    rectNode.cornerRadius = payload.radius as number;
+  if (typeof payload.radius === 'number') {
+    rectNode.cornerRadius = payload.radius;
   } else {
-    if (payload.topLeft !== undefined) rectNode.topLeftRadius = payload.topLeft as number;
-    if (payload.topRight !== undefined) rectNode.topRightRadius = payload.topRight as number;
-    if (payload.bottomLeft !== undefined) rectNode.bottomLeftRadius = payload.bottomLeft as number;
-    if (payload.bottomRight !== undefined)
-      rectNode.bottomRightRadius = payload.bottomRight as number;
+    if (typeof payload.topLeft === 'number') rectNode.topLeftRadius = payload.topLeft;
+    if (typeof payload.topRight === 'number') rectNode.topRightRadius = payload.topRight;
+    if (typeof payload.bottomLeft === 'number') rectNode.bottomLeftRadius = payload.bottomLeft;
+    if (typeof payload.bottomRight === 'number') rectNode.bottomRightRadius = payload.bottomRight;
   }
 
   return { nodeId: payload.nodeId, message: 'Corner radius applied successfully' };
@@ -65,12 +88,16 @@ export function handleSetStroke(payload: Record<string, unknown>): unknown {
     const opacity = typeof payload.opacity === 'number' ? payload.opacity : 1;
     geoNode.strokes = [{ type: 'SOLID', color: rgb, opacity }];
   }
-  if (payload.strokeWeight !== undefined) geoNode.strokeWeight = payload.strokeWeight as number;
-  if (typeof payload.strokeAlign === 'string') {
-    (geoNode as FrameNode).strokeAlign = payload.strokeAlign as 'INSIDE' | 'OUTSIDE' | 'CENTER';
+  if (typeof payload.strokeWeight === 'number') geoNode.strokeWeight = payload.strokeWeight;
+  const strokeAlign = checkEnum(payload.strokeAlign, STROKE_ALIGNS);
+  if (strokeAlign !== undefined) {
+    (geoNode as FrameNode).strokeAlign = strokeAlign;
   }
-  if (Array.isArray(payload.dashPattern)) {
-    geoNode.dashPattern = payload.dashPattern as number[];
+  if (
+    Array.isArray(payload.dashPattern) &&
+    payload.dashPattern.every((el: unknown) => typeof el === 'number')
+  ) {
+    geoNode.dashPattern = payload.dashPattern;
   }
 
   return { nodeId: payload.nodeId, message: 'Stroke applied successfully' };
@@ -80,13 +107,14 @@ export function handleSetAppearance(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
   if (!node) throw new Error('Node not found');
 
-  if (typeof payload.blendMode === 'string' && 'blendMode' in node) {
-    (node as BlendMixin).blendMode = payload.blendMode as BlendMode;
+  const blendMode = checkEnum(payload.blendMode, BLEND_MODES);
+  if (blendMode !== undefined && 'blendMode' in node) {
+    (node as BlendMixin).blendMode = blendMode;
   }
-  if (payload.opacity !== undefined && 'opacity' in node) {
-    (node as BlendMixin).opacity = payload.opacity as number;
+  if (typeof payload.opacity === 'number' && 'opacity' in node) {
+    (node as BlendMixin).opacity = payload.opacity;
   }
-  if (payload.clipping !== undefined && 'clipsContent' in node) {
+  if (typeof payload.clipping === 'object' && payload.clipping !== null && 'clipsContent' in node) {
     const clipping = payload.clipping as Record<string, unknown>;
     const frameNode = node as FrameNode;
     if (clipping.useMask === true) {
@@ -97,7 +125,7 @@ export function handleSetAppearance(payload: Record<string, unknown>): unknown {
         (firstChild as SceneNode & { isMask: boolean }).isMask = true;
       }
     } else {
-      frameNode.clipsContent = clipping.enabled as boolean;
+      frameNode.clipsContent = clipping.enabled === true;
     }
   }
 
@@ -108,7 +136,8 @@ export function handleSetOpacity(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
   if (!node || !('opacity' in node)) throw new Error('Node does not support opacity');
 
-  (node as BlendMixin).opacity = payload.opacity as number;
+  if (typeof payload.opacity !== 'number') throw new Error('opacity must be a number');
+  (node as BlendMixin).opacity = payload.opacity;
   return {
     nodeId: payload.nodeId,
     opacity: payload.opacity,
@@ -120,7 +149,9 @@ export function handleSetBlendMode(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
   if (!node || !('blendMode' in node)) throw new Error('Node does not support blend mode');
 
-  (node as BlendMixin).blendMode = payload.blendMode as BlendMode;
+  const blendMode = checkEnum(payload.blendMode, BLEND_MODES);
+  if (blendMode === undefined) throw new Error(`Invalid blendMode: ${String(payload.blendMode)}`);
+  (node as BlendMixin).blendMode = blendMode;
   return {
     nodeId: payload.nodeId,
     blendMode: payload.blendMode,
@@ -132,6 +163,7 @@ export function handleApplyEffects(payload: Record<string, unknown>): unknown {
   const node = getNode(payload.nodeId as string);
   if (!node || !('effects' in node)) throw new Error('Node does not support effects');
 
+  if (!Array.isArray(payload.effects)) throw new Error('effects must be an array');
   const effects = convertEffects(payload.effects as Array<Record<string, unknown>>);
   (node as BlendMixin).effects = effects;
 
@@ -148,10 +180,11 @@ export function handleAddGradientFill(payload: Record<string, unknown>): unknown
   if (!('fills' in node)) throw new Error(`Node type ${node.type} does not support fills`);
 
   const gradientType = payload.type === 'RADIAL' ? 'GRADIENT_RADIAL' : 'GRADIENT_LINEAR';
+  if (!Array.isArray(payload.stops)) throw new Error('stops must be an array');
   const stops: ColorStop[] = (payload.stops as Array<Record<string, unknown>>).map((stop) => ({
-    position: stop.position as number,
+    position: typeof stop.position === 'number' ? stop.position : 0,
     color: {
-      ...hexToRgb(stop.color as string),
+      ...hexToRgb(typeof stop.color === 'string' ? stop.color : '#000000'),
       a: typeof stop.opacity === 'number' ? stop.opacity : 1
     }
   }));
@@ -159,8 +192,8 @@ export function handleAddGradientFill(payload: Record<string, unknown>): unknown
   let gradientTransform: Transform;
   if (Array.isArray(payload.gradientTransform)) {
     gradientTransform = payload.gradientTransform as Transform;
-  } else if (gradientType === 'GRADIENT_LINEAR' && payload.angle !== undefined) {
-    const angleRad = ((payload.angle as number) * Math.PI) / 180;
+  } else if (gradientType === 'GRADIENT_LINEAR' && typeof payload.angle === 'number') {
+    const angleRad = (payload.angle * Math.PI) / 180;
     const cos = Math.cos(angleRad);
     const sin = Math.sin(angleRad);
     gradientTransform = [
@@ -195,13 +228,13 @@ export function handleSetImageFill(payload: Record<string, unknown>): unknown {
   if (!node || !('fills' in node)) throw new Error('Node does not support fills');
 
   if (Array.isArray(payload.imageBytes)) {
-    const bytes = new Uint8Array(payload.imageBytes as number[]);
+    if (!payload.imageBytes.every((el: unknown) => typeof el === 'number')) {
+      throw new Error('imageBytes must contain only numbers');
+    }
+    const bytes = new Uint8Array(payload.imageBytes);
 
     const imageHash = figma.createImage(bytes).hash;
-    const scaleMode =
-      typeof payload.scaleMode === 'string'
-        ? (payload.scaleMode as ImagePaint['scaleMode'])
-        : 'FILL';
+    const scaleMode = checkEnum(payload.scaleMode, SCALE_MODES) ?? 'FILL';
     const opacity = typeof payload.opacity === 'number' ? payload.opacity : 1;
     const imageFill: ImagePaint = {
       type: 'IMAGE',
@@ -222,7 +255,7 @@ export function handleSetImageFill(payload: Record<string, unknown>): unknown {
       'Base64 strings not supported in plugin main thread. Please send image data as a byte array.'
     );
   } else if (typeof payload.imageUrl === 'string') {
-    const scaleMode = typeof payload.scaleMode === 'string' ? payload.scaleMode : 'FILL';
+    const scaleMode = checkEnum(payload.scaleMode, SCALE_MODES) ?? 'FILL';
     const opacity = typeof payload.opacity === 'number' ? payload.opacity : 1;
     return {
       nodeId: payload.nodeId,

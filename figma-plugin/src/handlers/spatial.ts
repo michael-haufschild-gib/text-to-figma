@@ -6,7 +6,9 @@
  */
 
 import { getNode, getNodeDimensions } from '../helpers.js';
-import { validatePayload, type ValidationRule } from '../validate.js';
+import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
+
+const DISTRIBUTE_AXES = ['HORIZONTAL', 'VERTICAL'] as const;
 
 const alignNodesRules: ValidationRule[] = [
   { field: 'nodeIds', type: 'array', required: true },
@@ -14,7 +16,7 @@ const alignNodesRules: ValidationRule[] = [
 ];
 const distributeNodesRules: ValidationRule[] = [
   { field: 'nodeIds', type: 'array', required: true },
-  { field: 'axis', type: 'string', required: true }
+  { field: 'axis', type: 'string', required: true, enum: DISTRIBUTE_AXES }
 ];
 const connectShapesRules: ValidationRule[] = [
   { field: 'sourceNodeId', type: 'string', required: true },
@@ -25,7 +27,13 @@ export function handleAlignNodes(payload: Record<string, unknown>): unknown {
   const error = validatePayload(payload, alignNodesRules);
   if (error !== null) throw new Error(error);
 
-  const nodeIds = payload.nodeIds as string[];
+  if (
+    !Array.isArray(payload.nodeIds) ||
+    !payload.nodeIds.every((el: unknown) => typeof el === 'string')
+  ) {
+    throw new Error('nodeIds must be an array of strings');
+  }
+  const nodeIds: string[] = payload.nodeIds;
   const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 2) throw new Error('At least 2 valid nodes required for alignment');
 
@@ -119,11 +127,18 @@ export function handleDistributeNodes(payload: Record<string, unknown>): unknown
   const error = validatePayload(payload, distributeNodesRules);
   if (error !== null) throw new Error(error);
 
-  const nodeIds = payload.nodeIds as string[];
+  if (
+    !Array.isArray(payload.nodeIds) ||
+    !payload.nodeIds.every((el: unknown) => typeof el === 'string')
+  ) {
+    throw new Error('nodeIds must be an array of strings');
+  }
+  const nodeIds: string[] = payload.nodeIds;
   const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 3) throw new Error('At least 3 valid nodes required for distribution');
 
-  const axis = payload.axis as 'HORIZONTAL' | 'VERTICAL';
+  const axis = checkEnum(payload.axis, DISTRIBUTE_AXES);
+  if (axis === undefined) throw new Error(`Invalid axis: ${String(payload.axis)}`);
   const method = typeof payload.method === 'string' ? payload.method : 'SPACING';
 
   nodes.sort((a, b) => (axis === 'HORIZONTAL' ? a.x - b.x : a.y - b.y));
@@ -134,8 +149,9 @@ export function handleDistributeNodes(payload: Record<string, unknown>): unknown
     throw new Error('Cannot distribute: need at least 2 nodes');
   }
 
+  const explicitSpacing = typeof payload.spacing === 'number' ? payload.spacing : undefined;
   if (method === 'SPACING') {
-    return distributeBySpacing(nodes, first, last, axis, payload.spacing as number | undefined);
+    return distributeBySpacing(nodes, first, last, axis, explicitSpacing);
   }
   return distributeByCenters(nodes, first, last, axis);
 }

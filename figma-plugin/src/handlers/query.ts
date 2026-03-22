@@ -34,9 +34,10 @@ export function handleGetNodeById(payload: Record<string, unknown>): unknown {
 }
 
 export function handleGetNodeByName(payload: Record<string, unknown>): unknown {
-  const findAll = (payload.findAll as boolean) || false;
-  const exactMatch = (payload.exactMatch as boolean) || false;
-  const searchName = (payload.name as string).toLowerCase();
+  const findAll = payload.findAll === true;
+  const exactMatch = payload.exactMatch === true;
+  if (typeof payload.name !== 'string') throw new Error('name must be a string');
+  const searchName = payload.name.toLowerCase();
 
   const results: Array<{ nodeId: string; name: string; type: string }> = [];
 
@@ -63,7 +64,8 @@ export function handleGetNodeByName(payload: Record<string, unknown>): unknown {
 }
 
 export function handleGetChildren(payload: Record<string, unknown>): unknown {
-  const node = getNode(payload.nodeId as string);
+  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
+  const node = getNode(payload.nodeId);
   if (!node || !('children' in node)) throw new Error('Node does not have children');
 
   const children = (node as FrameNode).children.map((child) => ({
@@ -83,7 +85,8 @@ export function handleGetChildren(payload: Record<string, unknown>): unknown {
 }
 
 export function handleGetParent(payload: Record<string, unknown>): unknown {
-  const node = getNode(payload.nodeId as string);
+  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
+  const node = getNode(payload.nodeId);
   if (!node) throw new Error('Node not found');
 
   const parent = node.parent;
@@ -97,7 +100,8 @@ export function handleGetParent(payload: Record<string, unknown>): unknown {
 }
 
 export function handleGetAbsoluteBounds(payload: Record<string, unknown>): unknown {
-  const node = getNode(payload.nodeId as string);
+  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
+  const node = getNode(payload.nodeId);
   if (!node) throw new Error('Node not found');
 
   return {
@@ -108,8 +112,11 @@ export function handleGetAbsoluteBounds(payload: Record<string, unknown>): unkno
 }
 
 export function handleGetRelativeBounds(payload: Record<string, unknown>): unknown {
-  const targetNode = getNode(payload.targetNodeId as string);
-  const referenceNode = getNode(payload.referenceNodeId as string);
+  if (typeof payload.targetNodeId !== 'string') throw new Error('targetNodeId must be a string');
+  if (typeof payload.referenceNodeId !== 'string')
+    throw new Error('referenceNodeId must be a string');
+  const targetNode = getNode(payload.targetNodeId);
+  const referenceNode = getNode(payload.referenceNodeId);
   if (!targetNode || !referenceNode) throw new Error('Target or reference node not found');
 
   const td = getNodeDimensions(targetNode);
@@ -175,7 +182,7 @@ export function handleGetPageHierarchy(): unknown {
 
 export function handleGetSelection(payload: Record<string, unknown>): unknown {
   const selection = figma.currentPage.selection;
-  const includeDetails = (payload.includeDetails as boolean) !== false;
+  const includeDetails = payload.includeDetails !== false;
 
   if (selection.length === 0) {
     return { count: 0, selection: [], message: 'No nodes selected' };
