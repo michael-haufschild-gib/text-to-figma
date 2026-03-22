@@ -15,6 +15,12 @@
     "noEmit": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["**/*.ts", "../mcp-server/src/**/*.ts", "../vitest-globals.d.ts"],
+  "include": [
+    "**/*.ts",
+    "../mcp-server/src/**/*.ts",
+    "../figma-plugin/src/**/*.ts",
+    "../vitest-globals.d.ts"
+  ],
+  "files": ["../node_modules/@figma/plugin-typings/plugin-api.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
