@@ -160,11 +160,7 @@ set_layout_sizing({
   vertical: 'FIXED'
 });
 
-// Fixed height only
-set_size({
-  nodeId: "input-frame",
-  height: 48  // Only height, NOT width
-});
+// Fixed height — set via create_frame({ height: 48 }) or resize after creation
 
 // Background
 set_fills({
@@ -240,11 +236,7 @@ create_frame({
   itemSpacing: 0
 });
 
-// Fixed width for image sizing
-set_size({
-  nodeId: "card",
-  width: 320
-});
+// Fixed width — set via create_frame({ width: 320, horizontalSizing: 'FIXED' })
 
 // Background
 set_fills({
@@ -278,11 +270,7 @@ create_frame({
   parentId: "card"
 });
 
-set_size({
-  nodeId: "image",
-  width: 320,
-  height: 200
-});
+// Dimensions set via create_frame({ width: 320, height: 200 }) above
 
 set_fills({
   nodeId: "image",
@@ -360,29 +348,6 @@ create_text({
 **Remember**: ALWAYS think HTML first, then translate to Figma. The width strategy comes naturally from CSS.
 `;
 
-/**
- *
- */
 export function getFewShotPrompt(): string {
   return FEW_SHOT_PROMPT;
-}
-
-/**
- *
- */
-export function getFewShotExamples() {
-  return [
-    {
-      title: 'Button Component',
-      pattern: 'width: fit-content → HUG mode'
-    },
-    {
-      title: 'Input Field',
-      pattern: 'width: 100% → FILL mode'
-    },
-    {
-      title: 'Card Component',
-      pattern: 'width: 320px → FIXED (for images)'
-    }
-  ];
 }

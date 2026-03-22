@@ -125,7 +125,7 @@ await create_text({ content: "...", parentId: frame.frameId });
 |----------|----------------|
 | \`width: 100%\` | \`set_layout_sizing({ horizontal: 'FILL' })\` |
 | \`width: fit-content\` | \`set_layout_sizing({ horizontal: 'HUG' })\` |
-| \`width: 400px\` | \`set_size({ width: 400 })\` (only for fixed layouts) |
+| \`width: 400px\` | \`create_frame({ width: 400, horizontalSizing: 'FIXED' })\` (only for fixed layouts) |
 
 **Default behavior**: If you don't specify width in \`create_frame\`, it will HUG by default.
 
@@ -170,10 +170,8 @@ Valid weights: 100, 200, 300, 400, 500, 600, 700, 800, 900
 - \`set_layout_align\`: Alignment (like \`justify-content\`, \`align-items\`)
 
 ### Validation Primitives
-- \`validate_design_tokens\`: Validate spacing, typography, colors
-- \`validate_spacing\`: Check 8pt grid
-- \`validate_typography\`: Check type scale
-- \`validate_contrast\`: Check WCAG compliance
+- \`validate_design_tokens\`: Validate spacing, typography, and color tokens in one call
+- \`check_wcag_contrast\`: Check WCAG AA/AAA contrast compliance with suggestions
 
 ## Complete Example Workflow
 
@@ -270,7 +268,7 @@ create_frame({
 // Input field (width: 100%)
 const input = await create_frame({ layoutMode: 'HORIZONTAL', padding: 16 });
 await set_layout_sizing({ nodeId: input.frameId, horizontal: 'FILL', vertical: 'FIXED' });
-await set_size({ nodeId: input.frameId, height: 48 });
+// Height set via create_frame({ height: 48 }) or set_layout_sizing({ vertical: 'FIXED' })
 
 // Button (width: fit-content)
 const button = await create_frame({ layoutMode: 'HORIZONTAL', padding: 16 });
@@ -278,7 +276,7 @@ await set_layout_sizing({ nodeId: button.frameId, horizontal: 'HUG', vertical: '
 
 // Image placeholder (width: 300px)
 const image = await create_frame({ layoutMode: 'NONE' });
-await set_size({ nodeId: image.frameId, width: 300, height: 200 });
+// Dimensions set via create_frame({ width: 300, height: 200 })
 \`\`\`
 
 ## Response Format
@@ -402,40 +400,6 @@ Use these tools aggressively for complex drawings:
 5. **Verify constantly** - get_absolute_bounds, export_node
 `;
 
-/**
- *
- */
 export function getZeroShotPrompt(): string {
   return ZERO_SHOT_SYSTEM_PROMPT;
-}
-
-/**
- *
- */
-export function getCondensedPrompt(): string {
-  return `# Text-to-Figma Quick Reference
-
-## Workflow
-1. Think HTML/SVG first
-2. Extract layout patterns
-3. Translate to Figma primitives
-4. Apply width strategy
-
-## Width Strategy
-- \`width: 100%\` → FILL
-- \`width: fit-content\` → HUG
-- \`width: 400px\` → FIXED (sparingly)
-
-## Constraints
-- Spacing: 0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 128
-- Typography: 12, 16, 20, 24, 32, 40, 48, 64
-- Contrast: AA ≥4.5:1, AAA ≥7.0:1
-
-## HTML → Figma
-- \`<div style="display: flex">\` → \`create_frame({ layoutMode })\`
-- \`<label>\` → \`create_text()\`
-- \`background-color\` → \`set_fills()\`
-- \`border\` → \`set_stroke()\`
-- \`box-shadow\` → \`apply_effects()\`
-`;
 }
