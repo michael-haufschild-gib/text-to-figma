@@ -53,6 +53,24 @@ export function createServerState(): ServerState {
 }
 
 /**
+ * Normalize WebSocket RawData into a single Buffer.
+ *
+ * RawData from the `ws` library is `Buffer | ArrayBuffer | Buffer[]`.
+ * Calling `.toString()` directly on ArrayBuffer yields "[object ArrayBuffer]"
+ * and on Buffer[] yields comma-joined fragments — both corrupt JSON parsing.
+ */
+export function normalizeRawData(data: RawData): Buffer {
+  if (Buffer.isBuffer(data)) {
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return Buffer.concat(data);
+  }
+  // ArrayBuffer
+  return Buffer.from(data);
+}
+
+/**
  * Validate and classify a parsed JSON object as a BridgeMessage.
  * Returns null if the object does not match any known message shape.
  */
@@ -238,7 +256,8 @@ function setupConnection(state: ServerState, ws: WebSocket): void {
   // Handle incoming messages
   ws.on('message', (data: RawData) => {
     try {
-      const messageSize = Buffer.byteLength(data as Buffer);
+      const buffer = normalizeRawData(data);
+      const messageSize = buffer.byteLength;
       if (messageSize > MAX_MESSAGE_SIZE) {
         console.error(
           `Message too large from ${clientId}: ${messageSize} bytes (max: ${MAX_MESSAGE_SIZE})`
@@ -249,7 +268,7 @@ function setupConnection(state: ServerState, ws: WebSocket): void {
         return;
       }
 
-      const parsed: unknown = JSON.parse(data.toString());
+      const parsed: unknown = JSON.parse(buffer.toString());
       const message = validateMessage(parsed);
       if (!message) {
         console.error(`Invalid message structure from ${clientId}:`, parsed);

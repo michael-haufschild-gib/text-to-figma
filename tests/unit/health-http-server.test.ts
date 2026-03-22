@@ -40,24 +40,34 @@ const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) 
   };
 };
 
-/** Helper: make an HTTP request and return status + body */
+/** Helper: make an HTTP request and return status, body, and headers */
 function httpGet(
   port: number,
   path: string,
-  method = 'GET'
-): Promise<{ status: number; body: Record<string, unknown> }> {
+  method = 'GET',
+  headers: Record<string, string> = {}
+): Promise<{
+  status: number;
+  body: Record<string, unknown>;
+  headers: http.IncomingHttpHeaders;
+}> {
   return new Promise((resolve, reject) => {
-    const req = http.request({ hostname: '127.0.0.1', port, path, method }, (res) => {
+    const req = http.request({ hostname: '127.0.0.1', port, path, method, headers }, (res) => {
       let data = '';
       res.on('data', (chunk) => (data += chunk));
       res.on('end', () => {
         try {
           resolve({
             status: res.statusCode ?? 0,
-            body: JSON.parse(data) as Record<string, unknown>
+            body: JSON.parse(data) as Record<string, unknown>,
+            headers: res.headers
           });
         } catch {
-          resolve({ status: res.statusCode ?? 0, body: { raw: data } });
+          resolve({
+            status: res.statusCode ?? 0,
+            body: { raw: data },
+            headers: res.headers
+          });
         }
       });
     });
@@ -192,9 +202,67 @@ describe('HealthCheckServer HTTP endpoints', () => {
       expect(body.error).toBe('Method not allowed');
     });
 
-    it('returns 200 for OPTIONS (CORS preflight)', async () => {
-      const { status } = await httpGet(port, '/health', 'OPTIONS');
+    it('returns 200 for OPTIONS without origin (no CORS headers)', async () => {
+      const { status, headers } = await httpGet(port, '/health', 'OPTIONS');
       expect(status).toBe(200);
+      expect(headers['access-control-allow-origin']).toBeUndefined();
+    });
+  });
+
+  describe('CORS', () => {
+    it('reflects localhost origin in CORS headers', async () => {
+      const { status, headers } = await httpGet(port, '/health', 'GET', {
+        Origin: 'http://localhost:3000'
+      });
+      expect(status).toBe(200);
+      expect(headers['access-control-allow-origin']).toBe('http://localhost:3000');
+      expect(headers['access-control-allow-methods']).toBe('GET, OPTIONS');
+      expect(headers['vary']).toBe('Origin');
+    });
+
+    it('reflects 127.0.0.1 origin in CORS headers', async () => {
+      const { headers } = await httpGet(port, '/health', 'GET', {
+        Origin: 'http://127.0.0.1:8080'
+      });
+      expect(headers['access-control-allow-origin']).toBe('http://127.0.0.1:8080');
+    });
+
+    it('reflects IPv6 localhost origin in CORS headers', async () => {
+      const { headers } = await httpGet(port, '/health', 'GET', {
+        Origin: 'http://[::1]:5173'
+      });
+      expect(headers['access-control-allow-origin']).toBe('http://[::1]:5173');
+    });
+
+    it('omits CORS headers for non-localhost origin', async () => {
+      const { headers } = await httpGet(port, '/health', 'GET', {
+        Origin: 'https://evil.example.com'
+      });
+      expect(headers['access-control-allow-origin']).toBeUndefined();
+      expect(headers['vary']).toBe('Origin');
+    });
+
+    it('omits CORS headers when no Origin header is sent', async () => {
+      const { headers } = await httpGet(port, '/health', 'GET');
+      expect(headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    it('OPTIONS preflight with localhost origin returns CORS headers', async () => {
+      const { status, headers } = await httpGet(port, '/health', 'OPTIONS', {
+        Origin: 'http://localhost:3000'
+      });
+      expect(status).toBe(200);
+      expect(headers['access-control-allow-origin']).toBe('http://localhost:3000');
+      expect(headers['access-control-allow-methods']).toBe('GET, OPTIONS');
+      expect(headers['access-control-allow-headers']).toBe('Content-Type');
+    });
+
+    it('OPTIONS preflight with non-localhost origin omits CORS headers', async () => {
+      const { status, headers } = await httpGet(port, '/health', 'OPTIONS', {
+        Origin: 'https://attacker.com'
+      });
+      expect(status).toBe(200);
+      expect(headers['access-control-allow-origin']).toBeUndefined();
     });
   });
 

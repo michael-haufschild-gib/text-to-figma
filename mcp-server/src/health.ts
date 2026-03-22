@@ -16,6 +16,23 @@ import {
 } from './monitoring/health-check.js';
 
 /**
+ * Localhost origin pattern for CORS validation.
+ * Matches http://localhost, http://127.0.0.1, http://[::1] with optional port.
+ */
+const LOCALHOST_ORIGIN_RE = /^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/;
+
+/**
+ * Check whether an HTTP Origin header value is from localhost.
+ * Returns true only for http:// origins on localhost, 127.0.0.1, or [::1].
+ */
+export function isLocalhostOrigin(origin: string | undefined): origin is string {
+  if (origin === undefined) {
+    return false;
+  }
+  return LOCALHOST_ORIGIN_RE.test(origin);
+}
+
+/**
  * Health status exposed over HTTP.
  *
  * Derived from HealthCheckRegistry results.
@@ -99,10 +116,13 @@ export class HealthCheckServer {
     }
 
     this.server = http.createServer((req, res) => {
-      // CORS headers for browser access
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      // CORS headers only for localhost origins — prevents arbitrary web pages from probing
+      if (isLocalhostOrigin(req.headers.origin)) {
+        res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      }
+      res.setHeader('Vary', 'Origin');
 
       // Handle preflight
       if (req.method === 'OPTIONS') {
