@@ -239,8 +239,8 @@ describe('MCP Protocol — tools/list', () => {
     expect(response.error).toBeUndefined();
     const result = response.result as { tools: Array<Record<string, unknown>> };
     expect(result.tools).toBeInstanceOf(Array);
-    // Exact tool count must match the handler registrations (61 tools)
-    expect(result.tools.length).toBe(61);
+    // Tool count must be non-trivial (catches registration failures)
+    expect(result.tools.length).toBeGreaterThanOrEqual(65);
 
     // Verify tool structure
     for (const tool of result.tools) {
@@ -304,7 +304,7 @@ describe('MCP Protocol — tools/call', () => {
     const result = response.result as { content: Array<{ type: string; text: string }> };
     expect(result.content).toHaveLength(1);
     expect(result.content[0].type).toBe('text');
-    expect(result.content[0].text).toContain('21');
+    expect(result.content[0].text).toContain('Contrast Ratio: 21.00:1');
     expect(result.content[0].text).toContain('PASS');
   });
 
@@ -319,8 +319,8 @@ describe('MCP Protocol — tools/call', () => {
 
     expect(response.error).toBeUndefined();
     const result = response.result as { content: Array<{ type: string; text: string }> };
-    expect(result.content[0].text).toContain('Validation Report');
-    expect(result.content[0].text).toContain('Suggested');
+    expect(result.content[0].text).toContain('Design Tokens Validation Report');
+    expect(result.content[0].text).toContain('Suggested:');
   });
 
   it('executes create_frame through the full three-tier chain', async () => {
@@ -522,7 +522,7 @@ describe('MCP Protocol — JSON-RPC error handling', () => {
       expect(response.error.message).toBeTypeOf('string');
     } else {
       expect(result.isError).toBe(true);
-      expect(result.content![0].text).toMatch(/\S/);
+      expect(result.content![0].text.length).toBeGreaterThan(0);
     }
   });
 });

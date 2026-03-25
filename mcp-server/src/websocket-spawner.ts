@@ -19,18 +19,31 @@ const DEFAULT_WEBSOCKET_PORT = 8080;
 const STARTUP_TIMEOUT = 10000; // 10 seconds to wait for server to start
 const PORT_CHECK_INTERVAL = 200; // Check every 200ms
 
+interface WebSocketTarget {
+  port: number;
+  hostname: string;
+  isLocal: boolean;
+}
+
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
+
 /**
- * Extract port from the configured WebSocket URL.
- * Falls back to DEFAULT_WEBSOCKET_PORT if URL parsing fails.
+ * Extract port and hostname from the configured WebSocket URL.
+ * Falls back to localhost:DEFAULT_WEBSOCKET_PORT if URL parsing fails.
  */
-function getWebSocketPort(): number {
+function getWebSocketTarget(): WebSocketTarget {
   try {
     const config = getConfig();
     const url = new URL(config.FIGMA_WS_URL);
     const port = parseInt(url.port, 10);
-    return Number.isFinite(port) && port > 0 ? port : DEFAULT_WEBSOCKET_PORT;
+    const hostname = url.hostname;
+    return {
+      port: Number.isFinite(port) && port > 0 ? port : DEFAULT_WEBSOCKET_PORT,
+      hostname,
+      isLocal: LOCAL_HOSTNAMES.has(hostname)
+    };
   } catch {
-    return DEFAULT_WEBSOCKET_PORT;
+    return { port: DEFAULT_WEBSOCKET_PORT, hostname: 'localhost', isLocal: true };
   }
 }
 
@@ -39,8 +52,9 @@ let spawnedProcess: ChildProcess | null = null;
 /**
  * Check if a port is in use by trying to connect to it
  * @param port
+ * @param hostname
  */
-async function isPortInUse(port: number): Promise<boolean> {
+async function isPortInUse(port: number, hostname: string): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
     const timeout = setTimeout(() => {
@@ -51,20 +65,16 @@ async function isPortInUse(port: number): Promise<boolean> {
     socket.on('connect', () => {
       clearTimeout(timeout);
       socket.destroy();
-      resolve(true); // Port is in use - something is listening
+      resolve(true);
     });
 
-    socket.on('error', (err: NodeJS.ErrnoException) => {
+    socket.on('error', () => {
       clearTimeout(timeout);
       socket.destroy();
-      if (err.code === 'ECONNREFUSED') {
-        resolve(false); // Port is free - nothing listening
-      } else {
-        resolve(false); // Assume free on other errors
-      }
+      resolve(false);
     });
 
-    socket.connect(port, '127.0.0.1');
+    socket.connect(port, hostname);
   });
 }
 
@@ -95,25 +105,26 @@ async function canBindPort(port: number): Promise<boolean> {
  * Check if our WebSocket server is responding on the port
  * Uses actual WebSocket connection to verify it's a WS server
  * @param port
+ * @param hostname
  */
-async function isWebSocketServerReady(port: number): Promise<boolean> {
+async function isWebSocketServerReady(port: number, hostname: string): Promise<boolean> {
   return new Promise((resolve) => {
     const timeout = setTimeout(() => {
       resolve(false);
     }, 2000);
 
     try {
-      const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+      const ws = new WebSocket(`ws://${hostname}:${port}`);
 
       ws.on('open', () => {
         clearTimeout(timeout);
         ws.close();
-        resolve(true); // Successfully connected to a WebSocket server
+        resolve(true);
       });
 
       ws.on('error', () => {
         clearTimeout(timeout);
-        resolve(false); // Not a WebSocket server
+        resolve(false);
       });
     } catch {
       clearTimeout(timeout);
@@ -125,13 +136,18 @@ async function isWebSocketServerReady(port: number): Promise<boolean> {
 /**
  * Wait for the WebSocket server to become ready
  * @param port
+ * @param hostname
  * @param timeoutMs
  */
-async function waitForServerReady(port: number, timeoutMs: number): Promise<boolean> {
+async function waitForServerReady(
+  port: number,
+  hostname: string,
+  timeoutMs: number
+): Promise<boolean> {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeoutMs) {
-    if (await isWebSocketServerReady(port)) {
+    if (await isWebSocketServerReady(port, hostname)) {
       return true;
     }
     await new Promise((resolve) => setTimeout(resolve, PORT_CHECK_INTERVAL));
@@ -181,23 +197,27 @@ export interface SpawnResult {
  * Will spawn it if not already running.
  */
 export async function ensureWebSocketServer(): Promise<SpawnResult> {
-  const port = getWebSocketPort();
+  const { port, hostname, isLocal } = getWebSocketTarget();
 
-  console.error(`[WebSocket Spawner] Checking if WebSocket server is running on port ${port}...`);
+  console.error(
+    `[WebSocket Spawner] Checking if WebSocket server is running on ${hostname}:${port}...`
+  );
 
-  // First check if something is already listening on the port
-  const portInUse = await isPortInUse(port);
+  // First check if something is already listening
+  const portUsed = await isPortInUse(port, isLocal ? '127.0.0.1' : hostname);
 
-  if (portInUse) {
-    // Port has something listening - check if it responds like a WebSocket server
-    const isReady = await isWebSocketServerReady(port);
+  if (portUsed) {
+    const isReady = await isWebSocketServerReady(port, isLocal ? '127.0.0.1' : hostname);
 
     if (isReady) {
-      console.error(`[WebSocket Spawner] WebSocket server already running on port ${port}`);
+      console.error(`[WebSocket Spawner] WebSocket server already running on ${hostname}:${port}`);
+      return { success: true, alreadyRunning: true, spawned: false, port };
+    } else if (!isLocal) {
       return {
-        success: true,
-        alreadyRunning: true,
+        success: false,
+        alreadyRunning: false,
         spawned: false,
+        error: `Remote host ${hostname}:${port} is reachable but not responding as a WebSocket server`,
         port
       };
     } else {
@@ -205,43 +225,52 @@ export async function ensureWebSocketServer(): Promise<SpawnResult> {
     }
   }
 
-  // Nothing listening, but check if we can actually bind the port
+  // Remote host not reachable — cannot spawn there
+  if (!isLocal) {
+    console.error(
+      `[WebSocket Spawner] Remote WebSocket server at ${hostname}:${port} is not reachable. ` +
+        `Cannot auto-spawn on a remote host.`
+    );
+    return {
+      success: false,
+      alreadyRunning: false,
+      spawned: false,
+      error: `Remote WebSocket server at ${hostname}:${port} is not reachable. Start it manually or use a local FIGMA_WS_URL.`,
+      port
+    };
+  }
+
+  // Local host — check if we can bind the port
   const canBind = await canBindPort(port);
   if (!canBind) {
     return portInUseResult(port);
   }
 
-  // Port is free - spawn the WebSocket server
+  return spawnLocalServer(port);
+}
+
+async function spawnLocalServer(port: number): Promise<SpawnResult> {
   console.error(`[WebSocket Spawner] Port ${port} is free. Spawning WebSocket server...`);
 
   const serverPath = getWebSocketServerPath();
   console.error(`[WebSocket Spawner] Server path: ${serverPath}`);
 
   try {
-    // Spawn the WebSocket server as a detached process
     spawnedProcess = spawn('node', [serverPath], {
-      detached: false, // Keep attached so it terminates with the MCP server
+      detached: false,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: {
-        ...process.env,
-        PORT: String(port)
-      }
+      env: { ...process.env, PORT: String(port) }
     });
 
-    // Log output from the spawned process
-    spawnedProcess.stdout?.on('data', (data: Buffer) => {
-      const lines = data.toString().trim().split('\n');
-      for (const line of lines) {
-        console.error(`[WebSocket Server] ${line}`);
-      }
-    });
-
-    spawnedProcess.stderr?.on('data', (data: Buffer) => {
-      const lines = data.toString().trim().split('\n');
-      for (const line of lines) {
-        console.error(`[WebSocket Server] ${line}`);
-      }
-    });
+    const pipeOutput = (stream: NodeJS.ReadableStream | null): void => {
+      stream?.on('data', (data: Buffer) => {
+        for (const line of data.toString().trim().split('\n')) {
+          console.error(`[WebSocket Server] ${line}`);
+        }
+      });
+    };
+    pipeOutput(spawnedProcess.stdout);
+    pipeOutput(spawnedProcess.stderr);
 
     spawnedProcess.on('error', (err) => {
       console.error(`[WebSocket Spawner] Failed to spawn server: ${err.message}`);
@@ -256,23 +285,16 @@ export async function ensureWebSocketServer(): Promise<SpawnResult> {
       spawnedProcess = null;
     });
 
-    // Wait for the server to become ready
     console.error(`[WebSocket Spawner] Waiting for server to become ready...`);
-    const isReady = await waitForServerReady(port, STARTUP_TIMEOUT);
+    const isReady = await waitForServerReady(port, '127.0.0.1', STARTUP_TIMEOUT);
 
     if (isReady) {
-      console.error(`[WebSocket Spawner] ✓ WebSocket server started successfully on port ${port}`);
-      return {
-        success: true,
-        alreadyRunning: false,
-        spawned: true,
-        port
-      };
+      console.error(`[WebSocket Spawner] WebSocket server started successfully on port ${port}`);
+      return { success: true, alreadyRunning: false, spawned: true, port };
     } else {
       console.error(
-        `[WebSocket Spawner] ✗ WebSocket server failed to start within ${STARTUP_TIMEOUT / 1000} seconds`
+        `[WebSocket Spawner] FAIL: Server failed to start within ${STARTUP_TIMEOUT / 1000}s`
       );
-      // Kill the process if it's still running but not responding
       spawnedProcess.kill();
       spawnedProcess = null;
       return {

@@ -6,6 +6,42 @@ import { IncomingMessage } from 'http';
 export const MAX_MESSAGE_SIZE = 10 * 1024 * 1024; // 10MB - prevent DoS via large payloads
 export const HEARTBEAT_INTERVAL = 30000; // 30 seconds - ping interval
 export const HEARTBEAT_TIMEOUT = 60000; // 60 seconds - connection timeout
+export const RATE_LIMIT_BURST = 500; // Max tokens in bucket
+export const RATE_LIMIT_REFILL_RATE = 200; // Tokens per second
+
+/**
+ * Token bucket rate limiter for per-client message throttling.
+ * Prevents a single client from flooding the bridge with requests.
+ */
+export class TokenBucket {
+  private tokens: number;
+  private lastRefill: number;
+
+  constructor(
+    private readonly burst: number = RATE_LIMIT_BURST,
+    private readonly refillRate: number = RATE_LIMIT_REFILL_RATE
+  ) {
+    this.tokens = burst;
+    this.lastRefill = Date.now();
+  }
+
+  /** Try to consume one token. Returns true if allowed, false if rate-limited. */
+  consume(): boolean {
+    this.refill();
+    if (this.tokens >= 1) {
+      this.tokens--;
+      return true;
+    }
+    return false;
+  }
+
+  private refill(): void {
+    const now = Date.now();
+    const elapsed = (now - this.lastRefill) / 1000;
+    this.tokens = Math.min(this.burst, this.tokens + elapsed * this.refillRate);
+    this.lastRefill = now;
+  }
+}
 
 export interface ClientRecord {
   ws: WebSocket;
@@ -13,6 +49,7 @@ export interface ClientRecord {
   lastPong: number;
   isFigma?: boolean;
   isMCP?: boolean;
+  rateLimiter: TokenBucket;
 }
 
 export interface FigmaHelloMessage {
@@ -159,6 +196,21 @@ export function routeRequest(state: ServerState, message: RequestMessage, client
     }
   } else {
     console.error('  No Figma plugin connected!');
+    // Send error response back to the requesting MCP client
+    const originClient = state.clients.get(clientId);
+    if (originClient?.ws.readyState === WebSocket.OPEN && typeof message.id === 'string') {
+      originClient.ws.send(
+        JSON.stringify({
+          id: message.id,
+          success: false,
+          error: 'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin.'
+        })
+      );
+    }
+    // Clean up the pending origin since we handled it
+    if (typeof message.id === 'string') {
+      state.pendingRequestOrigins.delete(message.id);
+    }
   }
 }
 
@@ -187,12 +239,7 @@ export function routeResponse(
       console.log(`  Routed to originating MCP client: ${originClientId}`);
     }
   } else {
-    // Fallback: broadcast to all MCP clients (for requests without tracked IDs)
-    for (const [, mcpClient] of state.clients.entries()) {
-      if (mcpClient.isMCP && mcpClient.ws.readyState === WebSocket.OPEN) {
-        mcpClient.ws.send(JSON.stringify(message));
-      }
-    }
+    console.warn(`  Orphan response (no tracked origin for id=${message.id}), dropping`);
   }
 }
 
@@ -226,7 +273,58 @@ export interface ServerHandle {
   wss: WebSocketServer;
   state: ServerState;
   heartbeatInterval: ReturnType<typeof setInterval>;
-  shutdown: (signal: string) => void;
+  shutdown: (signal: string) => Promise<void>;
+}
+
+/**
+ * Process an incoming WebSocket message: validate size, rate-limit, parse, route.
+ */
+function handleIncomingMessage(
+  state: ServerState,
+  ws: WebSocket,
+  clientId: string,
+  data: RawData
+): void {
+  try {
+    const buffer = normalizeRawData(data);
+    const messageSize = buffer.byteLength;
+    if (messageSize > MAX_MESSAGE_SIZE) {
+      console.error(
+        `Message too large from ${clientId}: ${messageSize} bytes (max: ${MAX_MESSAGE_SIZE})`
+      );
+      ws.send(
+        JSON.stringify({ type: 'error', error: 'Message size exceeds maximum allowed size' })
+      );
+      return;
+    }
+
+    // Rate limiting — prevent a single client from flooding the bridge
+    const client = state.clients.get(clientId);
+    if (client && !client.rateLimiter.consume()) {
+      console.warn(`Rate limit exceeded for ${clientId}`);
+      ws.send(JSON.stringify({ type: 'error', error: 'Rate limit exceeded. Slow down requests.' }));
+      return;
+    }
+
+    const parsed: unknown = JSON.parse(buffer.toString());
+    const message = validateMessage(parsed);
+    if (!message) {
+      console.error(`Invalid message structure from ${clientId}:`, parsed);
+      ws.send(JSON.stringify({ type: 'error', error: 'Unrecognized message format' }));
+      return;
+    }
+
+    if (!handleFigmaRegistration(state, message, clientId, ws)) {
+      routeMessage(state, message, clientId);
+    }
+  } catch (error) {
+    console.error(`Error parsing message from ${clientId}:`, error);
+    try {
+      ws.send(JSON.stringify({ type: 'error', error: 'Failed to parse message' }));
+    } catch (sendError) {
+      console.error(`Failed to send error response to ${clientId}:`, sendError);
+    }
+  }
 }
 
 /**
@@ -237,11 +335,12 @@ function setupConnection(state: ServerState, ws: WebSocket): void {
 
   console.log(`Client connected: ${clientId}`);
 
-  // Store client connection with heartbeat info
+  // Store client connection with heartbeat info and rate limiter
   state.clients.set(clientId, {
     ws,
     isAlive: true,
-    lastPong: Date.now()
+    lastPong: Date.now(),
+    rateLimiter: new TokenBucket()
   });
 
   // Set up ping/pong for connection health
@@ -255,38 +354,7 @@ function setupConnection(state: ServerState, ws: WebSocket): void {
 
   // Handle incoming messages
   ws.on('message', (data: RawData) => {
-    try {
-      const buffer = normalizeRawData(data);
-      const messageSize = buffer.byteLength;
-      if (messageSize > MAX_MESSAGE_SIZE) {
-        console.error(
-          `Message too large from ${clientId}: ${messageSize} bytes (max: ${MAX_MESSAGE_SIZE})`
-        );
-        ws.send(
-          JSON.stringify({ type: 'error', error: 'Message size exceeds maximum allowed size' })
-        );
-        return;
-      }
-
-      const parsed: unknown = JSON.parse(buffer.toString());
-      const message = validateMessage(parsed);
-      if (!message) {
-        console.error(`Invalid message structure from ${clientId}:`, parsed);
-        ws.send(JSON.stringify({ type: 'error', error: 'Unrecognized message format' }));
-        return;
-      }
-
-      if (!handleFigmaRegistration(state, message, clientId, ws)) {
-        routeMessage(state, message, clientId);
-      }
-    } catch (error) {
-      console.error(`Error parsing message from ${clientId}:`, error);
-      try {
-        ws.send(JSON.stringify({ type: 'error', error: 'Failed to parse message' }));
-      } catch (sendError) {
-        console.error(`Failed to send error response to ${clientId}:`, sendError);
-      }
-    }
+    handleIncomingMessage(state, ws, clientId, data);
   });
 
   ws.on('close', () => {
@@ -295,6 +363,20 @@ function setupConnection(state: ServerState, ws: WebSocket): void {
     if (clientId === state.figmaPluginClient) {
       console.log(`  Primary Figma plugin disconnected, clearing assignment`);
       state.figmaPluginClient = null;
+      // Fail all pending requests from MCP clients
+      for (const [reqId, originId] of state.pendingRequestOrigins.entries()) {
+        const originClient = state.clients.get(originId);
+        if (originClient?.ws.readyState === WebSocket.OPEN) {
+          originClient.ws.send(
+            JSON.stringify({
+              id: reqId,
+              success: false,
+              error: 'Figma plugin disconnected during operation'
+            })
+          );
+        }
+        state.pendingRequestOrigins.delete(reqId);
+      }
     }
     state.clients.delete(clientId);
     // Clean up any pending request origins for this client
@@ -376,29 +458,25 @@ export function createServer(port: number): ServerHandle {
     }
   }, HEARTBEAT_INTERVAL);
 
-  // Graceful shutdown handler
-  function shutdown(signal: string): void {
+  /**
+   * Graceful shutdown — closes connections and server without calling process.exit().
+   * The caller (CLI entrypoint) is responsible for exiting the process.
+   */
+  function shutdown(signal: string): Promise<void> {
     console.log(`\n${signal} received, shutting down WebSocket server...`);
 
-    // Clear heartbeat interval
     clearInterval(heartbeatInterval);
 
-    // Close all client connections
     for (const [_clientId, client] of state.clients.entries()) {
       client.ws.close();
     }
 
-    // Close server
-    wss.close(() => {
-      console.log('WebSocket server closed');
-      process.exit(0);
+    return new Promise<void>((resolve) => {
+      wss.close(() => {
+        console.log('WebSocket server closed');
+        resolve();
+      });
     });
-
-    // Force exit after timeout if graceful shutdown stalls
-    setTimeout(() => {
-      console.error('Graceful shutdown timed out, forcing exit');
-      process.exit(1);
-    }, 5000);
   }
 
   return { wss, state, heartbeatInterval, shutdown };
@@ -409,6 +487,19 @@ const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMainModule) {
   const port = parseInt(process.env.PORT ?? '8080', 10);
   const { shutdown } = createServer(port);
-  process.on('SIGINT', () => shutdown('SIGINT'));
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+  const handleSignal = (signal: string): void => {
+    const forceTimer = setTimeout(() => {
+      console.error('Graceful shutdown timed out, forcing exit');
+      process.exit(1);
+    }, 5000);
+    forceTimer.unref();
+
+    void shutdown(signal).then(() => {
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGINT', () => handleSignal('SIGINT'));
+  process.on('SIGTERM', () => handleSignal('SIGTERM'));
 }

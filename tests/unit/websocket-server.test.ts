@@ -10,6 +10,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import {
+  normalizeRawData,
   validateMessage,
   handleFigmaRegistration,
   routeRequest,
@@ -43,6 +44,69 @@ function mockClient(overrides: Partial<ClientRecord> = {}): ClientRecord {
     ...overrides
   };
 }
+
+// ─── normalizeRawData ────────────────────────────────────────────────
+
+describe('normalizeRawData', () => {
+  it('returns the same Buffer when given a Buffer', () => {
+    const buf = Buffer.from('hello');
+    const result = normalizeRawData(buf);
+    expect(result).toBe(buf);
+    expect(result.toString()).toBe('hello');
+  });
+
+  it('converts ArrayBuffer to Buffer', () => {
+    const ab = new ArrayBuffer(5);
+    const view = new Uint8Array(ab);
+    view.set([104, 101, 108, 108, 111]); // "hello"
+    const result = normalizeRawData(ab);
+    expect(Buffer.isBuffer(result)).toBe(true);
+    expect(result.toString()).toBe('hello');
+  });
+
+  it('concatenates Buffer[] fragments into a single Buffer', () => {
+    const fragments = [Buffer.from('hel'), Buffer.from('lo')];
+    const result = normalizeRawData(fragments);
+    expect(Buffer.isBuffer(result)).toBe(true);
+    expect(result.toString()).toBe('hello');
+  });
+
+  it('handles empty Buffer', () => {
+    const result = normalizeRawData(Buffer.alloc(0));
+    expect(result.toString()).toBe('');
+  });
+
+  it('handles empty ArrayBuffer', () => {
+    const result = normalizeRawData(new ArrayBuffer(0));
+    expect(result.toString()).toBe('');
+  });
+
+  it('handles empty Buffer array', () => {
+    const result = normalizeRawData([]);
+    expect(result.toString()).toBe('');
+  });
+
+  it('preserves JSON content through Buffer path', () => {
+    const json = JSON.stringify({ type: 'test', payload: { value: 42 } });
+    const result = normalizeRawData(Buffer.from(json));
+    expect(JSON.parse(result.toString())).toEqual({ type: 'test', payload: { value: 42 } });
+  });
+
+  it('preserves JSON content through ArrayBuffer path', () => {
+    const json = JSON.stringify({ id: 'req_1', success: true });
+    const encoder = new TextEncoder();
+    const ab = encoder.encode(json).buffer;
+    const result = normalizeRawData(ab);
+    expect(JSON.parse(result.toString())).toEqual({ id: 'req_1', success: true });
+  });
+
+  it('preserves JSON content through Buffer[] path', () => {
+    const part1 = Buffer.from('{"type":');
+    const part2 = Buffer.from('"test"}');
+    const result = normalizeRawData([part1, part2]);
+    expect(JSON.parse(result.toString())).toEqual({ type: 'test' });
+  });
+});
 
 // ─── validateMessage ────────────────────────────────────────────────
 
@@ -200,7 +264,10 @@ describe('routeRequest', () => {
   });
 
   it('tracks request origin by message id', () => {
+    const figmaWs = mockWs();
+    state.clients.set('figma-1', mockClient({ ws: figmaWs }));
     state.clients.set('mcp-1', mockClient());
+    state.figmaPluginClient = 'figma-1';
 
     routeRequest(state, { type: 'create_frame', payload: {}, id: 'req-42' }, 'mcp-1');
     expect(state.pendingRequestOrigins.get('req-42')).toBe('mcp-1');
@@ -267,20 +334,19 @@ describe('routeResponse', () => {
     expect(mcpWs.send).not.toHaveBeenCalled();
   });
 
-  it('broadcasts to all MCP clients when origin is unknown', () => {
+  it('drops orphan response when origin is unknown', () => {
     const mcpWs1 = mockWs();
     const mcpWs2 = mockWs();
     const nonMcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs1, isMCP: true }));
     state.clients.set('mcp-2', mockClient({ ws: mcpWs2, isMCP: true }));
     state.clients.set('other', mockClient({ ws: nonMcpWs }));
-    // No figmaPluginClient set — so the guard `clientId !== figmaPluginClient` is skipped
 
     const response = { id: 'unknown-req', success: true };
     routeResponse(state, response, 'some-client');
 
-    expect(mcpWs1.send).toHaveBeenCalledWith(JSON.stringify(response));
-    expect(mcpWs2.send).toHaveBeenCalledWith(JSON.stringify(response));
+    expect(mcpWs1.send).not.toHaveBeenCalled();
+    expect(mcpWs2.send).not.toHaveBeenCalled();
     expect(nonMcpWs.send).not.toHaveBeenCalled();
   });
 

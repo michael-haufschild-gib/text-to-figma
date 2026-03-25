@@ -273,26 +273,15 @@ describe('request routing MCP → Figma', () => {
       payload: { name: 'NoTarget' }
     });
 
-    // Wait for the bridge to track the pending request origin
-    const start = Date.now();
-    while (bridge.server.state.pendingRequestOrigins.size === 0) {
-      if (Date.now() - start > 3000) break;
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    }
+    // Wait for the bridge to process the request and send an error response
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    // The bridge tracks the request origin even though no Figma plugin exists.
-    // This is the expected behavior — the FigmaBridge client will timeout.
+    // The bridge sends an error response immediately when no Figma plugin is connected,
+    // then cleans up the pending origin.
     expect(bridge.server.state.figmaPluginClient).toBeNull();
-    expect(bridge.server.state.pendingRequestOrigins.has('req-orphan')).toBe(true);
-
-    // Disconnect MCP — pending origins for this client should be cleaned up
-    mcp.disconnect();
-    const cleanStart = Date.now();
-    while (bridge.server.state.pendingRequestOrigins.size > 0) {
-      if (Date.now() - cleanStart > 3000) break;
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    }
     expect(bridge.server.state.pendingRequestOrigins.size).toBe(0);
+
+    mcp.disconnect();
   });
 });
 

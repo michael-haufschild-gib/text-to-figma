@@ -403,8 +403,7 @@ describe('Three-Tier Round-Trip — Validation & Contracts', () => {
       } catch (err) {
         const errorObj = err as Error;
         expect(errorObj).toBeInstanceOf(Error);
-        // The create_frame tool wraps bridge errors as FigmaAPIError
-        expect(errorObj.name).toMatch(/FigmaAPIError|FigmaBridgeError|Error/);
+        expect(errorObj.name).toBe('FigmaAPIError');
       }
     });
   });

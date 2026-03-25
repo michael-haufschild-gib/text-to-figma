@@ -551,7 +551,7 @@ describe('Design Workflow E2E — Styling & Utility', () => {
 
       const text = result[0].text!;
       // Should contain clear PASS or FAIL verdict
-      expect(text).toMatch(/PASS|FAIL/);
+      expect(text).toContain('PASS');
       // Should contain the ratio
       expect(text).toMatch(/\d+(\.\d+)?/);
     });

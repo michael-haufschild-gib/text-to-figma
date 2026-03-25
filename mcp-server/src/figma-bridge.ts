@@ -119,6 +119,24 @@ class CircuitBreaker {
   }
 }
 
+/** True when the failure happened before the request reached the plugin (safe to retry). */
+function isPreSendFailure(error: Error): boolean {
+  return (
+    error.message.includes('ECONNREFUSED') ||
+    error.message.includes('not connected') ||
+    error.message.includes('Circuit breaker is OPEN') ||
+    (error instanceof FigmaBridgeError && error.code.startsWith('CONN_'))
+  );
+}
+
+function isNonRetryableValidationError(error: Error): boolean {
+  return (
+    (error instanceof FigmaBridgeError && error.code.startsWith('VAL_')) ||
+    error.name === 'ZodError' ||
+    error.name === 'ValidationError'
+  );
+}
+
 /**
  * Request message sent to Figma plugin
  */
@@ -466,6 +484,7 @@ export class FigmaBridge {
       maxRetries?: number;
       baseDelay?: number;
       maxDelay?: number;
+      idempotent?: boolean;
     }
   ): Promise<T> {
     const config = getConfig();
@@ -485,11 +504,15 @@ export class FigmaBridge {
         lastError = error instanceof Error ? error : new Error(String(error));
 
         // Don't retry on validation errors or if it's the last attempt
-        const isValidationError =
-          (lastError instanceof FigmaBridgeError && lastError.code.startsWith('VAL_')) ||
-          lastError.name === 'ZodError' ||
-          lastError.name === 'ValidationError';
-        if (isValidationError || attempt === maxRetries - 1) {
+        if (isNonRetryableValidationError(lastError) || attempt === maxRetries - 1) {
+          throw lastError;
+        }
+
+        // Don't retry non-idempotent operations (creates, deletes, mutations)
+        // unless explicitly marked safe. Pre-send failures (connection refused,
+        // not connected, circuit breaker open) are always safe to retry because
+        // the request never reached the plugin.
+        if (options?.idempotent !== true && !isPreSendFailure(lastError)) {
           throw lastError;
         }
 
@@ -533,9 +556,10 @@ export class FigmaBridge {
   async sendToFigmaValidated<T>(
     type: string,
     payload: unknown,
-    responseSchema: z.ZodSchema<T>
+    responseSchema: z.ZodSchema<T>,
+    options?: { idempotent?: boolean }
   ): Promise<T> {
-    const raw = await this.sendToFigmaWithRetry<unknown>(type, payload);
+    const raw = await this.sendToFigmaWithRetry<unknown>(type, payload, options);
     return responseSchema.parse(raw);
   }
 

@@ -287,7 +287,7 @@ describe('createServer', () => {
     expect(mcp1Response.data).toBe('for-mcp1');
   });
 
-  it('Figma plugin disconnect during active request: response is silently dropped', async () => {
+  it('Figma plugin disconnect during active request: pending requests are failed', async () => {
     const port = getPort();
 
     // Connect Figma plugin
@@ -299,6 +299,8 @@ describe('createServer', () => {
     // Connect MCP client and send request
     const { ws: mcpWs } = await connectClient(port);
     clients.push(mcpWs);
+
+    const errorResponsePromise = nextMessage(mcpWs);
     mcpWs.send(JSON.stringify({ type: 'slow_op', payload: {}, id: 'req-slow' }));
     await new Promise((r) => setTimeout(r, 50));
 
@@ -311,9 +313,13 @@ describe('createServer', () => {
 
     // Figma plugin client should be cleared
     expect(handle.state.figmaPluginClient).toBeNull();
-    // The pending request origin is NOT cleaned up by Figma disconnecting —
-    // only by the originating MCP client disconnecting
-    expect(handle.state.pendingRequestOrigins.has('req-slow')).toBe(true);
+    // Pending requests are failed and cleaned up when Figma disconnects
+    expect(handle.state.pendingRequestOrigins.has('req-slow')).toBe(false);
+
+    // MCP client should receive an error response
+    const errorResponse = await errorResponsePromise;
+    expect(errorResponse.success).toBe(false);
+    expect(errorResponse.error).toBe('Figma plugin disconnected during operation');
   });
 
   it('new Figma plugin can register after previous one disconnects', async () => {

@@ -223,7 +223,8 @@ describe('FigmaBridge — Lifecycle & Retry', () => {
         {
           maxRetries: 2,
           baseDelay: 10,
-          maxDelay: 100
+          maxDelay: 100,
+          idempotent: true
         }
       );
 

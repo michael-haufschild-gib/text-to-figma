@@ -1,30 +1,27 @@
-# MCP Server Dockerfile
+# MCP Server Dockerfile — multi-stage build
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+COPY package*.json tsconfig.json ./
+RUN npm ci
+
+COPY src ./src
+RUN npm run build
+
+# ── Production stage ─────────────────────────────────────────────────────────
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-COPY tsconfig.json ./
+RUN npm ci --omit=dev
 
-# Install dependencies (including dev dependencies for building)
-RUN npm ci
+COPY --from=build /app/dist ./dist
 
-# Copy source code
-COPY src ./src
-
-# Build TypeScript
-RUN npm run build
-
-# Remove dev dependencies
-RUN npm prune --production
-
-# Expose health check port
 EXPOSE 8081
 
-# Health check — wget is built into Alpine, no CJS/ESM concerns
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
   CMD wget -q -O /dev/null http://localhost:8081/health || exit 1
 
-# Start server
 CMD ["node", "dist/index.js"]

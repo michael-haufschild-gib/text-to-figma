@@ -167,11 +167,11 @@ async function main(): Promise<void> {
   const configValues = getConfig();
   console.error('[MCP Server] Configuration loaded');
 
-  // Sync logger with configured LOG_LEVEL.
+  // Sync logger with configured LOG_LEVEL and LOG_JSON.
   // Module-level loggers are created before loadConfig() runs (ESM import order).
   // Because child loggers share the root config by reference, updating the root
   // propagates to all existing loggers.
-  getLogger().setConfig({ level: configValues.LOG_LEVEL });
+  getLogger().setConfig({ level: configValues.LOG_LEVEL, pretty: !configValues.LOG_JSON });
 
   // Register all tools
   registerAllTools();

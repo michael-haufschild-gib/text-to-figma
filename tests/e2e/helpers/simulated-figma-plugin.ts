@@ -86,7 +86,9 @@ function handleQueryTool(type: string, payload: Record<string, unknown>): Succes
           height: 100,
           x: 0,
           y: 0,
-          childrenCount: 0
+          childrenCount: 0,
+          layoutMode: 'NONE',
+          layoutPositioning: 'AUTO'
         }
       }
     };
@@ -178,16 +180,26 @@ function handleQueryTool(type: string, payload: Record<string, unknown>): Succes
   return null;
 }
 
-/** Handle page/connection/export tools. */
-function handleUtilityTool(type: string, payload: Record<string, unknown>): SuccessResponse | null {
+/** Handle page and connection tools. */
+function handlePageTool(type: string, payload: Record<string, unknown>): SuccessResponse | null {
   if (type === 'list_pages') {
     return {
       success: true,
       data: {
         pages: [
-          { id: 'page1', name: 'Page 1', isCurrent: true },
-          { id: 'page2', name: 'Page 2', isCurrent: false }
+          { pageId: 'page1', name: 'Page 1', isCurrent: true },
+          { pageId: 'page2', name: 'Page 2', isCurrent: false }
         ]
+      }
+    };
+  }
+  if (type === 'create_page') {
+    return {
+      success: true,
+      data: {
+        pageId: `page_${Date.now()}`,
+        name: (payload.name as string) ?? 'New Page',
+        message: 'Page created'
       }
     };
   }
@@ -220,6 +232,14 @@ function handleUtilityTool(type: string, payload: Record<string, unknown>): Succ
       }
     };
   }
+  return null;
+}
+
+/** Handle export, node-op, and data tools. */
+function handleUtilityTool(type: string, payload: Record<string, unknown>): SuccessResponse | null {
+  const pageResult = handlePageTool(type, payload);
+  if (pageResult) return pageResult;
+
   if (type === 'export_node') {
     return {
       success: true,
@@ -237,6 +257,35 @@ function handleUtilityTool(type: string, payload: Record<string, unknown>): Succ
     return {
       success: true,
       data: { nodeId: payload.nodeId, key: payload.key, value: payload.value }
+    };
+  }
+  if (type === 'reparent_node') {
+    return {
+      success: true,
+      data: {
+        nodeId: payload.nodeId,
+        oldParentId: 'old-parent',
+        newParentId: payload.parentId,
+        message: 'Node reparented successfully'
+      }
+    };
+  }
+  if (type === 'rename_node') {
+    return {
+      success: true,
+      data: { nodeId: payload.nodeId, oldName: 'old-name', name: payload.name }
+    };
+  }
+  if (type === 'remove_node') {
+    return {
+      success: true,
+      data: {
+        nodeId: payload.nodeId,
+        parentId: 'old-parent',
+        name: 'removed-node',
+        type: 'RECTANGLE',
+        message: 'Node removed successfully'
+      }
     };
   }
   return null;
@@ -270,7 +319,7 @@ function handleComponentTool(
     return {
       success: true,
       data: {
-        booleanNodeId: `bool_${Date.now()}`,
+        nodeId: `bool_${Date.now()}`,
         operation: payload.operation,
         nodeCount: (payload.nodeIds as string[])?.length ?? 0
       }
@@ -301,7 +350,12 @@ function handleLayoutTool(type: string, payload: Record<string, unknown>): Succe
   if (type === 'set_layout_sizing')
     return {
       success: true,
-      data: { nodeId: payload.nodeId, horizontal: payload.horizontal, vertical: payload.vertical }
+      data: {
+        nodeId: payload.nodeId,
+        horizontal: payload.horizontal,
+        vertical: payload.vertical,
+        layoutPositioning: payload.layoutPositioning
+      }
     };
   if (type === 'align_nodes' || type === 'distribute_nodes')
     return { success: true, data: { aligned: true, nodeIds: payload.nodeIds } };
