@@ -21,11 +21,11 @@ This runbook provides step-by-step instructions for deploying the Text-to-Figma 
 git clone https://github.com/michael-h-patrianna/text-to-figma.git
 cd text-to-figma
 
-# Install dependencies for all services
-npm run setup
+# Install dependencies for all workspaces
+npm install
 
-# Start all services
-npm run dev
+# Build and start all services
+npm run build
 ```
 
 ### Manual Step-by-Step

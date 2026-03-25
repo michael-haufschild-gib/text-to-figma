@@ -26,11 +26,13 @@ The Figma plugin is a **dual-threaded application** that acts as the bridge betw
 ```
 figma-plugin/
 ├── manifest.json          # Plugin metadata and configuration
-├── code.ts                # Main thread (Figma API access)
-├── code.js                # Compiled main thread code
+├── src/
+│   ├── main.ts            # Entry point (Figma API access)
+│   ├── handlers/          # Command handlers by domain
+│   ├── helpers.ts         # Shared utilities
+│   └── validate.ts        # Payload validation
+├── code.js                # Compiled bundle (built by esbuild)
 ├── ui.html                # UI thread (WebSocket client + display)
-├── types.ts               # Shared type definitions
-├── types.js               # Compiled types
 ├── package.json           # Dependencies and build scripts
 └── tsconfig.json          # TypeScript configuration
 ```
@@ -45,7 +47,7 @@ figma-plugin/
 │                                                              │
 │  ┌─────────────────────┐        ┌─────────────────────┐    │
 │  │   UI Thread         │        │   Main Thread       │    │
-│  │   (ui.html)         │◄──────►│   (code.ts)         │    │
+│  │   (ui.html)         │◄──────►│   (src/main.ts)     │    │
 │  │                     │  Post  │                     │    │
 │  │  - WebSocket Client │ Message│  - Figma API Access │    │
 │  │  - Connection UI    │        │  - Frame Creation   │    │
@@ -68,7 +70,7 @@ figma-plugin/
 
 ## Component Details
 
-### 1. Main Thread (`code.ts`)
+### 1. Main Thread (`src/main.ts`)
 
 **Purpose**: Executes Figma API operations with strict type safety
 
@@ -410,7 +412,7 @@ function validateCreateFramePayload(payload: unknown): payload is CreateFramePay
 **Key Configuration**:
 
 - `api: "1.0.0"` - Figma Plugin API version
-- `main: "code.js"` - Main thread entry point (must be compiled JS)
+- `main: "code.js"` - Main thread entry point (bundled by esbuild from `src/main.ts`)
 - `ui: "ui.html"` - UI thread HTML file
 - `networkAccess: none` - Main thread has NO network access (security)
 
@@ -670,7 +672,7 @@ export function validateCreateEllipsePayload(payload: unknown): payload is Creat
 }
 ```
 
-**2. Implement handler in `code.ts`**:
+**2. Implement handler in `src/handlers/`**:
 
 ```typescript
 async function createEllipse(payload: CreateEllipsePayload): Promise<PluginResponse> {
@@ -735,7 +737,7 @@ function isValidCommand(data) {
 ```bash
 cd figma-plugin
 npm install
-npm run build  # Compiles code.ts → code.js
+npm run build  # Bundles src/main.ts → code.js via esbuild
 ```
 
 **Configuration** (`tsconfig.json`):
@@ -820,7 +822,7 @@ npm run build  # Compiles code.ts → code.js
 
 ### Plugin Won't Load
 
-- Check `code.js` exists (run `npm run build`)
+- Check `code.js` exists (run `npm run build` — esbuild bundles `src/main.ts`)
 - Verify manifest.json is valid JSON
 - Check Figma console for TypeScript errors
 

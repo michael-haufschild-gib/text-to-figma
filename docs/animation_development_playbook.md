@@ -515,8 +515,7 @@ useEffect(() => {
 
 ### Internal Docs
 
-- [REACT_NATIVE_ANIMATION_TRANSLATION_GUIDE.md](./REACT_NATIVE_ANIMATION_TRANSLATION_GUIDE.md)
-- [REACT_NATIVE_REFACTORING_PATTERNS.md](./REACT_NATIVE_REFACTORING_PATTERNS.md)
+<!-- React Native guides removed — they were never created for this project -->
 
 ---
 

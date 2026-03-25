@@ -405,5 +405,3 @@ commands: [
 ## See Also
 
 - [Drawing Workflow Guide](../.claude/commands/draw.md) - Complete drawing workflow
-- [Boolean Operations](./BOOLEAN_OPERATIONS.md) - Combining paths
-- [Path Examples Collection](./examples/) - More path examples

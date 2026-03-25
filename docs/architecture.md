@@ -44,7 +44,7 @@ text-to-figma/
 │   └── src/server.ts       # WebSocket bridge (rarely modify)
 │
 ├── figma-plugin/
-│   ├── code.ts             # Plugin logic - ADD message handlers HERE
+│   ├── src/main.ts          # Plugin entry point - ADD message handlers HERE
 │   ├── ui.html             # Plugin UI (rarely modify)
 │   └── manifest.json       # Plugin config (rarely modify)
 │
@@ -60,13 +60,13 @@ text-to-figma/
 ## Decision Tree: Where Does My Code Go?
 
 - **Creating a new MCP tool?** → `mcp-server/src/tools/{tool_name}.ts`
-- **Adding Figma operation?** → Add handler in `figma-plugin/code.ts`
+- **Adding Figma operation?** → Add handler in `figma-plugin/src/handlers/` and wire in `figma-plugin/src/main.ts`
 - **Adding design constraint?** → `mcp-server/src/constraints/{constraint}.ts`
 - **Adding shared utility?** → `mcp-server/src/utils/{utility}.ts`
 - **Adding custom error type?** → `mcp-server/src/errors/index.ts`
 - **Adding metrics/logging?** → `mcp-server/src/monitoring/`
-- **Writing unit test?** → `tests/unit/{module}.test.js`
-- **Writing integration test?** → `tests/integration/{feature}.test.js`
+- **Writing unit test?** → `tests/unit/{module}.test.ts`
+- **Writing integration test?** → `tests/integration/{feature}.test.ts`
 
 ---
 
@@ -179,7 +179,7 @@ export async function {toolName}(input: {ToolName}Input): Promise<{ToolName}Resu
 
 ### Step 2: Add handler to Figma plugin
 
-Add case in `figma-plugin/code.ts` switch statement:
+Add handler in `figma-plugin/src/handlers/` and wire it in `figma-plugin/src/main.ts`:
 
 ```typescript
 case '{tool_name}': {
@@ -306,14 +306,14 @@ export class {ErrorName} extends ToolExecutionError {
 
 ## File Naming Conventions
 
-| Type        | Pattern                 | Example                   |
-| ----------- | ----------------------- | ------------------------- |
-| MCP Tool    | `snake_case.ts`         | `create_frame.ts`         |
-| Constraint  | `snake_case.ts`         | `spacing.ts`              |
-| Utility     | `kebab-case.ts`         | `parent-validator.ts`     |
-| Test        | `{module}.test.{js,ts}` | `color-converter.test.js` |
-| Error class | `PascalCase`            | `ValidationError`         |
-| Zod schema  | `camelCaseSchema`       | `createFrameInputSchema`  |
+| Type        | Pattern            | Example                  |
+| ----------- | ------------------ | ------------------------ |
+| MCP Tool    | `snake_case.ts`    | `create_frame.ts`        |
+| Constraint  | `snake_case.ts`    | `spacing.ts`             |
+| Utility     | `kebab-case.ts`    | `parent-validator.ts`    |
+| Test        | `{module}.test.ts` | `metrics.test.ts`        |
+| Error class | `PascalCase`       | `ValidationError`        |
+| Zod schema  | `camelCaseSchema`  | `createFrameInputSchema` |
 
 ---
 

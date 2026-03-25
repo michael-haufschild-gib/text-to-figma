@@ -10,28 +10,18 @@
 
 ```
 tests/
-├── unit/               # Fast, isolated tests - import compiled modules
-│   ├── color-converter.test.js
-│   ├── typography-generator.test.js
-│   └── *.test.ts       # TypeScript unit tests
-│
-├── integration/        # Test WebSocket flow and multi-component interaction
-│   ├── foundation.test.js
-│   ├── wcag-contrast.test.js
-│   └── component-tools.test.js
-│
-├── validation/         # Design token and constraint validation
-│   └── design-tokens.test.js
+├── unit/               # Fast, isolated tests (vitest + TypeScript)
+│   ├── metrics.test.ts
+│   ├── figma-plugin-helpers.test.ts
+│   ├── tools-query.test.ts
+│   └── *.test.ts
 │
 ├── e2e/                # End-to-end tests (require running servers)
-│   ├── button-component.test.js
-│   └── login-form.test.js
+│   ├── helpers/
+│   └── mcp-protocol.test.ts
 │
-├── agents/             # Agent-based review tests
-│   └── design-reviewer.js
-│
-└── visual/             # Visual regression tests
-    └── regression.test.js
+└── agents/             # Agent-based review tests
+    └── design-reviewer.js
 ```
 
 ---
@@ -49,7 +39,7 @@ cd tests && npm run test:unit
 cd tests && npm run test:integration
 
 # Single test file
-node tests/unit/color-converter.test.js
+npx vitest run tests/unit/metrics.test.ts
 
 # TypeScript tests (run via node --test with ts loader or compile first)
 cd mcp-server && npm run build && cd ../tests && node unit/tool-router.test.ts
@@ -59,7 +49,7 @@ cd mcp-server && npm run build && cd ../tests && node unit/tool-router.test.ts
 
 ## How to Write a Unit Test
 
-Create `tests/unit/{module}.test.js`:
+Create `tests/unit/{module}.test.ts`:
 
 ```javascript
 /**
@@ -150,7 +140,7 @@ runTests().catch((error) => {
 
 ## How to Write an Integration Test
 
-Create `tests/integration/{feature}.test.js`:
+Create `tests/integration/{feature}.test.ts`:
 
 ```javascript
 /**

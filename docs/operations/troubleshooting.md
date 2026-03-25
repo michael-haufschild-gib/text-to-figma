@@ -511,4 +511,4 @@ Share this archive when reporting issues.
 - [Deployment Runbook](./deployment-runbook.md)
 - [Architecture Documentation](../architecture.md)
 - [MCP Server Documentation](../architecture-mcp-server.md)
-- [WebSocket Bridge Documentation](../architecture-websocket-server.md)
+- [Figma Plugin Documentation](../architecture-figma-plugin.md)

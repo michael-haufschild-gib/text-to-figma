@@ -67,7 +67,7 @@ npm start
 ### Making Changes to Figma Plugin
 
 ```bash
-# 1. Edit figma-plugin/code.ts
+# 1. Edit files in figma-plugin/src/
 # 2. Rebuild
 cd figma-plugin && npm run build
 
@@ -107,24 +107,24 @@ kill $(lsof -t -i :8080)
 
 ## Build Outputs
 
-| Source                      | Output                       | Built By |
-| --------------------------- | ---------------------------- | -------- |
-| `mcp-server/src/*.ts`       | `mcp-server/dist/*.js`       | `tsc`    |
-| `figma-plugin/code.ts`      | `figma-plugin/code.js`       | `tsc`    |
-| `websocket-server/src/*.ts` | `websocket-server/dist/*.js` | `tsc`    |
+| Source                      | Output                       | Built By  |
+| --------------------------- | ---------------------------- | --------- |
+| `mcp-server/src/*.ts`       | `mcp-server/dist/*.js`       | `tsc`     |
+| `figma-plugin/src/main.ts`  | `figma-plugin/code.js`       | `esbuild` |
+| `websocket-server/src/*.ts` | `websocket-server/dist/*.js` | `tsc`     |
 
 ---
 
 ## Environment Requirements
 
-- **Node.js**: v18+ (v20 recommended)
+- **Node.js**: v20 or later (required by `engines` field)
 - **npm**: v9+
 - **Figma Desktop**: Required for plugin development
 
 Check versions:
 
 ```bash
-node --version  # Should be v18+
+node --version  # Should be v20+
 npm --version   # Should be v9+
 ```
 
@@ -257,7 +257,7 @@ When things get stuck, clean and rebuild:
 ```bash
 # Remove all build artifacts
 rm -rf mcp-server/dist
-rm -f figma-plugin/code.js
+rm -f figma-plugin/code.js  # Built by esbuild from src/main.ts
 
 # Reinstall dependencies
 rm -rf node_modules
