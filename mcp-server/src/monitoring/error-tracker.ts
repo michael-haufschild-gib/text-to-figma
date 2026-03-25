@@ -106,9 +106,18 @@ const CATEGORY_RULES: Array<{
   nameKeywords?: string[];
   category: ErrorCategory;
 }> = [
-  { nameKeywords: ['validation'], keywords: ['invalid', 'required'], category: 'validation' },
-  { nameKeywords: ['network'], keywords: ['connection', 'timeout'], category: 'network' },
-  { keywords: ['figma', 'node', 'frame'], category: 'figma_api' },
+  {
+    nameKeywords: ['validation'],
+    keywords: ['invalid', 'required', 'schema', 'parse'],
+    category: 'validation'
+  },
+  {
+    nameKeywords: ['network', 'econnrefused'],
+    keywords: ['econnrefused', 'socket hang up', 'websocket'],
+    category: 'network'
+  },
+  { keywords: ['connection timeout', 'request timeout', 'timed out'], category: 'network' },
+  { keywords: ['figma', 'node', 'frame', 'component'], category: 'figma_api' },
   { nameKeywords: ['typeerror', 'referenceerror'], keywords: [], category: 'internal' },
   { keywords: ['user', 'input'], category: 'user_input' },
   { keywords: ['config', 'configuration'], category: 'configuration' }

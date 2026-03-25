@@ -95,9 +95,6 @@ export interface ApplyFillStyleResult {
  * @param input
  */
 export async function applyFillStyle(input: ApplyFillStyleInput): Promise<ApplyFillStyleResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -105,15 +102,15 @@ export async function applyFillStyle(input: ApplyFillStyleInput): Promise<ApplyF
   const response = await bridge.sendToFigmaValidated(
     'apply_fill_style',
     {
-      nodeId: validated.nodeId,
-      styleNameOrId: validated.styleNameOrId
+      nodeId: input.nodeId,
+      styleNameOrId: input.styleNameOrId
     },
     ApplyFillStyleResponseSchema
   );
 
   return {
-    nodeId: validated.nodeId,
-    styleName: response.styleName ?? validated.styleNameOrId,
-    message: `Applied fill style "${response.styleName ?? validated.styleNameOrId}" to node`
+    nodeId: input.nodeId,
+    styleName: response.styleName ?? input.styleNameOrId,
+    message: `Applied fill style "${response.styleName ?? input.styleNameOrId}" to node`
   };
 }

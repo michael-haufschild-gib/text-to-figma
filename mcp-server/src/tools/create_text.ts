@@ -94,11 +94,8 @@ function generateCssEquivalent(input: CreateTextInput, appliedLineHeight: number
  * @param input
  */
 export async function createText(input: CreateTextInput): Promise<CreateTextResult> {
-  // Validate input
-  const validated = input;
-
   // Validate parent relationship - STRICT MODE to enforce hierarchy
-  const parentValidation = await validateParentRelationship('text', validated.parentId, {
+  const parentValidation = await validateParentRelationship('text', input.parentId, {
     strict: true, // STRICT: Prevent creation without parent to maintain HTML-like hierarchy
     checkExists: true // Check if parent actually exists
   });
@@ -113,32 +110,32 @@ export async function createText(input: CreateTextInput): Promise<CreateTextResu
       'Parent validation failed - text must have a parent container',
       new Error(errorMessage),
       {
-        input: validated
+        input: input
       }
     );
     throw new Error(fullError);
   }
 
   // Calculate line height if not provided
-  const appliedLineHeight = validated.lineHeight ?? getRecommendedLineHeight(validated.fontSize);
+  const appliedLineHeight = input.lineHeight ?? getRecommendedLineHeight(input.fontSize);
 
   // Generate CSS equivalent
-  const cssEquivalent = generateCssEquivalent(validated, appliedLineHeight);
+  const cssEquivalent = generateCssEquivalent(input, appliedLineHeight);
 
   // Send to Figma with response validation
   const bridge = getFigmaBridge();
   const response = await bridge.sendToFigmaValidated(
     'create_text',
     {
-      content: validated.content,
-      fontSize: validated.fontSize,
-      fontFamily: validated.fontFamily,
-      fontWeight: validated.fontWeight,
+      content: input.content,
+      fontSize: input.fontSize,
+      fontFamily: input.fontFamily,
+      fontWeight: input.fontWeight,
       lineHeight: appliedLineHeight,
-      textAlign: validated.textAlign,
-      color: validated.color,
-      letterSpacing: validated.letterSpacing,
-      parentId: validated.parentId
+      textAlign: input.textAlign,
+      color: input.color,
+      letterSpacing: input.letterSpacing,
+      parentId: input.parentId
     },
     z.object({ nodeId: z.string().min(1) })
   );
@@ -147,8 +144,8 @@ export async function createText(input: CreateTextInput): Promise<CreateTextResu
   const registry = getNodeRegistry();
   registry.register(response.nodeId, {
     type: 'TEXT',
-    name: validated.content.substring(0, 50), // Use first 50 chars as name
-    parentId: validated.parentId ?? null,
+    name: input.content.substring(0, 50), // Use first 50 chars as name
+    parentId: input.parentId ?? null,
     children: [],
     bounds: { x: 0, y: 0, width: 0, height: 0 } // Will be updated on next hierarchy refresh
   });
@@ -169,20 +166,20 @@ export const createTextToolDefinition = {
 
 HTML/CSS Analogy: Like setting text content with CSS font properties.
 
-📋 RECOMMENDED WORKFLOW:
+RECOMMENDED WORKFLOW:
 1. Use get_page_hierarchy to see current structure
 2. Option A (Multi-element): Use create_design to create text + container together
 3. Option B (Single text node):
    - First: Create or identify parent frame
    - Then: Create text with parentId
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Adding a single text element to an existing frame
 - Building UI step-by-step (for simple designs)
 
-⚠️ For designs with text + other elements, prefer create_design instead.
+For designs with text + other elements, prefer create_design instead.
 
-🚨 MANDATORY REQUIREMENT: parentId is REQUIRED
+MANDATORY REQUIREMENT: parentId is REQUIRED
 - Text nodes CANNOT exist at canvas root (just like text can't float outside HTML elements)
 - You MUST specify parentId to place text inside a frame container
 - Think HTML: text always lives inside <div>, <p>, <span>, etc.
@@ -253,7 +250,7 @@ line-height: 29px; // auto-calculated`,
       parentId: {
         type: 'string' as const,
         description:
-          '⚠️ REQUIRED: Parent frame ID to place text inside. Text nodes CANNOT exist at canvas root - you must create a frame first, then place text inside it with parentId.'
+          'REQUIRED: Parent frame ID to place text inside. Text nodes CANNOT exist at canvas root - you must create a frame first, then place text inside it with parentId.'
       }
     },
     required: ['content', 'parentId']

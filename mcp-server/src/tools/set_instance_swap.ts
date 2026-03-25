@@ -91,9 +91,6 @@ export interface SetInstanceSwapResult {
  * @param input
  */
 export async function setInstanceSwap(input: SetInstanceSwapInput): Promise<SetInstanceSwapResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -101,16 +98,16 @@ export async function setInstanceSwap(input: SetInstanceSwapInput): Promise<SetI
   const response = await bridge.sendToFigmaValidated(
     'set_instance_swap',
     {
-      instanceId: validated.instanceId,
-      newComponentId: validated.newComponentId
+      instanceId: input.instanceId,
+      newComponentId: input.newComponentId
     },
     SetInstanceSwapResponseSchema
   );
 
   return {
-    instanceId: validated.instanceId,
+    instanceId: input.instanceId,
     oldComponentId: response.oldComponentId,
-    newComponentId: validated.newComponentId,
+    newComponentId: input.newComponentId,
     message: 'Instance swapped successfully'
   };
 }

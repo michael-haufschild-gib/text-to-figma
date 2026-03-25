@@ -166,9 +166,6 @@ export interface GetRelativeBoundsResult {
 export async function getRelativeBounds(
   input: GetRelativeBoundsInput
 ): Promise<GetRelativeBoundsResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -176,8 +173,8 @@ export async function getRelativeBounds(
   const response = await bridge.sendToFigmaValidated(
     'get_relative_bounds',
     {
-      targetNodeId: validated.targetNodeId,
-      referenceNodeId: validated.referenceNodeId
+      targetNodeId: input.targetNodeId,
+      referenceNodeId: input.referenceNodeId
     },
     GetRelativeBoundsResponseSchema
   );
@@ -186,8 +183,8 @@ export async function getRelativeBounds(
 
   return {
     success: true as const,
-    targetNodeId: validated.targetNodeId,
-    referenceNodeId: validated.referenceNodeId,
+    targetNodeId: input.targetNodeId,
+    referenceNodeId: input.referenceNodeId,
     relativeBounds: rb,
     message: `Target is (${rb.relativeX.toFixed(1)}, ${rb.relativeY.toFixed(1)}) relative to reference. Center distance: (${rb.centerDistanceX.toFixed(1)}, ${rb.centerDistanceY.toFixed(1)}). Reference center point: (${rb.referencePoints.center.x.toFixed(1)}, ${rb.referencePoints.center.y.toFixed(1)})`,
     timestamp: new Date().toISOString()

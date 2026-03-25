@@ -129,64 +129,59 @@ export interface SetCornerRadiusResult {
  * @param input
  */
 export async function setCornerRadius(input: SetCornerRadiusInput): Promise<SetCornerRadiusResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Determine if uniform or individual
-  const isUniform = validated.radius !== undefined;
+  const isUniform = input.radius !== undefined;
 
   // Send command to Figma
-  // Note: bridge.sendToFigma validates success at protocol level
-  // It only resolves if Figma returns success=true, otherwise rejects
   await bridge.sendToFigmaWithRetry('set_corner_radius', {
-    nodeId: validated.nodeId,
-    radius: validated.radius,
-    topLeft: validated.topLeft,
-    topRight: validated.topRight,
-    bottomRight: validated.bottomRight,
-    bottomLeft: validated.bottomLeft
+    nodeId: input.nodeId,
+    radius: input.radius,
+    topLeft: input.topLeft,
+    topRight: input.topRight,
+    bottomRight: input.bottomRight,
+    bottomLeft: input.bottomLeft
   });
 
   // Build CSS equivalent
   let cssEquivalent = '';
 
   if (isUniform) {
-    cssEquivalent = `border-radius: ${validated.radius}px;`;
+    cssEquivalent = `border-radius: ${input.radius}px;`;
   } else {
     // Individual corners (CSS order: top-left, top-right, bottom-right, bottom-left)
-    const tl = validated.topLeft ?? 0;
-    const tr = validated.topRight ?? 0;
-    const br = validated.bottomRight ?? 0;
-    const bl = validated.bottomLeft ?? 0;
+    const tl = input.topLeft ?? 0;
+    const tr = input.topRight ?? 0;
+    const br = input.bottomRight ?? 0;
+    const bl = input.bottomLeft ?? 0;
 
     cssEquivalent = `border-radius: ${tl}px ${tr}px ${br}px ${bl}px;`;
   }
 
   let message = '';
   if (isUniform) {
-    message = `Set uniform corner radius: ${validated.radius}px`;
+    message = `Set uniform corner radius: ${input.radius}px`;
   } else {
     const corners: string[] = [];
-    if (validated.topLeft !== undefined) {
-      corners.push(`TL:${validated.topLeft}px`);
+    if (input.topLeft !== undefined) {
+      corners.push(`TL:${input.topLeft}px`);
     }
-    if (validated.topRight !== undefined) {
-      corners.push(`TR:${validated.topRight}px`);
+    if (input.topRight !== undefined) {
+      corners.push(`TR:${input.topRight}px`);
     }
-    if (validated.bottomRight !== undefined) {
-      corners.push(`BR:${validated.bottomRight}px`);
+    if (input.bottomRight !== undefined) {
+      corners.push(`BR:${input.bottomRight}px`);
     }
-    if (validated.bottomLeft !== undefined) {
-      corners.push(`BL:${validated.bottomLeft}px`);
+    if (input.bottomLeft !== undefined) {
+      corners.push(`BL:${input.bottomLeft}px`);
     }
     message = `Set individual corner radii: ${corners.join(', ')}`;
   }
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     isUniform,
     cssEquivalent,
     message

@@ -41,12 +41,12 @@ export const setTextPropertiesToolDefinition = {
   name: 'set_text_properties',
   description: `Sets advanced text styling properties (decoration, spacing, case, paragraphs).
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Styling an EXISTING text node
 - Adding underlines, letter spacing, text transformations
 - Formatting multi-paragraph text
 
-⚠️ DON'T use this for:
+DON'T use this for:
 - Basic text properties like fontSize, fontWeight (use create_text or set_fills for color)
 - New text creation (use create_text or create_design)
 
@@ -173,38 +173,35 @@ export interface SetTextPropertiesResult {
 export async function setTextProperties(
   input: SetTextPropertiesInput
 ): Promise<SetTextPropertiesResult> {
-  // Validate input
-  const validated = input;
-
   // Track what properties were applied
   const applied: string[] = [];
   const cssLines: string[] = [];
 
   // Build command payload for Figma
-  const payload: Record<string, unknown> = { nodeId: validated.nodeId };
+  const payload: Record<string, unknown> = { nodeId: input.nodeId };
 
-  if (validated.decoration !== undefined) {
-    payload.decoration = validated.decoration;
+  if (input.decoration !== undefined) {
+    payload.decoration = input.decoration;
     applied.push('decoration');
-    if (validated.decoration === 'UNDERLINE') {
+    if (input.decoration === 'UNDERLINE') {
       cssLines.push('text-decoration: underline;');
-    } else if (validated.decoration === 'STRIKETHROUGH') {
+    } else if (input.decoration === 'STRIKETHROUGH') {
       cssLines.push('text-decoration: line-through;');
     } else {
       cssLines.push('text-decoration: none;');
     }
   }
 
-  if (validated.letterSpacing !== undefined) {
-    payload.letterSpacing = validated.letterSpacing;
+  if (input.letterSpacing !== undefined) {
+    payload.letterSpacing = input.letterSpacing;
     applied.push('letterSpacing');
-    const value = validated.letterSpacing.value;
-    const cssValue = validated.letterSpacing.unit === 'PIXELS' ? `${value}px` : `${value / 100}em`;
+    const value = input.letterSpacing.value;
+    const cssValue = input.letterSpacing.unit === 'PIXELS' ? `${value}px` : `${value / 100}em`;
     cssLines.push(`letter-spacing: ${cssValue};`);
   }
 
-  if (validated.textCase !== undefined) {
-    payload.textCase = validated.textCase;
+  if (input.textCase !== undefined) {
+    payload.textCase = input.textCase;
     applied.push('textCase');
     const caseMap: Record<string, string> = {
       UPPER: 'uppercase',
@@ -212,19 +209,19 @@ export async function setTextProperties(
       TITLE: 'capitalize',
       ORIGINAL: 'none'
     };
-    cssLines.push(`text-transform: ${caseMap[validated.textCase]};`);
+    cssLines.push(`text-transform: ${caseMap[input.textCase]};`);
   }
 
-  if (validated.paragraphSpacing !== undefined) {
-    payload.paragraphSpacing = validated.paragraphSpacing;
+  if (input.paragraphSpacing !== undefined) {
+    payload.paragraphSpacing = input.paragraphSpacing;
     applied.push('paragraphSpacing');
-    cssLines.push(`margin-bottom: ${validated.paragraphSpacing}px;`);
+    cssLines.push(`margin-bottom: ${input.paragraphSpacing}px;`);
   }
 
-  if (validated.paragraphIndent !== undefined) {
-    payload.paragraphIndent = validated.paragraphIndent;
+  if (input.paragraphIndent !== undefined) {
+    payload.paragraphIndent = input.paragraphIndent;
     applied.push('paragraphIndent');
-    cssLines.push(`text-indent: ${validated.paragraphIndent}px;`);
+    cssLines.push(`text-indent: ${input.paragraphIndent}px;`);
   }
 
   if (applied.length === 0) {
@@ -238,7 +235,7 @@ export async function setTextProperties(
   await bridge.sendToFigmaWithRetry('set_text_properties', payload);
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     applied,
     cssEquivalent: cssLines.join('\n'),
     message: `Applied text properties: ${applied.join(', ')}`

@@ -69,29 +69,26 @@ export interface CreateInstanceResult {
  * @param input
  */
 export async function createInstance(input: CreateInstanceInput): Promise<CreateInstanceResult> {
-  // Validate input
-  const validated = input;
-
   // Send to Figma
   const bridge = getFigmaBridge();
   const response = await bridge.sendToFigmaValidated(
     'create_instance',
     {
-      componentId: validated.componentId,
-      name: validated.name,
-      x: validated.x,
-      y: validated.y,
-      parentId: validated.parentId,
-      overrides: validated.overrides
+      componentId: input.componentId,
+      name: input.name,
+      x: input.x,
+      y: input.y,
+      parentId: input.parentId,
+      overrides: input.overrides
     },
     z.object({ instanceId: z.string() })
   );
 
-  const overridesCount = validated.overrides?.length ?? 0;
+  const overridesCount = input.overrides?.length ?? 0;
 
   return {
     instanceId: response.instanceId,
-    componentId: validated.componentId,
+    componentId: input.componentId,
     overridesApplied: overridesCount,
     message: `Instance created successfully${overridesCount > 0 ? ` with ${overridesCount} override(s)` : ''}.`
   };

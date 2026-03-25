@@ -152,11 +152,8 @@ export interface AddGradientFillResult {
  * @param input
  */
 export async function addGradientFill(input: AddGradientFillInput): Promise<AddGradientFillResult> {
-  // Validate input
-  const validated = input;
-
   // Ensure at least 2 stops
-  if (validated.stops.length < 2) {
+  if (input.stops.length < 2) {
     throw new Error('Gradient must have at least 2 color stops');
   }
 
@@ -164,43 +161,41 @@ export async function addGradientFill(input: AddGradientFillInput): Promise<AddG
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: bridge.sendToFigma validates success at protocol level
-  // It only resolves if Figma returns success=true, otherwise rejects
   await bridge.sendToFigmaWithRetry('add_gradient_fill', {
-    nodeId: validated.nodeId,
-    type: validated.type,
-    stops: validated.stops,
-    angle: validated.angle,
-    opacity: validated.opacity
+    nodeId: input.nodeId,
+    type: input.type,
+    stops: input.stops,
+    angle: input.angle,
+    opacity: input.opacity
   });
 
   // Build CSS equivalent
   let cssEquivalent = '';
 
-  if (validated.type === 'LINEAR') {
-    const stopsCSS = validated.stops
+  if (input.type === 'LINEAR') {
+    const stopsCSS = input.stops
       .map((stop) => `${stop.color} ${Math.round(stop.position * 100)}%`)
       .join(', ');
 
-    cssEquivalent = `background: linear-gradient(${validated.angle}deg, ${stopsCSS});`;
+    cssEquivalent = `background: linear-gradient(${input.angle}deg, ${stopsCSS});`;
   } else {
     // RADIAL
-    const stopsCSS = validated.stops
+    const stopsCSS = input.stops
       .map((stop) => `${stop.color} ${Math.round(stop.position * 100)}%`)
       .join(', ');
 
     cssEquivalent = `background: radial-gradient(circle, ${stopsCSS});`;
   }
 
-  if (validated.opacity < 1) {
-    cssEquivalent += `\nopacity: ${validated.opacity};`;
+  if (input.opacity < 1) {
+    cssEquivalent += `\nopacity: ${input.opacity};`;
   }
 
   return {
-    nodeId: validated.nodeId,
-    type: validated.type,
-    stopCount: validated.stops.length,
+    nodeId: input.nodeId,
+    type: input.type,
+    stopCount: input.stops.length,
     cssEquivalent,
-    message: `Applied ${validated.type.toLowerCase()} gradient with ${validated.stops.length} stops`
+    message: `Applied ${input.type.toLowerCase()} gradient with ${input.stops.length} stops`
   };
 }

@@ -91,7 +91,7 @@ After creating styles, use apply_fill_style to apply them to nodes.`,
  */
 const CreateColorStyleResponseSchema = z
   .object({
-    styleId: z.string().optional()
+    styleId: z.string()
   })
   .passthrough();
 
@@ -112,9 +112,6 @@ export interface CreateColorStyleResult {
 export async function createColorStyle(
   input: CreateColorStyleInput
 ): Promise<CreateColorStyleResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -122,17 +119,17 @@ export async function createColorStyle(
   const response = await bridge.sendToFigmaValidated(
     'create_color_style',
     {
-      name: validated.name,
-      color: validated.color,
-      description: validated.description
+      name: input.name,
+      color: input.color,
+      description: input.description
     },
     CreateColorStyleResponseSchema
   );
 
   return {
-    styleId: response.styleId ?? '',
-    name: validated.name,
-    color: validated.color,
-    message: `Created color style "${validated.name}" (${validated.color})`
+    styleId: response.styleId,
+    name: input.name,
+    color: input.color,
+    message: `Created color style "${input.name}" (${input.color})`
   };
 }

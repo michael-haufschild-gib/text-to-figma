@@ -30,7 +30,7 @@ export const CheckWcagContrastInputSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .describe('Background color in hex format (e.g., #FFFFFF)'),
-  fontSize: z.number().positive().describe('Font size in points (pt)'),
+  fontSize: z.number().positive().describe('Font size in pixels (px)'),
   fontWeight: z
     .number()
     .min(100)
@@ -75,15 +75,15 @@ export interface CheckWcagContrastResult {
 
 /**
  * Determines if text is considered "large" according to WCAG
- * Large text: 18pt+ regular or 14pt+ bold
+ * Large text: 24px+ regular or 19px+ bold (WCAG 2.1: 18pt/14pt bold converted to px)
  * @param fontSize
  * @param fontWeight
  */
 function isLargeText(fontSize: number, fontWeight: number): boolean {
-  if (fontSize >= 18) {
+  if (fontSize >= 24) {
     return true;
   }
-  if (fontSize >= 14 && fontWeight >= 700) {
+  if (fontSize >= 19 && fontWeight >= 700) {
     return true;
   }
   return false;
@@ -205,11 +205,9 @@ function generateColorSuggestions(
  * @param input
  */
 export function checkWcagContrast(input: CheckWcagContrastInput): CheckWcagContrastResult {
-  const validated = input;
-
   // Convert colors to RGB
-  const foreground = hexToRgb(validated.foreground);
-  const background = hexToRgb(validated.background);
+  const foreground = hexToRgb(input.foreground);
+  const background = hexToRgb(input.background);
 
   if (!foreground || !background) {
     throw new Error('Invalid hex color format');
@@ -219,7 +217,7 @@ export function checkWcagContrast(input: CheckWcagContrastInput): CheckWcagContr
   const contrastRatio = getContrastRatio(foreground, background);
 
   // Determine text size category
-  const largeText = isLargeText(validated.fontSize, validated.fontWeight);
+  const largeText = isLargeText(input.fontSize, input.fontWeight);
   const textSize = largeText ? TextSize.Large : TextSize.Normal;
 
   // Check compliance
@@ -278,11 +276,11 @@ export function formatContrastCheckResult(result: CheckWcagContrastResult): stri
   text += `Text Size: ${result.isLargeText ? 'Large' : 'Normal'}\n\n`;
 
   text += `WCAG AA Compliance:\n`;
-  text += `  Status: ${result.compliance.aa.passes ? '✓ PASS' : '✗ FAIL'}\n`;
+  text += `  Status: ${result.compliance.aa.passes ? 'PASS' : 'FAIL'}\n`;
   text += `  Required: ${result.compliance.aa.threshold}:1\n\n`;
 
   text += `WCAG AAA Compliance:\n`;
-  text += `  Status: ${result.compliance.aaa.passes ? '✓ PASS' : '✗ FAIL'}\n`;
+  text += `  Status: ${result.compliance.aaa.passes ? 'PASS' : 'FAIL'}\n`;
   text += `  Required: ${result.compliance.aaa.threshold}:1\n\n`;
 
   text += `Summary: ${result.summary}\n`;
@@ -308,12 +306,12 @@ export const checkWcagContrastToolDefinition = {
 
 Determines if text meets accessibility standards based on:
 - Contrast ratio between foreground and background colors
-- Font size (in points)
+- Font size (in pixels)
 - Font weight
 
 WCAG defines "large text" as:
-- 18pt or larger (regardless of weight)
-- 14pt or larger with bold weight (700+)
+- 24px or larger (regardless of weight)
+- 19px or larger with bold weight (700+)
 
 WCAG Standards:
 - AA Normal Text: 4.5:1 minimum
@@ -340,7 +338,7 @@ Returns:
       },
       fontSize: {
         type: 'number' as const,
-        description: 'Font size in points (pt)'
+        description: 'Font size in pixels (px)'
       },
       fontWeight: {
         type: 'number' as const,

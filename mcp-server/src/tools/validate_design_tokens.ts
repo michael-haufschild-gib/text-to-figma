@@ -233,7 +233,7 @@ function formatSpacingSection(report: ValidationReport): string {
   out += `Total: ${String(report.spacing.total)} | Valid: ${String(report.spacing.valid)} | Invalid: ${String(report.spacing.invalid)}\n`;
   out += `Valid values: ${VALID_SPACING_VALUES.join(', ')}\n\n`;
   for (const result of report.spacing.results) {
-    const status = result.isValid ? '✓' : '✗';
+    const status = result.isValid ? 'PASS' : 'FAIL';
     out += `  ${status} ${String(result.value)}px`;
     if (!result.isValid && result.suggestedValue !== undefined) {
       out += ` → Suggested: ${String(result.suggestedValue)}px`;
@@ -249,7 +249,7 @@ function formatTypographySection(report: ValidationReport): string {
   out += `Total: ${String(report.typography.total)} | Valid: ${String(report.typography.valid)} | Invalid: ${String(report.typography.invalid)}\n`;
   out += `Valid sizes: ${VALID_FONT_SIZES.join(', ')}\n\n`;
   for (const result of report.typography.results) {
-    const status = result.isValid ? '✓' : '✗';
+    const status = result.isValid ? 'PASS' : 'FAIL';
     const label =
       result.name !== undefined
         ? `${result.name} (${String(result.fontSize)}px)`
@@ -271,8 +271,8 @@ function formatColorsSection(report: ValidationReport): string {
   let out = `COLOR CONTRAST (WCAG)\n`;
   out += `Total: ${String(report.colors.total)} | AA: ${String(report.colors.passesAA)} | AAA: ${String(report.colors.passesAAA)}\n\n`;
   for (const result of report.colors.results) {
-    const aaStatus = result.passesAA ? '✓' : '✗';
-    const aaaStatus = result.passesAAA ? '✓' : '✗';
+    const aaStatus = result.passesAA ? 'PASS' : 'FAIL';
+    const aaaStatus = result.passesAAA ? 'PASS' : 'FAIL';
     const label = result.name ?? `${result.foreground} / ${result.background}`;
     out += `  ${label}\n`;
     out += `    Ratio: ${result.ratio.toFixed(2)}:1\n`;
@@ -288,7 +288,7 @@ export function formatValidationReport(report: ValidationReport): string {
   output += formatTypographySection(report);
   output += formatColorsSection(report);
 
-  output += `SUMMARY\nOverall Status: ${report.summary.allValid ? '✓ All valid' : '✗ Issues found'}\n\n`;
+  output += `SUMMARY\nOverall Status: ${report.summary.allValid ? 'All valid' : 'FAIL: Issues found'}\n\n`;
 
   if (report.summary.issues.length > 0) {
     output += `Issues:\n`;

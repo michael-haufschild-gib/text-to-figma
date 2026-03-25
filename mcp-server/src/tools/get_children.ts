@@ -43,25 +43,25 @@ export const getChildrenToolDefinition = {
   name: 'get_children',
   description: `Lists all child nodes inside a container (frame, group, component).
 
-🎯 WHEN TO USE:
+WHEN TO USE:
 - Exploring what's inside a frame before modifying it
 - Finding all elements to batch-update (e.g., change all text colors)
 - Understanding component structure before replicating
 - Verifying node creation succeeded
 
-📋 PARAMETERS:
+PARAMETERS:
 - nodeId: The container to inspect
 - recursive: false (default) = Direct children only
               true = All descendants (entire subtree flattened)
 
-📋 RETURNS (for each child):
+RETURNS (for each child):
 - nodeId: Use this to target the child in subsequent operations
 - name: Layer name as shown in Figma
 - type: FRAME, TEXT, ELLIPSE, RECTANGLE, GROUP, etc.
 - visible: Whether layer is visible
 - locked: Whether layer is locked
 
-💡 COMMON PATTERNS:
+COMMON PATTERNS:
 
 1. List items in a container:
    children = get_children({ nodeId: "card-frame-123" })
@@ -75,7 +75,7 @@ export const getChildrenToolDefinition = {
    result = get_children({ nodeId: "list-container" })
    console.log(\`Found \${result.childCount} items\`)
 
-⚠️ TIP: Use recursive=false first for performance. Only use recursive=true
+TIP: Use recursive=false first for performance. Only use recursive=true
 when you need to search through nested hierarchies.
 
 🔗 RELATED TOOLS:
@@ -135,9 +135,6 @@ export interface GetChildrenResult {
  * @param input
  */
 export async function getChildren(input: GetChildrenInput): Promise<GetChildrenResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -145,17 +142,17 @@ export async function getChildren(input: GetChildrenInput): Promise<GetChildrenR
   const response = await bridge.sendToFigmaValidated(
     'get_children',
     {
-      nodeId: validated.nodeId,
-      recursive: validated.recursive
+      nodeId: input.nodeId,
+      recursive: input.recursive
     },
     GetChildrenResponseSchema
   );
 
   const children = response.children ?? [];
-  const scope = validated.recursive ? 'descendants' : 'direct children';
+  const scope = input.recursive ? 'descendants' : 'direct children';
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     childCount: children.length,
     children,
     message: `Found ${children.length} ${scope}`

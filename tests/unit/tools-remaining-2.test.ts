@@ -470,19 +470,16 @@ describe('createBooleanOperation', () => {
     expect(result.message).toContain('3 shapes');
   });
 
-  it('handles missing nodeId in response gracefully', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({
-      success: true
-    });
+  it('rejects response when bridge returns no nodeId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "nodeId"'));
 
-    const result = await createBooleanOperation({
-      nodeIds: ['a', 'b'],
-      operation: 'INTERSECT',
-      name: 'Lens'
-    });
-
-    expect(result.booleanNodeId).toBe('');
-    expect(result.operation).toBe('INTERSECT');
+    await expect(
+      createBooleanOperation({
+        nodeIds: ['a', 'b'],
+        operation: 'INTERSECT',
+        name: 'Lens'
+      })
+    ).rejects.toThrow();
   });
 
   it('propagates bridge errors', async () => {

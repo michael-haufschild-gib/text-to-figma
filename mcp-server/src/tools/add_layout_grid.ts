@@ -152,48 +152,43 @@ export interface AddLayoutGridResult {
  * @param input
  */
 export async function addLayoutGrid(input: AddLayoutGridInput): Promise<AddLayoutGridResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: bridge.sendToFigma validates success at protocol level
-  // It only resolves if Figma returns success=true, otherwise rejects
   await bridge.sendToFigmaWithRetry('add_layout_grid', {
-    nodeId: validated.nodeId,
-    pattern: validated.pattern,
-    count: validated.count,
-    gutter: validated.gutter,
-    margin: validated.margin,
-    offset: validated.offset,
-    color: validated.color,
-    opacity: validated.opacity
+    nodeId: input.nodeId,
+    pattern: input.pattern,
+    count: input.count,
+    gutter: input.gutter,
+    margin: input.margin,
+    offset: input.offset,
+    color: input.color,
+    opacity: input.opacity
   });
 
   // Build CSS equivalent
   let cssEquivalent = '';
-  if (validated.pattern === 'COLUMNS' && validated.count !== undefined) {
-    cssEquivalent = `.container {\n  display: grid;\n  grid-template-columns: repeat(${String(validated.count)}, 1fr);\n  gap: ${String(validated.gutter)}px;\n  padding: 0 ${String(validated.margin)}px;\n}`;
-  } else if (validated.pattern === 'ROWS' && validated.count !== undefined) {
-    cssEquivalent = `.container {\n  display: grid;\n  grid-template-rows: repeat(${String(validated.count)}, 1fr);\n  gap: ${String(validated.gutter)}px;\n  padding: ${String(validated.margin)}px 0;\n}`;
+  if (input.pattern === 'COLUMNS' && input.count !== undefined) {
+    cssEquivalent = `.container {\n  display: grid;\n  grid-template-columns: repeat(${String(input.count)}, 1fr);\n  gap: ${String(input.gutter)}px;\n  padding: 0 ${String(input.margin)}px;\n}`;
+  } else if (input.pattern === 'ROWS' && input.count !== undefined) {
+    cssEquivalent = `.container {\n  display: grid;\n  grid-template-rows: repeat(${String(input.count)}, 1fr);\n  gap: ${String(input.gutter)}px;\n  padding: ${String(input.margin)}px 0;\n}`;
   } else {
-    cssEquivalent = `/* Grid layout for alignment reference */\n.container {\n  background-image: linear-gradient(...);\n  background-size: ${validated.gutter}px ${validated.gutter}px;\n}`;
+    cssEquivalent = `/* Grid layout for alignment reference */\n.container {\n  background-image: linear-gradient(...);\n  background-size: ${input.gutter}px ${input.gutter}px;\n}`;
   }
 
   const gridLabel =
-    validated.count !== undefined
-      ? `${String(validated.count)}-${validated.pattern.toLowerCase().slice(0, -1)}`
-      : validated.pattern.toLowerCase();
+    input.count !== undefined
+      ? `${String(input.count)}-${input.pattern.toLowerCase().slice(0, -1)}`
+      : input.pattern.toLowerCase();
 
   return {
-    nodeId: validated.nodeId,
-    pattern: validated.pattern,
-    count: validated.count,
-    gutter: validated.gutter,
-    margin: validated.margin,
+    nodeId: input.nodeId,
+    pattern: input.pattern,
+    count: input.count,
+    gutter: input.gutter,
+    margin: input.margin,
     cssEquivalent,
-    message: `Added ${gridLabel} layout grid (gutter: ${validated.gutter}px, margin: ${validated.margin}px)`
+    message: `Added ${gridLabel} layout grid (gutter: ${input.gutter}px, margin: ${input.margin}px)`
   };
 }

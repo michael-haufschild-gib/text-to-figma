@@ -56,19 +56,18 @@ export interface GetNodeInfoResult {
  * - Children are direct descendants only (not recursive)
  */
 export function getNodeInfo(input: GetNodeInfoInput): GetNodeInfoResult {
-  const validated = input;
   const registry = getNodeRegistry();
 
-  const node = registry.getNode(validated.nodeId);
+  const node = registry.getNode(input.nodeId);
   if (!node) {
     throw new Error(
-      `Node not found: ${validated.nodeId}. Try calling get_page_hierarchy with refresh=true first.`
+      `Node not found: ${input.nodeId}. Try calling get_page_hierarchy with refresh=true first.`
     );
   }
 
   const parent = node.parentId ? registry.getNode(node.parentId) : null;
-  const children = registry.getChildren(validated.nodeId);
-  const path = buildPath(validated.nodeId);
+  const children = registry.getChildren(input.nodeId);
+  const path = buildPath(input.nodeId);
 
   return {
     node,

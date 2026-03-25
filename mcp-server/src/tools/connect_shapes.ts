@@ -218,24 +218,21 @@ export interface ConnectShapesResult {
  * @param input
  */
 export async function connectShapes(input: ConnectShapesInput): Promise<ConnectShapesResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  const method = validated.method ?? 'POSITION_OVERLAP';
-  const overlap = validated.overlap ?? 5;
-  const unionResult = validated.unionResult !== false; // Default true
+  const method = input.method ?? 'POSITION_OVERLAP';
+  const overlap = input.overlap ?? 5;
+  const unionResult = input.unionResult !== false; // Default true
 
   // Send command to Figma
   const response = await bridge.sendToFigmaValidated(
     'connect_shapes',
     {
-      sourceNodeId: validated.sourceNodeId,
-      targetNodeId: validated.targetNodeId,
-      sourceAnchor: validated.sourceAnchor,
-      targetAnchor: validated.targetAnchor,
+      sourceNodeId: input.sourceNodeId,
+      targetNodeId: input.targetNodeId,
+      sourceAnchor: input.sourceAnchor,
+      targetAnchor: input.targetAnchor,
       method,
       overlap,
       unionResult
@@ -247,8 +244,8 @@ export async function connectShapes(input: ConnectShapesInput): Promise<ConnectS
 
   return {
     success: true as const,
-    sourceNodeId: validated.sourceNodeId,
-    targetNodeId: validated.targetNodeId,
+    sourceNodeId: input.sourceNodeId,
+    targetNodeId: input.targetNodeId,
     method,
     merged,
     newNodeId: response.newNodeId,

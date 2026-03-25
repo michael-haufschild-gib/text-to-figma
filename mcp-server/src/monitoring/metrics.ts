@@ -22,17 +22,33 @@ export interface HistogramBucket {
 }
 
 /**
- * Metric statistics
+ * Lifetime aggregate statistics (never reset by ring-buffer eviction).
  */
-export interface MetricStatistics {
+export interface LifetimeStatistics {
   count: number;
   sum: number;
+  mean: number;
+}
+
+/**
+ * Rolling-window statistics computed over the last MAX_VALUES observations.
+ */
+export interface WindowStatistics {
+  sampleSize: number;
   min: number;
   max: number;
-  mean: number;
   median: number;
   p95: number;
   p99: number;
+}
+
+/**
+ * Metric statistics — clearly separates lifetime aggregates from
+ * rolling-window percentiles to avoid misleading mixed semantics.
+ */
+export interface MetricStatistics {
+  lifetime: LifetimeStatistics;
+  window: WindowStatistics;
 }
 
 /**
@@ -195,34 +211,27 @@ class Histogram {
   getStatistics(): MetricStatistics {
     if (this.bufferSize === 0) {
       return {
-        count: 0,
-        sum: 0,
-        min: 0,
-        max: 0,
-        mean: 0,
-        median: 0,
-        p95: 0,
-        p99: 0
+        lifetime: { count: 0, sum: 0, mean: 0 },
+        window: { sampleSize: 0, min: 0, max: 0, median: 0, p95: 0, p99: 0 }
       };
     }
 
     const sorted = Array.from(this.buffer.subarray(0, this.bufferSize)).sort((a, b) => a - b);
-    const min = sorted[0] ?? 0;
-    const max = sorted[sorted.length - 1] ?? 0;
-    const mean = this.sum / this.count;
-    const median = this.percentile(sorted, 50);
-    const p95 = this.percentile(sorted, 95);
-    const p99 = this.percentile(sorted, 99);
 
     return {
-      count: this.count,
-      sum: this.sum,
-      min,
-      max,
-      mean,
-      median,
-      p95,
-      p99
+      lifetime: {
+        count: this.count,
+        sum: this.sum,
+        mean: this.sum / this.count
+      },
+      window: {
+        sampleSize: sorted.length,
+        min: sorted[0] ?? 0,
+        max: sorted[sorted.length - 1] ?? 0,
+        median: this.percentile(sorted, 50),
+        p95: this.percentile(sorted, 95),
+        p99: this.percentile(sorted, 99)
+      }
     };
   }
 

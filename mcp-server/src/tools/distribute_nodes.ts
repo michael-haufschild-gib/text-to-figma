@@ -159,45 +159,42 @@ export type DistributeNodesResult = ToolResult<DistributeNodesData>;
 export async function distributeNodes(input: DistributeNodesInput): Promise<DistributeNodesResult> {
   const startTime = Date.now();
 
-  // Validate input
-  const validated = input;
-
-  if (validated.nodeIds.length < 3) {
+  if (input.nodeIds.length < 3) {
     const error = new Error('Must provide at least 3 nodes to distribute');
-    log.error('Validation failed', error, { nodeCount: validated.nodeIds.length });
+    log.error('Validation failed', error, { nodeCount: input.nodeIds.length });
     throw error;
   }
 
   log.debug('Distributing nodes', {
-    nodeCount: validated.nodeIds.length,
-    axis: validated.axis
+    nodeCount: input.nodeIds.length,
+    axis: input.axis
   });
 
   try {
     // Get Figma bridge
     const bridge = getFigmaBridge();
 
-    const method = validated.method ?? 'SPACING';
+    const method = input.method ?? 'SPACING';
 
     // Send command to Figma
     const response = await bridge.sendToFigmaValidated(
       'distribute_nodes',
       {
-        nodeIds: validated.nodeIds,
-        axis: validated.axis,
+        nodeIds: input.nodeIds,
+        axis: input.axis,
         method,
-        spacing: validated.spacing
+        spacing: input.spacing
       },
       DistributeNodesResponseSchema
     );
 
     const duration = Date.now() - startTime;
-    const actualSpacing = validated.spacing ?? response.spacing;
-    const message = `Distributed ${validated.nodeIds.length} nodes ${validated.axis.toLowerCase()} using ${method}${actualSpacing !== undefined ? ` (spacing: ${String(actualSpacing)}px)` : ''}`;
+    const actualSpacing = input.spacing ?? response.spacing;
+    const message = `Distributed ${input.nodeIds.length} nodes ${input.axis.toLowerCase()} using ${method}${actualSpacing !== undefined ? ` (spacing: ${String(actualSpacing)}px)` : ''}`;
 
     log.info('Nodes distributed successfully', {
-      nodeCount: validated.nodeIds.length,
-      axis: validated.axis,
+      nodeCount: input.nodeIds.length,
+      axis: input.axis,
       method,
       spacing: actualSpacing,
       duration
@@ -205,8 +202,8 @@ export async function distributeNodes(input: DistributeNodesInput): Promise<Dist
 
     return createToolResult<DistributeNodesData>(
       {
-        nodeIds: validated.nodeIds,
-        axis: validated.axis,
+        nodeIds: input.nodeIds,
+        axis: input.axis,
         method,
         spacing: actualSpacing
       },
@@ -217,8 +214,8 @@ export async function distributeNodes(input: DistributeNodesInput): Promise<Dist
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     log.error('Failed to distribute nodes', error instanceof Error ? error : undefined, {
-      nodeIds: validated.nodeIds,
-      axis: validated.axis,
+      nodeIds: input.nodeIds,
+      axis: input.axis,
       duration
     });
 

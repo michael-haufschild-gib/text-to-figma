@@ -76,19 +76,19 @@ describe('MetricsRegistry', () => {
       hist.observe(0.5);
 
       const stats = hist.getStatistics();
-      expect(stats.count).toBe(5);
-      expect(stats.min).toBe(0.1);
-      expect(stats.max).toBe(0.5);
-      expect(stats.mean).toBeCloseTo(0.3, 5);
-      expect(stats.median).toBeCloseTo(0.3, 5);
+      expect(stats.lifetime.count).toBe(5);
+      expect(stats.window.min).toBe(0.1);
+      expect(stats.window.max).toBe(0.5);
+      expect(stats.lifetime.mean).toBeCloseTo(0.3, 5);
+      expect(stats.window.median).toBeCloseTo(0.3, 5);
     });
 
     it('returns zeroes for empty histogram', () => {
       const registry = new MetricsRegistry();
       const hist = registry.histogram('empty');
       const stats = hist.getStatistics();
-      expect(stats.count).toBe(0);
-      expect(stats.sum).toBe(0);
+      expect(stats.lifetime.count).toBe(0);
+      expect(stats.lifetime.sum).toBe(0);
     });
   });
 
@@ -101,9 +101,8 @@ describe('MetricsRegistry', () => {
 
       expect(result).toBe(42);
       const stats = timer.getStatistics();
-      expect(stats.count).toBe(1);
-      // Duration may be 0 for trivial work due to Date.now() granularity
-      expect(stats.sum).toBeGreaterThanOrEqual(0);
+      expect(stats.lifetime.count).toBe(1);
+      expect(stats.lifetime.sum).toBeGreaterThanOrEqual(0);
     });
 
     it('measures async function duration', async () => {
@@ -116,7 +115,7 @@ describe('MetricsRegistry', () => {
       });
 
       const stats = timer.getStatistics();
-      expect(stats.count).toBe(1);
+      expect(stats.lifetime.count).toBe(1);
     });
   });
 
@@ -195,11 +194,11 @@ describe('MetricsRegistry edge cases', () => {
       hist.observe(5);
 
       const stats = hist.getStatistics();
-      expect(stats.count).toBe(1);
-      expect(stats.min).toBe(5);
-      expect(stats.max).toBe(5);
-      expect(stats.mean).toBe(5);
-      expect(stats.median).toBe(5);
+      expect(stats.lifetime.count).toBe(1);
+      expect(stats.window.min).toBe(5);
+      expect(stats.window.max).toBe(5);
+      expect(stats.lifetime.mean).toBe(5);
+      expect(stats.window.median).toBe(5);
     });
 
     it('handles large dataset', () => {
@@ -210,10 +209,10 @@ describe('MetricsRegistry edge cases', () => {
       }
 
       const stats = hist.getStatistics();
-      expect(stats.count).toBe(100);
-      expect(stats.min).toBe(1);
-      expect(stats.max).toBe(100);
-      expect(stats.mean).toBeCloseTo(50.5, 1);
+      expect(stats.lifetime.count).toBe(100);
+      expect(stats.window.min).toBe(1);
+      expect(stats.window.max).toBe(100);
+      expect(stats.lifetime.mean).toBeCloseTo(50.5, 1);
     });
   });
 
@@ -265,8 +264,8 @@ describe('MetricsRegistry edge cases', () => {
       hist.observe(4);
 
       const stats = hist.getStatistics();
-      expect(stats.count).toBe(4);
-      expect(stats.median).toBeCloseTo(2.5, 5);
+      expect(stats.lifetime.count).toBe(4);
+      expect(stats.window.median).toBeCloseTo(2.5, 5);
     });
 
     it('median of odd count is the middle value', () => {
@@ -277,7 +276,7 @@ describe('MetricsRegistry edge cases', () => {
       hist.observe(30);
 
       const stats = hist.getStatistics();
-      expect(stats.median).toBeCloseTo(20, 5);
+      expect(stats.window.median).toBeCloseTo(20, 5);
     });
 
     it('histogram with identical values', () => {
@@ -288,10 +287,10 @@ describe('MetricsRegistry edge cases', () => {
       }
 
       const stats = hist.getStatistics();
-      expect(stats.min).toBe(42);
-      expect(stats.max).toBe(42);
-      expect(stats.mean).toBe(42);
-      expect(stats.median).toBe(42);
+      expect(stats.window.min).toBe(42);
+      expect(stats.window.max).toBe(42);
+      expect(stats.lifetime.mean).toBe(42);
+      expect(stats.window.median).toBe(42);
     });
 
     it('histogram mean is sum/count', () => {
@@ -302,8 +301,8 @@ describe('MetricsRegistry edge cases', () => {
       hist.observe(30);
 
       const stats = hist.getStatistics();
-      expect(stats.sum).toBe(60);
-      expect(stats.mean).toBeCloseTo(20, 5);
+      expect(stats.lifetime.sum).toBe(60);
+      expect(stats.lifetime.mean).toBeCloseTo(20, 5);
     });
   });
 
@@ -319,7 +318,7 @@ describe('MetricsRegistry edge cases', () => {
       ).toThrow('boom');
 
       const stats = timer.getStatistics();
-      expect(stats.count).toBe(1);
+      expect(stats.lifetime.count).toBe(1);
     });
 
     it('records observation even when async function rejects', async () => {
@@ -333,7 +332,7 @@ describe('MetricsRegistry edge cases', () => {
       ).rejects.toThrow('async boom');
 
       const stats = timer.getStatistics();
-      expect(stats.count).toBe(1);
+      expect(stats.lifetime.count).toBe(1);
     });
   });
 
@@ -385,12 +384,10 @@ describe('MetricsRegistry histogram advanced', () => {
       }
 
       const stats = hist.getStatistics();
-      // count tracks all observations monotonically
-      expect(stats.count).toBe(10051);
-      // But min/max/median are computed from the retained values window
-      // The 999 values should have been evicted since only last 10000 are kept
-      expect(stats.max).toBe(1);
-      expect(stats.min).toBe(1);
+      expect(stats.lifetime.count).toBe(10051);
+      // window stats are computed from the retained ring buffer only
+      expect(stats.window.max).toBe(1);
+      expect(stats.window.min).toBe(1);
     });
 
     it('mean drifts after eviction because sum includes evicted values (known bug)', () => {
@@ -411,18 +408,12 @@ describe('MetricsRegistry histogram advanced', () => {
       }
 
       const stats = hist.getStatistics();
-      // sum = 50*1000 + 10001*1 = 60001
-      // count = 10051
-      // mean = 60001/10051 ≈ 5.97
-      // But the retained window only has values of 1, so the "windowed mean" would be 1.
-      // The reported mean includes the evicted 1000-values in sum/count.
-      expect(stats.mean).toBeCloseTo(60001 / 10051, 1);
-      // This is technically correct as a lifetime aggregate, but may surprise consumers
-      // who expect stats to reflect only the retained observation window.
-      // The min/max/median correctly reflect only the retained window:
-      expect(stats.min).toBe(1);
-      expect(stats.max).toBe(1);
-      expect(stats.median).toBe(1);
+      // Lifetime mean includes evicted values — this is now explicit
+      expect(stats.lifetime.mean).toBeCloseTo(60001 / 10051, 1);
+      // Window stats reflect only the retained ring buffer
+      expect(stats.window.min).toBe(1);
+      expect(stats.window.max).toBe(1);
+      expect(stats.window.median).toBe(1);
     });
 
     it('bucket counts are monotonic and never evicted', () => {
@@ -455,10 +446,8 @@ describe('MetricsRegistry histogram advanced', () => {
       }
 
       const stats = hist.getStatistics();
-      // p95 of 1..100: index = 0.95 * 99 = 94.05 → interpolated between sorted[94]=95 and sorted[95]=96
-      expect(stats.p95).toBeCloseTo(95.05, 1);
-      // p99 of 1..100: index = 0.99 * 99 = 98.01 → interpolated between sorted[98]=99 and sorted[99]=100
-      expect(stats.p99).toBeCloseTo(99.01, 1);
+      expect(stats.window.p95).toBeCloseTo(95.05, 1);
+      expect(stats.window.p99).toBeCloseTo(99.01, 1);
     });
 
     it('p95 and p99 equal the single value for 1 observation', () => {
@@ -467,8 +456,8 @@ describe('MetricsRegistry histogram advanced', () => {
       hist.observe(42);
 
       const stats = hist.getStatistics();
-      expect(stats.p95).toBe(42);
-      expect(stats.p99).toBe(42);
+      expect(stats.window.p95).toBe(42);
+      expect(stats.window.p99).toBe(42);
     });
 
     it('p95 of two values interpolates correctly', () => {
@@ -478,10 +467,7 @@ describe('MetricsRegistry histogram advanced', () => {
       hist.observe(20);
 
       const stats = hist.getStatistics();
-      // sorted = [10, 20], index = 0.95 * 1 = 0.95
-      // lower=0 (10), upper=1 (20), weight=0.95
-      // result = 10 * 0.05 + 20 * 0.95 = 0.5 + 19 = 19.5
-      expect(stats.p95).toBeCloseTo(19.5, 5);
+      expect(stats.window.p95).toBeCloseTo(19.5, 5);
     });
   });
 
@@ -543,8 +529,8 @@ describe('MetricsRegistry histogram advanced', () => {
 
       expect(counter.get()).toBe(0);
       expect(gauge.get()).toBe(0);
-      expect(hist.getStatistics().count).toBe(0);
-      expect(timer.getStatistics().count).toBe(0);
+      expect(hist.getStatistics().lifetime.count).toBe(0);
+      expect(timer.getStatistics().lifetime.count).toBe(0);
     });
   });
 
@@ -558,7 +544,9 @@ describe('MetricsRegistry histogram advanced', () => {
       const json = registry.toJSON();
       const hJson = json.h as Record<string, unknown>;
       expect(hJson.type).toBe('histogram');
-      expect((hJson.statistics as Record<string, unknown>).count).toBe(2);
+      expect(
+        ((hJson.statistics as Record<string, unknown>).lifetime as Record<string, unknown>).count
+      ).toBe(2);
       expect((hJson.buckets as unknown[]).length).toBe(2);
     });
 
@@ -571,7 +559,7 @@ describe('MetricsRegistry histogram advanced', () => {
       const tJson = json.t as Record<string, unknown>;
       expect(tJson.type).toBe('timer');
       const stats = tJson.statistics as Record<string, unknown>;
-      expect(stats.count).toBe(1);
+      expect((stats.lifetime as Record<string, unknown>).count).toBe(1);
     });
   });
 
@@ -586,8 +574,8 @@ describe('MetricsRegistry histogram advanced', () => {
 
       const buckets = hist.getBuckets();
       expect(buckets.every((b) => b.count === 0)).toBe(true);
-      expect(hist.getStatistics().count).toBe(0);
-      expect(hist.getStatistics().sum).toBe(0);
+      expect(hist.getStatistics().lifetime.count).toBe(0);
+      expect(hist.getStatistics().lifetime.sum).toBe(0);
     });
   });
 
@@ -599,10 +587,10 @@ describe('MetricsRegistry histogram advanced', () => {
       timer.observe(1.5);
 
       const stats = timer.getStatistics();
-      expect(stats.count).toBe(2);
-      expect(stats.sum).toBeCloseTo(2.0, 5);
-      expect(stats.min).toBeCloseTo(0.5, 5);
-      expect(stats.max).toBeCloseTo(1.5, 5);
+      expect(stats.lifetime.count).toBe(2);
+      expect(stats.lifetime.sum).toBeCloseTo(2.0, 5);
+      expect(stats.window.min).toBeCloseTo(0.5, 5);
+      expect(stats.window.max).toBeCloseTo(1.5, 5);
     });
   });
 });

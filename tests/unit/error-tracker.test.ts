@@ -91,9 +91,9 @@ describe('ErrorTracker', () => {
       expect(tracker.getByCategory('validation')).toHaveLength(1);
     });
 
-    it('categorizes by message keyword: "connection" → network', () => {
+    it('categorizes by message keyword: "econnrefused" → network', () => {
       tracker = new ErrorTracker();
-      tracker.track(new Error('connection refused'));
+      tracker.track(new Error('ECONNREFUSED: connection refused'));
       expect(tracker.getByCategory('network')).toHaveLength(1);
     });
 
@@ -153,17 +153,10 @@ describe('ErrorTracker', () => {
       expect(tracker.getByCategory('unknown')).toHaveLength(1);
     });
 
-    it('categorizes "connection" in Figma context as network, not figma_api — exposes ambiguity', () => {
-      // BUG EXPOSURE: The keyword "connection" matches network category before "node"/"frame"
-      // could match figma_api. An error like "Connection between nodes failed" is about
-      // Figma node connections, not network issues — but gets categorized as network.
+    it('categorizes "connection between nodes" as figma_api, not network', () => {
       tracker = new ErrorTracker();
       tracker.track(new Error('Connection between nodes is not supported'));
-      // This test documents the current (incorrect) behavior: categorized as "network"
-      // because "connection" matches the network rule before any figma_api rule.
-      expect(tracker.getByCategory('network')).toHaveLength(1);
-      // When fixed, this should be figma_api instead:
-      // expect(tracker.getByCategory('figma_api')).toHaveLength(1);
+      expect(tracker.getByCategory('figma_api')).toHaveLength(1);
     });
 
     it('first matching rule wins: "invalid node" → validation (not figma_api)', () => {

@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { getNodeRegistry } from '../node-registry.js';
 
 /**
  * Input schema
@@ -109,7 +110,7 @@ Note: Order matters for SUBTRACT (first shape is the base)`,
  */
 const CreateBooleanOperationResponseSchema = z
   .object({
-    nodeId: z.string().optional()
+    nodeId: z.string()
   })
   .passthrough();
 
@@ -131,9 +132,6 @@ export interface CreateBooleanOperationResult {
 export async function createBooleanOperation(
   input: CreateBooleanOperationInput
 ): Promise<CreateBooleanOperationResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -141,9 +139,9 @@ export async function createBooleanOperation(
   const response = await bridge.sendToFigmaValidated(
     'create_boolean_operation',
     {
-      nodeIds: validated.nodeIds,
-      operation: validated.operation,
-      name: validated.name
+      nodeIds: input.nodeIds,
+      operation: input.operation,
+      name: input.name
     },
     CreateBooleanOperationResponseSchema
   );
@@ -163,23 +161,31 @@ export async function createBooleanOperation(
     EXCLUDE: 'excluded overlaps'
   };
 
-  const cssEquivalent = `/* ${operationLabel[validated.operation]} requires SVG */
+  const cssEquivalent = `/* ${operationLabel[input.operation]} requires SVG */
 .boolean-shape {
-  clip-path: url(#${validated.name.toLowerCase().replace(/\s+/g, '-')});
+  clip-path: url(#${input.name.toLowerCase().replace(/\s+/g, '-')});
 }
 
 <!-- SVG definition required -->
 <svg>
-  <clipPath id="${validated.name.toLowerCase().replace(/\s+/g, '-')}">
+  <clipPath id="${input.name.toLowerCase().replace(/\s+/g, '-')}">
     <!-- Boolean operation path -->
   </clipPath>
 </svg>`;
 
+  const registry = getNodeRegistry();
+  registry.register(response.nodeId, {
+    type: 'BOOLEAN_OPERATION',
+    name: input.name,
+    parentId: null,
+    children: []
+  });
+
   return {
-    booleanNodeId: response.nodeId ?? '',
-    operation: validated.operation,
-    nodeCount: validated.nodeIds.length,
+    booleanNodeId: response.nodeId,
+    operation: input.operation,
+    nodeCount: input.nodeIds.length,
     cssEquivalent,
-    message: `Created ${operationDescription[validated.operation]} from ${validated.nodeIds.length} shapes using ${validated.operation}`
+    message: `Created ${operationDescription[input.operation]} from ${input.nodeIds.length} shapes using ${input.operation}`
   };
 }

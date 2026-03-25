@@ -223,27 +223,27 @@ export async function createFrame(input: CreateFrameInput): Promise<CreateFrameR
  */
 export const createFrameToolDefinition = {
   name: 'create_frame',
-  description: `[TIER 2 - ESSENTIAL] ⭐ Core building block for single containers
+  description: `[TIER 2 - ESSENTIAL] Core building block for single containers
 
 Creates a new frame in Figma with auto-layout properties.
 
 HTML Analogy: A frame is like a <div> container with flexbox layout.
 
-📋 RECOMMENDED WORKFLOW:
+RECOMMENDED WORKFLOW:
 1. Use get_page_hierarchy to understand current structure
 2. Option A (Multi-element design): Use create_design for entire hierarchy at once
 3. Option B (Single frame creation):
    - First frame: create_frame with NO parentId (creates root container)
    - Nested frames: create_frame WITH parentId (nests inside parent)
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Creating a single, isolated frame container
 - Adding one container to an existing design structure
 - Building layouts step-by-step (for simple designs)
 
-⚠️ For designs with 2+ elements, prefer create_design instead (faster, atomic, no coordination issues).
+For designs with 2+ elements, prefer create_design instead (faster, atomic, no coordination issues).
 
-🚨 CRITICAL HIERARCHY RULE (Think Like HTML):
+CRITICAL HIERARCHY RULE (Think Like HTML):
 - In HTML, you don't create dozens of <div>s as direct children of <body>
 - Instead, you create a ROOT container, then nest children inside it
 - FIRST create a parent frame (no parentId), THEN create children (with parentId)

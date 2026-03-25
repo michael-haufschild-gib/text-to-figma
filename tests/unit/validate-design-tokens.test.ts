@@ -165,11 +165,11 @@ describe('formatValidationReport', () => {
     expect(text).toContain('10px');
   });
 
-  it('uses checkmark for valid and X for invalid', () => {
+  it('uses PASS for valid and FAIL for invalid', () => {
     const report = validateDesignTokens({ spacing: [8, 10] });
     const text = formatValidationReport(report);
-    expect(text).toContain('✓');
-    expect(text).toContain('✗');
+    expect(text).toContain('PASS');
+    expect(text).toContain('FAIL');
   });
 });
 

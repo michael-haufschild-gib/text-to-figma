@@ -135,9 +135,6 @@ export interface ExportNodeResult {
  * @param input
  */
 export async function exportNode(input: ExportNodeInput): Promise<ExportNodeResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -145,22 +142,22 @@ export async function exportNode(input: ExportNodeInput): Promise<ExportNodeResu
   const response = await bridge.sendToFigmaValidated(
     'export_node',
     {
-      nodeId: validated.nodeId,
-      format: validated.format,
-      scale: validated.scale,
-      returnBase64: validated.returnBase64
+      nodeId: input.nodeId,
+      format: input.format,
+      scale: input.scale,
+      returnBase64: input.returnBase64
     },
     ExportNodeResponseSchema
   );
 
-  const scaleLabel = validated.scale === 1 ? '1x' : `${validated.scale}x`;
+  const scaleLabel = input.scale === 1 ? '1x' : `${input.scale}x`;
 
   return {
-    nodeId: validated.nodeId,
-    format: validated.format,
-    scale: validated.scale,
+    nodeId: input.nodeId,
+    format: input.format,
+    scale: input.scale,
     base64Data: response.base64Data,
     filePath: response.filePath,
-    message: `Exported node as ${validated.format} at ${scaleLabel}`
+    message: `Exported node as ${input.format} at ${scaleLabel}`
   };
 }

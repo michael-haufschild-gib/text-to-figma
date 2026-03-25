@@ -108,20 +108,15 @@ export interface SetImageFillResult {
  * @param input
  */
 export async function setImageFill(input: SetImageFillInput): Promise<SetImageFillResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: bridge.sendToFigma validates success at protocol level
-  // It only resolves if Figma returns success=true, otherwise rejects
   await bridge.sendToFigmaWithRetry('set_image_fill', {
-    nodeId: validated.nodeId,
-    imageUrl: validated.imageUrl,
-    scaleMode: validated.scaleMode,
-    opacity: validated.opacity
+    nodeId: input.nodeId,
+    imageUrl: input.imageUrl,
+    scaleMode: input.scaleMode,
+    opacity: input.opacity
   });
 
   // Map scale mode to CSS
@@ -132,16 +127,16 @@ export async function setImageFill(input: SetImageFillInput): Promise<SetImageFi
     TILE: 'background-repeat: repeat;'
   };
 
-  const cssEquivalent = `background-image: url('${validated.imageUrl}');
-${scaleModeToCSS[validated.scaleMode]}
-opacity: ${validated.opacity};`;
+  const cssEquivalent = `background-image: url('${input.imageUrl}');
+${scaleModeToCSS[input.scaleMode]}
+opacity: ${input.opacity};`;
 
   return {
-    nodeId: validated.nodeId,
-    imageUrl: validated.imageUrl,
-    scaleMode: validated.scaleMode,
-    opacity: validated.opacity,
+    nodeId: input.nodeId,
+    imageUrl: input.imageUrl,
+    scaleMode: input.scaleMode,
+    opacity: input.opacity,
     cssEquivalent,
-    message: `Applied image fill to node ${validated.nodeId} (${validated.scaleMode} mode)`
+    message: `Applied image fill to node ${input.nodeId} (${input.scaleMode} mode)`
   };
 }

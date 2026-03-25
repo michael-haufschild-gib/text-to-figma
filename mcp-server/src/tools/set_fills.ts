@@ -116,19 +116,16 @@ function generateCssEquivalent(hex: string, opacity: number, isText: boolean): s
  * to ensure WCAG AA/AAA accessibility compliance.
  */
 export async function setFills(input: SetFillsInput, isText = false): Promise<SetFillsResult> {
-  // Validate input
-  const validated = input;
-
   // Normalize color to RGB and hex
-  const { rgb, hex } = normalizeColor(validated.color);
+  const { rgb, hex } = normalizeColor(input.color);
 
   // Generate CSS equivalent
-  const cssEquivalent = generateCssEquivalent(hex, validated.opacity, isText);
+  const cssEquivalent = generateCssEquivalent(hex, input.opacity, isText);
 
   // Send to Figma
   const bridge = getFigmaBridge();
   await bridge.sendToFigmaWithRetry('set_fills', {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     fills: [
       {
         type: 'SOLID',
@@ -137,13 +134,13 @@ export async function setFills(input: SetFillsInput, isText = false): Promise<Se
           g: rgb.g / 255,
           b: rgb.b / 255
         },
-        opacity: validated.opacity
+        opacity: input.opacity
       }
     ]
   });
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     appliedColor: hex,
     cssEquivalent
   };
@@ -156,13 +153,13 @@ export const setFillsToolDefinition = {
   name: 'set_fills',
   description: `Sets fill colors on frames or text nodes in Figma.
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Updating color on an EXISTING node
 - Changing background color of an existing frame
 - Changing text color of existing text
 - Styling nodes created by individual create_* tools
 
-⚠️ DON'T use this for:
+DON'T use this for:
 - New designs with multiple elements (use create_design with color props instead)
 - Initial color during node creation (set color in create_* tool directly)
 

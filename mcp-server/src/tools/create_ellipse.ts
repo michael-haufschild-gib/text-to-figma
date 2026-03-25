@@ -39,18 +39,18 @@ export const createEllipseToolDefinition = {
 
 PRIMITIVE: Raw Figma shape primitive - not a pre-made component.
 
-📋 RECOMMENDED WORKFLOW:
+RECOMMENDED WORKFLOW:
 1. Option A (Multi-element): Use create_design to create ellipse + container together
 2. Option B (Single ellipse):
    - Best practice: Create inside a parent frame for organization
    - Edge case: Can create at root for standalone decorative elements
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Adding a single circle/oval to an existing design
 - Creating avatars, icons, bullets, or decorative shapes
 - Building UI step-by-step (for simple designs)
 
-⚠️ For designs with shapes + other elements, prefer create_design instead.
+For designs with shapes + other elements, prefer create_design instead.
 
 Perfect Circle: Set width = height
 Oval: Set different width and height
@@ -129,9 +129,6 @@ export interface CreateEllipseResult {
  * @param input
  */
 export async function createEllipse(input: CreateEllipseInput): Promise<CreateEllipseResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -139,53 +136,51 @@ export async function createEllipse(input: CreateEllipseInput): Promise<CreateEl
   const response = await bridge.sendToFigmaValidated(
     'create_ellipse',
     {
-      width: validated.width,
-      height: validated.height,
-      name: validated.name,
-      parentId: validated.parentId,
-      fillColor: validated.fillColor,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight
+      width: input.width,
+      height: input.height,
+      name: input.name,
+      parentId: input.parentId,
+      fillColor: input.fillColor,
+      strokeColor: input.strokeColor,
+      strokeWeight: input.strokeWeight
     },
-    z.object({ nodeId: z.string().optional(), error: z.string().optional() })
+    z.object({ nodeId: z.string() }).passthrough()
   );
 
-  const isCircle = validated.width === validated.height;
+  const isCircle = input.width === input.height;
 
   // Build CSS equivalent
-  let cssEquivalent = `.${validated.name.toLowerCase().replace(/\s+/g, '-')} {
-  width: ${validated.width}px;
-  height: ${validated.height}px;
+  let cssEquivalent = `.${input.name.toLowerCase().replace(/\s+/g, '-')} {
+  width: ${input.width}px;
+  height: ${input.height}px;
   border-radius: 50%; /* Makes it ${isCircle ? 'a circle' : 'an ellipse'} */`;
 
-  if (validated.fillColor !== undefined) {
-    cssEquivalent += `\n  background-color: ${validated.fillColor};`;
+  if (input.fillColor !== undefined) {
+    cssEquivalent += `\n  background-color: ${input.fillColor};`;
   }
 
-  if (validated.strokeColor !== undefined && validated.strokeWeight !== undefined) {
-    cssEquivalent += `\n  border: ${validated.strokeWeight}px solid ${validated.strokeColor};`;
+  if (input.strokeColor !== undefined && input.strokeWeight !== undefined) {
+    cssEquivalent += `\n  border: ${input.strokeWeight}px solid ${input.strokeColor};`;
   }
 
   cssEquivalent += '\n}';
 
   // Register node in hierarchy registry
-  if (response.nodeId) {
-    const registry = getNodeRegistry();
-    registry.register(response.nodeId, {
-      type: 'ELLIPSE',
-      name: validated.name,
-      parentId: validated.parentId ?? null,
-      children: [],
-      bounds: { x: 0, y: 0, width: validated.width, height: validated.height }
-    });
-  }
+  const registry = getNodeRegistry();
+  registry.register(response.nodeId, {
+    type: 'ELLIPSE',
+    name: input.name,
+    parentId: input.parentId ?? null,
+    children: [],
+    bounds: { x: 0, y: 0, width: input.width, height: input.height }
+  });
 
   return {
-    ellipseId: response.nodeId ?? '',
-    width: validated.width,
-    height: validated.height,
+    ellipseId: response.nodeId,
+    width: input.width,
+    height: input.height,
     isCircle,
     cssEquivalent,
-    message: `Created ${isCircle ? 'circle' : 'ellipse'} (${validated.width}x${validated.height})`
+    message: `Created ${isCircle ? 'circle' : 'ellipse'} (${input.width}x${input.height})`
   };
 }

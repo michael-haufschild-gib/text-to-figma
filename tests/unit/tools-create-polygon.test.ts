@@ -158,16 +158,16 @@ describe('createPolygon', () => {
     );
   });
 
-  it('returns empty polygonId when response has no nodeId', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
+  it('rejects response when bridge returns no nodeId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "nodeId"'));
 
-    const result = await createPolygon({
-      sideCount: 3,
-      radius: 30,
-      name: 'No ID'
-    });
-
-    expect(result.polygonId).toBe('');
+    await expect(
+      createPolygon({
+        sideCount: 3,
+        radius: 30,
+        name: 'No ID'
+      })
+    ).rejects.toThrow();
   });
 
   it('propagates bridge errors without wrapping', async () => {

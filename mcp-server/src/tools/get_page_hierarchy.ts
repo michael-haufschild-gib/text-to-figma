@@ -106,11 +106,10 @@ const GetPageHierarchyResponseSchema = z
 export async function getPageHierarchy(
   input: GetPageHierarchyInput
 ): Promise<GetPageHierarchyResult> {
-  const validated = input;
   const registry = getNodeRegistry();
 
   // If refresh requested, query Figma and rebuild registry
-  if (validated.refresh === true) {
+  if (input.refresh === true) {
     logger.info('Refreshing hierarchy from Figma...');
 
     const bridge = getFigmaBridge();

@@ -88,16 +88,15 @@ describe('createColorStyle', () => {
     );
   });
 
-  it('falls back to empty string when bridge returns no styleId', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
+  it('rejects response when bridge returns no styleId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "styleId"'));
 
-    const result = await createColorStyle({
-      name: 'Gray/500',
-      color: '#6B7280'
-    });
-
-    expect(result.styleId).toBe('');
-    expect(result.name).toBe('Gray/500');
+    await expect(
+      createColorStyle({
+        name: 'Gray/500',
+        color: '#6B7280'
+      })
+    ).rejects.toThrow();
   });
 
   it('propagates bridge errors', async () => {
@@ -140,19 +139,19 @@ describe('createTextStyle', () => {
     expect(result.message).toBe('Created text style "H1" (48px, 700)');
   });
 
-  it('falls back to empty string when bridge returns no styleId', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
+  it('rejects response when bridge returns no styleId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "styleId"'));
 
-    const result = await createTextStyle({
-      name: 'Body',
-      fontFamily: 'Inter',
-      fontSize: 16,
-      fontWeight: 400,
-      textCase: 'ORIGINAL' as const,
-      textDecoration: 'NONE' as const
-    });
-
-    expect(result.styleId).toBe('');
+    await expect(
+      createTextStyle({
+        name: 'Body',
+        fontFamily: 'Inter',
+        fontSize: 16,
+        fontWeight: 400,
+        textCase: 'ORIGINAL' as const,
+        textDecoration: 'NONE' as const
+      })
+    ).rejects.toThrow();
   });
 
   it('propagates bridge errors', async () => {

@@ -243,13 +243,13 @@ describe('ErrorTracker pruning', () => {
       tracker.track(err1); // validation, count=1
       tracker.track(err1); // validation, count=2
       tracker.track(err1); // validation, count=3
-      tracker.track(new Error('connection lost')); // network, count=1
+      tracker.track(new Error('connection lost')); // unknown (no matching network keyword), count=1
 
       const stats = tracker.getStatistics();
       expect(stats.total).toBe(4); // 3 + 1
       expect(stats.uniqueErrors).toBe(2);
       expect(stats.byCategory.validation).toBe(3);
-      expect(stats.byCategory.network).toBe(1);
+      expect(stats.byCategory.unknown).toBe(1);
     });
   });
 

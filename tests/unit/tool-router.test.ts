@@ -15,7 +15,7 @@ type TestResult = { result: number };
 const testHandler: ToolHandler<TestInput, TestResult> = {
   name: 'test_tool',
   schema: z.object({ value: z.number() }),
-  execute: (input) => ({ result: input.value * 2 }),
+  execute: (input) => Promise.resolve({ result: input.value * 2 }),
   formatResponse: (result) => [{ type: 'text', text: `Result: ${result.result}` }],
   definition: {
     name: 'test_tool',
@@ -283,7 +283,7 @@ describe('routeToolCall', () => {
     const handlerB: ToolHandler<TestInput, TestResult> = {
       ...testHandler,
       name: 'tool_b',
-      execute: (input) => ({ result: input.value + 2 }),
+      execute: (input) => Promise.resolve({ result: input.value + 2 }),
       definition: { ...testHandler.definition, name: 'tool_b' }
     };
 

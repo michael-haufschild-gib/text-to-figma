@@ -95,28 +95,23 @@ export interface SetVisibleResult {
  * @param input
  */
 export async function setVisible(input: SetVisibleInput): Promise<SetVisibleResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: bridge.sendToFigma validates success at protocol level
-  // It only resolves if Figma returns success=true, otherwise rejects
   await bridge.sendToFigmaWithRetry('set_visible', {
-    nodeId: validated.nodeId,
-    visible: validated.visible
+    nodeId: input.nodeId,
+    visible: input.visible
   });
 
-  const cssEquivalent = validated.visible
+  const cssEquivalent = input.visible
     ? 'visibility: visible;'
     : 'visibility: hidden;\n/* OR */\ndisplay: none;';
 
   return {
-    nodeId: validated.nodeId,
-    visible: validated.visible,
+    nodeId: input.nodeId,
+    visible: input.visible,
     cssEquivalent,
-    message: validated.visible ? 'Showed node' : 'Hid node'
+    message: input.visible ? 'Showed node' : 'Hid node'
   };
 }

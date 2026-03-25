@@ -91,7 +91,7 @@ After creating, use add_variant_property to define variant properties.`,
  */
 const CreateComponentSetResponseSchema = z
   .object({
-    componentSetId: z.string().optional()
+    componentSetId: z.string()
   })
   .passthrough();
 
@@ -112,9 +112,6 @@ export interface CreateComponentSetResult {
 export async function createComponentSet(
   input: CreateComponentSetInput
 ): Promise<CreateComponentSetResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -122,17 +119,17 @@ export async function createComponentSet(
   const response = await bridge.sendToFigmaValidated(
     'create_component_set',
     {
-      componentIds: validated.componentIds,
-      name: validated.name,
-      description: validated.description
+      variantIds: input.componentIds,
+      name: input.name,
+      description: input.description
     },
     CreateComponentSetResponseSchema
   );
 
   return {
-    componentSetId: response.componentSetId ?? '',
-    name: validated.name,
-    variantCount: validated.componentIds.length,
-    message: `Created component set "${validated.name}" with ${validated.componentIds.length} variants`
+    componentSetId: response.componentSetId,
+    name: input.name,
+    variantCount: input.componentIds.length,
+    message: `Created component set "${input.name}" with ${input.componentIds.length} variants`
   };
 }

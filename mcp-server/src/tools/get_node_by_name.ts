@@ -138,9 +138,6 @@ export interface GetNodeByNameResult {
  * @param input
  */
 export async function getNodeByName(input: GetNodeByNameInput): Promise<GetNodeByNameResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -148,20 +145,20 @@ export async function getNodeByName(input: GetNodeByNameInput): Promise<GetNodeB
   const response = await bridge.sendToFigmaValidated(
     'get_node_by_name',
     {
-      name: validated.name,
-      findAll: validated.findAll,
-      exactMatch: validated.exactMatch
+      name: input.name,
+      findAll: input.findAll,
+      exactMatch: input.exactMatch
     },
     GetNodeByNameResponseSchema
   );
 
   const nodes = response.nodes ?? [];
-  const matchType = validated.exactMatch ? 'exact' : 'partial';
-  const searchScope = validated.findAll ? 'all matches' : 'first match';
+  const matchType = input.exactMatch ? 'exact' : 'partial';
+  const searchScope = input.findAll ? 'all matches' : 'first match';
 
   return {
     found: nodes.length,
     nodes,
-    message: `Found ${nodes.length} node(s) with ${matchType} match for "${validated.name}" (${searchScope})`
+    message: `Found ${nodes.length} node(s) with ${matchType} match for "${input.name}" (${searchScope})`
   };
 }

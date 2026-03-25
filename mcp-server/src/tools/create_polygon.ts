@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { getNodeRegistry } from '../node-registry.js';
 
 /**
  * Input schema
@@ -123,9 +124,6 @@ export interface CreatePolygonResult {
  * @param input
  */
 export async function createPolygon(input: CreatePolygonInput): Promise<CreatePolygonResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -133,15 +131,15 @@ export async function createPolygon(input: CreatePolygonInput): Promise<CreatePo
   const response = await bridge.sendToFigmaValidated(
     'create_polygon',
     {
-      sideCount: validated.sideCount,
-      radius: validated.radius,
-      name: validated.name,
-      parentId: validated.parentId,
-      fillColor: validated.fillColor,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight
+      sideCount: input.sideCount,
+      radius: input.radius,
+      name: input.name,
+      parentId: input.parentId,
+      fillColor: input.fillColor,
+      strokeColor: input.strokeColor,
+      strokeWeight: input.strokeWeight
     },
-    z.object({ nodeId: z.string().optional(), error: z.string().optional() })
+    z.object({ nodeId: z.string() }).passthrough()
   );
 
   // Determine polygon type
@@ -152,23 +150,32 @@ export async function createPolygon(input: CreatePolygonInput): Promise<CreatePo
     6: 'hexagon',
     8: 'octagon'
   };
-  const polygonType = polygonTypes[validated.sideCount] ?? `${validated.sideCount}-sided polygon`;
+  const polygonType = polygonTypes[input.sideCount] ?? `${input.sideCount}-sided polygon`;
 
   // Build CSS equivalent (simplified - actual implementation would need SVG)
-  const cssEquivalent = `/* ${validated.sideCount}-sided polygon requires SVG or clip-path */
-.${validated.name.toLowerCase().replace(/\s+/g, '-')} {
-  width: ${validated.radius * 2}px;
-  height: ${validated.radius * 2}px;
-  clip-path: polygon(/* ${validated.sideCount} vertices */);
-  ${validated.fillColor ? `background-color: ${validated.fillColor};` : ''}
+  const cssEquivalent = `/* ${input.sideCount}-sided polygon requires SVG or clip-path */
+.${input.name.toLowerCase().replace(/\s+/g, '-')} {
+  width: ${input.radius * 2}px;
+  height: ${input.radius * 2}px;
+  clip-path: polygon(/* ${input.sideCount} vertices */);
+  ${input.fillColor ? `background-color: ${input.fillColor};` : ''}
 }`;
 
+  const registry = getNodeRegistry();
+  registry.register(response.nodeId, {
+    type: 'POLYGON',
+    name: input.name,
+    parentId: input.parentId ?? null,
+    children: [],
+    bounds: { x: 0, y: 0, width: input.radius * 2, height: input.radius * 2 }
+  });
+
   return {
-    polygonId: response.nodeId ?? '',
-    sideCount: validated.sideCount,
-    radius: validated.radius,
+    polygonId: response.nodeId,
+    sideCount: input.sideCount,
+    radius: input.radius,
     polygonType,
     cssEquivalent,
-    message: `Created ${polygonType} with ${validated.sideCount} sides (radius: ${validated.radius}px)`
+    message: `Created ${polygonType} with ${input.sideCount} sides (radius: ${input.radius}px)`
   };
 }

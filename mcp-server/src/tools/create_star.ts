@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { getNodeRegistry } from '../node-registry.js';
 
 /**
  * Input schema
@@ -132,11 +133,8 @@ export interface CreateStarResult {
  * @param input
  */
 export async function createStar(input: CreateStarInput): Promise<CreateStarResult> {
-  // Validate input
-  const validated = input;
-
   // Calculate inner radius if not provided (golden ratio approximation)
-  const innerRadius = validated.innerRadius ?? validated.radius * 0.382;
+  const innerRadius = input.innerRadius ?? input.radius * 0.382;
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -145,35 +143,44 @@ export async function createStar(input: CreateStarInput): Promise<CreateStarResu
   const response = await bridge.sendToFigmaValidated(
     'create_star',
     {
-      pointCount: validated.pointCount,
-      radius: validated.radius,
+      pointCount: input.pointCount,
+      radius: input.radius,
       innerRadius,
-      name: validated.name,
-      parentId: validated.parentId,
-      fillColor: validated.fillColor,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight
+      name: input.name,
+      parentId: input.parentId,
+      fillColor: input.fillColor,
+      strokeColor: input.strokeColor,
+      strokeWeight: input.strokeWeight
     },
-    z.object({ nodeId: z.string().optional(), error: z.string().optional() })
+    z.object({ nodeId: z.string() }).passthrough()
   );
 
   // Build CSS equivalent
-  const cssEquivalent = `/* ${validated.pointCount}-point star requires SVG or clip-path */
-.${validated.name.toLowerCase().replace(/\s+/g, '-')} {
-  width: ${validated.radius * 2}px;
-  height: ${validated.radius * 2}px;
-  clip-path: polygon(/* ${validated.pointCount * 2} vertices */);
-  ${validated.fillColor ? `background-color: ${validated.fillColor};` : ''}
+  const cssEquivalent = `/* ${input.pointCount}-point star requires SVG or clip-path */
+.${input.name.toLowerCase().replace(/\s+/g, '-')} {
+  width: ${input.radius * 2}px;
+  height: ${input.radius * 2}px;
+  clip-path: polygon(/* ${input.pointCount * 2} vertices */);
+  ${input.fillColor ? `background-color: ${input.fillColor};` : ''}
 }
 
 /* For rating stars, consider using Unicode: ★ (U+2605) or SVG */`;
 
+  const registry = getNodeRegistry();
+  registry.register(response.nodeId, {
+    type: 'STAR',
+    name: input.name,
+    parentId: input.parentId ?? null,
+    children: [],
+    bounds: { x: 0, y: 0, width: input.radius * 2, height: input.radius * 2 }
+  });
+
   return {
-    starId: response.nodeId ?? '',
-    pointCount: validated.pointCount,
-    radius: validated.radius,
+    starId: response.nodeId,
+    pointCount: input.pointCount,
+    radius: input.radius,
     innerRadius,
     cssEquivalent,
-    message: `Created ${validated.pointCount}-point star (radius: ${validated.radius}px, inner: ${innerRadius}px)`
+    message: `Created ${input.pointCount}-point star (radius: ${input.radius}px, inner: ${innerRadius}px)`
   };
 }

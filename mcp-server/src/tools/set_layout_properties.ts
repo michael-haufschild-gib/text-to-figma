@@ -17,7 +17,11 @@ export const SetLayoutPropertiesInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the frame to modify'),
   layoutMode: layoutModeSchema.optional().describe('Layout direction'),
   itemSpacing: spacingSchema.optional().describe('Gap between children (8pt grid)'),
-  padding: spacingSchema.optional().describe('Internal padding (8pt grid)'),
+  padding: spacingSchema.optional().describe('Uniform internal padding (8pt grid)'),
+  paddingTop: z.number().min(0).optional().describe('Top padding in pixels'),
+  paddingRight: z.number().min(0).optional().describe('Right padding in pixels'),
+  paddingBottom: z.number().min(0).optional().describe('Bottom padding in pixels'),
+  paddingLeft: z.number().min(0).optional().describe('Left padding in pixels'),
   width: z.number().positive().optional().describe('Width in pixels'),
   height: z.number().positive().optional().describe('Height in pixels')
 });
@@ -59,6 +63,17 @@ function generateCssEquivalent(input: SetLayoutPropertiesInput): string {
     updates.push(`padding: ${input.padding}px;`);
   }
 
+  const hasIndividualPadding =
+    input.paddingTop !== undefined ||
+    input.paddingRight !== undefined ||
+    input.paddingBottom !== undefined ||
+    input.paddingLeft !== undefined;
+  if (hasIndividualPadding) {
+    updates.push(
+      `padding: ${input.paddingTop ?? 0}px ${input.paddingRight ?? 0}px ${input.paddingBottom ?? 0}px ${input.paddingLeft ?? 0}px;`
+    );
+  }
+
   if (input.width !== undefined) {
     updates.push(`width: ${input.width}px;`);
   }
@@ -77,24 +92,25 @@ function generateCssEquivalent(input: SetLayoutPropertiesInput): string {
 export async function setLayoutProperties(
   input: SetLayoutPropertiesInput
 ): Promise<SetLayoutPropertiesResult> {
-  // Validate input
-  const validated = input;
-
   // Track what was updated
   const updated: string[] = [];
-  if (validated.layoutMode !== undefined) {
+  if (input.layoutMode !== undefined) {
     updated.push('layoutMode');
   }
-  if (validated.itemSpacing !== undefined) {
+  if (input.itemSpacing !== undefined) {
     updated.push('itemSpacing');
   }
-  if (validated.padding !== undefined) {
+  if (input.padding !== undefined) {
     updated.push('padding');
   }
-  if (validated.width !== undefined) {
+  if (input.paddingTop !== undefined) updated.push('paddingTop');
+  if (input.paddingRight !== undefined) updated.push('paddingRight');
+  if (input.paddingBottom !== undefined) updated.push('paddingBottom');
+  if (input.paddingLeft !== undefined) updated.push('paddingLeft');
+  if (input.width !== undefined) {
     updated.push('width');
   }
-  if (validated.height !== undefined) {
+  if (input.height !== undefined) {
     updated.push('height');
   }
 
@@ -103,21 +119,25 @@ export async function setLayoutProperties(
   }
 
   // Generate CSS equivalent
-  const cssEquivalent = generateCssEquivalent(validated);
+  const cssEquivalent = generateCssEquivalent(input);
 
   // Send to Figma
   const bridge = getFigmaBridge();
   await bridge.sendToFigmaWithRetry('set_layout_properties', {
-    nodeId: validated.nodeId,
-    layoutMode: validated.layoutMode,
-    itemSpacing: validated.itemSpacing,
-    padding: validated.padding,
-    width: validated.width,
-    height: validated.height
+    nodeId: input.nodeId,
+    layoutMode: input.layoutMode,
+    itemSpacing: input.itemSpacing,
+    padding: input.padding,
+    paddingTop: input.paddingTop,
+    paddingRight: input.paddingRight,
+    paddingBottom: input.paddingBottom,
+    paddingLeft: input.paddingLeft,
+    width: input.width,
+    height: input.height
   });
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     updated,
     cssEquivalent
   };
@@ -130,13 +150,13 @@ export const setLayoutPropertiesToolDefinition = {
   name: 'set_layout_properties',
   description: `Updates layout properties on an existing frame in Figma.
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Modifying layout on an EXISTING frame
 - Changing spacing/padding after frame creation
 - Adjusting dimensions of an existing container
 - Switching layout direction (horizontal ↔ vertical)
 
-⚠️ DON'T use this for:
+DON'T use this for:
 - New frame creation (use create_frame instead)
 - Multi-element designs (use create_design with layout props)
 
@@ -183,7 +203,23 @@ CSS equivalent: flex-direction: row; gap: 24px;`,
       },
       padding: {
         type: 'number' as const,
-        description: `Internal padding in pixels. Must be one of: ${VALID_SPACING_VALUES.join(', ')}`
+        description: `Uniform padding in pixels. Must be one of: ${VALID_SPACING_VALUES.join(', ')}`
+      },
+      paddingTop: {
+        type: 'number' as const,
+        description: 'Top padding in pixels (overrides uniform padding for top)'
+      },
+      paddingRight: {
+        type: 'number' as const,
+        description: 'Right padding in pixels (overrides uniform padding for right)'
+      },
+      paddingBottom: {
+        type: 'number' as const,
+        description: 'Bottom padding in pixels (overrides uniform padding for bottom)'
+      },
+      paddingLeft: {
+        type: 'number' as const,
+        description: 'Left padding in pixels (overrides uniform padding for left)'
       },
       width: {
         type: 'number' as const,

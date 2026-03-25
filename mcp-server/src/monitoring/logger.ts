@@ -290,7 +290,11 @@ let globalLogger: Logger | null = null;
  * @param config
  */
 export function getLogger(config?: LoggerConfig): Logger {
-  globalLogger ??= new Logger(config);
+  if (!globalLogger) {
+    const envLogJson = process.env.LOG_JSON;
+    const useJson = envLogJson === '1' || envLogJson === 'true';
+    globalLogger = new Logger({ pretty: !useJson, ...config });
+  }
   return globalLogger;
 }
 

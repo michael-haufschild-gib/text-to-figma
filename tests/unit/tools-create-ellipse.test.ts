@@ -171,23 +171,16 @@ describe('createEllipse', () => {
     );
   });
 
-  it('handles missing nodeId in response gracefully', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({
-      success: true
-      // nodeId not present
-    });
+  it('rejects response when bridge returns no nodeId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "nodeId"'));
 
-    const result = await createEllipse({
-      width: 40,
-      height: 40,
-      name: 'No ID'
-    });
-
-    // Returns empty string when nodeId is missing
-    expect(result.ellipseId).toBe('');
-    // Should not register in registry (guarded by if response.nodeId)
-    const registry = getNodeRegistry();
-    expect(registry.getNode('')).toBeNull();
+    await expect(
+      createEllipse({
+        width: 40,
+        height: 40,
+        name: 'No ID'
+      })
+    ).rejects.toThrow();
   });
 
   it('handles name with special characters in CSS class generation', async () => {

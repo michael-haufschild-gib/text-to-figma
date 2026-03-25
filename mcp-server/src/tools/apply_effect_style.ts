@@ -97,9 +97,6 @@ export interface ApplyEffectStyleResult {
 export async function applyEffectStyle(
   input: ApplyEffectStyleInput
 ): Promise<ApplyEffectStyleResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -107,15 +104,15 @@ export async function applyEffectStyle(
   const response = await bridge.sendToFigmaValidated(
     'apply_effect_style',
     {
-      nodeId: validated.nodeId,
-      styleNameOrId: validated.styleNameOrId
+      nodeId: input.nodeId,
+      styleNameOrId: input.styleNameOrId
     },
     ApplyEffectStyleResponseSchema
   );
 
   return {
-    nodeId: validated.nodeId,
-    styleName: response.styleName ?? validated.styleNameOrId,
-    message: `Applied effect style "${response.styleName ?? validated.styleNameOrId}" to node`
+    nodeId: input.nodeId,
+    styleName: response.styleName ?? input.styleNameOrId,
+    message: `Applied effect style "${response.styleName ?? input.styleNameOrId}" to node`
   };
 }

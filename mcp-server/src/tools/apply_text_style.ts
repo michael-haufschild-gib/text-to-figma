@@ -95,9 +95,6 @@ export interface ApplyTextStyleResult {
  * @param input
  */
 export async function applyTextStyle(input: ApplyTextStyleInput): Promise<ApplyTextStyleResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -105,15 +102,15 @@ export async function applyTextStyle(input: ApplyTextStyleInput): Promise<ApplyT
   const response = await bridge.sendToFigmaValidated(
     'apply_text_style',
     {
-      nodeId: validated.nodeId,
-      styleNameOrId: validated.styleNameOrId
+      nodeId: input.nodeId,
+      styleNameOrId: input.styleNameOrId
     },
     ApplyTextStyleResponseSchema
   );
 
   return {
-    nodeId: validated.nodeId,
-    styleName: response.styleName ?? validated.styleNameOrId,
-    message: `Applied text style "${response.styleName ?? validated.styleNameOrId}" to text node`
+    nodeId: input.nodeId,
+    styleName: response.styleName ?? input.styleNameOrId,
+    message: `Applied text style "${response.styleName ?? input.styleNameOrId}" to text node`
   };
 }

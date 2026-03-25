@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
 import { getNodeRegistry } from '../node-registry.js';
+import type { NodeSpec } from '../types/node-spec.js';
 import { autoCorrectSpec, type Correction } from '../utils/auto-validator.js';
 
 const logger = getLogger().child({ component: 'create-design' });
@@ -32,67 +33,7 @@ export const CreateDesignInputSchema = z.object({
   autoCorrect: z.boolean().optional()
 });
 
-interface NodeSpec {
-  type: 'frame' | 'text' | 'ellipse' | 'rectangle' | 'line';
-  name?: string;
-  props?: {
-    // Dimensions
-    width?: number;
-    height?: number;
-    x?: number;
-    y?: number;
-
-    // Layout (frame only)
-    layoutMode?: 'HORIZONTAL' | 'VERTICAL' | 'NONE';
-    itemSpacing?: number;
-    padding?: number;
-    paddingLeft?: number;
-    paddingRight?: number;
-    paddingTop?: number;
-    paddingBottom?: number;
-    horizontalSizing?: 'FILL' | 'HUG' | 'FIXED';
-    verticalSizing?: 'FILL' | 'HUG' | 'FIXED';
-    primaryAxisAlignItems?: 'MIN' | 'CENTER' | 'MAX' | 'SPACE_BETWEEN';
-    counterAxisAlignItems?: 'MIN' | 'CENTER' | 'MAX';
-
-    // Fills
-    fillColor?: string;
-    fillOpacity?: number;
-    fills?: Array<{
-      type: string;
-      color?: { r: number; g: number; b: number };
-      opacity?: number;
-    }>;
-
-    // Stroke
-    strokeColor?: string;
-    strokeWeight?: number;
-    strokeAlign?: 'INSIDE' | 'OUTSIDE' | 'CENTER';
-
-    // Effects
-    effects?: Array<{
-      type: string;
-      color?: { r: number; g: number; b: number; a: number };
-      offset?: { x: number; y: number };
-      radius?: number;
-      spread?: number;
-      visible?: boolean;
-    }>;
-    cornerRadius?: number;
-
-    // Text properties
-    content?: string;
-    text?: string;
-    fontSize?: number;
-    fontFamily?: string;
-    fontWeight?: number;
-    color?: string;
-    textAlign?: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED';
-    lineHeight?: number;
-    letterSpacing?: number;
-  };
-  children?: NodeSpec[];
-}
+// NodeSpec is imported from ../types/node-spec.js
 
 export interface CreateDesignParams {
   spec: NodeSpec;
@@ -203,16 +144,16 @@ export async function createDesign(params: CreateDesignParams): Promise<CreateDe
  */
 export const createDesignToolDefinition = {
   name: 'create_design',
-  description: `[TIER 1 - PRIMARY] 🌟 Start here for 80% of design tasks!
+  description: `[TIER 1 - PRIMARY] Start here for 80% of design tasks!
 
 Creates entire design hierarchies in a single atomic operation.
 
-🎯 USE THIS TOOL FOR:
+USE THIS TOOL FOR:
 - ANY design with 2+ elements (buttons, cards, forms, navbars, modals, lists)
 - Complex layouts with nested containers
 - Multi-level hierarchies where elements need to be grouped
 
-✅ BENEFITS:
+BENEFITS:
 - All nodes created together in one operation (no coordination issues)
 - Proper parent-child relationships automatically guaranteed
 - 17x faster than using individual create_* commands
@@ -221,7 +162,7 @@ Creates entire design hierarchies in a single atomic operation.
 - No race conditions between commands
 - Auto-corrects spacing to 8pt grid and font sizes to type scale (disable with autoCorrect: false)
 
-⚠️ ONLY use individual create_* tools for single, isolated nodes.
+ONLY use individual create_* tools for single, isolated nodes.
 
 � NESTING DESIGNS (parentId):
 To create a design INSIDE an existing container, use the parentId parameter:
@@ -235,7 +176,7 @@ Example with parentId:
   parentId: "10119:46087"  // ← ID of existing parent container
 }
 
-📋 SPECIFICATION FORMAT:
+SPECIFICATION FORMAT:
 The spec is a tree structure where each node has:
 - type: 'frame' | 'text' | 'ellipse' | 'rectangle' | 'line'
 - name: optional node name
@@ -269,7 +210,7 @@ Examples:
 
 IMPORTANT: When replicating components, preserve the exact sizing mode and dimensions from the original!
 
-💡 EXAMPLES:
+EXAMPLES:
 
 Simple Button with Icon:
 {

@@ -17,7 +17,13 @@ import { getFigmaBridge } from '../figma-bridge.js';
 export const SetLayoutSizingInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node'),
   horizontal: z.enum(['FIXED', 'HUG', 'FILL']).optional().describe('Horizontal sizing mode'),
-  vertical: z.enum(['FIXED', 'HUG', 'FILL']).optional().describe('Vertical sizing mode')
+  vertical: z.enum(['FIXED', 'HUG', 'FILL']).optional().describe('Vertical sizing mode'),
+  layoutPositioning: z
+    .enum(['AUTO', 'ABSOLUTE'])
+    .optional()
+    .describe(
+      'Layout positioning: AUTO (participates in auto-layout flow) or ABSOLUTE (free positioning within auto-layout parent)'
+    )
 });
 
 export type SetLayoutSizingInput = z.infer<typeof SetLayoutSizingInputSchema>;
@@ -27,15 +33,28 @@ export type SetLayoutSizingInput = z.infer<typeof SetLayoutSizingInputSchema>;
  */
 export const setLayoutSizingToolDefinition = {
   name: 'set_layout_sizing',
-  description: `Sets how a node's size is determined in auto-layout.
+  description: `Sets how a node's size and positioning are determined in auto-layout.
 
-PRIMITIVE: Raw Figma auto-layout sizing primitive - not a pre-made component.
-Use for: responsive layouts, flexible containers, content-based sizing.
+PRIMITIVE: Raw Figma auto-layout child primitive - not a pre-made component.
+Use for: responsive layouts, flexible containers, content-based sizing, absolute positioning within auto-layout.
 
 Sizing Modes:
 - FIXED: Node has a fixed width/height
 - HUG: Node hugs its content (shrink-wrap)
 - FILL: Node fills available space in parent
+
+Layout Positioning:
+- AUTO: Node participates in auto-layout flow (default)
+- ABSOLUTE: Node is removed from auto-layout flow, freely positionable via x/y.
+  Use this to allow instance overrides of child positions within components.
+  The parent MUST have auto-layout enabled (HORIZONTAL or VERTICAL).
+  After setting ABSOLUTE, use set_transform to position the node.
+
+Example - Absolute Positioning:
+set_layout_sizing({
+  nodeId: "badge-123",
+  layoutPositioning: "ABSOLUTE"
+})
 
 Example - Hug Content:
 set_layout_sizing({
@@ -51,23 +70,11 @@ set_layout_sizing({
   vertical: "HUG"
 })
 
-Example - Fixed Size:
-set_layout_sizing({
-  nodeId: "avatar-789",
-  horizontal: "FIXED",
-  vertical: "FIXED"
-})
-
 CSS Equivalents:
 - FIXED: width: 100px; height: 100px;
 - HUG: width: fit-content; height: fit-content;
 - FILL: flex: 1; (in flex container)
-
-Use Cases:
-- Responsive buttons (hug content)
-- Full-width cards (fill container)
-- Fixed-size avatars
-- Flexible layouts`,
+- ABSOLUTE: position: absolute; (within flex container)`,
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -84,6 +91,12 @@ Use Cases:
         type: 'string' as const,
         enum: ['FIXED', 'HUG', 'FILL'],
         description: 'Vertical sizing mode'
+      },
+      layoutPositioning: {
+        type: 'string' as const,
+        enum: ['AUTO', 'ABSOLUTE'],
+        description:
+          'Layout positioning: AUTO (participates in auto-layout flow) or ABSOLUTE (free positioning, allows instance overrides of x/y)'
       }
     },
     required: ['nodeId']
@@ -97,6 +110,7 @@ export interface SetLayoutSizingResult {
   nodeId: string;
   horizontal?: string;
   vertical?: string;
+  layoutPositioning?: string;
   cssEquivalent: string;
   message: string;
 }
@@ -106,51 +120,59 @@ export interface SetLayoutSizingResult {
  * @param input
  */
 export async function setLayoutSizing(input: SetLayoutSizingInput): Promise<SetLayoutSizingResult> {
-  // Validate input
-  const validated = input;
-
-  if (validated.horizontal === undefined && validated.vertical === undefined) {
-    throw new Error('Must specify at least one of horizontal or vertical');
+  if (
+    input.horizontal === undefined &&
+    input.vertical === undefined &&
+    input.layoutPositioning === undefined
+  ) {
+    throw new Error('Must specify at least one of horizontal, vertical, or layoutPositioning');
   }
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: Response validated by bridge at protocol level
+  // Note: Response input by bridge at protocol level
   await bridge.sendToFigmaWithRetry('set_layout_sizing', {
-    nodeId: validated.nodeId,
-    horizontal: validated.horizontal,
-    vertical: validated.vertical
+    nodeId: input.nodeId,
+    horizontal: input.horizontal,
+    vertical: input.vertical,
+    layoutPositioning: input.layoutPositioning
   });
 
   // Build CSS equivalent
   const cssParts: string[] = [];
-  if (validated.horizontal !== undefined) {
-    if (validated.horizontal === 'FIXED') {
+  if (input.horizontal !== undefined) {
+    if (input.horizontal === 'FIXED') {
       cssParts.push('width: [fixed]px');
-    } else if (validated.horizontal === 'HUG') {
+    } else if (input.horizontal === 'HUG') {
       cssParts.push('width: fit-content');
     } else {
       cssParts.push('flex: 1');
     }
   }
-  if (validated.vertical !== undefined) {
-    if (validated.vertical === 'FIXED') {
+  if (input.vertical !== undefined) {
+    if (input.vertical === 'FIXED') {
       cssParts.push('height: [fixed]px');
-    } else if (validated.vertical === 'HUG') {
+    } else if (input.vertical === 'HUG') {
       cssParts.push('height: fit-content');
     } else {
       cssParts.push('align-self: stretch');
     }
   }
+  if (input.layoutPositioning !== undefined) {
+    cssParts.push(
+      input.layoutPositioning === 'ABSOLUTE' ? 'position: absolute' : 'position: relative'
+    );
+  }
 
   const cssEquivalent = cssParts.join('; ');
 
   return {
-    nodeId: validated.nodeId,
-    horizontal: validated.horizontal,
-    vertical: validated.vertical,
+    nodeId: input.nodeId,
+    horizontal: input.horizontal,
+    vertical: input.vertical,
+    layoutPositioning: input.layoutPositioning,
     cssEquivalent,
     message: `Layout sizing updated`
   };

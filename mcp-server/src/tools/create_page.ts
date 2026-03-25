@@ -70,7 +70,7 @@ Note: The new page becomes the current page after creation.`,
  */
 const CreatePageResponseSchema = z
   .object({
-    pageId: z.string().optional(),
+    pageId: z.string(),
     name: z.string().optional(),
     message: z.string().optional()
   })
@@ -92,24 +92,21 @@ export interface CreatePageResult {
  * @param input
  */
 export async function createPage(input: CreatePageInput): Promise<CreatePageResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
   const response = await bridge.sendToFigmaValidated(
     'create_page',
-    { name: validated.name },
+    { name: input.name },
     CreatePageResponseSchema
   );
 
   return {
     success: true as const,
-    pageId: response.pageId ?? '',
-    name: validated.name,
-    message: `Page "${validated.name}" created successfully`,
+    pageId: response.pageId,
+    name: input.name,
+    message: `Page "${input.name}" created successfully`,
     timestamp: new Date().toISOString()
   };
 }

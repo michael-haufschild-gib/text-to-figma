@@ -5,6 +5,8 @@
  * execution, response formatting, and centralized observability.
  */
 
+import { ErrorCode } from '../errors/error-codes.js';
+import { ToolExecutionError } from '../errors/index.js';
 import { trackError } from '../monitoring/error-tracker.js';
 import { getLogger } from '../monitoring/logger.js';
 import { getMetrics } from '../monitoring/metrics.js';
@@ -47,7 +49,13 @@ export async function routeToolCall(toolName: string, args: unknown): Promise<Re
 
   if (!handler) {
     logger.error('Unknown tool requested', undefined, { tool: toolName });
-    throw new Error(`Unknown tool: ${toolName}`);
+    throw new ToolExecutionError(
+      `Unknown tool: ${toolName}`,
+      toolName,
+      args,
+      undefined,
+      ErrorCode.SYS_UNKNOWN_COMMAND
+    );
   }
 
   const startTime = Date.now();

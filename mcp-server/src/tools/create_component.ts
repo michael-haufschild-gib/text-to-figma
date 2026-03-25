@@ -34,26 +34,23 @@ export interface CreateComponentResult {
  * @param input
  */
 export async function createComponent(input: CreateComponentInput): Promise<CreateComponentResult> {
-  // Validate input
-  const validated = input;
-
   // Send to Figma
   const bridge = getFigmaBridge();
   const response = await bridge.sendToFigmaValidated(
     'create_component',
     {
-      frameId: validated.frameId,
-      name: validated.name,
-      description: validated.description
+      frameId: input.frameId,
+      name: input.name,
+      description: input.description
     },
     z.object({ componentId: z.string() })
   );
 
   return {
     componentId: response.componentId,
-    name: validated.name,
-    description: validated.description,
-    message: `Component "${validated.name}" created successfully. Use this component ID to create instances.`
+    name: input.name,
+    description: input.description,
+    message: `Component "${input.name}" created successfully. Use this component ID to create instances.`
   };
 }
 

@@ -218,13 +218,12 @@ export interface CreatePathResult {
  */
 export async function createPath(input: CreatePathInput): Promise<CreatePathResult> {
   // Validate input schema
-  const validated = input;
 
   // Use intelligent repair system to normalize and fix common issues
   let normalizedCommands: RepairedPathCommand[];
   let repairMessage = '';
   try {
-    const repairReport = repairPathCommands(validated.commands);
+    const repairReport = repairPathCommands(input.commands);
     normalizedCommands = repairReport.commands;
 
     // Generate repair message if fixes were applied
@@ -241,8 +240,8 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  const name = validated.name ?? 'Path';
-  const closed = validated.closed ?? false;
+  const name = input.name ?? 'Path';
+  const closed = input.closed ?? false;
 
   // Send command to Figma with normalized commands
   const response = await bridge.sendToFigmaValidated(
@@ -250,11 +249,11 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
     {
       name,
       commands: normalizedCommands,
-      fillColor: validated.fillColor,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight,
+      fillColor: input.fillColor,
+      strokeColor: input.strokeColor,
+      strokeWeight: input.strokeWeight,
       closed,
-      parentId: validated.parentId
+      parentId: input.parentId
     },
     CreatePathResponseSchema
   );

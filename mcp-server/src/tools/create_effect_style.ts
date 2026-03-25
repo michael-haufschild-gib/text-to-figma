@@ -12,17 +12,26 @@ import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 
 /**
- * Effect schema (simplified - matches apply_effects format)
+ * Effect schema — accepts both apply_effects field names (x/y, radius)
+ * and legacy aliases (offsetX/offsetY, blur) for backwards compatibility.
+ * The Figma plugin helper convertEffects() handles both forms.
  */
-const EffectSchema = z.object({
-  type: z.enum(['DROP_SHADOW', 'INNER_SHADOW', 'LAYER_BLUR', 'BACKGROUND_BLUR']),
-  offsetX: z.number().optional(),
-  offsetY: z.number().optional(),
-  blur: z.number().min(0),
-  spread: z.number().optional(),
-  color: z.string().optional(),
-  opacity: z.number().min(0).max(1).optional()
-});
+const EffectSchema = z
+  .object({
+    type: z.enum(['DROP_SHADOW', 'INNER_SHADOW', 'LAYER_BLUR', 'BACKGROUND_BLUR']),
+    x: z.number().optional().describe('Horizontal offset (shadow only)'),
+    y: z.number().optional().describe('Vertical offset (shadow only)'),
+    offsetX: z.number().optional().describe('Alias for x (backwards compat)'),
+    offsetY: z.number().optional().describe('Alias for y (backwards compat)'),
+    radius: z.number().min(0).optional().describe('Blur radius (blur effects)'),
+    blur: z.number().min(0).optional().describe('Blur radius for shadows, or alias for radius'),
+    spread: z.number().optional(),
+    color: z.string().optional(),
+    opacity: z.number().min(0).max(1).optional()
+  })
+  .refine((e) => e.blur !== undefined || e.radius !== undefined, {
+    message: 'Either blur or radius must be provided'
+  });
 
 /**
  * Input schema
@@ -57,13 +66,24 @@ Naming Conventions:
 - Blur: "Blur/Light", "Blur/Heavy"
 - Glow: "Glow/Subtle", "Glow/Strong"
 
+Shadow parameters (same as apply_effects):
+- x (or offsetX): Horizontal offset in pixels
+- y (or offsetY): Vertical offset in pixels
+- blur (or radius): Blur radius in pixels
+- spread: Spread radius in pixels (drop shadow only)
+- color: Hex color (e.g., "#000000")
+- opacity: 0-1
+
+Blur parameters:
+- radius (or blur): Blur radius in pixels
+
 Example - Card Elevation:
 create_effect_style({
   name: "Elevation/2",
   effects: [{
     type: "DROP_SHADOW",
-    offsetX: 0,
-    offsetY: 4,
+    x: 0,
+    y: 4,
     blur: 16,
     spread: 0,
     color: "#000000",
@@ -72,27 +92,12 @@ create_effect_style({
   description: "Card elevation shadow"
 })
 
-Example - Button Hover Shadow:
-create_effect_style({
-  name: "Shadow/Button Hover",
-  effects: [{
-    type: "DROP_SHADOW",
-    offsetX: 0,
-    offsetY: 8,
-    blur: 24,
-    spread: 0,
-    color: "#000000",
-    opacity: 0.12
-  }],
-  description: "Button hover state shadow"
-})
-
 Example - Glassmorphism Blur:
 create_effect_style({
   name: "Blur/Glass",
   effects: [{
     type: "BACKGROUND_BLUR",
-    blur: 20
+    radius: 20
   }],
   description: "Glassmorphism backdrop blur"
 })
@@ -114,14 +119,35 @@ After creating styles, use apply_effect_style to apply them to nodes.`,
               type: 'string' as const,
               enum: ['DROP_SHADOW', 'INNER_SHADOW', 'LAYER_BLUR', 'BACKGROUND_BLUR']
             },
-            offsetX: { type: 'number' as const },
-            offsetY: { type: 'number' as const },
-            blur: { type: 'number' as const },
-            spread: { type: 'number' as const },
-            color: { type: 'string' as const },
-            opacity: { type: 'number' as const }
+            x: {
+              type: 'number' as const,
+              description: 'Horizontal offset in pixels (shadow only)'
+            },
+            y: {
+              type: 'number' as const,
+              description: 'Vertical offset in pixels (shadow only)'
+            },
+            offsetX: {
+              type: 'number' as const,
+              description: 'Alias for x (backwards compatible)'
+            },
+            offsetY: {
+              type: 'number' as const,
+              description: 'Alias for y (backwards compatible)'
+            },
+            blur: {
+              type: 'number' as const,
+              description: 'Blur radius in pixels (shadow effects)'
+            },
+            radius: {
+              type: 'number' as const,
+              description: 'Blur radius in pixels (blur effects, or alias for blur)'
+            },
+            spread: { type: 'number' as const, description: 'Spread radius (drop shadow only)' },
+            color: { type: 'string' as const, description: 'Shadow color in hex format' },
+            opacity: { type: 'number' as const, description: 'Shadow opacity (0-1)' }
           },
-          required: ['type', 'blur']
+          required: ['type']
         },
         description: 'Array of effects'
       },
@@ -139,7 +165,7 @@ After creating styles, use apply_effect_style to apply them to nodes.`,
  */
 const CreateEffectStyleResponseSchema = z
   .object({
-    styleId: z.string().optional()
+    styleId: z.string()
   })
   .passthrough();
 
@@ -160,27 +186,35 @@ export interface CreateEffectStyleResult {
 export async function createEffectStyle(
   input: CreateEffectStyleInput
 ): Promise<CreateEffectStyleResult> {
-  // Validate input
-  const validated = input;
+  // Normalize aliases: x→offsetX, y→offsetY, radius→blur
+  // so the Figma plugin receives a consistent payload.
+  const normalizedEffects = input.effects.map((e) => ({
+    type: e.type,
+    x: e.x ?? e.offsetX,
+    y: e.y ?? e.offsetY,
+    blur: e.blur ?? e.radius,
+    radius: e.radius ?? e.blur,
+    spread: e.spread,
+    color: e.color,
+    opacity: e.opacity
+  }));
 
-  // Get Figma bridge
   const bridge = getFigmaBridge();
 
-  // Send command to Figma
   const response = await bridge.sendToFigmaValidated(
     'create_effect_style',
     {
-      name: validated.name,
-      effects: validated.effects,
-      description: validated.description
+      name: input.name,
+      effects: normalizedEffects,
+      description: input.description
     },
     CreateEffectStyleResponseSchema
   );
 
   return {
-    styleId: response.styleId ?? '',
-    name: validated.name,
-    effectCount: validated.effects.length,
-    message: `Created effect style "${validated.name}" with ${validated.effects.length} effect(s)`
+    styleId: response.styleId,
+    name: input.name,
+    effectCount: input.effects.length,
+    message: `Created effect style "${input.name}" with ${input.effects.length} effect(s)`
   };
 }

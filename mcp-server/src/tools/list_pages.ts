@@ -34,18 +34,18 @@ export const listPagesToolDefinition = {
   name: 'list_pages',
   description: `Lists all pages in the current Figma document.
 
-🎯 WHEN TO USE:
+WHEN TO USE:
 - Starting work on a multi-page document (discover what exists)
 - Finding a specific page to switch to
 - Understanding document organization before creating content
 - Verifying page creation succeeded
 
-📋 RETURNS (for each page):
+RETURNS (for each page):
 - pageId: Use with set_current_page to navigate
 - name: Page name as shown in Figma's page tabs
 - isCurrent: true if this is the active page
 
-💡 COMMON PATTERNS:
+COMMON PATTERNS:
 
 1. Find and switch to a page:
    pages = list_pages({})
@@ -63,7 +63,7 @@ export const listPagesToolDefinition = {
      // Page exists, safe to navigate
    }
 
-⚠️ NOTE: Most operations work on the CURRENT page. Use set_current_page
+NOTE: Most operations work on the CURRENT page. Use set_current_page
 to switch pages before creating content on a different page.
 
 🔗 RELATED TOOLS:
@@ -79,11 +79,15 @@ to switch pages before creating content on a different page.
 /**
  * Response schema for Figma bridge list_pages response
  */
-const ListPagesResponseSchema = z
-  .object({
-    pages: z.array(z.record(z.unknown()))
-  })
-  .passthrough();
+const ListPagesResponseSchema = z.object({
+  pages: z.array(
+    z.object({
+      pageId: z.string(),
+      name: z.string(),
+      isCurrent: z.boolean()
+    })
+  )
+});
 
 /**
  * Result type
@@ -102,9 +106,6 @@ export interface ListPagesResult {
  * @param input
  */
 export async function listPages(_input: ListPagesInput): Promise<ListPagesResult> {
-  // Input validated by routing layer
-
-  // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
@@ -113,7 +114,7 @@ export async function listPages(_input: ListPagesInput): Promise<ListPagesResult
   return {
     success: true as const,
     pageCount: response.pages.length,
-    pages: response.pages as unknown as PageInfo[],
+    pages: response.pages,
     message: `Found ${response.pages.length} page(s)`,
     timestamp: new Date().toISOString()
   };

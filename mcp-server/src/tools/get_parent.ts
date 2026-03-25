@@ -27,18 +27,18 @@ export const getParentToolDefinition = {
   name: 'get_parent',
   description: `Gets the parent container of any node in the Figma hierarchy.
 
-🎯 WHEN TO USE:
+WHEN TO USE:
 - Finding what frame/group contains a specific element
 - Navigating UP the node tree (child → parent → grandparent)
 - Understanding context before modifying a node
 - Verifying hierarchy relationships
 
-📋 RETURNS:
+RETURNS:
 - parentId: ID of the parent node (use for subsequent operations)
 - parentName: Name as shown in Figma layers panel
 - parentType: FRAME, GROUP, COMPONENT, PAGE, etc.
 
-💡 COMMON PATTERNS:
+COMMON PATTERNS:
 
 1. Find container to add siblings:
    parent = get_parent({ nodeId: "existing-button-123" })
@@ -52,7 +52,7 @@ export const getParentToolDefinition = {
    result = get_parent({ nodeId: "some-node" })
    if (!result.parentId) { /* node is at page root */ }
 
-⚠️ NOTE: Returns empty parentId for root-level nodes (direct children of the page).
+NOTE: Returns empty parentId for root-level nodes (direct children of the page).
 
 🔗 RELATED TOOLS:
 - get_children: Navigate DOWN the tree
@@ -102,28 +102,25 @@ export interface GetParentResult {
  * @param input
  */
 export async function getParent(input: GetParentInput): Promise<GetParentResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
   const response = await bridge.sendToFigmaValidated(
     'get_parent',
-    { nodeId: validated.nodeId },
+    { nodeId: input.nodeId },
     GetParentResponseSchema
   );
 
   if (!response.parent) {
     return {
-      nodeId: validated.nodeId,
+      nodeId: input.nodeId,
       message: 'Node has no parent (root node or page)'
     };
   }
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     parentId: response.parent.id,
     parentName: response.parent.name,
     parentType: response.parent.type,

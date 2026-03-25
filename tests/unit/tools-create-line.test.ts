@@ -186,21 +186,21 @@ describe('createLine', () => {
     expect(result.length).toBe(0);
   });
 
-  it('returns empty lineId when response has no nodeId', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
+  it('rejects response when bridge returns no nodeId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "nodeId"'));
 
-    const result = await createLine({
-      x1: 0,
-      y1: 0,
-      x2: 100,
-      y2: 0,
-      strokeColor: '#000000',
-      strokeWeight: 1,
-      strokeCap: 'NONE',
-      name: 'No ID'
-    });
-
-    expect(result.lineId).toBe('');
+    await expect(
+      createLine({
+        x1: 0,
+        y1: 0,
+        x2: 100,
+        y2: 0,
+        strokeColor: '#000000',
+        strokeWeight: 1,
+        strokeCap: 'NONE',
+        name: 'No ID'
+      })
+    ).rejects.toThrow();
   });
 
   it('propagates bridge errors without wrapping', async () => {

@@ -153,16 +153,13 @@ export type SetLayerOrderResult = ToolResult<SetLayerOrderData>;
 export async function setLayerOrder(input: SetLayerOrderInput): Promise<SetLayerOrderResult> {
   const startTime = Date.now();
 
-  // Validate input
-  const validated = input;
-
-  if (validated.action === 'SET_INDEX' && validated.index === undefined) {
+  if (input.action === 'SET_INDEX' && input.index === undefined) {
     const error = new Error('index is required when action is SET_INDEX');
     log.error('Validation failed', error, { input });
     throw error;
   }
 
-  log.debug('Setting layer order', { nodeId: validated.nodeId, action: validated.action });
+  log.debug('Setting layer order', { nodeId: input.nodeId, action: input.action });
 
   // Get Figma bridge
   const bridge = getFigmaBridge();
@@ -172,27 +169,27 @@ export async function setLayerOrder(input: SetLayerOrderInput): Promise<SetLayer
     const response = await bridge.sendToFigmaValidated(
       'set_layer_order',
       {
-        nodeId: validated.nodeId,
-        action: validated.action,
-        index: validated.index
+        nodeId: input.nodeId,
+        action: input.action,
+        index: input.index
       },
       SetLayerOrderResponseSchema
     );
 
     const duration = Date.now() - startTime;
-    const message = `Set layer order: ${validated.action} (now at index ${String(response.newIndex)})`;
+    const message = `Set layer order: ${input.action} (now at index ${String(response.newIndex)})`;
 
     log.info('Layer order set successfully', {
-      nodeId: validated.nodeId,
-      action: validated.action,
+      nodeId: input.nodeId,
+      action: input.action,
       newIndex: response.newIndex,
       duration
     });
 
     return createToolResult<SetLayerOrderData>(
       {
-        nodeId: validated.nodeId,
-        action: validated.action,
+        nodeId: input.nodeId,
+        action: input.action,
         newIndex: response.newIndex
       },
       message
@@ -202,11 +199,11 @@ export async function setLayerOrder(input: SetLayerOrderInput): Promise<SetLayer
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     log.error('Failed to set layer order', error instanceof Error ? error : undefined, {
-      nodeId: validated.nodeId,
-      action: validated.action,
+      nodeId: input.nodeId,
+      action: input.action,
       duration
     });
 
-    throw new Error(`Failed to set layer order for node ${validated.nodeId}: ${errorMessage}`);
+    throw new Error(`Failed to set layer order for node ${input.nodeId}: ${errorMessage}`);
   }
 }

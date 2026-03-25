@@ -37,19 +37,19 @@ export const getAbsoluteBoundsToolDefinition = {
   name: 'get_absolute_bounds',
   description: `Gets the exact position and size of a node on the Figma canvas.
 
-🎯 WHEN TO USE:
+WHEN TO USE:
 - Positioning new elements relative to existing ones
 - Calculating gaps/spacing between elements
 - Measuring element sizes for documentation
 - Aligning elements that aren't in the same auto-layout
 
-📋 RETURNS:
+RETURNS:
 - x: Left edge position on canvas (pixels from origin)
 - y: Top edge position on canvas (pixels from origin)
 - width: Element width in pixels
 - height: Element height in pixels
 
-💡 COMMON PATTERNS:
+COMMON PATTERNS:
 
 1. Position element to the right of another:
    bounds = get_absolute_bounds({ nodeId: "button-123" })
@@ -67,7 +67,7 @@ export const getAbsoluteBoundsToolDefinition = {
    bottom = get_absolute_bounds({ nodeId: "content" })
    gap = bottom.y - (top.y + top.height)
 
-⚠️ NOTE: These are ABSOLUTE coordinates (relative to canvas origin),
+NOTE: These are ABSOLUTE coordinates (relative to canvas origin),
 not relative to parent. For parent-relative positioning, use
 get_relative_bounds or set_transform with x/y.
 
@@ -121,22 +121,19 @@ export interface GetAbsoluteBoundsResult {
 export async function getAbsoluteBounds(
   input: GetAbsoluteBoundsInput
 ): Promise<GetAbsoluteBoundsResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
   const response = await bridge.sendToFigmaValidated(
     'get_absolute_bounds',
-    { nodeId: validated.nodeId },
+    { nodeId: input.nodeId },
     GetAbsoluteBoundsResponseSchema
   );
 
   return {
     success: true as const,
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     bounds: response.bounds,
     message: `Bounds: (${response.bounds.x}, ${response.bounds.y}) ${response.bounds.width}×${response.bounds.height}`,
     timestamp: new Date().toISOString()

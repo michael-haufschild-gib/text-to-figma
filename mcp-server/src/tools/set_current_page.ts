@@ -27,17 +27,17 @@ export const setCurrentPageToolDefinition = {
   name: 'set_current_page',
   description: `Switches to a different page in the Figma document.
 
-🎯 WHEN TO USE:
+WHEN TO USE:
 - Before creating content on a different page
 - Navigating between design flows (login, dashboard, settings)
 - Switching to a component library page
 - Focusing Figma viewport on a specific page
 
-📋 IMPORTANT:
+IMPORTANT:
 All create_* operations work on the CURRENT page. You MUST switch pages
 before creating content if you want it on a different page.
 
-💡 COMMON PATTERNS:
+COMMON PATTERNS:
 
 1. Navigate to a page by name (use with list_pages):
    pages = list_pages({})
@@ -59,7 +59,7 @@ before creating content if you want it on a different page.
    // ... do work on other pages ...
    set_current_page({ pageId: original.pageId })
 
-⚠️ NOTE: The Figma UI will visually switch to the target page,
+NOTE: The Figma UI will visually switch to the target page,
 which is helpful for the user to see your progress.
 
 🔗 RELATED TOOLS:
@@ -101,21 +101,18 @@ export interface SetCurrentPageResult {
  * @param input
  */
 export async function setCurrentPage(input: SetCurrentPageInput): Promise<SetCurrentPageResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
   const response = await bridge.sendToFigmaValidated(
     'set_current_page',
-    { pageId: validated.pageId },
+    { pageId: input.pageId },
     SetCurrentPageResponseSchema
   );
 
   return {
-    pageId: validated.pageId,
+    pageId: input.pageId,
     pageName: response.pageName,
     message: response.pageName
       ? `Switched to page "${response.pageName}"`

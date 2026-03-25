@@ -60,12 +60,12 @@ export const setAppearanceToolDefinition = {
   name: 'set_appearance',
   description: `Sets visual appearance properties (blend mode, opacity, clipping).
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Styling an EXISTING node's appearance
 - Adding transparency, blend effects, or masking
 - Creating overlays, lighting effects, or visual compositing
 
-⚠️ DON'T use this for:
+DON'T use this for:
 - Color changes (use set_fills)
 - New node creation (use create_design)
 
@@ -204,32 +204,29 @@ export interface SetAppearanceResult {
  * @param input
  */
 export async function setAppearance(input: SetAppearanceInput): Promise<SetAppearanceResult> {
-  // Validate input
-  const validated = input;
-
   // Track what properties were applied
   const applied: string[] = [];
   const cssLines: string[] = [];
 
   // Build command payload for Figma
-  const payload: Record<string, unknown> = { nodeId: validated.nodeId };
+  const payload: Record<string, unknown> = { nodeId: input.nodeId };
 
-  if (validated.blendMode !== undefined) {
-    payload.blendMode = validated.blendMode;
+  if (input.blendMode !== undefined) {
+    payload.blendMode = input.blendMode;
     applied.push('blendMode');
-    cssLines.push(`mix-blend-mode: ${validated.blendMode.toLowerCase().replace('_', '-')};`);
+    cssLines.push(`mix-blend-mode: ${input.blendMode.toLowerCase().replace('_', '-')};`);
   }
 
-  if (validated.opacity !== undefined) {
-    payload.opacity = validated.opacity;
+  if (input.opacity !== undefined) {
+    payload.opacity = input.opacity;
     applied.push('opacity');
-    cssLines.push(`opacity: ${validated.opacity};`);
+    cssLines.push(`opacity: ${input.opacity};`);
   }
 
-  if (validated.clipping !== undefined) {
-    payload.clipping = validated.clipping;
+  if (input.clipping !== undefined) {
+    payload.clipping = input.clipping;
     applied.push('clipping');
-    if (validated.clipping.useMask) {
+    if (input.clipping.useMask) {
       cssLines.push('mask-image: url(#mask-shape);');
     } else {
       cssLines.push('overflow: hidden;');
@@ -247,7 +244,7 @@ export async function setAppearance(input: SetAppearanceInput): Promise<SetAppea
   await bridge.sendToFigmaWithRetry('set_appearance', payload);
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     applied,
     cssEquivalent: cssLines.join('\n'),
     message: `Applied appearance properties: ${applied.join(', ')}`

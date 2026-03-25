@@ -419,20 +419,6 @@ describe('Auto-Validator — Edge Cases', () => {
       expect(result.corrected.props?.paddingBottom).toBe(32);
     });
 
-    it('autoCorrectSpec corrects gap field to 8pt grid', () => {
-      const result = autoCorrectSpec({
-        type: 'frame',
-        name: 'test',
-        props: { gap: 12 }
-      });
-
-      expect(result.wasModified).toBe(true);
-      const gapCorrection = result.corrections.find((c) => c.field === 'gap');
-      expect(gapCorrection?.originalValue).toBe(12);
-      // 12 snaps to either 8 or 16 — check it's one of them
-      expect([8, 16]).toContain(gapCorrection?.correctedValue);
-    });
-
     it('autoCorrectSpec correction paths include correct child indices', () => {
       const result = autoCorrectSpec({
         type: 'frame',

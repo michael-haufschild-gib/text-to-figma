@@ -41,18 +41,18 @@ export const createRectangleWithImageFillToolDefinition = {
 PRIMITIVE: This is a raw Figma primitive for displaying images.
 Think of it as <img> tag in HTML or background-image in CSS.
 
-📋 RECOMMENDED WORKFLOW:
+RECOMMENDED WORKFLOW:
 1. Option A (Multi-element): Use create_design to create image + other elements together
 2. Option B (Single image):
    - Best practice: Create inside a parent frame for organization
    - Can create at root for standalone images
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Adding a single image to an existing design
 - Creating product photos, avatars, hero images
 - Building UI step-by-step (for simple designs)
 
-⚠️ For designs with images + other elements, prefer create_design instead.
+For designs with images + other elements, prefer create_design instead.
 
 Scale Modes:
 - FILL: Image fills entire rectangle (may crop, default)
@@ -118,7 +118,7 @@ CSS Equivalent:
  */
 const CreateRectangleWithImageFillResponseSchema = z
   .object({
-    nodeId: z.string().optional()
+    nodeId: z.string()
   })
   .passthrough();
 
@@ -142,9 +142,6 @@ export interface CreateRectangleWithImageFillResult {
 export async function createRectangleWithImageFill(
   input: CreateRectangleWithImageFillInput
 ): Promise<CreateRectangleWithImageFillResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -158,12 +155,12 @@ export async function createRectangleWithImageFill(
   const response = await bridge.sendToFigmaValidated(
     'create_rectangle_with_image_fill',
     {
-      imageUrl: validated.imageUrl,
-      width: validated.width,
-      height: validated.height,
-      scaleMode: validated.scaleMode,
-      name: validated.name,
-      parentId: validated.parentId
+      imageUrl: input.imageUrl,
+      width: input.width,
+      height: input.height,
+      scaleMode: input.scaleMode,
+      name: input.name,
+      parentId: input.parentId
     },
     CreateRectangleWithImageFillResponseSchema
   );
@@ -177,31 +174,29 @@ export async function createRectangleWithImageFill(
   };
 
   const cssEquivalent = `.image {
-  width: ${validated.width}px;
-  height: ${validated.height}px;
-  background-image: url('${validated.imageUrl}');
-  ${scaleModeToCSS[validated.scaleMode]}
+  width: ${input.width}px;
+  height: ${input.height}px;
+  background-image: url('${input.imageUrl}');
+  ${scaleModeToCSS[input.scaleMode]}
 }`;
 
   // Register node in hierarchy registry
-  if (response.nodeId) {
-    const registry = getNodeRegistry();
-    registry.register(response.nodeId, {
-      type: 'RECTANGLE',
-      name: validated.name,
-      parentId: validated.parentId ?? null,
-      children: [],
-      bounds: { x: 0, y: 0, width: validated.width, height: validated.height }
-    });
-  }
+  const registry = getNodeRegistry();
+  registry.register(response.nodeId, {
+    type: 'RECTANGLE',
+    name: input.name,
+    parentId: input.parentId ?? null,
+    children: [],
+    bounds: { x: 0, y: 0, width: input.width, height: input.height }
+  });
 
   return {
-    rectangleId: response.nodeId ?? '',
-    imageUrl: validated.imageUrl,
-    width: validated.width,
-    height: validated.height,
-    scaleMode: validated.scaleMode,
+    rectangleId: response.nodeId,
+    imageUrl: input.imageUrl,
+    width: input.width,
+    height: input.height,
+    scaleMode: input.scaleMode,
     cssEquivalent,
-    message: `Created rectangle with image fill (${validated.scaleMode} mode)`
+    message: `Created rectangle with image fill (${input.scaleMode} mode)`
   };
 }

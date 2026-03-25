@@ -145,24 +145,21 @@ function hexToRgba(hex: string, opacity: number): string {
  * @param input
  */
 export async function applyEffects(input: ApplyEffectsInput): Promise<ApplyEffectsResult> {
-  // Validate input
-  const validated = input;
-
   // Generate CSS equivalent
-  const cssEquivalent = generateCssEquivalent(validated.effects);
+  const cssEquivalent = generateCssEquivalent(input.effects);
 
   // Send to Figma
   const bridge = getFigmaBridge();
   await bridge.sendToFigmaWithRetry('apply_effects', {
-    nodeId: validated.nodeId,
-    effects: validated.effects
+    nodeId: input.nodeId,
+    effects: input.effects
   });
 
   return {
-    nodeId: validated.nodeId,
-    effectsApplied: validated.effects.length,
+    nodeId: input.nodeId,
+    effectsApplied: input.effects.length,
     cssEquivalent,
-    message: `Applied ${validated.effects.length} effect(s) to node`
+    message: `Applied ${input.effects.length} effect(s) to node`
   };
 }
 

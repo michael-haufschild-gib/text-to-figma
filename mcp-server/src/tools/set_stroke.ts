@@ -47,11 +47,11 @@ export const setStrokeToolDefinition = {
   name: 'set_stroke',
   description: `Sets stroke (border/outline) properties on a node.
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Adding or updating strokes on EXISTING nodes
 - Styling borders, outlines, dividers
 
-⚠️ DON'T use this for:
+DON'T use this for:
 - New node creation (set stroke in create_* tools)
 
 CONSOLIDATED TOOL: Now includes strokeJoin and strokeCap (replaces set_stroke_join, set_stroke_cap)
@@ -170,51 +170,46 @@ export interface SetStrokeResult {
  * @param input
  */
 export async function setStroke(input: SetStrokeInput): Promise<SetStrokeResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: bridge.sendToFigma validates success at protocol level
-  // It only resolves if Figma returns success=true, otherwise rejects
   await bridge.sendToFigmaWithRetry('set_stroke', {
-    nodeId: validated.nodeId,
-    strokeWeight: validated.strokeWeight,
-    strokeColor: validated.strokeColor,
-    strokeAlign: validated.strokeAlign,
-    dashPattern: validated.dashPattern,
-    opacity: validated.opacity,
-    strokeJoin: validated.strokeJoin,
-    strokeCap: validated.strokeCap
+    nodeId: input.nodeId,
+    strokeWeight: input.strokeWeight,
+    strokeColor: input.strokeColor,
+    strokeAlign: input.strokeAlign,
+    dashPattern: input.dashPattern,
+    opacity: input.opacity,
+    strokeJoin: input.strokeJoin,
+    strokeCap: input.strokeCap
   });
 
-  const isDashed = !!validated.dashPattern;
+  const isDashed = !!input.dashPattern;
 
   // Build CSS equivalent
   const borderStyle = isDashed ? 'dashed' : 'solid';
-  let cssEquivalent = `border: ${validated.strokeWeight}px ${borderStyle} ${validated.strokeColor};`;
+  let cssEquivalent = `border: ${input.strokeWeight}px ${borderStyle} ${input.strokeColor};`;
 
-  if (validated.opacity < 1) {
+  if (input.opacity < 1) {
     // Convert hex to rgba for opacity
-    const r = parseInt(validated.strokeColor.slice(1, 3), 16);
-    const g = parseInt(validated.strokeColor.slice(3, 5), 16);
-    const b = parseInt(validated.strokeColor.slice(5, 7), 16);
-    cssEquivalent = `border: ${validated.strokeWeight}px ${borderStyle} rgba(${r}, ${g}, ${b}, ${validated.opacity});`;
+    const r = parseInt(input.strokeColor.slice(1, 3), 16);
+    const g = parseInt(input.strokeColor.slice(3, 5), 16);
+    const b = parseInt(input.strokeColor.slice(5, 7), 16);
+    cssEquivalent = `border: ${input.strokeWeight}px ${borderStyle} rgba(${r}, ${g}, ${b}, ${input.opacity});`;
   }
 
   // Note about alignment
-  if (validated.strokeAlign !== 'INSIDE') {
-    cssEquivalent += `\n/* Note: CSS borders are like INSIDE alignment. ${validated.strokeAlign} requires different approach */`;
+  if (input.strokeAlign !== 'INSIDE') {
+    cssEquivalent += `\n/* Note: CSS borders are like INSIDE alignment. ${input.strokeAlign} requires different approach */`;
   }
 
   return {
-    nodeId: validated.nodeId,
-    strokeWeight: validated.strokeWeight,
-    strokeAlign: validated.strokeAlign,
+    nodeId: input.nodeId,
+    strokeWeight: input.strokeWeight,
+    strokeAlign: input.strokeAlign,
     isDashed,
     cssEquivalent,
-    message: `Applied ${isDashed ? 'dashed' : 'solid'} stroke (${validated.strokeWeight}px, ${validated.strokeAlign})`
+    message: `Applied ${isDashed ? 'dashed' : 'solid'} stroke (${input.strokeWeight}px, ${input.strokeAlign})`
   };
 }

@@ -110,10 +110,7 @@ export interface SetLayoutAlignResult {
  * @param input
  */
 export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLayoutAlignResult> {
-  // Validate input
-  const validated = input;
-
-  if (validated.primaryAxis === undefined && validated.counterAxis === undefined) {
+  if (input.primaryAxis === undefined && input.counterAxis === undefined) {
     throw new Error('Must specify at least one of primaryAxis or counterAxis');
   }
 
@@ -121,41 +118,41 @@ export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLay
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  // Note: Response validated by bridge at protocol level
+  // Note: Response input by bridge at protocol level
   await bridge.sendToFigmaWithRetry('set_layout_align', {
-    nodeId: validated.nodeId,
-    primaryAxis: validated.primaryAxis,
-    counterAxis: validated.counterAxis
+    nodeId: input.nodeId,
+    primaryAxis: input.primaryAxis,
+    counterAxis: input.counterAxis
   });
 
   // Build CSS equivalent
   const cssParts: string[] = [];
 
-  if (validated.primaryAxis !== undefined) {
+  if (input.primaryAxis !== undefined) {
     const primaryMap: Record<string, string> = {
       MIN: 'flex-start',
       CENTER: 'center',
       MAX: 'flex-end',
       SPACE_BETWEEN: 'space-between'
     };
-    cssParts.push(`justify-content: ${primaryMap[validated.primaryAxis]}`);
+    cssParts.push(`justify-content: ${primaryMap[input.primaryAxis]}`);
   }
 
-  if (validated.counterAxis !== undefined) {
+  if (input.counterAxis !== undefined) {
     const counterMap: Record<string, string> = {
       MIN: 'flex-start',
       CENTER: 'center',
       MAX: 'flex-end'
     };
-    cssParts.push(`align-items: ${counterMap[validated.counterAxis]}`);
+    cssParts.push(`align-items: ${counterMap[input.counterAxis]}`);
   }
 
   const cssEquivalent = cssParts.join('; ');
 
   return {
-    nodeId: validated.nodeId,
-    primaryAxis: validated.primaryAxis,
-    counterAxis: validated.counterAxis,
+    nodeId: input.nodeId,
+    primaryAxis: input.primaryAxis,
+    counterAxis: input.counterAxis,
     cssEquivalent,
     message: 'Layout alignment updated'
   };

@@ -299,7 +299,7 @@ export function formatRepairReport(report: CommandRepairReport): string {
     return 'All commands validated successfully (no repairs needed)';
   }
 
-  let message = `✓ Repaired ${report.totalFixed} command(s):\n`;
+  let message = `Repaired ${report.totalFixed} command(s):\n`;
   for (const fix of report.fixes) {
     message += `  Command ${fix.index}:\n`;
     for (const fixMsg of fix.fixes) {

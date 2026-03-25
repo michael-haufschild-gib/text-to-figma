@@ -23,11 +23,11 @@ describe('MetricsRegistry — adversarial edge cases', () => {
       hist.observe(0);
 
       const stats = hist.getStatistics();
-      expect(stats.count).toBe(3);
-      expect(stats.min).toBe(-5);
-      expect(stats.max).toBe(0);
-      expect(stats.sum).toBe(-6);
-      expect(stats.mean).toBeCloseTo(-2, 5);
+      expect(stats.lifetime.count).toBe(3);
+      expect(stats.window.min).toBe(-5);
+      expect(stats.window.max).toBe(0);
+      expect(stats.lifetime.sum).toBe(-6);
+      expect(stats.lifetime.mean).toBeCloseTo(-2, 5);
     });
 
     it('negative values do not count in any bucket (all buckets use <=)', () => {
@@ -51,7 +51,7 @@ describe('MetricsRegistry — adversarial edge cases', () => {
       hist.observe(10);
 
       const stats = hist.getStatistics();
-      expect(stats.median).toBe(0);
+      expect(stats.window.median).toBe(0);
     });
   });
 
@@ -128,7 +128,7 @@ describe('MetricsRegistry — adversarial edge cases', () => {
 
       // Verify it's the exact same error instance (not wrapped)
       expect(caught).toBe(originalError);
-      expect(timer.getStatistics().count).toBe(1);
+      expect(timer.getStatistics().lifetime.count).toBe(1);
     });
 
     it('timeAsync() records duration even when async function rejects, then re-throws the same error', async () => {
@@ -144,7 +144,7 @@ describe('MetricsRegistry — adversarial edge cases', () => {
       }
 
       expect(caught).toBe(originalError);
-      expect(timer.getStatistics().count).toBe(1);
+      expect(timer.getStatistics().lifetime.count).toBe(1);
     });
   });
 
@@ -180,8 +180,8 @@ describe('MetricsRegistry — adversarial edge cases', () => {
       const buckets = hist.getBuckets();
       expect(buckets).toHaveLength(0);
       // Stats should still work
-      expect(hist.getStatistics().count).toBe(1);
-      expect(hist.getStatistics().min).toBe(5);
+      expect(hist.getStatistics().lifetime.count).toBe(1);
+      expect(hist.getStatistics().window.min).toBe(5);
     });
 
     it('unsorted bucket boundaries still distribute correctly', () => {

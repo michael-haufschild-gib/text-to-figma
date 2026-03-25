@@ -61,21 +61,21 @@ describe('checkWcagContrast', () => {
       expect(result.isLargeText).toBe(false);
     });
 
-    it('large text: 18pt, weight 400 → large', () => {
+    it('large text: 24px, weight 400 → large', () => {
       const result = checkWcagContrast({
         foreground: '#000000',
         background: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 400
       });
       expect(result.isLargeText).toBe(true);
     });
 
-    it('large text: 14pt, weight 700 → large (bold)', () => {
+    it('large text: 19px, weight 700 → large (bold)', () => {
       const result = checkWcagContrast({
         foreground: '#000000',
         background: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 19,
         fontWeight: 700
       });
       expect(result.isLargeText).toBe(true);
@@ -227,41 +227,41 @@ describe('checkWcagContrast — boundaries and quality', () => {
   });
 
   describe('large text boundary precision', () => {
-    it('17.99px normal weight is not large text', () => {
+    it('23.99px normal weight is not large text', () => {
       const result = checkWcagContrast({
         foreground: '#000000',
         background: '#FFFFFF',
-        fontSize: 17.99,
+        fontSize: 23.99,
         fontWeight: 400
       });
       expect(result.isLargeText).toBe(false);
     });
 
-    it('18px normal weight is large text', () => {
+    it('24px normal weight is large text', () => {
       const result = checkWcagContrast({
         foreground: '#000000',
         background: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 400
       });
       expect(result.isLargeText).toBe(true);
     });
 
-    it('13.99px bold weight is not large text', () => {
+    it('18.99px bold weight is not large text', () => {
       const result = checkWcagContrast({
         foreground: '#000000',
         background: '#FFFFFF',
-        fontSize: 13.99,
+        fontSize: 18.99,
         fontWeight: 700
       });
       expect(result.isLargeText).toBe(false);
     });
 
-    it('14px bold weight is large text', () => {
+    it('19px bold weight is large text', () => {
       const result = checkWcagContrast({
         foreground: '#000000',
         background: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 19,
         fontWeight: 700
       });
       expect(result.isLargeText).toBe(true);
@@ -345,6 +345,130 @@ describe('checkWcagContrast — boundaries and quality', () => {
       });
       expect(result.compliance.aaa.threshold).toBe(4.5);
     });
+  });
+});
+
+describe('checkWcagContrast — suggestion generation edge cases', () => {
+  it('suggests lightening foreground when fg is lighter than bg and fails AA', () => {
+    // #999999 fg on #666666 bg: fg is lighter, lightening it further increases contrast
+    const result = checkWcagContrast({
+      foreground: '#999999',
+      background: '#666666',
+      fontSize: 16,
+      fontWeight: 400
+    });
+
+    expect(result.compliance.aa.passes).toBe(false);
+    const lightenFgSuggestion = result.suggestions.find((s) =>
+      s.adjustment.includes('Lighten foreground')
+    );
+    expect(lightenFgSuggestion?.contrastRatio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('suggests lightening background when bg is lighter than fg and fails AA', () => {
+    // #666666 fg on #999999 bg: bg is lighter, lightening it further increases contrast
+    const result = checkWcagContrast({
+      foreground: '#666666',
+      background: '#999999',
+      fontSize: 16,
+      fontWeight: 400
+    });
+
+    expect(result.compliance.aa.passes).toBe(false);
+    const lightenBgSuggestion = result.suggestions.find((s) =>
+      s.adjustment.includes('Lighten background')
+    );
+    expect(lightenBgSuggestion?.contrastRatio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('suggests pure white when both colors are pure black and incremental adjustments fail', () => {
+    // Pure black on pure black: darkening either direction does nothing,
+    // so the fallback to pure black/white suggestions fires
+    const result = checkWcagContrast({
+      foreground: '#000000',
+      background: '#000000',
+      fontSize: 16,
+      fontWeight: 400
+    });
+
+    expect(result.compliance.aa.passes).toBe(false);
+    const whiteSuggestion = result.suggestions.find((s) => s.color === '#FFFFFF');
+    expect(whiteSuggestion?.color).toBe('#FFFFFF');
+    expect(whiteSuggestion?.contrastRatio).toBe(21);
+    expect(whiteSuggestion?.adjustment).toContain('white');
+  });
+
+  it('suggests pure black when both colors are pure white and incremental adjustments fail', () => {
+    const result = checkWcagContrast({
+      foreground: '#FFFFFF',
+      background: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: 400
+    });
+
+    expect(result.compliance.aa.passes).toBe(false);
+    const blackSuggestion = result.suggestions.find((s) => s.color === '#000000');
+    expect(blackSuggestion?.color).toBe('#000000');
+    expect(blackSuggestion?.contrastRatio).toBe(21);
+    expect(blackSuggestion?.adjustment).toContain('black');
+  });
+
+  it('throws for invalid hex color format', () => {
+    expect(() =>
+      checkWcagContrast({
+        foreground: '#ZZZZZZ',
+        background: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 400
+      })
+    ).toThrow('Invalid hex color format');
+  });
+
+  it('generates suggestions for lighter foreground on darker background', () => {
+    // White-ish foreground on dark-ish background, fails AA
+    const result = checkWcagContrast({
+      foreground: '#DDDDDD',
+      background: '#BBBBBB',
+      fontSize: 16,
+      fontWeight: 400
+    });
+
+    if (!result.compliance.aa.passes) {
+      expect(result.suggestions.length).toBeGreaterThan(0);
+      for (const s of result.suggestions) {
+        expect(s.contrastRatio).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it('summary reflects AA-pass-but-AAA-fail case', () => {
+    // Find a color pair that passes AA but not AAA for normal text
+    // AA threshold is 4.5, AAA is 7.0 for normal text
+    // #595959 on #FFFFFF has ratio ~7.0, #666666 on #FFFFFF has ratio ~5.74
+    const result = checkWcagContrast({
+      foreground: '#666666',
+      background: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: 400
+    });
+
+    if (result.compliance.aa.passes && !result.compliance.aaa.passes) {
+      expect(result.summary).toContain('Good');
+      expect(result.summary).toContain('AA');
+      expect(result.summary).toContain('AAA');
+    }
+  });
+
+  it('summary reflects total failure case', () => {
+    const result = checkWcagContrast({
+      foreground: '#CCCCCC',
+      background: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: 400
+    });
+
+    expect(result.compliance.aa.passes).toBe(false);
+    expect(result.summary).toContain('Fails');
   });
 });
 

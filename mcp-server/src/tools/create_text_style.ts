@@ -156,7 +156,7 @@ After creating styles, use apply_text_style to apply them to text nodes.`,
  */
 const CreateTextStyleResponseSchema = z
   .object({
-    styleId: z.string().optional()
+    styleId: z.string()
   })
   .passthrough();
 
@@ -176,9 +176,6 @@ export interface CreateTextStyleResult {
  * @param input
  */
 export async function createTextStyle(input: CreateTextStyleInput): Promise<CreateTextStyleResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -186,24 +183,24 @@ export async function createTextStyle(input: CreateTextStyleInput): Promise<Crea
   const response = await bridge.sendToFigmaValidated(
     'create_text_style',
     {
-      name: validated.name,
-      fontFamily: validated.fontFamily,
-      fontSize: validated.fontSize,
-      fontWeight: validated.fontWeight,
-      lineHeight: validated.lineHeight,
-      letterSpacing: validated.letterSpacing,
-      textCase: validated.textCase,
-      textDecoration: validated.textDecoration,
-      description: validated.description
+      name: input.name,
+      fontFamily: input.fontFamily,
+      fontSize: input.fontSize,
+      fontWeight: input.fontWeight,
+      lineHeight: input.lineHeight,
+      letterSpacing: input.letterSpacing,
+      textCase: input.textCase,
+      textDecoration: input.textDecoration,
+      description: input.description
     },
     CreateTextStyleResponseSchema
   );
 
   return {
-    styleId: response.styleId ?? '',
-    name: validated.name,
-    fontSize: validated.fontSize,
-    fontWeight: validated.fontWeight,
-    message: `Created text style "${validated.name}" (${validated.fontSize}px, ${validated.fontWeight})`
+    styleId: response.styleId,
+    name: input.name,
+    fontSize: input.fontSize,
+    fontWeight: input.fontWeight,
+    message: `Created text style "${input.name}" (${input.fontSize}px, ${input.fontWeight})`
   };
 }

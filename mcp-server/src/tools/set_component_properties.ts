@@ -46,33 +46,30 @@ export interface SetComponentPropertiesResult {
 export async function setComponentProperties(
   input: SetComponentPropertiesInput
 ): Promise<SetComponentPropertiesResult> {
-  // Validate input
-  const validated = input;
-
   // Track what was updated
   const updated: string[] = [];
 
-  if (validated.name !== undefined) {
+  if (input.name !== undefined) {
     updated.push('name');
   }
-  if (validated.description !== undefined) {
+  if (input.description !== undefined) {
     updated.push('description');
   }
-  if (validated.variantProperties !== undefined && validated.variantProperties.length > 0) {
-    updated.push(`${validated.variantProperties.length} variant properties`);
+  if (input.variantProperties !== undefined && input.variantProperties.length > 0) {
+    updated.push(`${input.variantProperties.length} variant properties`);
   }
 
   // Send to Figma
   const bridge = getFigmaBridge();
   await bridge.sendToFigmaWithRetry('set_component_properties', {
-    componentId: validated.componentId,
-    name: validated.name,
-    description: validated.description,
-    variantProperties: validated.variantProperties
+    componentId: input.componentId,
+    name: input.name,
+    description: input.description,
+    variantProperties: input.variantProperties
   });
 
   return {
-    componentId: validated.componentId,
+    componentId: input.componentId,
     updated,
     message: `Component properties updated: ${updated.join(', ')}`
   };

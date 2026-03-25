@@ -144,18 +144,15 @@ export type AlignNodesResult = ToolResult<AlignNodesData>;
 export async function alignNodes(input: AlignNodesInput): Promise<AlignNodesResult> {
   const startTime = Date.now();
 
-  // Validate input
-  const validated = input;
-
-  if (validated.nodeIds.length < 2) {
+  if (input.nodeIds.length < 2) {
     const error = new Error('Must provide at least 2 nodes to align');
-    log.error('Validation failed', error, { nodeCount: validated.nodeIds.length });
+    log.error('Validation failed', error, { nodeCount: input.nodeIds.length });
     throw error;
   }
 
   log.debug('Aligning nodes', {
-    nodeCount: validated.nodeIds.length,
-    alignment: validated.alignment
+    nodeCount: input.nodeIds.length,
+    alignment: input.alignment
   });
 
   try {
@@ -166,28 +163,28 @@ export async function alignNodes(input: AlignNodesInput): Promise<AlignNodesResu
     await bridge.sendToFigmaValidated(
       'align_nodes',
       {
-        nodeIds: validated.nodeIds,
-        alignment: validated.alignment,
-        alignTo: validated.alignTo ?? 'SELECTION_BOUNDS'
+        nodeIds: input.nodeIds,
+        alignment: input.alignment,
+        alignTo: input.alignTo ?? 'SELECTION_BOUNDS'
       },
       AlignNodesResponseSchema
     );
 
     const duration = Date.now() - startTime;
-    const alignTo = validated.alignTo ?? 'SELECTION_BOUNDS';
-    const message = `Aligned ${validated.nodeIds.length} nodes to ${validated.alignment} (relative to ${alignTo})`;
+    const alignTo = input.alignTo ?? 'SELECTION_BOUNDS';
+    const message = `Aligned ${input.nodeIds.length} nodes to ${input.alignment} (relative to ${alignTo})`;
 
     log.info('Nodes aligned successfully', {
-      nodeCount: validated.nodeIds.length,
-      alignment: validated.alignment,
+      nodeCount: input.nodeIds.length,
+      alignment: input.alignment,
       alignTo,
       duration
     });
 
     return createToolResult<AlignNodesData>(
       {
-        nodeIds: validated.nodeIds,
-        alignment: validated.alignment,
+        nodeIds: input.nodeIds,
+        alignment: input.alignment,
         alignedTo: alignTo
       },
       message
@@ -197,8 +194,8 @@ export async function alignNodes(input: AlignNodesInput): Promise<AlignNodesResu
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     log.error('Failed to align nodes', error instanceof Error ? error : undefined, {
-      nodeIds: validated.nodeIds,
-      alignment: validated.alignment,
+      nodeIds: input.nodeIds,
+      alignment: input.alignment,
       duration
     });
 

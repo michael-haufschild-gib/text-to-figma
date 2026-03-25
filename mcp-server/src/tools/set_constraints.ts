@@ -184,11 +184,8 @@ function generateDescription(input: SetConstraintsInput): string {
  * @param input
  */
 export async function setConstraints(input: SetConstraintsInput): Promise<SetConstraintsResult> {
-  // Validate input
-  const validated = input;
-
   // Resolve pinning conflicts with constraint settings
-  const resolvedInput = { ...validated };
+  const resolvedInput = { ...input };
 
   // If STRETCH is set, ensure both pins are enabled
   if (resolvedInput.horizontal === 'STRETCH') {
@@ -248,7 +245,7 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry<{ nodeId: string }>('set_constraints', {
+  await bridge.sendToFigmaWithRetry('set_constraints', {
     nodeId: resolvedInput.nodeId,
     constraints: {
       horizontal: resolvedInput.horizontal,
@@ -262,7 +259,7 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
   });
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     applied,
     cssEquivalent,
     description

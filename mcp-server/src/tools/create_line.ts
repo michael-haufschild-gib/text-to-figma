@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { getNodeRegistry } from '../node-registry.js';
 
 /**
  * Input schema
@@ -153,9 +154,6 @@ export interface CreateLineResult {
  * @param input
  */
 export async function createLine(input: CreateLineInput): Promise<CreateLineResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -163,23 +161,23 @@ export async function createLine(input: CreateLineInput): Promise<CreateLineResu
   const response = await bridge.sendToFigmaValidated(
     'create_line',
     {
-      x1: validated.x1,
-      y1: validated.y1,
-      x2: validated.x2,
-      y2: validated.y2,
-      strokeColor: validated.strokeColor,
-      strokeWeight: validated.strokeWeight,
-      strokeCap: validated.strokeCap,
-      dashPattern: validated.dashPattern,
-      name: validated.name,
-      parentId: validated.parentId
+      x1: input.x1,
+      y1: input.y1,
+      x2: input.x2,
+      y2: input.y2,
+      strokeColor: input.strokeColor,
+      strokeWeight: input.strokeWeight,
+      strokeCap: input.strokeCap,
+      dashPattern: input.dashPattern,
+      name: input.name,
+      parentId: input.parentId
     },
-    z.object({ nodeId: z.string().optional(), error: z.string().optional() })
+    z.object({ nodeId: z.string() }).passthrough()
   );
 
   // Calculate line properties
-  const dx = validated.x2 - validated.x1;
-  const dy = validated.y2 - validated.y1;
+  const dx = input.x2 - input.x1;
+  const dy = input.y2 - input.y1;
   const length = Math.sqrt(dx * dx + dy * dy);
   const isHorizontal = dy === 0;
   const isVertical = dx === 0;
@@ -187,13 +185,13 @@ export async function createLine(input: CreateLineInput): Promise<CreateLineResu
   // Build CSS equivalent
   let cssEquivalent = '';
   if (isHorizontal) {
-    cssEquivalent = `border-top: ${validated.strokeWeight}px solid ${validated.strokeColor};`;
-    if (validated.dashPattern !== undefined) {
+    cssEquivalent = `border-top: ${input.strokeWeight}px solid ${input.strokeColor};`;
+    if (input.dashPattern !== undefined) {
       cssEquivalent += `\nborder-style: dashed;`;
     }
   } else if (isVertical) {
-    cssEquivalent = `border-left: ${validated.strokeWeight}px solid ${validated.strokeColor};`;
-    if (validated.dashPattern !== undefined) {
+    cssEquivalent = `border-left: ${input.strokeWeight}px solid ${input.strokeColor};`;
+    if (input.dashPattern !== undefined) {
       cssEquivalent += `\nborder-style: dashed;`;
     }
   } else {
@@ -201,13 +199,27 @@ export async function createLine(input: CreateLineInput): Promise<CreateLineResu
     const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
     cssEquivalent = `/* Diagonal line - use SVG or CSS transform */
 width: ${length}px;
-height: ${validated.strokeWeight}px;
-background: ${validated.strokeColor};
+height: ${input.strokeWeight}px;
+background: ${input.strokeColor};
 transform: rotate(${angle}deg);`;
   }
 
+  const registry = getNodeRegistry();
+  registry.register(response.nodeId, {
+    type: 'LINE',
+    name: input.name,
+    parentId: input.parentId ?? null,
+    children: [],
+    bounds: {
+      x: input.x1,
+      y: input.y1,
+      width: Math.abs(input.x2 - input.x1),
+      height: Math.abs(input.y2 - input.y1)
+    }
+  });
+
   return {
-    lineId: response.nodeId ?? '',
+    lineId: response.nodeId,
     length: Math.round(length),
     isHorizontal,
     isVertical,

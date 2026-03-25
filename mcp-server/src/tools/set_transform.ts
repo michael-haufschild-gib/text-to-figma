@@ -47,12 +47,12 @@ export const setTransformToolDefinition = {
   name: 'set_transform',
   description: `Sets transform properties on a node (position, size, rotation, scale, flip).
 
-🎯 WHEN TO USE THIS TOOL:
+WHEN TO USE THIS TOOL:
 - Transforming an EXISTING node
 - Positioning, resizing, rotating, or scaling elements
 - Adjusting layout of already-created nodes
 
-⚠️ DON'T use this for:
+DON'T use this for:
 - New node creation (set properties in create_* tools)
 - Multi-element designs (use create_design)
 
@@ -172,50 +172,47 @@ export interface SetTransformResult {
  * @param input
  */
 export async function setTransform(input: SetTransformInput): Promise<SetTransformResult> {
-  // Validate input
-  const validated = input;
-
   // Track what transformations were applied
   const applied: string[] = [];
   const cssLines: string[] = [];
 
   // Build command payload for Figma
-  const payload: Record<string, unknown> = { nodeId: validated.nodeId };
+  const payload: Record<string, unknown> = { nodeId: input.nodeId };
 
-  if (validated.position !== undefined) {
-    payload.position = validated.position;
+  if (input.position !== undefined) {
+    payload.position = input.position;
     applied.push('position');
     cssLines.push(`position: absolute;`);
-    cssLines.push(`left: ${validated.position.x}px;`);
-    cssLines.push(`top: ${validated.position.y}px;`);
+    cssLines.push(`left: ${input.position.x}px;`);
+    cssLines.push(`top: ${input.position.y}px;`);
   }
 
-  if (validated.size !== undefined) {
-    payload.size = validated.size;
+  if (input.size !== undefined) {
+    payload.size = input.size;
     applied.push('size');
-    cssLines.push(`width: ${validated.size.width}px;`);
-    cssLines.push(`height: ${validated.size.height}px;`);
+    cssLines.push(`width: ${input.size.width}px;`);
+    cssLines.push(`height: ${input.size.height}px;`);
   }
 
-  if (validated.rotation !== undefined) {
-    payload.rotation = validated.rotation;
+  if (input.rotation !== undefined) {
+    payload.rotation = input.rotation;
     applied.push('rotation');
-    cssLines.push(`transform: rotate(${validated.rotation}deg);`);
+    cssLines.push(`transform: rotate(${input.rotation}deg);`);
   }
 
-  if (validated.scale !== undefined) {
-    payload.scale = validated.scale;
+  if (input.scale !== undefined) {
+    payload.scale = input.scale;
     applied.push('scale');
-    cssLines.push(`transform: scale(${validated.scale.x}, ${validated.scale.y});`);
+    cssLines.push(`transform: scale(${input.scale.x}, ${input.scale.y});`);
   }
 
-  if (validated.flip !== undefined) {
-    payload.flip = validated.flip;
+  if (input.flip !== undefined) {
+    payload.flip = input.flip;
     applied.push('flip');
     const flipTransform =
-      validated.flip === 'HORIZONTAL'
+      input.flip === 'HORIZONTAL'
         ? 'scaleX(-1)'
-        : validated.flip === 'VERTICAL'
+        : input.flip === 'VERTICAL'
           ? 'scaleY(-1)'
           : 'scale(-1, -1)';
     cssLines.push(`transform: ${flipTransform};`);
@@ -232,7 +229,7 @@ export async function setTransform(input: SetTransformInput): Promise<SetTransfo
   await bridge.sendToFigmaWithRetry('set_transform', payload);
 
   return {
-    nodeId: validated.nodeId,
+    nodeId: input.nodeId,
     applied,
     cssEquivalent: cssLines.join('\n'),
     message: `Applied transformations: ${applied.join(', ')}`

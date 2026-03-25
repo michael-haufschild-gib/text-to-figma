@@ -147,16 +147,16 @@ describe('createStar', () => {
     );
   });
 
-  it('returns empty starId when response has no nodeId', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
+  it('rejects response when bridge returns no nodeId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "nodeId"'));
 
-    const result = await createStar({
-      pointCount: 5,
-      radius: 24,
-      name: 'No ID'
-    });
-
-    expect(result.starId).toBe('');
+    await expect(
+      createStar({
+        pointCount: 5,
+        radius: 24,
+        name: 'No ID'
+      })
+    ).rejects.toThrow();
   });
 
   it('propagates bridge errors without wrapping', async () => {

@@ -7,6 +7,7 @@
 
 import { VALID_SPACING_VALUES, snapToGrid } from '../constraints/spacing.js';
 import { VALID_FONT_SIZES, snapToTypeScale } from '../constraints/typography.js';
+import type { NodeSpec } from '../types/node-spec.js';
 
 /**
  * Correction record for tracking what was changed
@@ -33,42 +34,7 @@ export interface AutoCorrectionResult {
   wasModified: boolean;
 }
 
-/**
- * Node specification (matches create_design format)
- */
-interface NodeSpec {
-  type: 'frame' | 'text' | 'ellipse' | 'rectangle' | 'line';
-  name?: string;
-  props?: NodeProps;
-  children?: NodeSpec[];
-}
-
-interface NodeProps {
-  // Dimensions
-  width?: number;
-  height?: number;
-  x?: number;
-  y?: number;
-
-  // Layout (frame only)
-  layoutMode?: 'HORIZONTAL' | 'VERTICAL' | 'NONE';
-  itemSpacing?: number;
-  padding?: number;
-  paddingLeft?: number;
-  paddingRight?: number;
-  paddingTop?: number;
-  paddingBottom?: number;
-
-  // Text properties
-  fontSize?: number;
-  lineHeight?: number;
-  letterSpacing?: number;
-
-  // Corner radius
-  cornerRadius?: number;
-
-  [key: string]: unknown;
-}
+// NodeSpec and NodeProps are imported from ../types/node-spec.js
 
 /**
  * Spacing fields that should be validated against the 8pt grid
@@ -79,8 +45,7 @@ const SPACING_FIELDS = [
   'paddingRight',
   'paddingTop',
   'paddingBottom',
-  'itemSpacing',
-  'gap'
+  'itemSpacing'
 ] as const;
 
 /**

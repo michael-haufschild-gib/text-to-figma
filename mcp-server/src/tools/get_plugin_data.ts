@@ -91,9 +91,6 @@ export interface GetPluginDataResult {
  * @param input
  */
 export async function getPluginData(input: GetPluginDataInput): Promise<GetPluginDataResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -101,8 +98,8 @@ export async function getPluginData(input: GetPluginDataInput): Promise<GetPlugi
   const response = await bridge.sendToFigmaValidated(
     'get_plugin_data',
     {
-      nodeId: validated.nodeId,
-      key: validated.key
+      nodeId: input.nodeId,
+      key: input.key
     },
     GetPluginDataResponseSchema
   );
@@ -111,11 +108,11 @@ export async function getPluginData(input: GetPluginDataInput): Promise<GetPlugi
   const hasValue = value.length > 0;
 
   return {
-    nodeId: validated.nodeId,
-    key: validated.key,
+    nodeId: input.nodeId,
+    key: input.key,
     value,
     message: hasValue
-      ? `Retrieved plugin data "${validated.key}"`
-      : `No data found for key "${validated.key}"`
+      ? `Retrieved plugin data "${input.key}"`
+      : `No data found for key "${input.key}"`
   };
 }
