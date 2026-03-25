@@ -60,6 +60,13 @@
     "tests/**/*.ts": [
       "eslint --fix",
       "prettier --write"
+    ],
+    "eslint-rules/**/*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "docs/**/*.md": [
+      "prettier --write"
     ]
   }
 }

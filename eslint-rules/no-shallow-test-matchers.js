@@ -42,6 +42,110 @@ function findExpectCall(node) {
   return null;
 }
 
+/**
+ * Check expect(<shallow-arg>) patterns: typeof, Array.isArray, Boolean wrapping.
+ */
+function checkExpectArgPatterns(context, node) {
+  if (node.callee.type !== 'Identifier' || node.callee.name !== 'expect') return;
+  const arg = node.arguments[0];
+  if (!arg) return;
+
+  if (arg.type === 'UnaryExpression' && arg.operator === 'typeof') {
+    context.report({ node, message: SHALLOW_MSG });
+  } else if (
+    arg.type === 'CallExpression' &&
+    arg.callee.type === 'MemberExpression' &&
+    arg.callee.object.name === 'Array' &&
+    arg.callee.property.name === 'isArray'
+  ) {
+    context.report({ node, message: SHALLOW_MSG });
+  } else if (arg.type === 'CallExpression' && arg.callee.name === 'Boolean') {
+    context.report({ node, message: SHALLOW_MSG });
+  }
+}
+
+/**
+ * Check matcher patterns: named shallow matchers, negated existence, extended patterns.
+ */
+function checkMatcherPatterns(context, node) {
+  if (node.callee.type !== 'MemberExpression') return;
+  // expect.any() / expect.anything() are asymmetric matchers — legitimate
+  if (node.callee.object.name === 'expect') return;
+
+  const methodName = node.callee.property.name;
+  if (!methodName) return;
+
+  const isNot =
+    node.callee.object.type === 'MemberExpression' && node.callee.object.property.name === 'not';
+
+  // Named shallow matchers (original set, zero args)
+  const namedReason = SHALLOW_MATCHERS[methodName];
+  if (namedReason && node.arguments.length === 0 && findExpectCall(node)) {
+    context.report({
+      node: node.callee.property,
+      messageId: 'shallowMatcher',
+      data: { matcher: methodName, reason: namedReason }
+    });
+    return;
+  }
+
+  // Negated existence matchers (.not.toBeNull / .not.toBeUndefined)
+  if (
+    isNot &&
+    NEGATED_EXISTENCE_MATCHERS.has(methodName) &&
+    node.arguments.length === 0 &&
+    findExpectCall(node)
+  ) {
+    context.report({
+      node: node.callee.property,
+      messageId: 'shallowMatcher',
+      data: {
+        matcher: `not.${methodName}`,
+        reason:
+          'Same as toBeDefined() — asserts existence, not correctness. Assert the specific expected value.'
+      }
+    });
+    return;
+  }
+
+  // .not.toBe(null/undefined) / .not.toEqual(null/undefined)
+  if (isNot && (methodName === 'toBe' || methodName === 'toEqual') && node.arguments.length === 1) {
+    const arg = node.arguments[0];
+    const isNullOrUndefined =
+      (arg.type === 'Literal' && arg.value === null) ||
+      (arg.type === 'Identifier' && arg.name === 'undefined');
+    if (isNullOrUndefined && findExpectCall(node)) {
+      context.report({
+        node: node.callee.property,
+        messageId: 'shallowMatcher',
+        data: {
+          matcher: `not.${methodName}`,
+          reason:
+            'Same as toBeDefined() — asserts existence, not correctness. Assert the specific expected value.'
+        }
+      });
+      return;
+    }
+  }
+
+  // Extended shallow matcher patterns
+  let isShallow = false;
+  if (methodName === 'toMatch') {
+    const arg = node.arguments[0];
+    if (arg?.type === 'Literal' && arg.regex) {
+      const pattern = arg.regex.pattern;
+      if (pattern.includes('.+') || pattern.includes('[a-zA-Z]') || pattern === '.*') {
+        isShallow = true;
+      }
+    }
+  } else if (methodName === 'toHaveProperty' && node.arguments.length === 1 && !isNot) {
+    isShallow = true;
+  }
+
+  if (!isShallow || !findExpectCall(node)) return;
+  context.report({ node: node.callee.property, message: SHALLOW_MSG });
+}
+
 /** @type {import('eslint').Rule.RuleModule} */
 module.exports = {
   meta: {
@@ -56,122 +160,10 @@ module.exports = {
     }
   },
   create(context) {
-    function reportNode(node, message) {
-      context.report({ node, message });
-    }
-
     return {
       CallExpression(node) {
-        // ── 1. expect(<shallow-arg>) checks ─────────────────────────────
-        if (node.callee.type === 'Identifier' && node.callee.name === 'expect') {
-          const arg = node.arguments[0];
-          if (arg) {
-            if (arg.type === 'UnaryExpression' && arg.operator === 'typeof') {
-              reportNode(node, SHALLOW_MSG);
-            } else if (
-              arg.type === 'CallExpression' &&
-              arg.callee.type === 'MemberExpression' &&
-              arg.callee.object.name === 'Array' &&
-              arg.callee.property.name === 'isArray'
-            ) {
-              reportNode(node, SHALLOW_MSG);
-            } else if (arg.type === 'CallExpression' && arg.callee.name === 'Boolean') {
-              reportNode(node, SHALLOW_MSG);
-            }
-          }
-          return;
-        }
-
-        if (node.callee.type !== 'MemberExpression') return;
-
-        // ── 2. expect.any() / expect.anything() ──────────────────────────
-        // These are asymmetric matchers used for partial matching — legitimate.
-        if (node.callee.object.name === 'expect') {
-          return;
-        }
-
-        const methodName = node.callee.property.name;
-        if (!methodName) return;
-
-        const isNot =
-          node.callee.object.type === 'MemberExpression' &&
-          node.callee.object.property.name === 'not';
-
-        // ── 3. Named shallow matchers (original set, zero args) ──────────
-        const namedReason = SHALLOW_MATCHERS[methodName];
-        if (namedReason && node.arguments.length === 0) {
-          if (findExpectCall(node)) {
-            context.report({
-              node: node.callee.property,
-              messageId: 'shallowMatcher',
-              data: { matcher: methodName, reason: namedReason }
-            });
-          }
-          return;
-        }
-
-        // ── 4. Negated existence matchers (.not.toBeNull / .not.toBeUndefined)
-        if (isNot && NEGATED_EXISTENCE_MATCHERS.has(methodName) && node.arguments.length === 0) {
-          if (findExpectCall(node)) {
-            context.report({
-              node: node.callee.property,
-              messageId: 'shallowMatcher',
-              data: {
-                matcher: `not.${methodName}`,
-                reason:
-                  'Same as toBeDefined() — asserts existence, not correctness. Assert the specific expected value.'
-              }
-            });
-          }
-          return;
-        }
-
-        // ── 5. .not.toBe(null/undefined) / .not.toEqual(null/undefined)
-        if (
-          isNot &&
-          (methodName === 'toBe' || methodName === 'toEqual') &&
-          node.arguments.length === 1
-        ) {
-          const arg = node.arguments[0];
-          const isNullOrUndefined =
-            (arg.type === 'Literal' && arg.value === null) ||
-            (arg.type === 'Identifier' && arg.name === 'undefined');
-          if (isNullOrUndefined && findExpectCall(node)) {
-            context.report({
-              node: node.callee.property,
-              messageId: 'shallowMatcher',
-              data: {
-                matcher: `not.${methodName}`,
-                reason:
-                  'Same as toBeDefined() — asserts existence, not correctness. Assert the specific expected value.'
-              }
-            });
-            return;
-          }
-        }
-
-        // ── 6. Extended shallow matcher patterns ─────────────────────────
-        let isShallow = false;
-
-        if (methodName === 'toMatch') {
-          const arg = node.arguments[0];
-          if (arg?.type === 'Literal' && arg.regex) {
-            const pattern = arg.regex.pattern;
-            if (pattern.includes('.+') || pattern.includes('[a-zA-Z]') || pattern === '.*') {
-              isShallow = true;
-            }
-          }
-        } else if (methodName === 'toHaveProperty' && node.arguments.length === 1 && !isNot) {
-          isShallow = true;
-        }
-
-        if (!isShallow) return;
-        if (!findExpectCall(node)) return;
-
-        context.report({
-          node: node.callee.property,
-          message: SHALLOW_MSG
-        });
+        checkExpectArgPatterns(context, node);
+        checkMatcherPatterns(context, node);
       }
     };
   }

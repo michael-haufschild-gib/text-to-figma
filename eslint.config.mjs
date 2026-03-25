@@ -129,7 +129,7 @@ export default [
           ]
         }
       ],
-      'prettier/prettier': ['error', { endOfLine: 'auto', tabWidth: 2, useTabs: false }]
+      'prettier/prettier': ['error', { endOfLine: 'lf', tabWidth: 2, useTabs: false }]
     }
   },
 
@@ -171,7 +171,7 @@ export default [
           ]
         }
       ],
-      'prettier/prettier': ['error', { endOfLine: 'auto', tabWidth: 2, useTabs: false }]
+      'prettier/prettier': ['error', { endOfLine: 'lf', tabWidth: 2, useTabs: false }]
     }
   },
 
@@ -189,7 +189,8 @@ export default [
       globals: {
         figma: 'readonly',
         parent: 'readonly',
-        __html__: 'readonly'
+        __html__: 'readonly',
+        __PLUGIN_VERSION__: 'readonly'
       }
     },
     plugins: {
@@ -203,7 +204,7 @@ export default [
       'no-console': 'off',
       // Figma API types require object literal assertions for discriminated union returns
       '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'as' }],
-      'prettier/prettier': ['error', { endOfLine: 'auto', tabWidth: 2, useTabs: false }]
+      'prettier/prettier': ['error', { endOfLine: 'lf', tabWidth: 2, useTabs: false }]
     }
   },
 
@@ -310,6 +311,22 @@ export default [
     }
   },
 
+  // ─── ESLint custom rules: CJS modules ──────────────────────────────────
+  {
+    files: ['eslint-rules/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node
+      }
+    },
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'max-lines-per-function': ['warn', { max: 100, skipBlankLines: true, skipComments: true }]
+    }
+  },
+
   // ─── Turn off stylistic rules that conflict with Prettier ────────────────
   eslintConfigPrettier,
 
@@ -322,10 +339,7 @@ export default [
       '**/build/**',
       'mcp-server/dist/**',
       'figma-plugin/code.js',
-      'coverage/**',
-      'eslint-rules/**',
-      // Legacy JS integration tests require live WebSocket server — not in CI pipeline
-      'tests/**/*.js'
+      'coverage/**'
     ]
   }
 ];
