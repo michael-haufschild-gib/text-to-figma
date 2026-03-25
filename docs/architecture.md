@@ -273,10 +273,10 @@ export function validate{Constraint}(value: unknown): {Constraint}ValidationResu
 }
 ```
 
-Then export from `mcp-server/src/constraints/index.ts`:
+Import directly from the constraint module in consuming files:
 
 ```typescript
-export {} from /* exports */ './{constraint}.js';
+import { validate{Constraint} } from '../constraints/{constraint}.js';
 ```
 
 ---

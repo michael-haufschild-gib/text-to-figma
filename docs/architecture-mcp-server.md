@@ -1275,16 +1275,10 @@ export function validateMyConstraint(value: number) {
 }
 ```
 
-**2. Export from** `src/constraints/index.ts`:
+**2. Use in tools** (import directly from the constraint module):
 
 ```typescript
-export * from './my_constraint.js';
-```
-
-**3. Use in tools**:
-
-```typescript
-import { validateMyConstraint } from '../constraints/index.js';
+import { validateMyConstraint } from '../constraints/my_constraint.js';
 
 const result = validateMyConstraint(input.value);
 if (!result.isValid) {
