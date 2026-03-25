@@ -5,52 +5,60 @@
  * These operations position multiple nodes relative to each other.
  */
 
+import { z } from 'zod';
 import { getNode, getNodeDimensions } from '../helpers.js';
-import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
 
+// ── Return types ─────────────────────────────────────────────────────────────
+
+interface OperationResult {
+  message: string;
+  [key: string]: unknown;
+}
+
+const ALIGNMENTS = ['LEFT', 'CENTER_H', 'RIGHT', 'TOP', 'CENTER_V', 'BOTTOM'] as const;
 const DISTRIBUTE_AXES = ['HORIZONTAL', 'VERTICAL'] as const;
 
-const alignNodesRules: ValidationRule[] = [
-  { field: 'nodeIds', type: 'array', required: true },
-  { field: 'alignment', type: 'string', required: true }
-];
-const distributeNodesRules: ValidationRule[] = [
-  { field: 'nodeIds', type: 'array', required: true },
-  { field: 'axis', type: 'string', required: true, enum: DISTRIBUTE_AXES }
-];
-const connectShapesRules: ValidationRule[] = [
-  { field: 'sourceNodeId', type: 'string', required: true },
-  { field: 'targetNodeId', type: 'string', required: true }
-];
+const alignNodesSchema = z.object({
+  nodeIds: z.array(z.string()),
+  alignment: z.enum(ALIGNMENTS),
+  alignTo: z.string().optional()
+});
 
-export function handleAlignNodes(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, alignNodesRules);
-  if (error !== null) throw new Error(error);
+const distributeNodesSchema = z.object({
+  nodeIds: z.array(z.string()),
+  axis: z.enum(DISTRIBUTE_AXES),
+  method: z.string().optional(),
+  spacing: z.number().optional()
+});
 
-  if (
-    !Array.isArray(payload.nodeIds) ||
-    !payload.nodeIds.every((el: unknown) => typeof el === 'string')
-  ) {
-    throw new Error('nodeIds must be an array of strings');
-  }
-  const nodeIds: string[] = payload.nodeIds;
-  const missingIds = nodeIds.filter((id) => getNode(id) === null);
+const connectShapesSchema = z.object({
+  sourceNodeId: z.string(),
+  targetNodeId: z.string(),
+  method: z.string().optional(),
+  overlap: z.number().optional(),
+  targetAnchor: z.string().optional(),
+  sourceAnchor: z.string().optional(),
+  unionResult: z.boolean().optional()
+});
+
+export function handleAlignNodes(payload: Record<string, unknown>): OperationResult {
+  const input = alignNodesSchema.parse(payload);
+
+  const missingIds = input.nodeIds.filter((id) => getNode(id) === null);
   if (missingIds.length > 0) {
     throw new Error(
       `Nodes not found: ${missingIds.join(', ')}. Use get_page_hierarchy to verify node IDs.`
     );
   }
-  const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
+  const nodes = input.nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 2) throw new Error('At least 2 valid nodes required for alignment');
 
-  const alignment = payload.alignment as string;
-  const alignTo = typeof payload.alignTo === 'string' ? payload.alignTo : 'SELECTION_BOUNDS';
-
-  const referenceValue = computeAlignmentReference(nodes, alignment, alignTo);
+  const alignTo = input.alignTo ?? 'SELECTION_BOUNDS';
+  const referenceValue = computeAlignmentReference(nodes, input.alignment, alignTo);
 
   for (const node of nodes) {
     const { width, height } = getNodeDimensions(node);
-    switch (alignment) {
+    switch (input.alignment) {
       case 'LEFT':
         node.x = referenceValue;
         break;
@@ -72,7 +80,7 @@ export function handleAlignNodes(payload: Record<string, unknown>): unknown {
     }
   }
 
-  return { message: `Aligned ${String(nodes.length)} nodes to ${alignment}` };
+  return { message: `Aligned ${String(nodes.length)} nodes to ${input.alignment}` };
 }
 
 function computeAlignmentReference(nodes: SceneNode[], alignment: string, alignTo: string): number {
@@ -105,7 +113,9 @@ function computeAlignmentReference(nodes: SceneNode[], alignment: string, alignT
     case 'BOTTOM':
       return maxY;
     default:
-      return 0;
+      throw new Error(
+        `Unknown alignment: ${alignment}. Valid values: LEFT, CENTER_H, RIGHT, TOP, CENTER_V, BOTTOM`
+      );
   }
 }
 
@@ -125,35 +135,27 @@ function computeRefFromNode(refNode: SceneNode, alignment: string): number {
     case 'BOTTOM':
       return refNode.y + height;
     default:
-      return 0;
+      throw new Error(
+        `Unknown alignment: ${alignment}. Valid values: LEFT, CENTER_H, RIGHT, TOP, CENTER_V, BOTTOM`
+      );
   }
 }
 
-export function handleDistributeNodes(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, distributeNodesRules);
-  if (error !== null) throw new Error(error);
+export function handleDistributeNodes(payload: Record<string, unknown>): OperationResult {
+  const input = distributeNodesSchema.parse(payload);
 
-  if (
-    !Array.isArray(payload.nodeIds) ||
-    !payload.nodeIds.every((el: unknown) => typeof el === 'string')
-  ) {
-    throw new Error('nodeIds must be an array of strings');
-  }
-  const nodeIds: string[] = payload.nodeIds;
-  const missingIds = nodeIds.filter((id) => getNode(id) === null);
+  const missingIds = input.nodeIds.filter((id) => getNode(id) === null);
   if (missingIds.length > 0) {
     throw new Error(
       `Nodes not found: ${missingIds.join(', ')}. Use get_page_hierarchy to verify node IDs.`
     );
   }
-  const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
+  const nodes = input.nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 3) throw new Error('At least 3 valid nodes required for distribution');
 
-  const axis = checkEnum(payload.axis, DISTRIBUTE_AXES);
-  if (axis === undefined) throw new Error(`Invalid axis: ${String(payload.axis)}`);
-  const method = typeof payload.method === 'string' ? payload.method : 'SPACING';
+  const method = input.method ?? 'SPACING';
 
-  nodes.sort((a, b) => (axis === 'HORIZONTAL' ? a.x - b.x : a.y - b.y));
+  nodes.sort((a, b) => (input.axis === 'HORIZONTAL' ? a.x - b.x : a.y - b.y));
 
   const first = nodes[0];
   const last = nodes[nodes.length - 1];
@@ -161,11 +163,10 @@ export function handleDistributeNodes(payload: Record<string, unknown>): unknown
     throw new Error('Cannot distribute: need at least 2 nodes');
   }
 
-  const explicitSpacing = typeof payload.spacing === 'number' ? payload.spacing : undefined;
   if (method === 'SPACING') {
-    return distributeBySpacing(nodes, first, last, axis, explicitSpacing);
+    return distributeBySpacing(nodes, first, last, input.axis, input.spacing);
   }
-  return distributeByCenters(nodes, first, last, axis);
+  return distributeByCenters(nodes, first, last, input.axis);
 }
 
 function distributeBySpacing(
@@ -174,7 +175,7 @@ function distributeBySpacing(
   last: SceneNode,
   axis: string,
   explicitSpacing?: number
-): unknown {
+): OperationResult {
   const dim = axis === 'HORIZONTAL' ? 'width' : 'height';
   const pos = axis === 'HORIZONTAL' ? 'x' : 'y';
 
@@ -204,7 +205,7 @@ function distributeByCenters(
   first: SceneNode,
   last: SceneNode,
   axis: string
-): unknown {
+): OperationResult {
   const dim = axis === 'HORIZONTAL' ? 'width' : 'height';
   const pos = axis === 'HORIZONTAL' ? 'x' : 'y';
 
@@ -248,18 +249,17 @@ function tryUnion(source: SceneNode, target: SceneNode): { merged: boolean; newN
   }
 }
 
-export function handleConnectShapes(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, connectShapesRules);
-  if (error !== null) throw new Error(error);
+export function handleConnectShapes(payload: Record<string, unknown>): OperationResult {
+  const input = connectShapesSchema.parse(payload);
 
-  const sourceNode = getNode(payload.sourceNodeId as string);
-  const targetNode = getNode(payload.targetNodeId as string);
+  const sourceNode = getNode(input.sourceNodeId);
+  const targetNode = getNode(input.targetNodeId);
   if (!sourceNode || !targetNode) throw new Error('Source or target node not found');
 
-  const method = typeof payload.method === 'string' ? payload.method : 'POSITION_OVERLAP';
-  const overlap = typeof payload.overlap === 'number' ? payload.overlap : 5;
-  const targetAnchor = typeof payload.targetAnchor === 'string' ? payload.targetAnchor : 'CENTER';
-  const sourceAnchor = typeof payload.sourceAnchor === 'string' ? payload.sourceAnchor : 'CENTER';
+  const method = input.method ?? 'POSITION_OVERLAP';
+  const overlap = input.overlap ?? 5;
+  const targetAnchor = input.targetAnchor ?? 'CENTER';
+  const sourceAnchor = input.sourceAnchor ?? 'CENTER';
 
   const targetDims = getNodeDimensions(targetNode);
   const sourceDims = getNodeDimensions(sourceNode);
@@ -288,7 +288,7 @@ export function handleConnectShapes(payload: Record<string, unknown>): unknown {
 
   let merged = false;
   let newNodeId: string | undefined;
-  if (method === 'UNION' && payload.unionResult !== false) {
+  if (method === 'UNION' && input.unionResult !== false) {
     ({ merged, newNodeId } = tryUnion(sourceNode, targetNode));
   }
 

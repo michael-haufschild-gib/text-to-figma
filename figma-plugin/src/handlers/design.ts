@@ -4,8 +4,8 @@
  * Creates an entire design hierarchy in a single atomic operation.
  */
 
+import { z } from 'zod';
 import { cacheNode, hexToRgb, loadFont, convertEffects } from '../helpers.js';
-import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
 
 const LAYOUT_MODES = ['HORIZONTAL', 'VERTICAL'] as const;
 const SIZING_VALUES = ['FIXED', 'HUG', 'FILL'] as const;
@@ -14,7 +14,17 @@ const PRIMARY_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'SPACE_BETWEEN'] as const;
 const COUNTER_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'BASELINE'] as const;
 const TEXT_ALIGNS = ['LEFT', 'CENTER', 'RIGHT', 'JUSTIFIED'] as const;
 
-const createDesignRules: ValidationRule[] = [{ field: 'spec', type: 'object', required: true }];
+const nodeSpecSchema: z.ZodType<NodeSpec> = z.object({
+  type: z.string(),
+  name: z.string().optional(),
+  props: z.record(z.string(), z.unknown()).optional(),
+  children: z.lazy(() => z.array(nodeSpecSchema)).optional()
+});
+
+const createDesignSchema = z.object({
+  spec: nodeSpecSchema,
+  parentId: z.string().optional()
+});
 
 interface NodeSpec {
   type: string;
@@ -58,11 +68,19 @@ async function buildNodeTree(
     figma.currentPage.appendChild(node);
   }
 
-  const hSizing = checkEnum(props.horizontalSizing, SIZING_VALUES);
+  const hSizing =
+    typeof props.horizontalSizing === 'string' &&
+    (SIZING_VALUES as readonly string[]).includes(props.horizontalSizing)
+      ? (props.horizontalSizing as (typeof SIZING_VALUES)[number])
+      : undefined;
   if (hSizing !== undefined && 'layoutSizingHorizontal' in node) {
     (node as FrameNode).layoutSizingHorizontal = hSizing;
   }
-  const vSizing = checkEnum(props.verticalSizing, SIZING_VALUES);
+  const vSizing =
+    typeof props.verticalSizing === 'string' &&
+    (SIZING_VALUES as readonly string[]).includes(props.verticalSizing)
+      ? (props.verticalSizing as (typeof SIZING_VALUES)[number])
+      : undefined;
   if (vSizing !== undefined && 'layoutSizingVertical' in node) {
     (node as FrameNode).layoutSizingVertical = vSizing;
   }
@@ -113,20 +131,21 @@ function buildDesignResponse(
   return { rootNodeId: rootNode.id, nodeIds, nodes, totalNodes: nodeMap.size };
 }
 
-export async function handleCreateDesign(payload: Record<string, unknown>): Promise<unknown> {
-  const error = validatePayload(payload, createDesignRules);
-  if (error !== null) throw new Error(error);
+export async function handleCreateDesign(
+  payload: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const input = createDesignSchema.parse(payload);
 
-  const spec = payload.spec as NodeSpec;
+  const spec = input.spec;
   const nodeMap = new Map<string, SceneNode>();
 
   let rootParent: FrameNode | GroupNode | undefined;
-  if (typeof payload.parentId === 'string') {
-    const parentNode = (await figma.getNodeByIdAsync(payload.parentId)) as SceneNode | null;
+  if (input.parentId !== undefined) {
+    const parentNode = (await figma.getNodeByIdAsync(input.parentId)) as SceneNode | null;
     if (parentNode !== null && 'appendChild' in parentNode) {
       rootParent = parentNode as FrameNode | GroupNode;
     } else {
-      throw new Error(`Parent node not found or cannot contain children: ${payload.parentId}`);
+      throw new Error(`Parent node not found or cannot contain children: ${input.parentId}`);
     }
   }
 
@@ -153,7 +172,11 @@ function applyFrameStroke(frame: FrameNode, props: Record<string, unknown>): voi
     if (typeof props.strokeWeight === 'number') {
       frame.strokeWeight = props.strokeWeight;
     }
-    const strokeAlign = checkEnum(props.strokeAlign, STROKE_ALIGNS);
+    const strokeAlign =
+      typeof props.strokeAlign === 'string' &&
+      (STROKE_ALIGNS as readonly string[]).includes(props.strokeAlign)
+        ? (props.strokeAlign as (typeof STROKE_ALIGNS)[number])
+        : undefined;
     if (strokeAlign !== undefined) {
       frame.strokeAlign = strokeAlign;
     }
@@ -161,18 +184,30 @@ function applyFrameStroke(frame: FrameNode, props: Record<string, unknown>): voi
 }
 
 function applyFrameLayout(frame: FrameNode, props: Record<string, unknown>): void {
-  const layoutMode = checkEnum(props.layoutMode, LAYOUT_MODES);
+  const layoutMode =
+    typeof props.layoutMode === 'string' &&
+    (LAYOUT_MODES as readonly string[]).includes(props.layoutMode)
+      ? (props.layoutMode as (typeof LAYOUT_MODES)[number])
+      : undefined;
   if (layoutMode !== undefined) {
     frame.layoutMode = layoutMode;
   }
   if (typeof props.itemSpacing === 'number') {
     frame.itemSpacing = props.itemSpacing;
   }
-  const primaryAxisAlignItems = checkEnum(props.primaryAxisAlignItems, PRIMARY_AXIS_ALIGNS);
+  const primaryAxisAlignItems =
+    typeof props.primaryAxisAlignItems === 'string' &&
+    (PRIMARY_AXIS_ALIGNS as readonly string[]).includes(props.primaryAxisAlignItems)
+      ? (props.primaryAxisAlignItems as (typeof PRIMARY_AXIS_ALIGNS)[number])
+      : undefined;
   if (primaryAxisAlignItems !== undefined) {
     frame.primaryAxisAlignItems = primaryAxisAlignItems;
   }
-  const counterAxisAlignItems = checkEnum(props.counterAxisAlignItems, COUNTER_AXIS_ALIGNS);
+  const counterAxisAlignItems =
+    typeof props.counterAxisAlignItems === 'string' &&
+    (COUNTER_AXIS_ALIGNS as readonly string[]).includes(props.counterAxisAlignItems)
+      ? (props.counterAxisAlignItems as (typeof COUNTER_AXIS_ALIGNS)[number])
+      : undefined;
   if (counterAxisAlignItems !== undefined) {
     frame.counterAxisAlignItems = counterAxisAlignItems;
   }
@@ -227,7 +262,11 @@ async function createTextNode(name: string, props: Record<string, unknown>): Pro
   if (typeof props.color === 'string') {
     text.fills = [{ type: 'SOLID', color: hexToRgb(props.color) }];
   }
-  const textAlign = checkEnum(props.textAlign, TEXT_ALIGNS);
+  const textAlign =
+    typeof props.textAlign === 'string' &&
+    (TEXT_ALIGNS as readonly string[]).includes(props.textAlign)
+      ? (props.textAlign as (typeof TEXT_ALIGNS)[number])
+      : undefined;
   if (textAlign !== undefined) {
     text.textAlignHorizontal = textAlign;
   }

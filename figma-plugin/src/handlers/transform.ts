@@ -4,39 +4,71 @@
  * Handles: set_transform (position, size, rotation, scale, flip)
  */
 
+import { z } from 'zod';
 import { getNode } from '../helpers.js';
-import { validatePayload, type ValidationRule } from '../validate.js';
+
+// ── Return types ─────────────────────────────────────────────────────────────
+
+interface OperationResult {
+  nodeId: string;
+  message: string;
+}
 
 const FLIP_DIRECTIONS = ['HORIZONTAL', 'VERTICAL', 'BOTH'] as const;
 
-const setTransformRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
+const setTransformSchema = z.object({
+  nodeId: z.string(),
+  position: z
+    .object({
+      x: z.number().optional(),
+      y: z.number().optional()
+    })
+    .optional(),
+  size: z
+    .object({
+      width: z.number().optional(),
+      height: z.number().optional()
+    })
+    .optional(),
+  rotation: z.number().optional(),
+  scale: z
+    .object({
+      x: z.number(),
+      y: z.number()
+    })
+    .optional(),
+  flip: z.enum(FLIP_DIRECTIONS).optional()
+});
 
-function applyPosition(node: SceneNode, position: unknown): void {
-  if (typeof position !== 'object' || position === null) return;
-  const pos = position as Record<string, unknown>;
-  if (typeof pos.x === 'number') node.x = pos.x;
-  if (typeof pos.y === 'number') node.y = pos.y;
+function applyPosition(node: SceneNode, position: { x?: number; y?: number }): void {
+  if (position.x !== undefined) node.x = position.x;
+  if (position.y !== undefined) node.y = position.y;
 }
 
-function applySize(node: SceneNode, size: unknown): void {
-  if (typeof size !== 'object' || size === null || !('resize' in node)) return;
-  const s = size as Record<string, unknown>;
-  if (typeof s.width === 'number' && typeof s.height === 'number') {
-    (node as FrameNode).resize(s.width, s.height);
+function applySize(node: SceneNode, size: { width?: number; height?: number }): void {
+  if (!('resize' in node)) return;
+  if (size.width !== undefined || size.height !== undefined) {
+    const w = size.width ?? node.width;
+    const h = size.height ?? node.height;
+    (node as FrameNode).resize(w, h);
   }
 }
 
-function applyScale(node: SceneNode, scale: unknown): void {
-  if (typeof scale !== 'object' || scale === null || !('resize' in node)) return;
-  const s = scale as Record<string, unknown>;
-  if (typeof s.x === 'number' && typeof s.y === 'number') {
-    (node as FrameNode).resize(node.width * s.x, node.height * s.y);
-  }
+function applyScale(node: SceneNode, scale: { x: number; y: number }): void {
+  if (!('resize' in node)) return;
+  (node as FrameNode).resize(node.width * scale.x, node.height * scale.y);
 }
 
-function applyFlip(node: SceneNode, flip: unknown): void {
-  if (typeof flip !== 'string' || !('relativeTransform' in node)) return;
-  if (!(FLIP_DIRECTIONS as readonly string[]).includes(flip)) return;
+/**
+ * Apply flip by mutating the node's relativeTransform matrix.
+ *
+ * ORDER MATTERS: For 'BOTH', horizontal is applied first, then vertical
+ * reads the post-horizontal transform. The two operations compose correctly
+ * because H-flip negates row 0 col 0 while V-flip negates row 1 col 1 —
+ * orthogonal axes that don't interfere. Do not reorder these blocks.
+ */
+function applyFlip(node: SceneNode, flip: (typeof FLIP_DIRECTIONS)[number]): void {
+  if (!('relativeTransform' in node)) return;
   const n = node as SceneNode & { relativeTransform: Transform };
   const t = n.relativeTransform;
   if (flip === 'HORIZONTAL' || flip === 'BOTH') {
@@ -54,20 +86,19 @@ function applyFlip(node: SceneNode, flip: unknown): void {
   }
 }
 
-export function handleSetTransform(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, setTransformRules);
-  if (error !== null) throw new Error(error);
+export function handleSetTransform(payload: Record<string, unknown>): OperationResult {
+  const input = setTransformSchema.parse(payload);
 
-  const node = getNode(payload.nodeId as string);
+  const node = getNode(input.nodeId);
   if (!node) throw new Error('Node not found');
 
-  applyPosition(node, payload.position);
-  applySize(node, payload.size);
-  if (typeof payload.rotation === 'number' && 'rotation' in node) {
-    (node as FrameNode).rotation = payload.rotation;
+  if (input.position !== undefined) applyPosition(node, input.position);
+  if (input.size !== undefined) applySize(node, input.size);
+  if (input.rotation !== undefined && 'rotation' in node) {
+    (node as FrameNode).rotation = input.rotation;
   }
-  applyScale(node, payload.scale);
-  applyFlip(node, payload.flip);
+  if (input.scale !== undefined) applyScale(node, input.scale);
+  if (input.flip !== undefined) applyFlip(node, input.flip);
 
-  return { nodeId: payload.nodeId, message: 'Transform applied successfully' };
+  return { nodeId: input.nodeId, message: 'Transform applied successfully' };
 }

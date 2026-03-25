@@ -278,10 +278,14 @@
           connecting: 'Connecting...'
         };
 
-        statusEl.innerHTML = `
-        <span class="status-dot"></span>
-        <span>${statusText[status]}</span>
-      `;
+        // Build DOM nodes instead of innerHTML to avoid XSS vectors
+        statusEl.textContent = '';
+        const dot = document.createElement('span');
+        dot.className = 'status-dot';
+        const label = document.createElement('span');
+        label.textContent = statusText[status];
+        statusEl.appendChild(dot);
+        statusEl.appendChild(label);
       }
 
       /**
@@ -428,6 +432,16 @@
           }
 
           const msg = /** @type {Record<string, unknown>} */ (message);
+
+          // Handle push notifications from plugin (documentchange, pagechange)
+          // These are forwarded to the bridge which broadcasts to MCP clients
+          if (msg.type === 'figma_notification' && typeof msg.kind === 'string') {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify(msg));
+              log(`Notification: ${msg.kind}`, 'info');
+            }
+            return;
+          }
 
           // Handle plugin responses
           // Plugin sends { id, success, data/error } directly

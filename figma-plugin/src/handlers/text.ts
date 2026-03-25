@@ -5,8 +5,16 @@
  * set_letter_spacing, set_paragraph_spacing
  */
 
+import { z } from 'zod';
 import { getNode } from '../helpers.js';
-import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
+
+// ── Return types ─────────────────────────────────────────────────────────────
+
+interface OperationResult {
+  nodeId: unknown;
+  message: string;
+  [key: string]: unknown;
+}
 
 const TEXT_DECORATIONS = ['NONE', 'UNDERLINE', 'STRIKETHROUGH'] as const;
 const TEXT_CASES = [
@@ -19,13 +27,26 @@ const TEXT_CASES = [
 ] as const;
 const SPACING_UNITS = ['PIXELS', 'PERCENT'] as const;
 
-const nodeIdRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
+const setTextPropertiesSchema = z.object({
+  nodeId: z.string(),
+  decoration: z.enum(TEXT_DECORATIONS).optional(),
+  letterSpacing: z
+    .object({
+      value: z.number().optional(),
+      unit: z.enum(SPACING_UNITS).optional()
+    })
+    .optional(),
+  textCase: z.enum(TEXT_CASES).optional(),
+  paragraphSpacing: z.number().optional(),
+  paragraphIndent: z.number().optional()
+});
 
-export async function handleSetTextProperties(payload: Record<string, unknown>): Promise<unknown> {
-  const error = validatePayload(payload, nodeIdRules);
-  if (error !== null) throw new Error(error);
+export async function handleSetTextProperties(
+  payload: Record<string, unknown>
+): Promise<OperationResult> {
+  const input = setTextPropertiesSchema.parse(payload);
 
-  const node = getNode(payload.nodeId as string);
+  const node = getNode(input.nodeId);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
   const fontName = node.fontName;
@@ -39,91 +60,98 @@ export async function handleSetTextProperties(payload: Record<string, unknown>):
     await figma.loadFontAsync(fontName);
   }
 
-  const decoration = checkEnum(payload.decoration, TEXT_DECORATIONS);
-  if (decoration !== undefined) {
-    node.textDecoration = decoration;
+  if (input.decoration !== undefined) {
+    node.textDecoration = input.decoration;
   }
-  if (typeof payload.letterSpacing === 'object' && payload.letterSpacing !== null) {
-    const ls = payload.letterSpacing as Record<string, unknown>;
-    const unit = checkEnum(ls.unit, SPACING_UNITS) ?? 'PIXELS';
-    if (typeof ls.value === 'number') {
-      node.letterSpacing = { value: ls.value, unit };
+  if (input.letterSpacing !== undefined) {
+    const unit = input.letterSpacing.unit ?? 'PIXELS';
+    if (input.letterSpacing.value !== undefined) {
+      node.letterSpacing = { value: input.letterSpacing.value, unit };
     }
   }
-  const textCase = checkEnum(payload.textCase, TEXT_CASES);
-  if (textCase !== undefined) {
-    node.textCase = textCase;
+  if (input.textCase !== undefined) {
+    node.textCase = input.textCase;
   }
-  if (typeof payload.paragraphSpacing === 'number')
-    node.paragraphSpacing = payload.paragraphSpacing;
-  if (typeof payload.paragraphIndent === 'number') node.paragraphIndent = payload.paragraphIndent;
+  if (input.paragraphSpacing !== undefined) node.paragraphSpacing = input.paragraphSpacing;
+  if (input.paragraphIndent !== undefined) node.paragraphIndent = input.paragraphIndent;
 
-  return { nodeId: payload.nodeId, message: 'Text properties set successfully' };
+  return { nodeId: input.nodeId, message: 'Text properties set successfully' };
 }
 
-export function handleSetTextDecoration(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, nodeIdRules);
-  if (error !== null) throw new Error(error);
+const setTextDecorationSchema = z.object({
+  nodeId: z.string(),
+  decoration: z.enum(TEXT_DECORATIONS)
+});
 
-  const node = getNode(payload.nodeId as string);
+export function handleSetTextDecoration(payload: Record<string, unknown>): OperationResult {
+  const input = setTextDecorationSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  const decoration = checkEnum(payload.decoration, TEXT_DECORATIONS);
-  if (decoration === undefined)
-    throw new Error(`Invalid decoration: ${String(payload.decoration)}`);
-  node.textDecoration = decoration;
+  node.textDecoration = input.decoration;
   return {
-    nodeId: payload.nodeId,
-    decoration: payload.decoration,
+    nodeId: input.nodeId,
+    decoration: input.decoration,
     message: 'Text decoration set successfully (deprecated - use set_text_properties)'
   };
 }
 
-export function handleSetTextCase(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, nodeIdRules);
-  if (error !== null) throw new Error(error);
+const setTextCaseSchema = z.object({
+  nodeId: z.string(),
+  textCase: z.enum(TEXT_CASES)
+});
 
-  const node = getNode(payload.nodeId as string);
+export function handleSetTextCase(payload: Record<string, unknown>): OperationResult {
+  const input = setTextCaseSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  const textCase = checkEnum(payload.textCase, TEXT_CASES);
-  if (textCase === undefined) throw new Error(`Invalid textCase: ${String(payload.textCase)}`);
-  node.textCase = textCase;
+  node.textCase = input.textCase;
   return {
-    nodeId: payload.nodeId,
-    textCase: payload.textCase,
+    nodeId: input.nodeId,
+    textCase: input.textCase,
     message: 'Text case set successfully'
   };
 }
 
-export function handleSetLetterSpacing(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, nodeIdRules);
-  if (error !== null) throw new Error(error);
+const setLetterSpacingSchema = z.object({
+  nodeId: z.string(),
+  value: z.number(),
+  unit: z.enum(SPACING_UNITS).optional()
+});
 
-  const node = getNode(payload.nodeId as string);
+export function handleSetLetterSpacing(payload: Record<string, unknown>): OperationResult {
+  const input = setLetterSpacingSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  const unit = checkEnum(payload.unit, SPACING_UNITS) ?? 'PERCENT';
-  if (typeof payload.value !== 'number') throw new Error('value must be a number');
-  node.letterSpacing = { value: payload.value, unit };
+  const unit = input.unit ?? 'PERCENT';
+  node.letterSpacing = { value: input.value, unit };
   return {
-    nodeId: payload.nodeId,
-    value: payload.value,
+    nodeId: input.nodeId,
+    value: input.value,
     unit,
     message: 'Letter spacing set successfully'
   };
 }
 
-export function handleSetParagraphSpacing(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, nodeIdRules);
-  if (error !== null) throw new Error(error);
+const setParagraphSpacingSchema = z.object({
+  nodeId: z.string(),
+  paragraphSpacing: z.number().optional(),
+  paragraphIndent: z.number().optional()
+});
 
-  const node = getNode(payload.nodeId as string);
+export function handleSetParagraphSpacing(payload: Record<string, unknown>): OperationResult {
+  const input = setParagraphSpacingSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  if (typeof payload.paragraphSpacing === 'number')
-    node.paragraphSpacing = payload.paragraphSpacing;
-  if (typeof payload.paragraphIndent === 'number') node.paragraphIndent = payload.paragraphIndent;
+  if (input.paragraphSpacing !== undefined) node.paragraphSpacing = input.paragraphSpacing;
+  if (input.paragraphIndent !== undefined) node.paragraphIndent = input.paragraphIndent;
 
-  return { nodeId: payload.nodeId, message: 'Paragraph spacing set successfully' };
+  return { nodeId: input.nodeId, message: 'Paragraph spacing set successfully' };
 }

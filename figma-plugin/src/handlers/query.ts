@@ -5,19 +5,26 @@
  * get_absolute_bounds, get_relative_bounds, get_page_hierarchy, get_selection
  */
 
+import { z } from 'zod';
 import { getNode, getNodeDimensions } from '../helpers.js';
-import { validatePayload } from '../validate.js';
-import type { ValidationRule } from '../validate.js';
 
-const getNodeByIdRules: ValidationRule[] = [{ field: 'nodeId', type: 'string', required: true }];
+// ── Return types ─────────────────────────────────────────────────────────────
 
-export function handleGetNodeById(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, getNodeByIdRules);
-  if (error !== null) throw new Error(error);
+interface QueryResult {
+  message: string;
+  [key: string]: unknown;
+}
 
-  const node = getNode(payload.nodeId as string);
+const getNodeByIdSchema = z.object({
+  nodeId: z.string()
+});
+
+export function handleGetNodeById(payload: Record<string, unknown>): QueryResult {
+  const input = getNodeByIdSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node) {
-    return { exists: false, error: 'Node not found' };
+    return { exists: false, error: 'Node not found', message: 'Node not found' };
   }
   const nodeData: Record<string, unknown> = {
     id: node.id,
@@ -48,11 +55,18 @@ export function handleGetNodeById(payload: Record<string, unknown>): unknown {
   };
 }
 
-export function handleGetNodeByName(payload: Record<string, unknown>): unknown {
-  const findAll = payload.findAll === true;
-  const exactMatch = payload.exactMatch === true;
-  if (typeof payload.name !== 'string') throw new Error('name must be a string');
-  const searchName = payload.name.toLowerCase();
+const getNodeByNameSchema = z.object({
+  name: z.string(),
+  findAll: z.boolean().optional(),
+  exactMatch: z.boolean().optional()
+});
+
+export function handleGetNodeByName(payload: Record<string, unknown>): QueryResult {
+  const input = getNodeByNameSchema.parse(payload);
+
+  const findAll = input.findAll === true;
+  const exactMatch = input.exactMatch === true;
+  const searchName = input.name.toLowerCase();
 
   const results: Array<{ nodeId: string; name: string; type: string }> = [];
 
@@ -78,9 +92,14 @@ export function handleGetNodeByName(payload: Record<string, unknown>): unknown {
   return { found: results.length, nodes: results, message: `Found ${results.length} node(s)` };
 }
 
-export function handleGetChildren(payload: Record<string, unknown>): unknown {
-  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
-  const node = getNode(payload.nodeId);
+const getChildrenSchema = z.object({
+  nodeId: z.string()
+});
+
+export function handleGetChildren(payload: Record<string, unknown>): QueryResult {
+  const input = getChildrenSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node || !('children' in node)) throw new Error('Node does not have children');
 
   const children = (node as FrameNode).children.map((child) => ({
@@ -92,21 +111,26 @@ export function handleGetChildren(payload: Record<string, unknown>): unknown {
   }));
 
   return {
-    nodeId: payload.nodeId,
+    nodeId: input.nodeId,
     childCount: children.length,
     children,
     message: 'Children retrieved successfully'
   };
 }
 
-export function handleGetParent(payload: Record<string, unknown>): unknown {
-  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
-  const node = getNode(payload.nodeId);
+const getParentSchema = z.object({
+  nodeId: z.string()
+});
+
+export function handleGetParent(payload: Record<string, unknown>): QueryResult {
+  const input = getParentSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node) throw new Error('Node not found');
 
   const parent = node.parent;
   return {
-    nodeId: payload.nodeId,
+    nodeId: input.nodeId,
     parentId: parent ? parent.id : null,
     parentName: parent ? parent.name : null,
     parentType: parent ? parent.type : null,
@@ -114,9 +138,14 @@ export function handleGetParent(payload: Record<string, unknown>): unknown {
   };
 }
 
-export function handleGetAbsoluteBounds(payload: Record<string, unknown>): unknown {
-  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
-  const node = getNode(payload.nodeId);
+const getAbsoluteBoundsSchema = z.object({
+  nodeId: z.string()
+});
+
+export function handleGetAbsoluteBounds(payload: Record<string, unknown>): QueryResult {
+  const input = getAbsoluteBoundsSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node) throw new Error('Node not found');
 
   const dim = getNodeDimensions(node);
@@ -132,18 +161,22 @@ export function handleGetAbsoluteBounds(payload: Record<string, unknown>): unkno
     absY = transform[1][2];
   }
   return {
-    nodeId: payload.nodeId,
+    nodeId: input.nodeId,
     bounds: { x: absX, y: absY, width: dim.width, height: dim.height },
     message: 'Absolute bounds retrieved successfully'
   };
 }
 
-export function handleGetRelativeBounds(payload: Record<string, unknown>): unknown {
-  if (typeof payload.targetNodeId !== 'string') throw new Error('targetNodeId must be a string');
-  if (typeof payload.referenceNodeId !== 'string')
-    throw new Error('referenceNodeId must be a string');
-  const targetNode = getNode(payload.targetNodeId);
-  const referenceNode = getNode(payload.referenceNodeId);
+const getRelativeBoundsSchema = z.object({
+  targetNodeId: z.string(),
+  referenceNodeId: z.string()
+});
+
+export function handleGetRelativeBounds(payload: Record<string, unknown>): QueryResult {
+  const input = getRelativeBoundsSchema.parse(payload);
+
+  const targetNode = getNode(input.targetNodeId);
+  const referenceNode = getNode(input.referenceNodeId);
   if (!targetNode || !referenceNode) throw new Error('Target or reference node not found');
 
   const td = getNodeDimensions(targetNode);
@@ -182,8 +215,8 @@ export function handleGetRelativeBounds(payload: Record<string, unknown>): unkno
   };
 }
 
-export function handleGetPageHierarchy(): unknown {
-  function traverseNode(node: SceneNode): unknown {
+export function handleGetPageHierarchy(): QueryResult {
+  function traverseNode(node: SceneNode): Record<string, unknown> {
     const base: Record<string, unknown> = {
       nodeId: node.id,
       type: node.type,
@@ -351,10 +384,17 @@ function serializeNode(
   return base;
 }
 
-export function handleGetSelection(payload: Record<string, unknown>): unknown {
+const getSelectionSchema = z.object({
+  includeDetails: z.boolean().optional(),
+  maxDepth: z.number().optional()
+});
+
+export function handleGetSelection(payload: Record<string, unknown>): QueryResult {
+  const input = getSelectionSchema.parse(payload);
+
   const selection = figma.currentPage.selection;
-  const includeDetails = payload.includeDetails !== false;
-  const maxDepth = typeof payload.maxDepth === 'number' ? payload.maxDepth : 5;
+  const includeDetails = input.includeDetails !== false;
+  const maxDepth = input.maxDepth ?? 5;
 
   if (selection.length === 0) {
     return { count: 0, selection: [], message: 'No nodes selected' };

@@ -5,9 +5,16 @@
  * set_constraints, set_layer_order, add_layout_grid
  */
 
+import { z } from 'zod';
 import { getNode, hexToRgb } from '../helpers.js';
-import { checkEnum, validatePayload } from '../validate.js';
-import type { ValidationRule } from '../validate.js';
+
+// ── Return types ─────────────────────────────────────────────────────────────
+
+interface OperationResult {
+  nodeId: unknown;
+  message: string;
+  [key: string]: unknown;
+}
 
 const LAYOUT_MODES = ['HORIZONTAL', 'VERTICAL'] as const;
 const SIZING_VALUES = ['FIXED', 'HUG', 'FILL'] as const;
@@ -17,112 +24,145 @@ const COUNTER_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'BASELINE'] as const;
 const CONSTRAINT_TYPES = ['MIN', 'CENTER', 'MAX', 'STRETCH', 'SCALE'] as const;
 const GRID_PATTERNS = ['COLUMNS', 'ROWS', 'GRID'] as const;
 const GRID_ALIGNS = ['MIN', 'MAX', 'STRETCH', 'CENTER'] as const;
+const LAYER_ORDER_ACTIONS = [
+  'BRING_TO_FRONT',
+  'BRING_FORWARD',
+  'SEND_BACKWARD',
+  'SEND_TO_BACK',
+  'SET_INDEX'
+] as const;
 
-const setLayoutPropertiesRules: ValidationRule[] = [
-  { field: 'nodeId', type: 'string', required: true },
-  { field: 'layoutMode', type: 'string', enum: LAYOUT_MODES },
-  { field: 'itemSpacing', type: 'number' },
-  { field: 'padding', type: 'number' },
-  { field: 'paddingTop', type: 'number' },
-  { field: 'paddingRight', type: 'number' },
-  { field: 'paddingBottom', type: 'number' },
-  { field: 'paddingLeft', type: 'number' }
-];
+const setLayoutPropertiesSchema = z.object({
+  nodeId: z.string(),
+  layoutMode: z.enum(LAYOUT_MODES).optional(),
+  itemSpacing: z.number().optional(),
+  padding: z.number().optional(),
+  paddingTop: z.number().optional(),
+  paddingRight: z.number().optional(),
+  paddingBottom: z.number().optional(),
+  paddingLeft: z.number().optional()
+});
 
-export function handleSetLayoutProperties(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, setLayoutPropertiesRules);
-  if (error !== null) throw new Error(error);
+export function handleSetLayoutProperties(payload: Record<string, unknown>): OperationResult {
+  const input = setLayoutPropertiesSchema.parse(payload);
 
-  const node = getNode(payload.nodeId as string);
+  const node = getNode(input.nodeId);
   if (!node || !('layoutMode' in node)) throw new Error('Node does not support auto-layout');
 
   const frame = node as FrameNode;
-  const layoutMode = checkEnum(payload.layoutMode, LAYOUT_MODES);
-  if (layoutMode !== undefined) {
-    frame.layoutMode = layoutMode;
+  if (input.layoutMode !== undefined) {
+    frame.layoutMode = input.layoutMode;
   }
-  if (typeof payload.itemSpacing === 'number') frame.itemSpacing = payload.itemSpacing;
-  if (typeof payload.padding === 'number') {
-    const p = payload.padding;
+  if (input.itemSpacing !== undefined) frame.itemSpacing = input.itemSpacing;
+  if (input.padding !== undefined) {
+    const p = input.padding;
     frame.paddingLeft = frame.paddingRight = frame.paddingTop = frame.paddingBottom = p;
   }
-  if (typeof payload.paddingTop === 'number') frame.paddingTop = payload.paddingTop;
-  if (typeof payload.paddingRight === 'number') frame.paddingRight = payload.paddingRight;
-  if (typeof payload.paddingBottom === 'number') frame.paddingBottom = payload.paddingBottom;
-  if (typeof payload.paddingLeft === 'number') frame.paddingLeft = payload.paddingLeft;
+  if (input.paddingTop !== undefined) frame.paddingTop = input.paddingTop;
+  if (input.paddingRight !== undefined) frame.paddingRight = input.paddingRight;
+  if (input.paddingBottom !== undefined) frame.paddingBottom = input.paddingBottom;
+  if (input.paddingLeft !== undefined) frame.paddingLeft = input.paddingLeft;
 
-  return { nodeId: payload.nodeId, message: 'Layout properties updated successfully' };
+  return { nodeId: input.nodeId, message: 'Layout properties updated successfully' };
 }
 
-export function handleSetLayoutAlign(payload: Record<string, unknown>): unknown {
-  const node = getNode(payload.nodeId as string);
+const setLayoutAlignSchema = z.object({
+  nodeId: z.string(),
+  primaryAxis: z.enum(PRIMARY_AXIS_ALIGNS).optional(),
+  counterAxis: z.enum(COUNTER_AXIS_ALIGNS).optional()
+});
+
+export function handleSetLayoutAlign(payload: Record<string, unknown>): OperationResult {
+  const input = setLayoutAlignSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node || !('primaryAxisAlignItems' in node))
     throw new Error('Node does not support layout alignment');
 
   const frame = node as FrameNode;
-  const primaryAxis = checkEnum(payload.primaryAxis, PRIMARY_AXIS_ALIGNS);
-  if (primaryAxis !== undefined) {
-    frame.primaryAxisAlignItems = primaryAxis;
+  if (input.primaryAxis !== undefined) {
+    frame.primaryAxisAlignItems = input.primaryAxis;
   }
-  const counterAxis = checkEnum(payload.counterAxis, COUNTER_AXIS_ALIGNS);
-  if (counterAxis !== undefined) {
-    frame.counterAxisAlignItems = counterAxis;
+  if (input.counterAxis !== undefined) {
+    frame.counterAxisAlignItems = input.counterAxis;
   }
 
-  return { nodeId: payload.nodeId, message: 'Layout alignment set successfully' };
+  return { nodeId: input.nodeId, message: 'Layout alignment set successfully' };
 }
 
-export function handleSetLayoutSizing(payload: Record<string, unknown>): unknown {
-  const node = getNode(payload.nodeId as string);
+const setLayoutSizingSchema = z.object({
+  nodeId: z.string(),
+  horizontal: z.enum(SIZING_VALUES).optional(),
+  vertical: z.enum(SIZING_VALUES).optional(),
+  layoutPositioning: z.enum(LAYOUT_POSITIONING_VALUES).optional()
+});
+
+export function handleSetLayoutSizing(payload: Record<string, unknown>): OperationResult {
+  const input = setLayoutSizingSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node || !('layoutSizingHorizontal' in node))
     throw new Error('Node does not support layout sizing');
 
   const frame = node as FrameNode;
-  const horizontal = checkEnum(payload.horizontal, SIZING_VALUES);
-  if (horizontal !== undefined) {
-    frame.layoutSizingHorizontal = horizontal;
+  if (input.horizontal !== undefined) {
+    frame.layoutSizingHorizontal = input.horizontal;
   }
-  const vertical = checkEnum(payload.vertical, SIZING_VALUES);
-  if (vertical !== undefined) {
-    frame.layoutSizingVertical = vertical;
+  if (input.vertical !== undefined) {
+    frame.layoutSizingVertical = input.vertical;
   }
-  const layoutPositioning = checkEnum(payload.layoutPositioning, LAYOUT_POSITIONING_VALUES);
-  if (layoutPositioning !== undefined && 'layoutPositioning' in node) {
+  if (input.layoutPositioning !== undefined && 'layoutPositioning' in node) {
     (node as SceneNode & { layoutPositioning: 'AUTO' | 'ABSOLUTE' }).layoutPositioning =
-      layoutPositioning;
+      input.layoutPositioning;
   }
 
-  return { nodeId: payload.nodeId, message: 'Layout sizing set successfully' };
+  return { nodeId: input.nodeId, message: 'Layout sizing set successfully' };
 }
 
-export function handleSetConstraints(payload: Record<string, unknown>): unknown {
-  const node = getNode(payload.nodeId as string);
+const setConstraintsSchema = z.object({
+  nodeId: z.string(),
+  horizontal: z.enum(CONSTRAINT_TYPES).optional(),
+  vertical: z.enum(CONSTRAINT_TYPES).optional()
+});
+
+export function handleSetConstraints(payload: Record<string, unknown>): OperationResult {
+  const input = setConstraintsSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node || !('constraints' in node)) throw new Error('Node does not support constraints');
 
-  const h = checkEnum(payload.horizontal, CONSTRAINT_TYPES) ?? 'MIN';
-  const v = checkEnum(payload.vertical, CONSTRAINT_TYPES) ?? 'MIN';
+  const h = input.horizontal ?? 'MIN';
+  const v = input.vertical ?? 'MIN';
 
   (node as ConstraintMixin).constraints = { horizontal: h, vertical: v };
 
   return {
-    nodeId: payload.nodeId,
+    nodeId: input.nodeId,
     applied: [
-      typeof payload.horizontal === 'string' ? `horizontal: ${payload.horizontal}` : '',
-      typeof payload.vertical === 'string' ? `vertical: ${payload.vertical}` : ''
+      input.horizontal !== undefined ? `horizontal: ${input.horizontal}` : '',
+      input.vertical !== undefined ? `vertical: ${input.vertical}` : ''
     ].filter((s) => s !== ''),
     message: 'Constraints applied successfully'
   };
 }
 
-export function handleSetLayerOrder(payload: Record<string, unknown>): unknown {
-  const node = getNode(payload.nodeId as string);
+const setLayerOrderSchema = z.object({
+  nodeId: z.string(),
+  action: z.enum(LAYER_ORDER_ACTIONS),
+  index: z.number().optional()
+});
+
+export function handleSetLayerOrder(payload: Record<string, unknown>): OperationResult {
+  const input = setLayerOrderSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node) throw new Error('Node not found');
   const parent = node.parent;
   if (!parent || !('children' in parent)) throw new Error('Node has no valid parent');
 
   const currentIndex = parent.children.indexOf(node);
 
-  switch (payload.action) {
+  switch (input.action) {
     case 'BRING_TO_FRONT':
       parent.insertChild(parent.children.length - 1, node);
       break;
@@ -136,29 +176,40 @@ export function handleSetLayerOrder(payload: Record<string, unknown>): unknown {
       parent.insertChild(0, node);
       break;
     case 'SET_INDEX':
-      if (typeof payload.index !== 'number') throw new Error('index must be a number');
-      parent.insertChild(Math.max(0, Math.min(payload.index, parent.children.length - 1)), node);
+      if (input.index === undefined) throw new Error('index must be a number');
+      parent.insertChild(Math.max(0, Math.min(input.index, parent.children.length - 1)), node);
       break;
-    default:
-      throw new Error('Invalid layer order action');
   }
 
   return {
+    nodeId: input.nodeId,
     newIndex: parent.children.indexOf(node),
     message: 'Layer order updated successfully'
   };
 }
 
-export function handleAddLayoutGrid(payload: Record<string, unknown>): unknown {
-  const node = getNode(payload.nodeId as string);
+const addLayoutGridSchema = z.object({
+  nodeId: z.string(),
+  pattern: z.enum(GRID_PATTERNS).optional(),
+  color: z.string().optional(),
+  sectionSize: z.number().optional(),
+  visible: z.boolean().optional(),
+  count: z.number().optional(),
+  gutter: z.number().optional(),
+  margin: z.number().optional(),
+  alignment: z.enum(GRID_ALIGNS).optional()
+});
+
+export function handleAddLayoutGrid(payload: Record<string, unknown>): OperationResult {
+  const input = addLayoutGridSchema.parse(payload);
+
+  const node = getNode(input.nodeId);
   if (!node || !('layoutGrids' in node)) throw new Error('Node does not support layout grids');
 
   const frame = node as FrameNode;
-  const pattern = checkEnum(payload.pattern, GRID_PATTERNS) ?? 'COLUMNS';
+  const pattern = input.pattern ?? 'COLUMNS';
   const gridColor =
-    typeof payload.color === 'string'
-      ? { ...hexToRgb(payload.color), a: 0.1 }
-      : { r: 1, g: 0, b: 0, a: 0.1 };
+    input.color !== undefined ? { ...hexToRgb(input.color), a: 0.1 } : { r: 1, g: 0, b: 0, a: 0.1 };
 
   let grid: LayoutGrid;
   let responseCount: number | undefined;
@@ -168,20 +219,20 @@ export function handleAddLayoutGrid(payload: Record<string, unknown>): unknown {
   if (pattern === 'GRID') {
     grid = {
       pattern: 'GRID',
-      sectionSize: typeof payload.sectionSize === 'number' ? payload.sectionSize : 64,
-      visible: payload.visible !== false,
+      sectionSize: input.sectionSize ?? 64,
+      visible: input.visible !== false,
       color: gridColor
     };
   } else {
-    const count = typeof payload.count === 'number' ? payload.count : 12;
-    const gutterSize = typeof payload.gutter === 'number' ? payload.gutter : 16;
-    const offset = typeof payload.margin === 'number' ? payload.margin : 0;
-    const alignment = checkEnum(payload.alignment, GRID_ALIGNS) ?? 'MIN';
+    const count = input.count ?? 12;
+    const gutterSize = input.gutter ?? 16;
+    const offset = input.margin ?? 0;
+    const alignment = input.alignment ?? 'MIN';
 
     grid = {
       pattern,
-      sectionSize: typeof payload.sectionSize === 'number' ? payload.sectionSize : 64,
-      visible: payload.visible !== false,
+      sectionSize: input.sectionSize ?? 64,
+      visible: input.visible !== false,
       color: gridColor,
       alignment,
       gutterSize,
@@ -196,7 +247,7 @@ export function handleAddLayoutGrid(payload: Record<string, unknown>): unknown {
   frame.layoutGrids = [...frame.layoutGrids, grid];
 
   return {
-    nodeId: payload.nodeId,
+    nodeId: input.nodeId,
     pattern,
     count: responseCount,
     gutter: responseGutter,

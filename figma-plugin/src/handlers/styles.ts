@@ -5,8 +5,15 @@
  * apply_fill_style, apply_text_style, apply_effect_style
  */
 
+import { z } from 'zod';
 import { convertEffects, getNode, hexToRgb, loadFont } from '../helpers.js';
-import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
+
+// ── Return types ─────────────────────────────────────────────────────────────
+
+interface StyleResult {
+  message: string;
+  [key: string]: unknown;
+}
 
 const TEXT_CASES = [
   'ORIGINAL',
@@ -18,93 +25,102 @@ const TEXT_CASES = [
 ] as const;
 const TEXT_DECORATIONS = ['NONE', 'UNDERLINE', 'STRIKETHROUGH'] as const;
 
-const createColorStyleRules: ValidationRule[] = [
-  { field: 'name', type: 'string', required: true },
-  { field: 'color', type: 'string', required: true }
-];
-const createTextStyleRules: ValidationRule[] = [
-  { field: 'name', type: 'string', required: true },
-  { field: 'fontSize', type: 'number', required: true }
-];
-const createEffectStyleRules: ValidationRule[] = [
-  { field: 'name', type: 'string', required: true },
-  { field: 'effects', type: 'array', required: true }
-];
-const applyStyleRules: ValidationRule[] = [
-  { field: 'nodeId', type: 'string', required: true },
-  { field: 'styleName', type: 'string', required: true }
-];
+const createColorStyleSchema = z.object({
+  name: z.string(),
+  color: z.string(),
+  description: z.string().optional()
+});
 
-export function handleCreateColorStyle(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, createColorStyleRules);
-  if (error !== null) throw new Error(error);
+const createTextStyleSchema = z.object({
+  name: z.string(),
+  fontSize: z.number(),
+  fontFamily: z.string().optional(),
+  fontWeight: z.number().optional(),
+  lineHeight: z.number().optional(),
+  letterSpacing: z.number().optional(),
+  textCase: z.enum(TEXT_CASES).optional(),
+  textDecoration: z.enum(TEXT_DECORATIONS).optional(),
+  description: z.string().optional()
+});
+
+const createEffectStyleSchema = z.object({
+  name: z.string(),
+  effects: z.array(z.record(z.string(), z.unknown())),
+  description: z.string().optional()
+});
+
+const applyStyleSchema = z.object({
+  nodeId: z.string(),
+  styleName: z.string()
+});
+
+export function handleCreateColorStyle(payload: Record<string, unknown>): StyleResult {
+  const input = createColorStyleSchema.parse(payload);
 
   const paintStyle = figma.createPaintStyle();
-  paintStyle.name = payload.name as string;
-  paintStyle.paints = [{ type: 'SOLID', color: hexToRgb(payload.color as string) }];
-  if (typeof payload.description === 'string') {
-    paintStyle.description = payload.description;
+  paintStyle.name = input.name;
+  paintStyle.paints = [{ type: 'SOLID', color: hexToRgb(input.color) }];
+  if (input.description !== undefined) {
+    paintStyle.description = input.description;
   }
 
   return {
     styleId: paintStyle.id,
     name: paintStyle.name,
-    color: payload.color,
+    color: input.color,
     message: `Color style created: ${paintStyle.name}`
   };
 }
 
-export async function handleCreateTextStyle(payload: Record<string, unknown>): Promise<unknown> {
-  const error = validatePayload(payload, createTextStyleRules);
-  if (error !== null) throw new Error(error);
+export async function handleCreateTextStyle(
+  payload: Record<string, unknown>
+): Promise<StyleResult> {
+  const input = createTextStyleSchema.parse(payload);
 
   const textStyle = figma.createTextStyle();
-  textStyle.name = payload.name as string;
+  textStyle.name = input.name;
 
-  const fontFamily = typeof payload.fontFamily === 'string' ? payload.fontFamily : 'Inter';
-  const fontWeight = typeof payload.fontWeight === 'number' ? payload.fontWeight : 400;
+  const fontFamily = input.fontFamily ?? 'Inter';
+  const fontWeight = input.fontWeight ?? 400;
   const fontResult = await loadFont(fontFamily, fontWeight);
   textStyle.fontName = fontResult.fontName;
-  textStyle.fontSize = payload.fontSize as number;
+  textStyle.fontSize = input.fontSize;
 
-  if (typeof payload.lineHeight === 'number') {
-    textStyle.lineHeight = { value: payload.lineHeight, unit: 'PIXELS' };
+  if (input.lineHeight !== undefined) {
+    textStyle.lineHeight = { value: input.lineHeight, unit: 'PIXELS' };
   }
-  if (typeof payload.letterSpacing === 'number') {
-    textStyle.letterSpacing = { value: payload.letterSpacing, unit: 'PIXELS' };
+  if (input.letterSpacing !== undefined) {
+    textStyle.letterSpacing = { value: input.letterSpacing, unit: 'PIXELS' };
   }
-  const textCase = checkEnum(payload.textCase, TEXT_CASES);
-  if (textCase !== undefined) {
-    textStyle.textCase = textCase;
+  if (input.textCase !== undefined) {
+    textStyle.textCase = input.textCase;
   }
-  const textDecoration = checkEnum(payload.textDecoration, TEXT_DECORATIONS);
-  if (textDecoration !== undefined) {
-    textStyle.textDecoration = textDecoration;
+  if (input.textDecoration !== undefined) {
+    textStyle.textDecoration = input.textDecoration;
   }
-  if (typeof payload.description === 'string') {
-    textStyle.description = payload.description;
+  if (input.description !== undefined) {
+    textStyle.description = input.description;
   }
 
   return {
     styleId: textStyle.id,
     name: textStyle.name,
-    fontSize: payload.fontSize,
-    fontWeight: payload.fontWeight,
+    fontSize: input.fontSize,
+    fontWeight: input.fontWeight,
     message: `Text style created: ${textStyle.name}`
   };
 }
 
-export function handleCreateEffectStyle(payload: Record<string, unknown>): unknown {
-  const error = validatePayload(payload, createEffectStyleRules);
-  if (error !== null) throw new Error(error);
+export function handleCreateEffectStyle(payload: Record<string, unknown>): StyleResult {
+  const input = createEffectStyleSchema.parse(payload);
 
   const effectStyle = figma.createEffectStyle();
-  effectStyle.name = payload.name as string;
+  effectStyle.name = input.name;
 
-  const effects = convertEffects(payload.effects as Array<Record<string, unknown>>);
+  const effects = convertEffects(input.effects);
   effectStyle.effects = effects;
-  if (typeof payload.description === 'string') {
-    effectStyle.description = payload.description;
+  if (input.description !== undefined) {
+    effectStyle.description = input.description;
   }
 
   return {
@@ -115,19 +131,18 @@ export function handleCreateEffectStyle(payload: Record<string, unknown>): unkno
   };
 }
 
-export async function handleApplyFillStyle(payload: Record<string, unknown>): Promise<unknown> {
-  const error = validatePayload(payload, applyStyleRules);
-  if (error !== null) throw new Error(error);
+export async function handleApplyFillStyle(payload: Record<string, unknown>): Promise<StyleResult> {
+  const input = applyStyleSchema.parse(payload);
 
-  const node = getNode(payload.nodeId as string);
+  const node = getNode(input.nodeId);
   if (!node || !('fillStyleId' in node)) throw new Error('Node does not support fill styles');
 
   const styles = await figma.getLocalPaintStylesAsync();
-  const matching = styles.filter((s) => s.name === payload.styleName);
-  if (matching.length === 0) throw new Error(`Fill style not found: ${String(payload.styleName)}`);
+  const matching = styles.filter((s) => s.name === input.styleName);
+  if (matching.length === 0) throw new Error(`Fill style not found: ${input.styleName}`);
   if (matching.length > 1)
     throw new Error(
-      `Multiple fill styles named "${String(payload.styleName)}" found (${matching.length}). Use a unique style name or apply by style ID.`
+      `Multiple fill styles named "${input.styleName}" found (${matching.length}). Use a unique style name or apply by style ID.`
     );
   const style = matching[0];
   if (!style) throw new Error('Fill style match was empty');
@@ -139,51 +154,50 @@ export async function handleApplyFillStyle(payload: Record<string, unknown>): Pr
     }
   ).setFillStyleIdAsync(style.id);
   return {
-    nodeId: payload.nodeId,
-    styleName: payload.styleName,
-    message: `Fill style applied: ${String(payload.styleName)}`
+    nodeId: input.nodeId,
+    styleName: input.styleName,
+    message: `Fill style applied: ${input.styleName}`
   };
 }
 
-export async function handleApplyTextStyle(payload: Record<string, unknown>): Promise<unknown> {
-  const error = validatePayload(payload, applyStyleRules);
-  if (error !== null) throw new Error(error);
+export async function handleApplyTextStyle(payload: Record<string, unknown>): Promise<StyleResult> {
+  const input = applyStyleSchema.parse(payload);
 
-  const node = getNode(payload.nodeId as string);
+  const node = getNode(input.nodeId);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
   const styles = await figma.getLocalTextStylesAsync();
-  const matching = styles.filter((s) => s.name === payload.styleName);
-  if (matching.length === 0) throw new Error(`Text style not found: ${String(payload.styleName)}`);
+  const matching = styles.filter((s) => s.name === input.styleName);
+  if (matching.length === 0) throw new Error(`Text style not found: ${input.styleName}`);
   if (matching.length > 1)
     throw new Error(
-      `Multiple text styles named "${String(payload.styleName)}" found (${matching.length}). Use a unique style name or apply by style ID.`
+      `Multiple text styles named "${input.styleName}" found (${matching.length}). Use a unique style name or apply by style ID.`
     );
   const style = matching[0];
   if (!style) throw new Error('Text style match was empty');
 
   await node.setTextStyleIdAsync(style.id);
   return {
-    nodeId: payload.nodeId,
-    styleName: payload.styleName,
-    message: `Text style applied: ${String(payload.styleName)}`
+    nodeId: input.nodeId,
+    styleName: input.styleName,
+    message: `Text style applied: ${input.styleName}`
   };
 }
 
-export async function handleApplyEffectStyle(payload: Record<string, unknown>): Promise<unknown> {
-  const error = validatePayload(payload, applyStyleRules);
-  if (error !== null) throw new Error(error);
+export async function handleApplyEffectStyle(
+  payload: Record<string, unknown>
+): Promise<StyleResult> {
+  const input = applyStyleSchema.parse(payload);
 
-  const node = getNode(payload.nodeId as string);
+  const node = getNode(input.nodeId);
   if (!node || !('effectStyleId' in node)) throw new Error('Node does not support effect styles');
 
   const styles = await figma.getLocalEffectStylesAsync();
-  const matching = styles.filter((s) => s.name === payload.styleName);
-  if (matching.length === 0)
-    throw new Error(`Effect style not found: ${String(payload.styleName)}`);
+  const matching = styles.filter((s) => s.name === input.styleName);
+  if (matching.length === 0) throw new Error(`Effect style not found: ${input.styleName}`);
   if (matching.length > 1)
     throw new Error(
-      `Multiple effect styles named "${String(payload.styleName)}" found (${matching.length}). Use a unique style name or apply by style ID.`
+      `Multiple effect styles named "${input.styleName}" found (${matching.length}). Use a unique style name or apply by style ID.`
     );
   const style = matching[0];
   if (!style) throw new Error('Effect style match was empty');
@@ -195,8 +209,8 @@ export async function handleApplyEffectStyle(payload: Record<string, unknown>): 
     }
   ).setEffectStyleIdAsync(style.id);
   return {
-    nodeId: payload.nodeId,
-    styleName: payload.styleName,
-    message: `Effect style applied: ${String(payload.styleName)}`
+    nodeId: input.nodeId,
+    styleName: input.styleName,
+    message: `Effect style applied: ${input.styleName}`
   };
 }

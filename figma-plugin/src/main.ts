@@ -228,9 +228,29 @@ const handlers: Record<string, Handler> = {
 
 // ─── Message handler ──────────────────────────────────────────────────────────
 
+/** Tracks whether an MCP command is currently executing. Used by the
+ *  documentchange listener to suppress feedback from our own mutations. */
+let mcpCommandInFlight = 0;
+
 figma.ui.onmessage = (msg: Record<string, unknown>): void => {
   void handleMessage(msg);
 };
+
+/**
+ * Context envelope attached to every response so the MCP server
+ * can detect page/file changes without polling.
+ */
+function getResponseContext(): {
+  pageId: string;
+  pageName: string;
+  fileName: string;
+} {
+  return {
+    pageId: figma.currentPage.id,
+    pageName: figma.currentPage.name,
+    fileName: figma.root.name
+  };
+}
 
 async function handleMessage(msg: Record<string, unknown>): Promise<void> {
   const { type, payload, requestId } = msg as {
@@ -243,11 +263,13 @@ async function handleMessage(msg: Record<string, unknown>): Promise<void> {
     figma.ui.postMessage({
       id: requestId ?? null,
       success: false,
-      error: 'Missing or invalid message type'
+      error: 'Missing or invalid message type',
+      _ctx: getResponseContext()
     });
     return;
   }
 
+  mcpCommandInFlight++;
   try {
     const handler = handlers[type];
     if (!handler) {
@@ -256,10 +278,69 @@ async function handleMessage(msg: Record<string, unknown>): Promise<void> {
 
     const result = await handler(payload ?? {});
 
-    figma.ui.postMessage({ id: requestId, success: true, data: result });
+    figma.ui.postMessage({
+      id: requestId,
+      success: true,
+      data: result,
+      _ctx: getResponseContext()
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`[${type}] Error:`, errorMessage);
-    figma.ui.postMessage({ id: requestId, success: false, error: errorMessage });
+    figma.ui.postMessage({
+      id: requestId,
+      success: false,
+      error: errorMessage,
+      _ctx: getResponseContext()
+    });
+  } finally {
+    mcpCommandInFlight--;
   }
 }
+
+// ─── Change detection ────────────────────────────────────────────────────────
+// Push notifications to the MCP server when the user (not us) modifies the
+// document or switches pages. This lets the MCP server mark its node registry
+// as stale rather than silently serving outdated data.
+
+/**
+ * Send a notification to the MCP server via the UI WebSocket.
+ */
+function sendNotification(kind: string, data?: Record<string, unknown>): void {
+  figma.ui.postMessage({
+    type: 'figma_notification',
+    kind,
+    data: { ...data, _ctx: getResponseContext() }
+  });
+}
+
+// ── documentchange: debounced, suppressed while MCP commands are in flight ──
+
+const DOCUMENT_CHANGE_DEBOUNCE_MS = 2000;
+let documentChangeTimer: ReturnType<typeof setTimeout> | null = null;
+
+figma.on('documentchange', () => {
+  // If an MCP command is executing, this change was likely caused by us
+  if (mcpCommandInFlight > 0) return;
+
+  // Debounce: reset timer on every change, fire once after quiet period
+  if (documentChangeTimer !== null) {
+    clearTimeout(documentChangeTimer);
+  }
+
+  documentChangeTimer = setTimeout(() => {
+    documentChangeTimer = null;
+    sendNotification('document_changed');
+  }, DOCUMENT_CHANGE_DEBOUNCE_MS);
+});
+
+// ── currentpagechange: immediate, always relevant ───────────────────────────
+
+figma.on('currentpagechange', () => {
+  // If MCP triggered this via set_current_page, the context envelope on the
+  // response already handles invalidation. But if the user switched pages
+  // manually, no MCP response is generated, so we must notify proactively.
+  if (mcpCommandInFlight > 0) return;
+
+  sendNotification('page_changed');
+});

@@ -13,5 +13,8 @@
   "devDependencies": {
     "@figma/plugin-typings": "^1.123.0",
     "esbuild": "^0.27.4"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
   }
 }
