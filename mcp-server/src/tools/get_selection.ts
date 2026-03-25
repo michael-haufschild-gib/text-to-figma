@@ -4,11 +4,23 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, formatSelectionNode, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema for get_selection tool
  */
-export const GetSelectionInputSchema = z.object({});
+export const GetSelectionInputSchema = z.object({
+  maxDepth: z
+    .number()
+    .int()
+    .min(0)
+    .max(10)
+    .optional()
+    .default(2)
+    .describe(
+      'How many levels of children to include (0=selected nodes only, 1=direct children, 2=grandchildren). Default: 2'
+    )
+});
 
 export type GetSelectionInput = z.infer<typeof GetSelectionInputSchema>;
 
@@ -202,13 +214,11 @@ const GetSelectionResponseSchema = z
  * console.log(`Corner radius: ${button.cornerRadius}`);
  * ```
  */
-export async function getSelection(_input: GetSelectionInput): Promise<GetSelectionResult> {
-  // Input input by routing layer
-
+export async function getSelection(input: GetSelectionInput): Promise<GetSelectionResult> {
   const bridge = getFigmaBridge();
   const response = await bridge.sendToFigmaValidated(
     'get_selection',
-    {},
+    { maxDepth: input.maxDepth },
     GetSelectionResponseSchema
   );
 
@@ -222,54 +232,41 @@ export const getSelectionToolDefinition = {
   name: 'get_selection',
   description: `Gets currently selected nodes in Figma with detailed properties.
 
-Returns comprehensive information about selected layers including:
-- Node type, name, ID, and dimensions
-- Fill colors, strokes, corner radius, opacity
-- Auto-layout properties (layoutMode, padding, itemSpacing)
-- Text properties (fontSize, fontName, characters, textCase, etc.)
-- Complete child hierarchy with all nested elements
+Returns information about selected layers: type, name, ID, dimensions,
+fills (as hex colors), strokes, corner radius, opacity, auto-layout
+properties, and text properties.
 
-**Use this tool to:**
-- Scan selected UI components from existing designs
-- Extract exact design specifications for buttons, cards, forms
-- Analyze component styles and recreate them via text-to-figma tools
-- Get precise dimensions, colors, spacing for documentation
+**maxDepth** controls child inclusion:
+- 0 = selected nodes only (no children)
+- 1 = direct children included (default)
+- 2-5 = deeper nesting (use sparingly on complex designs)
 
-**Workflow:**
-1. Select one or more layers in Figma
-2. Call this tool to extract all properties
-3. Use the returned data to recreate components with create_design or other tools
-
-**Error Handling:**
-- Throws error if no nodes are selected in Figma
-- Prompts user to select layers before calling
-
-**Example Usage:**
-\`\`\`typescript
-// User selects button component in Figma
-const result = await getSelection({});
-
-// result.selection[0] contains:
-// {
-//   nodeId: "123:456",
-//   type: "FRAME",
-//   name: "Primary Button",
-//   bounds: { x: 0, y: 0, width: 120, height: 40 },
-//   fills: [{ type: "SOLID", color: { r: 0.15, g: 0.93, b: 1 } }],
-//   cornerRadius: 8,
-//   layoutMode: "HORIZONTAL",
-//   padding: 16,
-//   itemSpacing: 8,
-//   children: [{
-//     type: "TEXT",
-//     characters: "BUTTON",
-//     fontSize: 14,
-//     fontWeight: 500
-//   }]
-// }
-\`\`\``,
+For deeper inspection of specific children, use get_children or get_node_by_id.`,
   inputSchema: {
     type: 'object' as const,
-    properties: {}
+    properties: {
+      maxDepth: {
+        type: 'number' as const,
+        description: 'Child nesting depth (0=none, 1=direct children, 2=grandchildren). Default: 2',
+        default: 2
+      }
+    }
   }
 };
+
+export const handler = defineHandler<GetSelectionInput, GetSelectionResult>({
+  name: 'get_selection',
+  schema: GetSelectionInputSchema,
+  execute: getSelection,
+  formatResponse: (result) => {
+    if (result.count === 0) {
+      return textResponse('No nodes selected. Please select a layer in Figma first.');
+    }
+    let text = `Selected: ${result.count} node(s)\n\n`;
+    text += result.selection
+      .map((node) => formatSelectionNode(node as Parameters<typeof formatSelectionNode>[0]))
+      .join('\n\n');
+    return textResponse(text);
+  },
+  definition: getSelectionToolDefinition
+});

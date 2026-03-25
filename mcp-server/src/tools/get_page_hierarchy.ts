@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
 import { getNodeRegistry, type HierarchyNode } from '../node-registry.js';
+import { defineHandler, formatHierarchyTree, textResponse } from '../routing/handler-utils.js';
 
 const logger = getLogger().child({ component: 'get-page-hierarchy' });
 
@@ -35,8 +36,10 @@ export interface GetPageHierarchyResult {
     totalNodes: number;
     rootNodes: number;
     nodesByType: Record<string, number>;
+    isStale: boolean;
   };
   source: 'cache' | 'figma';
+  warning?: string;
 }
 
 /**
@@ -119,9 +122,10 @@ export async function getPageHierarchy(
       GetPageHierarchyResponseSchema
     );
 
-    // Clear and rebuild registry
+    // Clear and rebuild registry from fresh data
     registry.clear();
     registerHierarchy(response.hierarchy, null);
+    registry.markFresh(response.pageId);
 
     return {
       hierarchy: response.hierarchy,
@@ -130,12 +134,20 @@ export async function getPageHierarchy(
     };
   }
 
-  // Use cached registry
-  return {
+  // Use cached registry — warn if stale
+  const result: GetPageHierarchyResult = {
     hierarchy: registry.getHierarchy(),
     stats: registry.getStats(),
     source: 'cache'
   };
+
+  if (registry.isStale()) {
+    result.warning =
+      'Cache may be stale — the Figma page or file has changed since the last refresh. ' +
+      'Use get_page_hierarchy with refresh=true to load current data.';
+  }
+
+  return result;
 }
 
 /**
@@ -233,3 +245,24 @@ The registry maintains awareness across:
     }
   }
 };
+
+export const handler = defineHandler<GetPageHierarchyInput, GetPageHierarchyResult>({
+  name: 'get_page_hierarchy',
+  schema: GetPageHierarchyInputSchema,
+  execute: getPageHierarchy,
+  formatResponse: (result) => {
+    const hierarchyTree = formatHierarchyTree(result.hierarchy);
+    let text = '';
+    if (result.warning) {
+      text += `WARNING: ${result.warning}\n\n`;
+    }
+    text += `Page Hierarchy\n\nSource: ${result.source === 'cache' ? 'Cached Registry' : 'Fresh from Figma'}\n`;
+    text += `Total Nodes: ${result.stats.totalNodes}\nRoot Nodes: ${result.stats.rootNodes}\n\nNode Types:\n`;
+    for (const [type, count] of Object.entries(result.stats.nodesByType)) {
+      text += `  ${type}: ${count}\n`;
+    }
+    text += `\nHierarchy Tree:\n\n${hierarchyTree}`;
+    return textResponse(text);
+  },
+  definition: getPageHierarchyToolDefinition
+});

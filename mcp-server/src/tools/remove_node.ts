@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 export const RemoveNodeInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to remove')
@@ -74,3 +75,14 @@ export async function removeNode(input: RemoveNodeInput): Promise<RemoveNodeResu
     message: `Node removed successfully`
   };
 }
+
+export const handler = defineHandler<RemoveNodeInput, RemoveNodeResult>({
+  name: 'remove_node',
+  schema: RemoveNodeInputSchema,
+  execute: removeNode,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nRemoved: ${r.name} (${r.type})\nFormer Parent: ${r.parentId ?? 'none'}\n`
+    ),
+  definition: removeNodeToolDefinition
+});

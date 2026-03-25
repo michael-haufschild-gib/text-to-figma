@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -116,3 +117,12 @@ export async function applyEffectStyle(
     message: `Applied effect style "${response.styleName ?? input.styleNameOrId}" to node`
   };
 }
+
+export const handler = defineHandler<ApplyEffectStyleInput, ApplyEffectStyleResult>({
+  name: 'apply_effect_style',
+  schema: ApplyEffectStyleInputSchema,
+  execute: applyEffectStyle,
+  formatResponse: (r) =>
+    textResponse(`${r.message}\nNode ID: ${r.nodeId}\nStyle: ${r.styleName}\n`),
+  definition: applyEffectStyleToolDefinition
+});

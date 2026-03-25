@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 import { getNodeRegistry, type NodeInfo } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema for get_node_info tool
@@ -25,6 +26,7 @@ export interface GetNodeInfoResult {
   parent: NodeInfo | null;
   children: NodeInfo[];
   path: string[]; // Path from root to this node
+  warning?: string;
 }
 
 /**
@@ -69,12 +71,21 @@ export function getNodeInfo(input: GetNodeInfoInput): GetNodeInfoResult {
   const children = registry.getChildren(input.nodeId);
   const path = buildPath(input.nodeId);
 
-  return {
+  const result: GetNodeInfoResult = {
     node,
     parent,
     children,
     path
   };
+
+  if (registry.isStale()) {
+    result.warning =
+      'Registry is stale — the Figma page or file has changed since the last refresh. ' +
+      'This data may be outdated. Use get_page_hierarchy with refresh=true, ' +
+      'or use get_node_by_id for a live lookup.';
+  }
+
+  return result;
 }
 
 /**
@@ -147,6 +158,12 @@ try {
 }
 \`\`\`
 
+**Staleness:**
+Uses cached registry data (fast). If the Figma page or file has changed
+since the last refresh, a warning is included in the response. When you
+see a staleness warning, either call get_page_hierarchy with refresh=true
+to resync, or use get_node_by_id for a live lookup from Figma.
+
 **Performance:**
 Very fast - uses in-memory registry lookup.`,
   inputSchema: {
@@ -160,3 +177,34 @@ Very fast - uses in-memory registry lookup.`,
     required: ['nodeId']
   }
 };
+
+export const handler = defineHandler<GetNodeInfoInput, GetNodeInfoResult>({
+  name: 'get_node_info',
+  schema: GetNodeInfoInputSchema,
+  execute: (input) => Promise.resolve(getNodeInfo(input)),
+  formatResponse: (result) => {
+    if (!result.node) {
+      return textResponse('Node not found');
+    }
+    let text = '';
+    if (result.warning) {
+      text += `WARNING: ${result.warning}\n\n`;
+    }
+    text += `Node Information\n\nNode: ${result.node.name}\nID: ${result.node.nodeId}\nType: ${result.node.type}\n`;
+    if (result.node.bounds) {
+      text += `Position: (${result.node.bounds.x}, ${result.node.bounds.y})\nSize: ${result.node.bounds.width} x ${result.node.bounds.height}\n`;
+    }
+    text += `Path: ${result.path.join(' > ')}\n\n`;
+    if (result.parent) {
+      text += `Parent: ${result.parent.name} (${result.parent.type})\n  ID: ${result.parent.nodeId}\n\n`;
+    } else {
+      text += `Parent: None (root node)\n\n`;
+    }
+    text += `Children: ${result.children.length}\n`;
+    for (const child of result.children) {
+      text += `  - ${child.name} (${child.type}) - ${child.nodeId}\n`;
+    }
+    return textResponse(text);
+  },
+  definition: getNodeInfoToolDefinition
+});

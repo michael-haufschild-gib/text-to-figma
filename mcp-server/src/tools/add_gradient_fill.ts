@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Gradient stop schema
@@ -161,13 +162,17 @@ export async function addGradientFill(input: AddGradientFillInput): Promise<AddG
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('add_gradient_fill', {
-    nodeId: input.nodeId,
-    type: input.type,
-    stops: input.stops,
-    angle: input.angle,
-    opacity: input.opacity
-  });
+  await bridge.sendToFigmaValidated(
+    'add_gradient_fill',
+    {
+      nodeId: input.nodeId,
+      type: input.type,
+      stops: input.stops,
+      angle: input.angle,
+      opacity: input.opacity
+    },
+    FigmaAckResponseSchema
+  );
 
   // Build CSS equivalent
   let cssEquivalent = '';
@@ -199,3 +204,14 @@ export async function addGradientFill(input: AddGradientFillInput): Promise<AddG
     message: `Applied ${input.type.toLowerCase()} gradient with ${input.stops.length} stops`
   };
 }
+
+export const handler = defineHandler<AddGradientFillInput, AddGradientFillResult>({
+  name: 'add_gradient_fill',
+  schema: AddGradientFillInputSchema,
+  execute: addGradientFill,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nType: ${r.type}\nStops: ${r.stopCount}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: addGradientFillToolDefinition
+});

@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -227,3 +228,14 @@ transform: rotate(${angle}deg);`;
     message: `Created ${isHorizontal ? 'horizontal' : isVertical ? 'vertical' : 'diagonal'} line (length: ${Math.round(length)}px)`
   };
 }
+
+export const handler = defineHandler<CreateLineInput, CreateLineResult>({
+  name: 'create_line',
+  schema: CreateLineInputSchema,
+  execute: createLine,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nLine ID: ${r.lineId}\nLength: ${r.length}px\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: createLineToolDefinition
+});

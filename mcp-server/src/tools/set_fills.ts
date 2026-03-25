@@ -7,7 +7,8 @@
 
 import { z } from 'zod';
 import { hexToRgb, rgbToHex, rgbSchema, type RGB } from '../constraints/color.js';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Hex color schema with validation
@@ -124,20 +125,24 @@ export async function setFills(input: SetFillsInput, isText = false): Promise<Se
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry('set_fills', {
-    nodeId: input.nodeId,
-    fills: [
-      {
-        type: 'SOLID',
-        color: {
-          r: rgb.r / 255,
-          g: rgb.g / 255,
-          b: rgb.b / 255
-        },
-        opacity: input.opacity
-      }
-    ]
-  });
+  await bridge.sendToFigmaValidated(
+    'set_fills',
+    {
+      nodeId: input.nodeId,
+      fills: [
+        {
+          type: 'SOLID',
+          color: {
+            r: rgb.r / 255,
+            g: rgb.g / 255,
+            b: rgb.b / 255
+          },
+          opacity: input.opacity
+        }
+      ]
+    },
+    FigmaAckResponseSchema
+  );
 
   return {
     nodeId: input.nodeId,
@@ -240,3 +245,14 @@ to ensure accessibility compliance (WCAG AA/AAA).`,
     required: ['nodeId', 'color']
   }
 };
+
+export const handler = defineHandler<SetFillsInput, SetFillsResult>({
+  name: 'set_fills',
+  schema: SetFillsInputSchema,
+  execute: setFills,
+  formatResponse: (r) =>
+    textResponse(
+      `Fills Applied Successfully\nNode ID: ${r.nodeId}\nApplied Color: ${r.appliedColor}\n\nCSS Equivalent:\n  ${r.cssEquivalent}\n`
+    ),
+  definition: setFillsToolDefinition
+});

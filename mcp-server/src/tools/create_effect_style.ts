@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Effect schema — accepts both apply_effects field names (x/y, radius)
@@ -218,3 +219,14 @@ export async function createEffectStyle(
     message: `Created effect style "${input.name}" with ${input.effects.length} effect(s)`
   };
 }
+
+export const handler = defineHandler<CreateEffectStyleInput, CreateEffectStyleResult>({
+  name: 'create_effect_style',
+  schema: CreateEffectStyleInputSchema,
+  execute: createEffectStyle,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nStyle ID: ${r.styleId}\nName: ${r.name}\nEffects: ${r.effectCount}\n`
+    ),
+  definition: createEffectStyleToolDefinition
+});

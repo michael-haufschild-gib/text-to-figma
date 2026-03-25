@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -114,3 +115,12 @@ export async function applyFillStyle(input: ApplyFillStyleInput): Promise<ApplyF
     message: `Applied fill style "${response.styleName ?? input.styleNameOrId}" to node`
   };
 }
+
+export const handler = defineHandler<ApplyFillStyleInput, ApplyFillStyleResult>({
+  name: 'apply_fill_style',
+  schema: ApplyFillStyleInputSchema,
+  execute: applyFillStyle,
+  formatResponse: (r) =>
+    textResponse(`${r.message}\nNode ID: ${r.nodeId}\nStyle: ${r.styleName}\n`),
+  definition: applyFillStyleToolDefinition
+});

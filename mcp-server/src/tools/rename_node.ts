@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 export const RenameNodeInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to rename'),
@@ -62,3 +63,11 @@ export async function renameNode(input: RenameNodeInput): Promise<RenameNodeResu
     message: 'Node renamed successfully'
   };
 }
+
+export const handler = defineHandler<RenameNodeInput, RenameNodeResult>({
+  name: 'rename_node',
+  schema: RenameNodeInputSchema,
+  execute: renameNode,
+  formatResponse: (r) => textResponse(`${r.message}\n"${r.oldName}" → "${r.name}"\n`),
+  definition: renameNodeToolDefinition
+});

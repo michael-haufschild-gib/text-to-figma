@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -204,3 +205,14 @@ export async function createTextStyle(input: CreateTextStyleInput): Promise<Crea
     message: `Created text style "${input.name}" (${input.fontSize}px, ${input.fontWeight})`
   };
 }
+
+export const handler = defineHandler<CreateTextStyleInput, CreateTextStyleResult>({
+  name: 'create_text_style',
+  schema: CreateTextStyleInputSchema,
+  execute: createTextStyle,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nStyle ID: ${r.styleId}\nName: ${r.name}\nFont: ${r.fontSize}px, weight ${r.fontWeight}\n`
+    ),
+  definition: createTextStyleToolDefinition
+});

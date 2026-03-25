@@ -16,6 +16,7 @@ import {
   type PathCommand as RepairedPathCommand,
   type RawPathCommand
 } from './utils/path-command-repair.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Path command types (SVG-like)
@@ -272,3 +273,11 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
       repairMessage
   };
 }
+
+export const handler = defineHandler<CreatePathInput, CreatePathResult>({
+  name: 'create_path',
+  schema: CreatePathInputSchema,
+  execute: createPath,
+  formatResponse: (r) => textResponse(r.message),
+  definition: createPathToolDefinition
+});

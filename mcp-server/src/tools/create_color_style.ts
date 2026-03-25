@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -133,3 +134,12 @@ export async function createColorStyle(
     message: `Created color style "${input.name}" (${input.color})`
   };
 }
+
+export const handler = defineHandler<CreateColorStyleInput, CreateColorStyleResult>({
+  name: 'create_color_style',
+  schema: CreateColorStyleInputSchema,
+  execute: createColorStyle,
+  formatResponse: (r) =>
+    textResponse(`${r.message}\nStyle ID: ${r.styleId}\nName: ${r.name}\nColor: ${r.color}\n`),
+  definition: createColorStyleToolDefinition
+});

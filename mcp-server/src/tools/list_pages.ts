@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema (no parameters needed)
@@ -119,3 +120,21 @@ export async function listPages(_input: ListPagesInput): Promise<ListPagesResult
     timestamp: new Date().toISOString()
   };
 }
+
+export const handler = defineHandler<ListPagesInput, ListPagesResult>({
+  name: 'list_pages',
+  schema: ListPagesInputSchema,
+  execute: listPages,
+  formatResponse: (r) => {
+    let text = `${r.message}\n\n`;
+    if (r.pages.length > 0) {
+      text += 'Pages:\n';
+      r.pages.forEach((page, i) => {
+        const current = page.isCurrent ? ' (current)' : '';
+        text += `${i + 1}. ${page.name}${current} - ID: ${page.pageId}\n`;
+      });
+    }
+    return textResponse(text);
+  },
+  definition: listPagesToolDefinition
+});

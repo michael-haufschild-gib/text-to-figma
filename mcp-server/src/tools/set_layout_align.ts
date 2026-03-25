@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -119,11 +120,15 @@ export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLay
 
   // Send command to Figma
   // Note: Response input by bridge at protocol level
-  await bridge.sendToFigmaWithRetry('set_layout_align', {
-    nodeId: input.nodeId,
-    primaryAxis: input.primaryAxis,
-    counterAxis: input.counterAxis
-  });
+  await bridge.sendToFigmaValidated(
+    'set_layout_align',
+    {
+      nodeId: input.nodeId,
+      primaryAxis: input.primaryAxis,
+      counterAxis: input.counterAxis
+    },
+    FigmaAckResponseSchema
+  );
 
   // Build CSS equivalent
   const cssParts: string[] = [];
@@ -157,3 +162,21 @@ export async function setLayoutAlign(input: SetLayoutAlignInput): Promise<SetLay
     message: 'Layout alignment updated'
   };
 }
+
+export const handler = defineHandler<SetLayoutAlignInput, SetLayoutAlignResult>({
+  name: 'set_layout_align',
+  schema: SetLayoutAlignInputSchema,
+  execute: setLayoutAlign,
+  formatResponse: (r) => {
+    let text = `${r.message}\nNode ID: ${r.nodeId}\n`;
+    if (r.primaryAxis) {
+      text += `Primary Axis: ${r.primaryAxis}\n`;
+    }
+    if (r.counterAxis) {
+      text += `Counter Axis: ${r.counterAxis}\n`;
+    }
+    text += `\nCSS Equivalent:\n${r.cssEquivalent}\n`;
+    return textResponse(text);
+  },
+  definition: setLayoutAlignToolDefinition
+});

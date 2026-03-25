@@ -6,7 +6,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema - all parameters optional, only update what's provided
@@ -226,7 +227,7 @@ export async function setTransform(input: SetTransformInput): Promise<SetTransfo
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry('set_transform', payload);
+  await bridge.sendToFigmaValidated('set_transform', payload, FigmaAckResponseSchema);
 
   return {
     nodeId: input.nodeId,
@@ -235,3 +236,14 @@ export async function setTransform(input: SetTransformInput): Promise<SetTransfo
     message: `Applied transformations: ${applied.join(', ')}`
   };
 }
+
+export const handler = defineHandler<SetTransformInput, SetTransformResult>({
+  name: 'set_transform',
+  schema: SetTransformInputSchema,
+  execute: setTransform,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nApplied: ${r.applied.join(', ')}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: setTransformToolDefinition
+});

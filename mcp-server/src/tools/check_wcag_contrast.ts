@@ -17,6 +17,7 @@ import {
   WCAGLevel
 } from '../constraints/color.js';
 import { adjustLightness, rgbToLch } from '../utils/color-converter.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema for check_wcag_contrast tool
@@ -348,3 +349,11 @@ Returns:
     required: ['foreground', 'background', 'fontSize']
   }
 };
+
+export const handler = defineHandler<CheckWcagContrastInput, CheckWcagContrastResult>({
+  name: 'check_wcag_contrast',
+  schema: CheckWcagContrastInputSchema,
+  execute: (input) => Promise.resolve(checkWcagContrast(input)),
+  formatResponse: (result) => textResponse(formatContrastCheckResult(result)),
+  definition: checkWcagContrastToolDefinition
+});

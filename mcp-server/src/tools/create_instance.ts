@@ -8,6 +8,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Property override schema for text content
@@ -185,3 +186,14 @@ Example: Creating button instances with different text
     required: ['componentId']
   }
 };
+
+export const handler = defineHandler<CreateInstanceInput, CreateInstanceResult>({
+  name: 'create_instance',
+  schema: CreateInstanceInputSchema,
+  execute: createInstance,
+  formatResponse: (r) =>
+    textResponse(
+      `Instance Created Successfully\nInstance ID: ${r.instanceId}\nComponent ID: ${r.componentId}\nOverrides Applied: ${r.overridesApplied}\n\n${r.message}\n`
+    ),
+  definition: createInstanceToolDefinition
+});

@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Connection side/anchor point
@@ -255,3 +256,11 @@ export async function connectShapes(input: ConnectShapesInput): Promise<ConnectS
     timestamp: new Date().toISOString()
   };
 }
+
+export const handler = defineHandler<ConnectShapesInput, ConnectShapesResult>({
+  name: 'connect_shapes',
+  schema: ConnectShapesInputSchema,
+  execute: connectShapes,
+  formatResponse: (r) => textResponse(r.message),
+  definition: connectShapesToolDefinition
+});

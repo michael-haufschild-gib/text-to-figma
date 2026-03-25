@@ -1,31 +1,33 @@
 /**
  * MCP Tool: detach_component
  *
- * Converts a COMPONENT or COMPONENT_SET back into regular frames.
+ * Detaches an INSTANCE from its component, or converts a COMPONENT/COMPONENT_SET into frames.
  *
- * PRIMITIVE: Reverses component creation.
- * In Figma: no built-in API — creates frames, copies properties/children, removes originals.
- * Use for: breaking components back into editable frames
+ * INSTANCE: uses Figma's detachInstance() — result is a standalone frame.
+ * COMPONENT: creates a frame, copies properties/children, removes the component.
+ * COMPONENT_SET: same as COMPONENT but for the set and all its variant children.
  */
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 export const DetachComponentInputSchema = z.object({
-  nodeId: z.string().min(1).describe('ID of the COMPONENT or COMPONENT_SET to detach')
+  nodeId: z.string().min(1).describe('ID of the INSTANCE, COMPONENT, or COMPONENT_SET to detach')
 });
 
 export type DetachComponentInput = z.infer<typeof DetachComponentInputSchema>;
 
 export const detachComponentToolDefinition = {
   name: 'detach_component',
-  description: `Converts a COMPONENT or COMPONENT_SET into regular frames.
+  description: `Detaches an INSTANCE from its component, or converts a COMPONENT/COMPONENT_SET into regular frames.
 
+For an INSTANCE: detaches it from its source component, turning it into a standalone FRAME.
 For a single COMPONENT: replaces it with a FRAME containing the same children and properties.
 For a COMPONENT_SET: replaces it with a FRAME, and converts each variant COMPONENT inside to a FRAME too.
 
-WARNING: Existing instances of these components will lose their source. The user can undo via Ctrl+Z in Figma.
+WARNING: Detaching a COMPONENT or COMPONENT_SET breaks existing instances. The user can undo via Ctrl+Z in Figma.
 
 Example:
 detach_component({ nodeId: "2052:3953" })`,
@@ -34,7 +36,7 @@ detach_component({ nodeId: "2052:3953" })`,
     properties: {
       nodeId: {
         type: 'string' as const,
-        description: 'ID of the COMPONENT or COMPONENT_SET to detach'
+        description: 'ID of the INSTANCE, COMPONENT, or COMPONENT_SET to detach'
       }
     },
     required: ['nodeId']
@@ -88,3 +90,17 @@ export async function detachComponent(input: DetachComponentInput): Promise<Deta
     message: response.message
   };
 }
+
+export const handler = defineHandler<DetachComponentInput, DetachComponentResult>({
+  name: 'detach_component',
+  schema: DetachComponentInputSchema,
+  execute: detachComponent,
+  formatResponse: (r) => {
+    const lines = [r.message];
+    for (const d of r.detached) {
+      lines.push(`  ${d.name}: ${d.oldId} → ${d.newId}`);
+    }
+    return textResponse(lines.join('\n') + '\n');
+  },
+  definition: detachComponentToolDefinition
+});

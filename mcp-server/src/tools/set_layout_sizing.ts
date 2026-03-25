@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -133,12 +134,16 @@ export async function setLayoutSizing(input: SetLayoutSizingInput): Promise<SetL
 
   // Send command to Figma
   // Note: Response input by bridge at protocol level
-  await bridge.sendToFigmaWithRetry('set_layout_sizing', {
-    nodeId: input.nodeId,
-    horizontal: input.horizontal,
-    vertical: input.vertical,
-    layoutPositioning: input.layoutPositioning
-  });
+  await bridge.sendToFigmaValidated(
+    'set_layout_sizing',
+    {
+      nodeId: input.nodeId,
+      horizontal: input.horizontal,
+      vertical: input.vertical,
+      layoutPositioning: input.layoutPositioning
+    },
+    FigmaAckResponseSchema
+  );
 
   // Build CSS equivalent
   const cssParts: string[] = [];
@@ -177,3 +182,21 @@ export async function setLayoutSizing(input: SetLayoutSizingInput): Promise<SetL
     message: `Layout sizing updated`
   };
 }
+
+export const handler = defineHandler<SetLayoutSizingInput, SetLayoutSizingResult>({
+  name: 'set_layout_sizing',
+  schema: SetLayoutSizingInputSchema,
+  execute: setLayoutSizing,
+  formatResponse: (r) => {
+    let text = `${r.message}\nNode ID: ${r.nodeId}\n`;
+    if (r.horizontal) {
+      text += `Horizontal: ${r.horizontal}\n`;
+    }
+    if (r.vertical) {
+      text += `Vertical: ${r.vertical}\n`;
+    }
+    text += `\nCSS Equivalent:\n${r.cssEquivalent}\n`;
+    return textResponse(text);
+  },
+  definition: setLayoutSizingToolDefinition
+});

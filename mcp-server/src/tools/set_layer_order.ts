@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
 import { createToolResult, type ToolResult } from '../utils/tool-result.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 const log = getLogger().child({ tool: 'set_layer_order' });
 
@@ -207,3 +208,11 @@ export async function setLayerOrder(input: SetLayerOrderInput): Promise<SetLayer
     throw new Error(`Failed to set layer order for node ${input.nodeId}: ${errorMessage}`);
   }
 }
+
+export const handler = defineHandler<SetLayerOrderInput, SetLayerOrderResult>({
+  name: 'set_layer_order',
+  schema: SetLayerOrderInputSchema,
+  execute: setLayerOrder,
+  formatResponse: (r) => textResponse(r.message),
+  definition: setLayerOrderToolDefinition
+});

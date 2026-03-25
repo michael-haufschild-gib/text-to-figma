@@ -7,8 +7,9 @@
 
 import { z } from 'zod';
 import { spacingSchema, VALID_SPACING_VALUES } from '../constraints/spacing.js';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
 import { layoutModeSchema } from './create_frame.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema for set_layout_properties tool
@@ -123,18 +124,22 @@ export async function setLayoutProperties(
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry('set_layout_properties', {
-    nodeId: input.nodeId,
-    layoutMode: input.layoutMode,
-    itemSpacing: input.itemSpacing,
-    padding: input.padding,
-    paddingTop: input.paddingTop,
-    paddingRight: input.paddingRight,
-    paddingBottom: input.paddingBottom,
-    paddingLeft: input.paddingLeft,
-    width: input.width,
-    height: input.height
-  });
+  await bridge.sendToFigmaValidated(
+    'set_layout_properties',
+    {
+      nodeId: input.nodeId,
+      layoutMode: input.layoutMode,
+      itemSpacing: input.itemSpacing,
+      padding: input.padding,
+      paddingTop: input.paddingTop,
+      paddingRight: input.paddingRight,
+      paddingBottom: input.paddingBottom,
+      paddingLeft: input.paddingLeft,
+      width: input.width,
+      height: input.height
+    },
+    FigmaAckResponseSchema
+  );
 
   return {
     nodeId: input.nodeId,
@@ -233,3 +238,14 @@ CSS equivalent: flex-direction: row; gap: 24px;`,
     required: ['nodeId']
   }
 };
+
+export const handler = defineHandler<SetLayoutPropertiesInput, SetLayoutPropertiesResult>({
+  name: 'set_layout_properties',
+  schema: SetLayoutPropertiesInputSchema,
+  execute: setLayoutProperties,
+  formatResponse: (r) =>
+    textResponse(
+      `Layout Properties Updated\nNode ID: ${r.nodeId}\nUpdated Properties: ${r.updated.join(', ')}\n\nCSS Equivalent:\n  ${r.cssEquivalent}\n`
+    ),
+  definition: setLayoutPropertiesToolDefinition
+});

@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -110,11 +111,15 @@ export async function addVariantProperty(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('add_variant_property', {
-    componentSetId: input.componentSetId,
-    propertyName: input.propertyName,
-    values: input.values
-  });
+  await bridge.sendToFigmaValidated(
+    'add_variant_property',
+    {
+      componentSetId: input.componentSetId,
+      propertyName: input.propertyName,
+      values: input.values
+    },
+    FigmaAckResponseSchema
+  );
 
   return {
     componentSetId: input.componentSetId,
@@ -123,3 +128,14 @@ export async function addVariantProperty(
     message: `Added variant property "${input.propertyName}" with ${input.values.length} values to component set`
   };
 }
+
+export const handler = defineHandler<AddVariantPropertyInput, AddVariantPropertyResult>({
+  name: 'add_variant_property',
+  schema: AddVariantPropertyInputSchema,
+  execute: addVariantProperty,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nComponent Set ID: ${r.componentSetId}\nProperty: ${r.propertyName}\nValues: ${r.valueCount}\n`
+    ),
+  definition: addVariantPropertyToolDefinition
+});

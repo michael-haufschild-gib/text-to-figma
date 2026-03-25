@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -162,3 +163,20 @@ export async function getNodeByName(input: GetNodeByNameInput): Promise<GetNodeB
     message: `Found ${nodes.length} node(s) with ${matchType} match for "${input.name}" (${searchScope})`
   };
 }
+
+export const handler = defineHandler<GetNodeByNameInput, GetNodeByNameResult>({
+  name: 'get_node_by_name',
+  schema: GetNodeByNameInputSchema,
+  execute: getNodeByName,
+  formatResponse: (r) => {
+    let text = `${r.message}\nFound: ${r.found} node(s)\n\n`;
+    if (r.nodes.length > 0) {
+      text += 'Nodes:\n';
+      r.nodes.forEach((node, i) => {
+        text += `${i + 1}. ${node.name} (${node.type}) - ID: ${node.nodeId}\n`;
+      });
+    }
+    return textResponse(text);
+  },
+  definition: getNodeByNameToolDefinition
+});

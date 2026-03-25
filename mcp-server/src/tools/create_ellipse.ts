@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -184,3 +185,14 @@ export async function createEllipse(input: CreateEllipseInput): Promise<CreateEl
     message: `Created ${isCircle ? 'circle' : 'ellipse'} (${input.width}x${input.height})`
   };
 }
+
+export const handler = defineHandler<CreateEllipseInput, CreateEllipseResult>({
+  name: 'create_ellipse',
+  schema: CreateEllipseInputSchema,
+  execute: createEllipse,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nEllipse ID: ${r.ellipseId}\nDimensions: ${r.width}x${r.height}\nIs Circle: ${r.isCircle}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: createEllipseToolDefinition
+});

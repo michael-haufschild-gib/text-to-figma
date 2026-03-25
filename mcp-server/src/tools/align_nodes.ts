@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
 import { createToolResult, type ToolResult } from '../utils/tool-result.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 const log = getLogger().child({ tool: 'align_nodes' });
 
@@ -202,3 +203,11 @@ export async function alignNodes(input: AlignNodesInput): Promise<AlignNodesResu
     throw new Error(`Failed to align nodes: ${errorMessage}`);
   }
 }
+
+export const handler = defineHandler<AlignNodesInput, AlignNodesResult>({
+  name: 'align_nodes',
+  schema: AlignNodesInputSchema,
+  execute: alignNodes,
+  formatResponse: (r) => textResponse(r.message),
+  definition: alignNodesToolDefinition
+});

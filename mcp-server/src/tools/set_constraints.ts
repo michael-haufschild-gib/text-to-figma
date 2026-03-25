@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Horizontal constraint types
@@ -245,18 +246,22 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry('set_constraints', {
-    nodeId: resolvedInput.nodeId,
-    constraints: {
-      horizontal: resolvedInput.horizontal,
-      vertical: resolvedInput.vertical
+  await bridge.sendToFigmaValidated(
+    'set_constraints',
+    {
+      nodeId: resolvedInput.nodeId,
+      constraints: {
+        horizontal: resolvedInput.horizontal,
+        vertical: resolvedInput.vertical
+      },
+      aspectRatioLocked: resolvedInput.aspectRatioLocked,
+      pinLeft: resolvedInput.pinLeft,
+      pinRight: resolvedInput.pinRight,
+      pinTop: resolvedInput.pinTop,
+      pinBottom: resolvedInput.pinBottom
     },
-    aspectRatioLocked: resolvedInput.aspectRatioLocked,
-    pinLeft: resolvedInput.pinLeft,
-    pinRight: resolvedInput.pinRight,
-    pinTop: resolvedInput.pinTop,
-    pinBottom: resolvedInput.pinBottom
-  });
+    FigmaAckResponseSchema
+  );
 
   return {
     nodeId: input.nodeId,
@@ -343,3 +348,14 @@ Common Patterns:
     required: ['nodeId']
   }
 };
+
+export const handler = defineHandler<SetConstraintsInput, SetConstraintsResult>({
+  name: 'set_constraints',
+  schema: SetConstraintsInputSchema,
+  execute: setConstraints,
+  formatResponse: (r) =>
+    textResponse(
+      `Constraints Applied Successfully\nNode ID: ${r.nodeId}\nApplied: ${r.applied.join(', ')}\n\nDescription: ${r.description}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: setConstraintsToolDefinition
+});

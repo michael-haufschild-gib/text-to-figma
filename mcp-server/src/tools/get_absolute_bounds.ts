@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -139,3 +140,14 @@ export async function getAbsoluteBounds(
     timestamp: new Date().toISOString()
   };
 }
+
+export const handler = defineHandler<GetAbsoluteBoundsInput, GetAbsoluteBoundsResult>({
+  name: 'get_absolute_bounds',
+  schema: GetAbsoluteBoundsInputSchema,
+  execute: getAbsoluteBounds,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nPosition: (${r.bounds.x}, ${r.bounds.y})\nDimensions: ${r.bounds.width}x${r.bounds.height}px\n`
+    ),
+  definition: getAbsoluteBoundsToolDefinition
+});

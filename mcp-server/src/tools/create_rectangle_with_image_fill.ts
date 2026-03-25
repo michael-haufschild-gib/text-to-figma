@@ -10,6 +10,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema for create_rectangle_with_image_fill
@@ -200,3 +201,17 @@ export async function createRectangleWithImageFill(
     message: `Created rectangle with image fill (${input.scaleMode} mode)`
   };
 }
+
+export const handler = defineHandler<
+  CreateRectangleWithImageFillInput,
+  CreateRectangleWithImageFillResult
+>({
+  name: 'create_rectangle_with_image_fill',
+  schema: CreateRectangleWithImageFillInputSchema,
+  execute: createRectangleWithImageFill,
+  formatResponse: (r) =>
+    textResponse(
+      `Image Rectangle Created Successfully\nRectangle ID: ${r.rectangleId}\nImage URL: ${r.imageUrl}\nScale Mode: ${r.scaleMode}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: createRectangleWithImageFillToolDefinition
+});

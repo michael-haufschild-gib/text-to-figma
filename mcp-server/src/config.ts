@@ -32,8 +32,6 @@ const configSchema = z.object({
   LOG_JSON: z.coerce.boolean().default(false),
 
   // Monitoring
-  ENABLE_METRICS: z.coerce.boolean().default(true),
-  ENABLE_ERROR_TRACKING: z.coerce.boolean().default(true),
   ERROR_TRACKER_MAX_ERRORS: z.coerce.number().int().positive().default(1000),
   ERROR_TRACKER_AGGREGATION_WINDOW: z.coerce.number().int().positive().default(3600000), // 1 hour
   ERROR_TRACKER_PRUNE_INTERVAL: z.coerce.number().int().positive().default(300000), // 5 minutes
@@ -43,13 +41,11 @@ const configSchema = z.object({
   HEALTH_CHECK_ENABLED: z.coerce.boolean().default(true),
 
   // Server
-  MCP_SERVER_PORT: z.coerce.number().int().positive().optional(),
   GRACEFUL_SHUTDOWN_TIMEOUT: z.coerce.number().int().positive().default(30000),
 
   // Circuit Breaker
   CIRCUIT_BREAKER_ENABLED: z.coerce.boolean().default(true),
   CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().positive().default(5),
-  CIRCUIT_BREAKER_TIMEOUT: z.coerce.number().int().positive().default(60000), // 1 minute
   CIRCUIT_BREAKER_RESET_TIMEOUT: z.coerce.number().int().positive().default(30000), // 30 seconds
 
   // Retry

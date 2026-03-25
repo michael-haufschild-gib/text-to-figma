@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -161,3 +162,20 @@ export async function exportNode(input: ExportNodeInput): Promise<ExportNodeResu
     message: `Exported node as ${input.format} at ${scaleLabel}`
   };
 }
+
+export const handler = defineHandler<ExportNodeInput, ExportNodeResult>({
+  name: 'export_node',
+  schema: ExportNodeInputSchema,
+  execute: exportNode,
+  formatResponse: (r) => {
+    let text = `${r.message}\nNode ID: ${r.nodeId}\nFormat: ${r.format}\nScale: ${r.scale}x\n`;
+    if (r.base64Data) {
+      text += `\nBase64 Data: [${r.base64Data.length} characters]\n`;
+    }
+    if (r.filePath) {
+      text += `\nFile Path: ${r.filePath}\n`;
+    }
+    return textResponse(text);
+  },
+  definition: exportNodeToolDefinition
+});

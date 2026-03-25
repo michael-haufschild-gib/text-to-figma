@@ -11,6 +11,7 @@ import { getLogger } from '../monitoring/logger.js';
 import { getNodeRegistry } from '../node-registry.js';
 import type { NodeSpec } from '../types/node-spec.js';
 import { autoCorrectSpec, type Correction } from '../utils/auto-validator.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 const logger = getLogger().child({ component: 'create-design' });
 
@@ -330,3 +331,32 @@ Login Modal with Form:
     tags: ['primary', 'atomic', 'hierarchy', 'batch']
   }
 };
+
+export const handler = defineHandler<CreateDesignParams, CreateDesignResult>({
+  name: 'create_design',
+  schema: CreateDesignInputSchema,
+  execute: createDesign,
+  formatResponse: (result) => {
+    if (!result.success) {
+      return textResponse(`Error: ${result.error}`);
+    }
+    let text = `Design Created Successfully\n\nRoot Node ID: ${result.rootNodeId}\nTotal Nodes: ${result.totalNodes}\n\n`;
+    if (result.nodeIds) {
+      text += `Node IDs:\n`;
+      for (const [name, id] of Object.entries(result.nodeIds)) {
+        text += `  - ${name}: ${id}\n`;
+      }
+      text += `\n`;
+    }
+    if (result.autoCorrections && result.autoCorrections.length > 0) {
+      text += `Auto-Corrections Applied (${result.autoCorrections.length}):\n`;
+      for (const c of result.autoCorrections) {
+        text += `  - ${c.path}.${c.field}: ${c.originalValue} -> ${c.correctedValue}\n`;
+      }
+      text += `\n`;
+    }
+    text += `${result.message}\n\nAll nodes created in a single atomic operation with proper hierarchy.`;
+    return textResponse(text);
+  },
+  definition: createDesignToolDefinition
+});

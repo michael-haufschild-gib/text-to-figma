@@ -6,7 +6,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema - all parameters optional
@@ -232,7 +233,7 @@ export async function setTextProperties(
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry('set_text_properties', payload);
+  await bridge.sendToFigmaValidated('set_text_properties', payload, FigmaAckResponseSchema);
 
   return {
     nodeId: input.nodeId,
@@ -241,3 +242,14 @@ export async function setTextProperties(
     message: `Applied text properties: ${applied.join(', ')}`
   };
 }
+
+export const handler = defineHandler<SetTextPropertiesInput, SetTextPropertiesResult>({
+  name: 'set_text_properties',
+  schema: SetTextPropertiesInputSchema,
+  execute: setTextProperties,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nApplied: ${r.applied.join(', ')}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: setTextPropertiesToolDefinition
+});

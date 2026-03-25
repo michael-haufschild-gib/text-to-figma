@@ -8,7 +8,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -112,12 +113,16 @@ export async function setImageFill(input: SetImageFillInput): Promise<SetImageFi
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('set_image_fill', {
-    nodeId: input.nodeId,
-    imageUrl: input.imageUrl,
-    scaleMode: input.scaleMode,
-    opacity: input.opacity
-  });
+  await bridge.sendToFigmaValidated(
+    'set_image_fill',
+    {
+      nodeId: input.nodeId,
+      imageUrl: input.imageUrl,
+      scaleMode: input.scaleMode,
+      opacity: input.opacity
+    },
+    FigmaAckResponseSchema
+  );
 
   // Map scale mode to CSS
   const scaleModeToCSS: Record<string, string> = {
@@ -140,3 +145,14 @@ opacity: ${input.opacity};`;
     message: `Applied image fill to node ${input.nodeId} (${input.scaleMode} mode)`
   };
 }
+
+export const handler = defineHandler<SetImageFillInput, SetImageFillResult>({
+  name: 'set_image_fill',
+  schema: SetImageFillInputSchema,
+  execute: setImageFill,
+  formatResponse: (r) =>
+    textResponse(
+      `Image Fill Applied Successfully\nNode ID: ${r.nodeId}\nImage URL: ${r.imageUrl}\nScale Mode: ${r.scaleMode}\nOpacity: ${r.opacity}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: setImageFillToolDefinition
+});

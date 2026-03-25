@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -174,16 +175,20 @@ export async function setStroke(input: SetStrokeInput): Promise<SetStrokeResult>
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('set_stroke', {
-    nodeId: input.nodeId,
-    strokeWeight: input.strokeWeight,
-    strokeColor: input.strokeColor,
-    strokeAlign: input.strokeAlign,
-    dashPattern: input.dashPattern,
-    opacity: input.opacity,
-    strokeJoin: input.strokeJoin,
-    strokeCap: input.strokeCap
-  });
+  await bridge.sendToFigmaValidated(
+    'set_stroke',
+    {
+      nodeId: input.nodeId,
+      strokeWeight: input.strokeWeight,
+      strokeColor: input.strokeColor,
+      strokeAlign: input.strokeAlign,
+      dashPattern: input.dashPattern,
+      opacity: input.opacity,
+      strokeJoin: input.strokeJoin,
+      strokeCap: input.strokeCap
+    },
+    FigmaAckResponseSchema
+  );
 
   const isDashed = !!input.dashPattern;
 
@@ -213,3 +218,14 @@ export async function setStroke(input: SetStrokeInput): Promise<SetStrokeResult>
     message: `Applied ${isDashed ? 'dashed' : 'solid'} stroke (${input.strokeWeight}px, ${input.strokeAlign})`
   };
 }
+
+export const handler = defineHandler<SetStrokeInput, SetStrokeResult>({
+  name: 'set_stroke',
+  schema: SetStrokeInputSchema,
+  execute: setStroke,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nStroke Weight: ${r.strokeWeight}px\nAlignment: ${r.strokeAlign}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: setStrokeToolDefinition
+});

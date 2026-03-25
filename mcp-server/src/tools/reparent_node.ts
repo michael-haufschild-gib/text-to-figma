@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 export const ReparentNodeInputSchema = z.object({
   nodeId: z.string().min(1).describe('ID of the node to move'),
@@ -72,8 +73,20 @@ export async function reparentNode(input: ReparentNodeInput): Promise<ReparentNo
     ReparentNodeResponseSchema
   );
 
+  // Use register() instead of update() — register() correctly removes
+  // the node from the old parent's children and adds it to the new parent's.
   const registry = getNodeRegistry();
-  registry.update(input.nodeId, { parentId: input.parentId });
+  const existing = registry.getNode(input.nodeId);
+  if (existing) {
+    registry.register(input.nodeId, {
+      type: existing.type,
+      name: existing.name,
+      parentId: input.parentId,
+      children: existing.children,
+      bounds: existing.bounds,
+      metadata: existing.metadata
+    });
+  }
 
   return {
     nodeId: input.nodeId,
@@ -82,3 +95,14 @@ export async function reparentNode(input: ReparentNodeInput): Promise<ReparentNo
     message: `Node reparented successfully`
   };
 }
+
+export const handler = defineHandler<ReparentNodeInput, ReparentNodeResult>({
+  name: 'reparent_node',
+  schema: ReparentNodeInputSchema,
+  execute: reparentNode,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nOld Parent: ${r.oldParentId ?? 'none'}\nNew Parent: ${r.newParentId}\n`
+    ),
+  definition: reparentNodeToolDefinition
+});

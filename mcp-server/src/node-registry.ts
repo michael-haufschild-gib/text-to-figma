@@ -78,6 +78,15 @@ export class NodeRegistry {
   private nodes = new Map<string, NodeInfo>();
   private rootNodes: string[] = [];
 
+  /** The page ID the registry was last populated from */
+  private contextPageId: string | null = null;
+  /** The file name the registry was last populated from */
+  private contextFileName: string | null = null;
+  /** Timestamp of last full refresh from Figma */
+  private lastRefreshed = 0;
+  /** True when page/file context has changed since the last refresh */
+  private stale = false;
+
   /**
    * Register a new node in the hierarchy
    * @param nodeId
@@ -128,7 +137,10 @@ export class NodeRegistry {
    * @param nodeId
    * @param updates
    */
-  update(nodeId: string, updates: Partial<Omit<NodeInfo, 'nodeId' | 'createdAt'>>): void {
+  update(
+    nodeId: string,
+    updates: Partial<Omit<NodeInfo, 'nodeId' | 'createdAt' | 'parentId'>>
+  ): void {
     const node = this.nodes.get(nodeId);
     if (!node) {
       logger.warn(`Cannot update non-existent node: ${nodeId}`);
@@ -300,6 +312,64 @@ export class NodeRegistry {
     logger.debug('Registry cleared');
   }
 
+  // ── Staleness tracking ────────────────────────────────────────────────
+
+  /**
+   * Update the page/file context. If the context differs from the stored
+   * values, the registry is marked stale.
+   */
+  setContext(pageId: string, fileName: string): void {
+    const changed =
+      (this.contextPageId !== null && this.contextPageId !== pageId) ||
+      (this.contextFileName !== null && this.contextFileName !== fileName);
+
+    this.contextPageId = pageId;
+    this.contextFileName = fileName;
+
+    if (changed) {
+      this.stale = true;
+      logger.info('Registry marked stale — Figma context changed', {
+        pageId,
+        fileName
+      });
+    }
+  }
+
+  /**
+   * Mark the registry as stale (e.g. on bridge reconnection).
+   */
+  markStale(): void {
+    this.stale = true;
+  }
+
+  /**
+   * Mark the registry as fresh (call after a full refresh from Figma).
+   */
+  markFresh(pageId?: string, fileName?: string): void {
+    this.stale = false;
+    this.lastRefreshed = Date.now();
+    if (pageId !== undefined) this.contextPageId = pageId;
+    if (fileName !== undefined) this.contextFileName = fileName;
+  }
+
+  /**
+   * Returns true when the registry may contain outdated data.
+   */
+  isStale(): boolean {
+    return this.stale;
+  }
+
+  /**
+   * Returns the page/file context the registry was last populated from.
+   */
+  getContext(): { pageId: string | null; fileName: string | null; lastRefreshed: number } {
+    return {
+      pageId: this.contextPageId,
+      fileName: this.contextFileName,
+      lastRefreshed: this.lastRefreshed
+    };
+  }
+
   /**
    * Get registry statistics
    */
@@ -307,6 +377,7 @@ export class NodeRegistry {
     totalNodes: number;
     rootNodes: number;
     nodesByType: Record<string, number>;
+    isStale: boolean;
   } {
     const nodesByType: Record<string, number> = {};
 
@@ -317,7 +388,8 @@ export class NodeRegistry {
     return {
       totalNodes: this.nodes.size,
       rootNodes: this.rootNodes.length,
-      nodesByType
+      nodesByType,
+      isStale: this.stale
     };
   }
 

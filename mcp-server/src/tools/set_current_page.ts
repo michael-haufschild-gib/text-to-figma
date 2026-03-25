@@ -10,6 +10,8 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -111,11 +113,30 @@ export async function setCurrentPage(input: SetCurrentPageInput): Promise<SetCur
     SetCurrentPageResponseSchema
   );
 
+  // Page changed — registry nodes belong to the old page
+  const registry = getNodeRegistry();
+  registry.clear();
+  registry.markStale();
+
   return {
     pageId: input.pageId,
     pageName: response.pageName,
     message: response.pageName
-      ? `Switched to page "${response.pageName}"`
-      : 'Page switched successfully'
+      ? `Switched to page "${response.pageName}". Node registry cleared — use get_page_hierarchy(refresh=true) to load new page structure.`
+      : 'Page switched successfully. Node registry cleared.'
   };
 }
+
+export const handler = defineHandler<SetCurrentPageInput, SetCurrentPageResult>({
+  name: 'set_current_page',
+  schema: SetCurrentPageInputSchema,
+  execute: setCurrentPage,
+  formatResponse: (r) => {
+    let text = `${r.message}\nPage ID: ${r.pageId}\n`;
+    if (r.pageName) {
+      text += `Page Name: ${r.pageName}\n`;
+    }
+    return textResponse(text);
+  },
+  definition: setCurrentPageToolDefinition
+});

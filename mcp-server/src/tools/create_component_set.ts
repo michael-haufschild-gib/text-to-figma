@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -133,3 +134,14 @@ export async function createComponentSet(
     message: `Created component set "${input.name}" with ${input.componentIds.length} variants`
   };
 }
+
+export const handler = defineHandler<CreateComponentSetInput, CreateComponentSetResult>({
+  name: 'create_component_set',
+  schema: CreateComponentSetInputSchema,
+  execute: createComponentSet,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nComponent Set ID: ${r.componentSetId}\nName: ${r.name}\nVariants: ${r.variantCount}\n`
+    ),
+  definition: createComponentSetToolDefinition
+});

@@ -1,7 +1,8 @@
 /**
  * Handler Utilities
  *
- * Shared helpers for building tool handlers in the routing system.
+ * Routing-layer helpers for building tool handlers.
+ * Formatting utilities live in utils/response-formatters.ts.
  */
 
 import type { z } from 'zod';
@@ -11,6 +12,16 @@ import type {
   ToolDefinition,
   ToolHandler
 } from './tool-handler.js';
+
+// Re-export formatters so existing handler-*.ts imports don't break
+export {
+  rgbToHex,
+  formatFill,
+  formatFills,
+  formatBounds,
+  formatSelectionNode,
+  formatHierarchyTree
+} from '../utils/response-formatters.js';
 
 /**
  * Build a ToolHandler from its constituent parts.
@@ -36,21 +47,4 @@ export function defineHandler<TInput, TResult>(opts: {
  */
 export function textResponse(text: string): ResponseContent[] {
   return [{ type: 'text', text }];
-}
-
-/**
- * Format hierarchy data (string or object) into a printable tree.
- */
-export function formatHierarchyTree(data: unknown): string {
-  if (typeof data === 'string') {
-    return data;
-  }
-  if (data !== null && data !== undefined && typeof data === 'object') {
-    const obj = data as Record<string, unknown>;
-    if (typeof obj.hierarchy === 'string' && obj.hierarchy !== '') {
-      return obj.hierarchy;
-    }
-    return JSON.stringify(data, null, 2);
-  }
-  return String(data);
 }

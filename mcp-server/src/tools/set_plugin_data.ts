@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -106,11 +107,15 @@ export async function setPluginData(input: SetPluginDataInput): Promise<SetPlugi
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('set_plugin_data', {
-    nodeId: input.nodeId,
-    key: input.key,
-    value: input.value
-  });
+  await bridge.sendToFigmaValidated(
+    'set_plugin_data',
+    {
+      nodeId: input.nodeId,
+      key: input.key,
+      value: input.value
+    },
+    FigmaAckResponseSchema
+  );
 
   return {
     nodeId: input.nodeId,
@@ -118,3 +123,11 @@ export async function setPluginData(input: SetPluginDataInput): Promise<SetPlugi
     message: `Stored plugin data "${input.key}" on node`
   };
 }
+
+export const handler = defineHandler<SetPluginDataInput, SetPluginDataResult>({
+  name: 'set_plugin_data',
+  schema: SetPluginDataInputSchema,
+  execute: setPluginData,
+  formatResponse: (r) => textResponse(`${r.message}\nNode ID: ${r.nodeId}\nKey: ${r.key}\n`),
+  definition: setPluginDataToolDefinition
+});

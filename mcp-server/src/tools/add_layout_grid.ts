@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -156,16 +157,20 @@ export async function addLayoutGrid(input: AddLayoutGridInput): Promise<AddLayou
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('add_layout_grid', {
-    nodeId: input.nodeId,
-    pattern: input.pattern,
-    count: input.count,
-    gutter: input.gutter,
-    margin: input.margin,
-    offset: input.offset,
-    color: input.color,
-    opacity: input.opacity
-  });
+  await bridge.sendToFigmaValidated(
+    'add_layout_grid',
+    {
+      nodeId: input.nodeId,
+      pattern: input.pattern,
+      count: input.count,
+      gutter: input.gutter,
+      margin: input.margin,
+      offset: input.offset,
+      color: input.color,
+      opacity: input.opacity
+    },
+    FigmaAckResponseSchema
+  );
 
   // Build CSS equivalent
   let cssEquivalent = '';
@@ -192,3 +197,18 @@ export async function addLayoutGrid(input: AddLayoutGridInput): Promise<AddLayou
     message: `Added ${gridLabel} layout grid (gutter: ${input.gutter}px, margin: ${input.margin}px)`
   };
 }
+
+export const handler = defineHandler<AddLayoutGridInput, AddLayoutGridResult>({
+  name: 'add_layout_grid',
+  schema: AddLayoutGridInputSchema,
+  execute: addLayoutGrid,
+  formatResponse: (r) => {
+    let text = `${r.message}\nNode ID: ${r.nodeId}\nPattern: ${r.pattern}\n`;
+    if (r.count !== undefined) {
+      text += `Count: ${r.count}\n`;
+    }
+    text += `Gutter: ${r.gutter}px\nMargin: ${r.margin}px\n\nCSS Equivalent:\n${r.cssEquivalent}\n`;
+    return textResponse(text);
+  },
+  definition: addLayoutGridToolDefinition
+});

@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Export setting schema
@@ -131,10 +132,14 @@ export async function setExportSettings(
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('set_export_settings', {
-    nodeId: input.nodeId,
-    settings: input.settings
-  });
+  await bridge.sendToFigmaValidated(
+    'set_export_settings',
+    {
+      nodeId: input.nodeId,
+      settings: input.settings
+    },
+    FigmaAckResponseSchema
+  );
 
   return {
     nodeId: input.nodeId,
@@ -142,3 +147,12 @@ export async function setExportSettings(
     message: `Configured ${input.settings.length} export setting(s) for node`
   };
 }
+
+export const handler = defineHandler<SetExportSettingsInput, SetExportSettingsResult>({
+  name: 'set_export_settings',
+  schema: SetExportSettingsInputSchema,
+  execute: setExportSettings,
+  formatResponse: (r) =>
+    textResponse(`${r.message}\nNode ID: ${r.nodeId}\nExport Settings: ${r.settingsCount}\n`),
+  definition: setExportSettingsToolDefinition
+});

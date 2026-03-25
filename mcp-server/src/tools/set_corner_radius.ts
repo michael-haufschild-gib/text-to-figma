@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -136,14 +137,18 @@ export async function setCornerRadius(input: SetCornerRadiusInput): Promise<SetC
   const isUniform = input.radius !== undefined;
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('set_corner_radius', {
-    nodeId: input.nodeId,
-    radius: input.radius,
-    topLeft: input.topLeft,
-    topRight: input.topRight,
-    bottomRight: input.bottomRight,
-    bottomLeft: input.bottomLeft
-  });
+  await bridge.sendToFigmaValidated(
+    'set_corner_radius',
+    {
+      nodeId: input.nodeId,
+      radius: input.radius,
+      topLeft: input.topLeft,
+      topRight: input.topRight,
+      bottomRight: input.bottomRight,
+      bottomLeft: input.bottomLeft
+    },
+    FigmaAckResponseSchema
+  );
 
   // Build CSS equivalent
   let cssEquivalent = '';
@@ -187,3 +192,14 @@ export async function setCornerRadius(input: SetCornerRadiusInput): Promise<SetC
     message
   };
 }
+
+export const handler = defineHandler<SetCornerRadiusInput, SetCornerRadiusResult>({
+  name: 'set_corner_radius',
+  schema: SetCornerRadiusInputSchema,
+  execute: setCornerRadius,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nIs Uniform: ${r.isUniform}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: setCornerRadiusToolDefinition
+});

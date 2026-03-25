@@ -166,8 +166,8 @@ export class HealthCheckServer {
         reject(error);
       });
 
-      server.listen(this.port, () => {
-        console.error(`[HealthCheck] Health check server started on port ${this.port}`);
+      server.listen(this.port, '127.0.0.1', () => {
+        console.error(`[HealthCheck] Health check server started on 127.0.0.1:${this.port}`);
         resolve();
       });
     });

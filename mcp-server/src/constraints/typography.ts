@@ -78,30 +78,11 @@ export function isValidFontSize(value: number): value is FontSize {
  * @param value
  */
 export function snapToTypeScale(value: number): FontSize {
-  const first = VALID_FONT_SIZES[0];
-
-  const last = VALID_FONT_SIZES[VALID_FONT_SIZES.length - 1] ?? (64 as FontSize);
-
-  if (value <= first) {
-    return first;
-  }
-  if (value >= last) {
-    return last;
-  }
-
-  let closest: FontSize = first;
-  let minDiff = Math.abs(value - closest);
-
-  for (const validSize of VALID_FONT_SIZES) {
-    const diff = Math.abs(value - validSize);
-    // Less than OR equal with higher value - rounds up when equidistant
-    if (diff < minDiff || (diff === minDiff && validSize > closest)) {
-      minDiff = diff;
-      closest = validSize;
-    }
-  }
-
-  return closest;
+  // Single-pass reduce: <= ensures equidistant values round up (last equal-distance wins)
+  return VALID_FONT_SIZES.reduce<FontSize>(
+    (closest, size) => (Math.abs(value - size) <= Math.abs(value - closest) ? size : closest),
+    VALID_FONT_SIZES[0]
+  );
 }
 
 /**

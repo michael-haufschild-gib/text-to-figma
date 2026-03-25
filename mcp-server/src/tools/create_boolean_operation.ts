@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -189,3 +190,14 @@ export async function createBooleanOperation(
     message: `Created ${operationDescription[input.operation]} from ${input.nodeIds.length} shapes using ${input.operation}`
   };
 }
+
+export const handler = defineHandler<CreateBooleanOperationInput, CreateBooleanOperationResult>({
+  name: 'create_boolean_operation',
+  schema: CreateBooleanOperationInputSchema,
+  execute: createBooleanOperation,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nBoolean Node ID: ${r.booleanNodeId}\nOperation: ${r.operation}\nNode Count: ${r.nodeCount}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: createBooleanOperationToolDefinition
+});

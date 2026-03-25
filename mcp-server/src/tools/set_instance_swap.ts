@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -111,3 +112,17 @@ export async function setInstanceSwap(input: SetInstanceSwapInput): Promise<SetI
     message: 'Instance swapped successfully'
   };
 }
+
+export const handler = defineHandler<SetInstanceSwapInput, SetInstanceSwapResult>({
+  name: 'set_instance_swap',
+  schema: SetInstanceSwapInputSchema,
+  execute: setInstanceSwap,
+  formatResponse: (r) => {
+    let text = `${r.message}\nInstance ID: ${r.instanceId}\nNew Component ID: ${r.newComponentId}\n`;
+    if (r.oldComponentId) {
+      text += `Old Component ID: ${r.oldComponentId}\n`;
+    }
+    return textResponse(text);
+  },
+  definition: setInstanceSwapToolDefinition
+});

@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -99,10 +100,14 @@ export async function setVisible(input: SetVisibleInput): Promise<SetVisibleResu
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('set_visible', {
-    nodeId: input.nodeId,
-    visible: input.visible
-  });
+  await bridge.sendToFigmaValidated(
+    'set_visible',
+    {
+      nodeId: input.nodeId,
+      visible: input.visible
+    },
+    FigmaAckResponseSchema
+  );
 
   const cssEquivalent = input.visible
     ? 'visibility: visible;'
@@ -115,3 +120,14 @@ export async function setVisible(input: SetVisibleInput): Promise<SetVisibleResu
     message: input.visible ? 'Showed node' : 'Hid node'
   };
 }
+
+export const handler = defineHandler<SetVisibleInput, SetVisibleResult>({
+  name: 'set_visible',
+  schema: SetVisibleInputSchema,
+  execute: setVisible,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nVisible: ${r.visible}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: setVisibleToolDefinition
+});

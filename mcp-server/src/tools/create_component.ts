@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema for create_component tool
@@ -101,3 +102,18 @@ Example workflow:
     required: ['frameId', 'name']
   }
 };
+
+export const handler = defineHandler<CreateComponentInput, CreateComponentResult>({
+  name: 'create_component',
+  schema: CreateComponentInputSchema,
+  execute: createComponent,
+  formatResponse: (r) => {
+    let text = `Component Created Successfully\nComponent ID: ${r.componentId}\nName: ${r.name}\n`;
+    if (r.description) {
+      text += `Description: ${r.description}\n`;
+    }
+    text += `\n${r.message}\n`;
+    return textResponse(text);
+  },
+  definition: createComponentToolDefinition
+});

@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -127,3 +128,17 @@ export async function getParent(input: GetParentInput): Promise<GetParentResult>
     message: `Parent: ${response.parent.name} (${response.parent.type})`
   };
 }
+
+export const handler = defineHandler<GetParentInput, GetParentResult>({
+  name: 'get_parent',
+  schema: GetParentInputSchema,
+  execute: getParent,
+  formatResponse: (r) => {
+    let text = `${r.message}\nNode ID: ${r.nodeId}\n`;
+    if (r.parentId) {
+      text += `Parent ID: ${r.parentId}\nParent Name: ${r.parentName}\nParent Type: ${r.parentType}\n`;
+    }
+    return textResponse(text);
+  },
+  definition: getParentToolDefinition
+});

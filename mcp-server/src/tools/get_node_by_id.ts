@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Response schema for Figma bridge get_node_by_id response
@@ -172,3 +173,29 @@ export async function getNodeById(input: GetNodeByIdInput): Promise<GetNodeByIdR
     timestamp: new Date().toISOString()
   };
 }
+
+export const handler = defineHandler<GetNodeByIdInput, GetNodeByIdResult>({
+  name: 'get_node_by_id',
+  schema: GetNodeByIdInputSchema,
+  execute: getNodeById,
+  formatResponse: (r) => {
+    let text = `${r.message}\nNode ID: ${r.nodeId}\nName: ${r.name}\nType: ${r.type}\n`;
+    if (r.width !== undefined && r.height !== undefined) {
+      text += `Dimensions: ${r.width}x${r.height}\n`;
+    }
+    if (r.x !== undefined && r.y !== undefined) {
+      text += `Position: (${r.x}, ${r.y})\n`;
+    }
+    if (r.layoutMode !== undefined) {
+      text += `Layout Mode: ${r.layoutMode}\n`;
+    }
+    if (r.layoutPositioning !== undefined) {
+      text += `Layout Positioning: ${r.layoutPositioning}\n`;
+    }
+    if (r.itemSpacing !== undefined) {
+      text += `Item Spacing: ${r.itemSpacing}\n`;
+    }
+    return textResponse(text);
+  },
+  definition: getNodeByIdToolDefinition
+});

@@ -11,9 +11,31 @@ import WebSocket from 'ws';
 import { z } from 'zod';
 import { getConfig } from './config.js';
 import { ErrorCode, FigmaBridgeError, createError } from './errors/index.js';
+import {
+  type FigmaContext,
+  type FigmaNotification,
+  type FigmaRequest,
+  type FigmaResponse,
+  notificationSchema,
+  responseSchema
+} from './figma-bridge-types.js';
 
-// Re-export for backward compatibility — consumers may import from figma-bridge
+// Re-export types so consumers can import from figma-bridge as before
 export { FigmaBridgeError } from './errors/index.js';
+
+/**
+ * Minimal response schema for fire-and-forget tools that don't use the
+ * plugin response data. Validates the response is a well-formed object
+ * (catches null, undefined, and primitive responses from protocol failures)
+ * while allowing any fields through.
+ */
+export const FigmaAckResponseSchema = z.object({}).passthrough();
+export type {
+  FigmaContext,
+  FigmaNotification,
+  FigmaRequest,
+  FigmaResponse
+} from './figma-bridge-types.js';
 
 /**
  * Circuit breaker states
@@ -138,27 +160,6 @@ function isNonRetryableValidationError(error: Error): boolean {
 }
 
 /**
- * Request message sent to Figma plugin
- */
-export interface FigmaRequest {
-  id: string;
-  type: string;
-  payload: unknown;
-}
-
-/**
- * Response message schema (used for runtime validation)
- */
-const responseSchema = z.object({
-  id: z.string(),
-  success: z.boolean(),
-  data: z.unknown().optional(),
-  error: z.string().optional()
-});
-
-export type FigmaResponse = z.infer<typeof responseSchema>;
-
-/**
  * Pending request tracking
  */
 interface PendingRequest {
@@ -187,6 +188,21 @@ export class FigmaBridge {
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private healthCheckInterval: ReturnType<typeof setInterval> | null = null;
   private connectingPromise: Promise<void> | null = null;
+  private latestContext: FigmaContext | null = null;
+
+  /**
+   * Optional callback invoked when the Figma context (page/file) changes
+   * between consecutive responses. Consumers (e.g. the tool router) use
+   * this to mark the node registry as stale.
+   */
+  onContextChange: ((prev: FigmaContext | null, next: FigmaContext) => void) | null = null;
+
+  /**
+   * Optional callback invoked when the Figma plugin pushes a notification
+   * (e.g. document_changed, page_changed). These arrive outside the
+   * request/response cycle — the user made a change in Figma directly.
+   */
+  onNotification: ((notification: FigmaNotification) => void) | null = null;
   private readonly circuitBreaker: CircuitBreaker;
   private readonly maxReconnectAttempts: number;
   private readonly wsUrl: string;
@@ -241,6 +257,9 @@ export class FigmaBridge {
           // Reset circuit breaker on successful connection
           this.circuitBreaker.reset();
 
+          // Clear cached context — may be connecting to a different file/plugin instance
+          this.latestContext = null;
+
           // Restart health check in case it was stopped during disconnect
           this.startHealthCheck();
 
@@ -279,20 +298,34 @@ export class FigmaBridge {
   }
 
   /**
+   * Checks whether the context (page/file) changed and invokes the callback.
+   */
+  private updateContext(ctx: FigmaContext): void {
+    const prev = this.latestContext;
+    const changed = prev?.pageId !== ctx.pageId || prev.fileName !== ctx.fileName;
+    this.latestContext = ctx;
+    if (changed && this.onContextChange) {
+      this.onContextChange(prev, ctx);
+    }
+  }
+
+  /**
+   * Converts raw WebSocket data to a string, handling Buffer/ArrayBuffer/Buffer[].
+   */
+  private static rawToString(data: WebSocket.Data): string | null {
+    if (typeof data === 'string') return data;
+    if (Buffer.isBuffer(data)) return data.toString('utf-8');
+    if (Array.isArray(data)) return Buffer.concat(data).toString('utf-8');
+    return null;
+  }
+
+  /**
    * Handles incoming WebSocket messages
-   * @param data
    */
   private handleMessage(data: WebSocket.Data): void {
     try {
-      // Type guard: ensure data is string or Buffer before converting
-      let messageStr: string;
-      if (typeof data === 'string') {
-        messageStr = data;
-      } else if (Buffer.isBuffer(data)) {
-        messageStr = data.toString('utf-8');
-      } else if (Array.isArray(data)) {
-        messageStr = Buffer.concat(data).toString('utf-8');
-      } else {
+      const messageStr = FigmaBridge.rawToString(data);
+      if (messageStr === null) {
         console.error('[FigmaBridge] Unsupported data type:', typeof data);
         return;
       }
@@ -307,8 +340,21 @@ export class FigmaBridge {
         return;
       }
 
+      // Handle push notifications from the Figma plugin
+      if (message.type === 'figma_notification') {
+        const notification = notificationSchema.parse(message);
+        if (notification.data?._ctx) {
+          this.updateContext(notification.data._ctx);
+        }
+        this.onNotification?.(notification);
+        return;
+      }
+
       // Parse as response message
       const response = responseSchema.parse(message);
+      if (response._ctx) {
+        this.updateContext(response._ctx);
+      }
 
       const pending = this.pendingRequests.get(response.id);
       if (pending) {
@@ -561,6 +607,14 @@ export class FigmaBridge {
   ): Promise<T> {
     const raw = await this.sendToFigmaWithRetry<unknown>(type, payload, options);
     return responseSchema.parse(raw);
+  }
+
+  /**
+   * Returns the latest Figma context (page/file) from the most recent response.
+   * Returns null if no response has been received yet.
+   */
+  getContext(): FigmaContext | null {
+    return this.latestContext;
   }
 
   /**

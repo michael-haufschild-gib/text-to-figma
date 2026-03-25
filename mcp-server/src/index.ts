@@ -24,7 +24,8 @@ import {
   formatStructuredError,
   createError
 } from './errors/index.js';
-import { getFigmaBridge } from './figma-bridge.js';
+import { getFigmaBridge, type FigmaContext, type FigmaNotification } from './figma-bridge.js';
+import { getNodeRegistry } from './node-registry.js';
 import { startHealthCheck, stopHealthCheck } from './health.js';
 import { getLogger } from './monitoring/logger.js';
 import { getFewShotPrompt } from './prompts/few-shot.js';
@@ -157,6 +158,62 @@ server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest)
 });
 
 /**
+ * Handles context changes reported by the Figma plugin.
+ * Clears and marks the node registry stale when the page or file changes.
+ */
+function handleFigmaContextChange(prev: FigmaContext | null, next: FigmaContext): void {
+  const registry = getNodeRegistry();
+  if (prev === null) {
+    // First response — seed context, don't mark stale
+    registry.setContext(next.pageId, next.fileName);
+  } else {
+    const pageChanged = prev.pageId !== next.pageId;
+    const fileChanged = prev.fileName !== next.fileName;
+
+    if (fileChanged) {
+      console.error(
+        `[MCP Server] Figma file changed: "${prev.fileName}" → "${next.fileName}". Clearing registry.`
+      );
+      registry.clear();
+      registry.markStale();
+    } else if (pageChanged) {
+      console.error(
+        `[MCP Server] Figma page changed: "${prev.pageName}" → "${next.pageName}". Clearing registry.`
+      );
+      registry.clear();
+      registry.markStale();
+    }
+
+    registry.setContext(next.pageId, next.fileName);
+  }
+}
+
+/**
+ * Handles push notifications from the Figma plugin.
+ * document_changed → user edited something on the current page.
+ * page_changed → user switched pages via the Figma UI.
+ */
+function handleFigmaNotification(notification: FigmaNotification): void {
+  const registry = getNodeRegistry();
+
+  switch (notification.kind) {
+    case 'document_changed':
+      console.error('[MCP Server] Figma document changed by user. Marking registry stale.');
+      registry.markStale();
+      break;
+
+    case 'page_changed':
+      console.error('[MCP Server] Figma page changed by user. Clearing registry.');
+      registry.clear();
+      registry.markStale();
+      break;
+
+    default:
+      console.error(`[MCP Server] Unknown notification kind: ${notification.kind}`);
+  }
+}
+
+/**
  * Main server startup
  */
 async function main(): Promise<void> {
@@ -205,6 +262,12 @@ async function main(): Promise<void> {
 
   // Connect to Figma bridge with retry
   const bridge = getFigmaBridge();
+
+  // Wire context-change detection: when the Figma plugin reports a different
+  // page or file, mark the node registry stale so query tools can warn.
+  bridge.onContextChange = handleFigmaContextChange;
+  bridge.onNotification = handleFigmaNotification;
+
   try {
     await bridge.connect();
     console.error('[MCP Server] Connected to Figma WebSocket bridge');

@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -110,3 +111,11 @@ export async function createPage(input: CreatePageInput): Promise<CreatePageResu
     timestamp: new Date().toISOString()
   };
 }
+
+export const handler = defineHandler<CreatePageInput, CreatePageResult>({
+  name: 'create_page',
+  schema: CreatePageInputSchema,
+  execute: createPage,
+  formatResponse: (r) => textResponse(`${r.message}\nPage ID: ${r.pageId}\nName: ${r.name}\n`),
+  definition: createPageToolDefinition
+});

@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
 import { createToolResult, type ToolResult } from '../utils/tool-result.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 const log = getLogger().child({ tool: 'distribute_nodes' });
 
@@ -222,3 +223,11 @@ export async function distributeNodes(input: DistributeNodesInput): Promise<Dist
     throw new Error(`Failed to distribute nodes: ${errorMessage}`);
   }
 }
+
+export const handler = defineHandler<DistributeNodesInput, DistributeNodesResult>({
+  name: 'distribute_nodes',
+  schema: DistributeNodesInputSchema,
+  execute: distributeNodes,
+  formatResponse: (r) => textResponse(r.message),
+  definition: distributeNodesToolDefinition
+});

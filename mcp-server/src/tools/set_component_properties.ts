@@ -6,7 +6,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Component variant property schema
@@ -61,12 +62,16 @@ export async function setComponentProperties(
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry('set_component_properties', {
-    componentId: input.componentId,
-    name: input.name,
-    description: input.description,
-    variantProperties: input.variantProperties
-  });
+  await bridge.sendToFigmaValidated(
+    'set_component_properties',
+    {
+      componentId: input.componentId,
+      name: input.name,
+      description: input.description,
+      variantProperties: input.variantProperties
+    },
+    FigmaAckResponseSchema
+  );
 
   return {
     componentId: input.componentId,
@@ -155,3 +160,14 @@ This creates a component set where instances can switch between variants.`,
     required: ['componentId']
   }
 };
+
+export const handler = defineHandler<SetComponentPropertiesInput, SetComponentPropertiesResult>({
+  name: 'set_component_properties',
+  schema: SetComponentPropertiesInputSchema,
+  execute: setComponentProperties,
+  formatResponse: (r) =>
+    textResponse(
+      `Component Properties Updated\nComponent ID: ${r.componentId}\nUpdated: ${r.updated.join(', ')}\n\n${r.message}\n`
+    ),
+  definition: setComponentPropertiesToolDefinition
+});

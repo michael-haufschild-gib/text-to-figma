@@ -6,7 +6,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Effect type enumeration
@@ -150,10 +151,14 @@ export async function applyEffects(input: ApplyEffectsInput): Promise<ApplyEffec
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry('apply_effects', {
-    nodeId: input.nodeId,
-    effects: input.effects
-  });
+  await bridge.sendToFigmaValidated(
+    'apply_effects',
+    {
+      nodeId: input.nodeId,
+      effects: input.effects
+    },
+    FigmaAckResponseSchema
+  );
 
   return {
     nodeId: input.nodeId,
@@ -266,3 +271,14 @@ You can apply multiple effects to a single node (they stack).`,
     required: ['nodeId', 'effects']
   }
 };
+
+export const handler = defineHandler<ApplyEffectsInput, ApplyEffectsResult>({
+  name: 'apply_effects',
+  schema: ApplyEffectsInputSchema,
+  execute: applyEffects,
+  formatResponse: (r) =>
+    textResponse(
+      `Effects Applied Successfully\nNode ID: ${r.nodeId}\nEffects Applied: ${r.effectsApplied}\n\nCSS Equivalent:\n  ${r.cssEquivalent}\n`
+    ),
+  definition: applyEffectsToolDefinition
+});

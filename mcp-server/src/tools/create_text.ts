@@ -21,6 +21,7 @@ import {
   validateParentRelationship,
   getHierarchyPatternExamples
 } from '../utils/parent-validator.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 const logger = getLogger().child({ tool: 'create_text' });
 
@@ -256,3 +257,14 @@ line-height: 29px; // auto-calculated`,
     required: ['content', 'parentId']
   }
 };
+
+export const handler = defineHandler<CreateTextInput, CreateTextResult>({
+  name: 'create_text',
+  schema: CreateTextInputSchema,
+  execute: createText,
+  formatResponse: (r) =>
+    textResponse(
+      `Text Created Successfully\nText ID: ${r.textId}\nApplied Line Height: ${r.appliedLineHeight}px\n\nCSS Equivalent:\n  ${r.cssEquivalent}\n`
+    ),
+  definition: createTextToolDefinition
+});

@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -179,3 +180,14 @@ export async function createPolygon(input: CreatePolygonInput): Promise<CreatePo
     message: `Created ${polygonType} with ${input.sideCount} sides (radius: ${input.radius}px)`
   };
 }
+
+export const handler = defineHandler<CreatePolygonInput, CreatePolygonResult>({
+  name: 'create_polygon',
+  schema: CreatePolygonInputSchema,
+  execute: createPolygon,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nPolygon ID: ${r.polygonId}\nType: ${r.polygonType}\nSides: ${r.sideCount}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: createPolygonToolDefinition
+});

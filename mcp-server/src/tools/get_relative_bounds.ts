@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Response schema for Figma bridge get_relative_bounds response
@@ -190,3 +191,11 @@ export async function getRelativeBounds(
     timestamp: new Date().toISOString()
   };
 }
+
+export const handler = defineHandler<GetRelativeBoundsInput, GetRelativeBoundsResult>({
+  name: 'get_relative_bounds',
+  schema: GetRelativeBoundsInputSchema,
+  execute: getRelativeBounds,
+  formatResponse: (r) => textResponse(r.message),
+  definition: getRelativeBoundsToolDefinition
+});

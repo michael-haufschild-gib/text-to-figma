@@ -18,6 +18,7 @@ import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
 import { getNodeRegistry } from '../node-registry.js';
 import { formatValidationError, validateParentRelationship } from '../utils/parent-validator.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 const logger = getLogger().child({ tool: 'create_frame' });
 
@@ -325,3 +326,14 @@ Example:
     tags: ['container', 'layout', 'primitive']
   }
 };
+
+export const handler = defineHandler<CreateFrameInput, CreateFrameResult>({
+  name: 'create_frame',
+  schema: CreateFrameInputSchema,
+  execute: createFrame,
+  formatResponse: (r) =>
+    textResponse(
+      `Frame Created Successfully\nFrame ID: ${r.frameId}\n\nHTML Analogy: ${r.htmlAnalogy}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: createFrameToolDefinition
+});

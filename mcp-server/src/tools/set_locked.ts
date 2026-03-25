@@ -9,7 +9,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -96,10 +97,14 @@ export async function setLocked(input: SetLockedInput): Promise<SetLockedResult>
   const bridge = getFigmaBridge();
 
   // Send command to Figma
-  await bridge.sendToFigmaWithRetry('set_locked', {
-    nodeId: input.nodeId,
-    locked: input.locked
-  });
+  await bridge.sendToFigmaValidated(
+    'set_locked',
+    {
+      nodeId: input.nodeId,
+      locked: input.locked
+    },
+    FigmaAckResponseSchema
+  );
 
   return {
     nodeId: input.nodeId,
@@ -107,3 +112,11 @@ export async function setLocked(input: SetLockedInput): Promise<SetLockedResult>
     message: input.locked ? 'Locked node (protected from editing)' : 'Unlocked node (editable)'
   };
 }
+
+export const handler = defineHandler<SetLockedInput, SetLockedResult>({
+  name: 'set_locked',
+  schema: SetLockedInputSchema,
+  execute: setLocked,
+  formatResponse: (r) => textResponse(`${r.message}\nNode ID: ${r.nodeId}\nLocked: ${r.locked}\n`),
+  definition: setLockedToolDefinition
+});

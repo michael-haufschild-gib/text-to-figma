@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -116,3 +117,17 @@ export async function getPluginData(input: GetPluginDataInput): Promise<GetPlugi
       : `No data found for key "${input.key}"`
   };
 }
+
+export const handler = defineHandler<GetPluginDataInput, GetPluginDataResult>({
+  name: 'get_plugin_data',
+  schema: GetPluginDataInputSchema,
+  execute: getPluginData,
+  formatResponse: (r) => {
+    let text = `${r.message}\nNode ID: ${r.nodeId}\nKey: ${r.key}\n`;
+    if (r.value !== '') {
+      text += `Value: ${r.value}\n`;
+    }
+    return textResponse(text);
+  },
+  definition: getPluginDataToolDefinition
+});

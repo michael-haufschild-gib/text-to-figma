@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
 import { getNodeRegistry } from '../node-registry.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -184,3 +185,14 @@ export async function createStar(input: CreateStarInput): Promise<CreateStarResu
     message: `Created ${input.pointCount}-point star (radius: ${input.radius}px, inner: ${innerRadius}px)`
   };
 }
+
+export const handler = defineHandler<CreateStarInput, CreateStarResult>({
+  name: 'create_star',
+  schema: CreateStarInputSchema,
+  execute: createStar,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nStar ID: ${r.starId}\nPoints: ${r.pointCount}\nRadius: ${r.radius}px (inner: ${r.innerRadius}px)\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: createStarToolDefinition
+});

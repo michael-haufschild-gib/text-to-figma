@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Zod schema for Figma plugin ping response validation
@@ -24,6 +25,7 @@ const FigmaPingResponseSchema = z.object({
  */
 export interface CheckConnectionResult {
   connected: boolean;
+  pluginResponsive: boolean;
   latencyMs?: number;
   figmaFile?: string;
   currentPage?: string;
@@ -57,6 +59,7 @@ export async function checkConnection(): Promise<CheckConnectionResult> {
   if (!status.connected) {
     return {
       connected: false,
+      pluginResponsive: false,
       pendingRequests: status.pendingRequests,
       circuitBreakerState: status.circuitBreakerState,
       wsReadyState: status.wsReadyState,
@@ -78,6 +81,7 @@ export async function checkConnection(): Promise<CheckConnectionResult> {
 
     return {
       connected: true,
+      pluginResponsive: true,
       latencyMs,
       figmaFile: pingResponse.fileName,
       currentPage: pingResponse.currentPage,
@@ -95,7 +99,8 @@ export async function checkConnection(): Promise<CheckConnectionResult> {
     const latencyMs = Date.now() - startTime;
 
     return {
-      connected: true, // WebSocket is connected, but ping failed
+      connected: true,
+      pluginResponsive: false,
       latencyMs,
       pendingRequests: status.pendingRequests,
       circuitBreakerState: status.circuitBreakerState,
@@ -152,3 +157,45 @@ EXAMPLE OUTPUT:
     tags: ['connection', 'status', 'diagnostic', 'health']
   }
 };
+
+export const handler = defineHandler<Record<string, never>, CheckConnectionResult>({
+  name: 'check_connection',
+  schema: z.object({}),
+  execute: checkConnection,
+  formatResponse: (result) => {
+    let text: string;
+    if (!result.connected) {
+      text = `Connection Status: DISCONNECTED\n\n`;
+    } else if (!result.pluginResponsive) {
+      text = `Connection Status: DEGRADED (WebSocket connected, plugin not responding)\n\n`;
+    } else {
+      text = `Connection Status: CONNECTED\n\n`;
+    }
+    if (result.connected) {
+      if (result.figmaFile) {
+        text += `File: ${result.figmaFile}\n`;
+      }
+      if (result.currentPage) {
+        text += `Page: ${result.currentPage}\n`;
+      }
+      if (result.latencyMs !== undefined) {
+        text += `Latency: ${result.latencyMs}ms\n`;
+      }
+      if (result.pluginVersion) {
+        text += `Plugin Version: ${result.pluginVersion}\n`;
+      }
+    }
+    text += `\nDiagnostics:\n`;
+    text += `  Circuit Breaker: ${result.circuitBreakerState}\n`;
+    text += `  Pending Requests: ${result.pendingRequests}\n`;
+    if (result.wsReadyStateText) {
+      text += `  WebSocket State: ${result.wsReadyStateText}\n`;
+    }
+    if (result.error) {
+      text += `\nWarning: ${result.error}\n`;
+    }
+    text += `\n${result.message}`;
+    return textResponse(text);
+  },
+  definition: checkConnectionToolDefinition
+});

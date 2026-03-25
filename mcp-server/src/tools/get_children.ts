@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema
@@ -158,3 +159,21 @@ export async function getChildren(input: GetChildrenInput): Promise<GetChildrenR
     message: `Found ${children.length} ${scope}`
   };
 }
+
+export const handler = defineHandler<GetChildrenInput, GetChildrenResult>({
+  name: 'get_children',
+  schema: GetChildrenInputSchema,
+  execute: getChildren,
+  formatResponse: (r) => {
+    let text = `${r.message}\nNode ID: ${r.nodeId}\nChild Count: ${r.childCount}\n\n`;
+    if (r.children.length > 0) {
+      text += 'Children:\n';
+      r.children.forEach((child, i) => {
+        text += `${i + 1}. ${child.name} (${child.type}) - ID: ${child.nodeId}\n`;
+        text += `   Visible: ${child.visible}, Locked: ${child.locked}\n`;
+      });
+    }
+    return textResponse(text);
+  },
+  definition: getChildrenToolDefinition
+});

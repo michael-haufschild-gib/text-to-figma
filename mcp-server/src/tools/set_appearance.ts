@@ -6,7 +6,8 @@
  */
 
 import { z } from 'zod';
-import { getFigmaBridge } from '../figma-bridge.js';
+import { FigmaAckResponseSchema, getFigmaBridge } from '../figma-bridge.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Input schema - all parameters optional
@@ -241,7 +242,7 @@ export async function setAppearance(input: SetAppearanceInput): Promise<SetAppea
 
   // Send to Figma
   const bridge = getFigmaBridge();
-  await bridge.sendToFigmaWithRetry('set_appearance', payload);
+  await bridge.sendToFigmaValidated('set_appearance', payload, FigmaAckResponseSchema);
 
   return {
     nodeId: input.nodeId,
@@ -250,3 +251,14 @@ export async function setAppearance(input: SetAppearanceInput): Promise<SetAppea
     message: `Applied appearance properties: ${applied.join(', ')}`
   };
 }
+
+export const handler = defineHandler<SetAppearanceInput, SetAppearanceResult>({
+  name: 'set_appearance',
+  schema: SetAppearanceInputSchema,
+  execute: setAppearance,
+  formatResponse: (r) =>
+    textResponse(
+      `${r.message}\nNode ID: ${r.nodeId}\nApplied: ${r.applied.join(', ')}\n\nCSS Equivalent:\n${r.cssEquivalent}\n`
+    ),
+  definition: setAppearanceToolDefinition
+});

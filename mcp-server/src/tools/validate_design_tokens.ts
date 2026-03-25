@@ -13,6 +13,7 @@ import {
   type SpacingValue
 } from '../constraints/spacing.js';
 import { VALID_FONT_SIZES, validateTypography, type FontSize } from '../constraints/typography.js';
+import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 /**
  * Design tokens input schema
@@ -398,3 +399,11 @@ Returns detailed report with:
     }
   }
 };
+
+export const handler = defineHandler<DesignTokensInput, ValidationReport>({
+  name: 'validate_design_tokens',
+  schema: DesignTokensInputSchema,
+  execute: (input) => Promise.resolve(validateDesignTokens(input)),
+  formatResponse: (report) => textResponse(formatValidationReport(report)),
+  definition: validateDesignTokensToolDefinition
+});
