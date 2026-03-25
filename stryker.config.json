@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/core/schema/stryker-core.schema.json",
+  "mutate": [
+    "mcp-server/src/routing/tool-router.ts",
+    "mcp-server/src/figma-bridge.ts",
+    "mcp-server/src/node-registry.ts",
+    "mcp-server/src/errors/error-codes.ts",
+    "mcp-server/src/errors/index.ts",
+    "mcp-server/src/monitoring/error-tracker.ts",
+    "mcp-server/src/utils/parent-validator.ts",
+    "mcp-server/src/utils/auto-validator.ts",
+    "mcp-server/src/constraints/spacing.ts",
+    "mcp-server/src/constraints/color.ts",
+    "websocket-server/src/server.ts"
+  ],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "vitest.workspace.ts"
+  },
+  "checkers": ["typescript"],
+  "tsconfigFile": "mcp-server/tsconfig.json",
+  "reporters": ["html", "clear-text", "progress"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "coverageAnalysis": "all",
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 50
+  },
+  "concurrency": 2,
+  "timeoutMS": 30000,
+  "tempDirName": ".stryker-tmp"
+}

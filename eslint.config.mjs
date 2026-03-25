@@ -339,7 +339,8 @@ export default [
       '**/build/**',
       'mcp-server/dist/**',
       'figma-plugin/code.js',
-      'coverage/**'
+      'coverage/**',
+      '.stryker-tmp/**'
     ]
   }
 ];

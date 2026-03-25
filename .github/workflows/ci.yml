@@ -64,3 +64,17 @@ jobs:
           name: benchmark-results
           path: benchmark-results.json
           retention-days: 14
+
+      - name: Mutation testing (critical paths)
+        if: matrix.node-version == 22
+        run: npm run test:mutation
+        continue-on-error: true
+        timeout-minutes: 15
+
+      - name: Upload mutation report
+        if: matrix.node-version == 22
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          retention-days: 14

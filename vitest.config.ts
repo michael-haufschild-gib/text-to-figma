@@ -7,7 +7,7 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     pool: 'threads',
-    maxWorkers: 4,
+    maxWorkers: 2,
     minWorkers: 1,
     coverage: {
       provider: 'v8',

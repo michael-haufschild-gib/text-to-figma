@@ -20,7 +20,8 @@
     "test:unit": "vitest run --config vitest.workspace.ts --project mcp-server-unit",
     "test:integration": "vitest run --config vitest.workspace.ts --project integration",
     "test:prop": "vitest run --config vitest.workspace.ts --project mcp-server-unit tests/unit/property-based.test.ts",
-    "bench": "vitest bench"
+    "bench": "vitest bench",
+    "test:mutation": "stryker run"
   },
   "workspaces": [
     "mcp-server",
@@ -31,6 +32,9 @@
   "devDependencies": {
     "@fast-check/vitest": "^0.3.0",
     "@figma/eslint-plugin-figma-plugins": "^1.0.0",
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/typescript-checker": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
     "@typescript-eslint/eslint-plugin": "^8.57.1",
     "@typescript-eslint/parser": "^8.57.1",
     "@vitest/coverage-v8": "^4.1.0",
