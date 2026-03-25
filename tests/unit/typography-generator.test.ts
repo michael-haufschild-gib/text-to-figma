@@ -55,7 +55,9 @@ describe('Typography Generator', () => {
       [13, 12],
       [14, 16],
       [18, 20],
+      [22, 24],
       [26, 24],
+      [28, 32],
       [36, 40],
       [44, 48],
       [56, 64]
@@ -275,14 +277,12 @@ describe('Typography Generator', () => {
       }
     });
 
-    it('snapToTypeScale at midpoints between consecutive sizes picks correctly', () => {
+    it('snapToTypeScale at midpoints rounds up to the larger size', () => {
       for (let i = 0; i < VALID_FONT_SIZES.length - 1; i++) {
         const lower = VALID_FONT_SIZES[i];
         const upper = VALID_FONT_SIZES[i + 1];
         const mid = (lower + upper) / 2;
-        const snapped = snapToTypeScale(mid);
-        // Should snap to one of the two adjacent values
-        expect([lower, upper]).toContain(snapped);
+        expect(snapToTypeScale(mid)).toBe(upper);
       }
     });
 

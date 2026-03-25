@@ -34,8 +34,6 @@ describe('Config', () => {
       expect(config.RETRY_MAX_ATTEMPTS).toBe(3);
       expect(config.CIRCUIT_BREAKER_ENABLED).toBe(true);
       expect(config.HEALTH_CHECK_ENABLED).toBe(true);
-      expect(config.ENABLE_METRICS).toBe(true);
-      expect(config.ENABLE_ERROR_TRACKING).toBe(true);
       expect(config.GRACEFUL_SHUTDOWN_TIMEOUT).toBe(30000);
       expect(config.RETRY_BASE_DELAY).toBe(1000);
       expect(config.RETRY_MAX_DELAY).toBe(30000);

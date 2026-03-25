@@ -31,6 +31,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     FigmaBridge: vi.fn(() => mockBridge),
     __mockBridge: mockBridge
@@ -134,7 +135,7 @@ describe('AddLayoutGridInputSchema', () => {
 
 describe('addLayoutGrid', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -153,7 +154,7 @@ describe('addLayoutGrid', () => {
       opacity: 0.1
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith(
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
       'add_layout_grid',
       expect.objectContaining({
         nodeId: 'frame-1',
@@ -161,7 +162,8 @@ describe('addLayoutGrid', () => {
         count: 12,
         gutter: 20,
         margin: 64
-      })
+      }),
+      expect.anything()
     );
   });
 
@@ -222,7 +224,7 @@ describe('addLayoutGrid', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Not a frame'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Not a frame'));
 
     await expect(
       addLayoutGrid({

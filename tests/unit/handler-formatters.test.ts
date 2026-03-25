@@ -29,6 +29,7 @@ describe('Handler formatResponse — creation, styling, navigation', () => {
       const handler = getHandler('check_connection');
       const result = handler.formatResponse({
         connected: true,
+        pluginResponsive: true,
         figmaFile: 'Design.fig',
         currentPage: 'Page 1',
         latencyMs: 42,
@@ -54,6 +55,7 @@ describe('Handler formatResponse — creation, styling, navigation', () => {
       const handler = getHandler('check_connection');
       const result = handler.formatResponse({
         connected: false,
+        pluginResponsive: false,
         circuitBreakerState: 'OPEN',
         pendingRequests: 0,
         error: 'Connection refused',
@@ -293,20 +295,62 @@ describe('Handler formatResponse — styling, navigation, edge cases', () => {
       });
 
       const text = result[0].text as string;
-      expect(text).toContain('Count: 0');
       expect(text).toContain('No nodes selected');
     });
 
-    it('formats non-empty selection', () => {
+    it('formats non-empty selection with compact text', () => {
       const handler = getHandler('get_selection');
       const result = handler.formatResponse({
         count: 1,
-        selection: [{ id: 'n1', name: 'Frame', type: 'FRAME' }]
+        selection: [{ nodeId: 'n1', name: 'Frame', type: 'FRAME' }]
       });
 
       const text = result[0].text as string;
-      expect(text).toContain('Count: 1');
-      expect(text).toContain('Frame');
+      expect(text).toContain('Selected: 1 node(s)');
+      expect(text).toContain('FRAME "Frame" [n1]');
+    });
+
+    it('formats selection with fills as hex colors', () => {
+      const handler = getHandler('get_selection');
+      const result = handler.formatResponse({
+        count: 1,
+        selection: [
+          {
+            nodeId: '1:2',
+            name: 'Button',
+            type: 'FRAME',
+            bounds: { x: 0, y: 0, width: 120, height: 40 },
+            fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }],
+            cornerRadius: 8,
+            layoutMode: 'HORIZONTAL',
+            itemSpacing: 8,
+            paddingTop: 12,
+            paddingRight: 16,
+            paddingBottom: 12,
+            paddingLeft: 16,
+            children: [
+              {
+                nodeId: '1:3',
+                name: 'Label',
+                type: 'TEXT',
+                characters: 'Click',
+                fontName: { family: 'Inter', style: 'Bold' },
+                fontSize: 14
+              }
+            ]
+          }
+        ]
+      });
+
+      const text = result[0].text as string;
+      expect(text).toContain('#FF0000');
+      expect(text).toContain('radius: 8');
+      expect(text).toContain('layout: HORIZONTAL gap=8');
+      expect(text).toContain('TEXT "Label" [1:3]');
+      expect(text).toContain('font: Inter Bold 14');
+      // Must NOT contain raw JSON structures
+      expect(text).not.toContain('"type": "SOLID"');
+      expect(text).not.toContain('"r":');
     });
   });
 

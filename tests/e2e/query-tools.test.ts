@@ -68,10 +68,10 @@ describe('Query Tools E2E — check_connection', () => {
       error: 'Plugin not responding'
     }));
 
-    // check_connection catches ping errors and still returns diagnostic info
+    // check_connection catches ping errors and returns DEGRADED status
     const result = await routeToolCall('check_connection', {});
-    // The WebSocket is connected, but ping failed — still returns diagnostics
-    expect(result[0].text).toContain('Connection Status: CONNECTED');
+    // The WebSocket is connected, but plugin didn't respond — shows degraded
+    expect(result[0].text).toContain('Connection Status: DEGRADED');
     expect(result[0].text).toContain('Diagnostics');
     expect(result[0].text).toContain('Warning');
   });
@@ -207,7 +207,6 @@ describe('Query Tools E2E — get_selection', () => {
   it('returns empty selection by default', async () => {
     const result = await routeToolCall('get_selection', {});
 
-    expect(result[0].text).toContain('Count: 0');
     expect(result[0].text).toContain('No nodes selected');
 
     const cmd = ctx.plugin.getReceivedCommands().find((c) => c.type === 'get_selection');
@@ -243,7 +242,9 @@ describe('Query Tools E2E — get_selection', () => {
 
     const result = await routeToolCall('get_selection', {});
 
-    expect(result[0].text).toContain('Count: 2');
+    expect(result[0].text).toContain('Selected: 2 node(s)');
+    expect(result[0].text).toContain('FRAME "Selected Frame" [sel-1]');
+    expect(result[0].text).toContain('TEXT "Selected Text" [sel-2]');
   });
 });
 

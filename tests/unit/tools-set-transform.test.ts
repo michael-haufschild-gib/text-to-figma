@@ -31,6 +31,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     FigmaBridge: vi.fn(() => mockBridge),
     __mockBridge: mockBridge
@@ -42,7 +43,7 @@ const { setTransform, SetTransformInputSchema } =
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
   __mockBridge: {
     sendToFigma: ReturnType<typeof vi.fn>;
-    sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
     isConnected: ReturnType<typeof vi.fn>;
     getConnectionStatus: ReturnType<typeof vi.fn>;
   };
@@ -109,7 +110,7 @@ describe('SetTransformInputSchema', () => {
 
 describe('setTransform', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -126,20 +127,24 @@ describe('setTransform', () => {
       flip: 'HORIZONTAL'
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith('set_transform', {
-      nodeId: 'el-1',
-      position: { x: 100, y: 200 },
-      size: { width: 300, height: 400 },
-      rotation: 45,
-      scale: { x: 2, y: 1.5 },
-      flip: 'HORIZONTAL'
-    });
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
+      'set_transform',
+      {
+        nodeId: 'el-1',
+        position: { x: 100, y: 200 },
+        size: { width: 300, height: 400 },
+        rotation: 45,
+        scale: { x: 2, y: 1.5 },
+        flip: 'HORIZONTAL'
+      },
+      expect.anything()
+    );
   });
 
   it('only includes specified transforms in payload', async () => {
     await setTransform({ nodeId: 'el-1', rotation: 90 });
 
-    const payload = __mockBridge.sendToFigmaWithRetry.mock.calls[0][1] as Record<string, unknown>;
+    const payload = __mockBridge.sendToFigmaValidated.mock.calls[0][1] as Record<string, unknown>;
     expect(Object.keys(payload)).toEqual(['nodeId', 'rotation']);
   });
 
@@ -178,7 +183,7 @@ describe('setTransform', () => {
     ];
 
     for (const [flipValue, expectedCss] of flips) {
-      __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+      __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
       const result = await setTransform({
         nodeId: 'el',
         flip: flipValue as 'HORIZONTAL' | 'VERTICAL' | 'BOTH'
@@ -202,11 +207,11 @@ describe('setTransform', () => {
 
   it('throws descriptive error when no transformations specified', async () => {
     await expect(setTransform({ nodeId: 'el-6' })).rejects.toThrow('No transformations specified');
-    expect(__mockBridge.sendToFigmaWithRetry).not.toHaveBeenCalled();
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Transform failed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Transform failed'));
 
     await expect(setTransform({ nodeId: 'x', position: { x: 0, y: 0 } })).rejects.toThrow(
       'Transform failed'

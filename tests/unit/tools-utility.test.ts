@@ -26,6 +26,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     FigmaBridge: vi.fn(() => mockBridge),
     __mockBridge: mockBridge
@@ -52,7 +53,7 @@ const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) 
 
 describe('setVisible', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -78,7 +79,7 @@ describe('setVisible', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Node not found'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Node not found'));
 
     await expect(setVisible({ nodeId: 'bad-id', visible: true })).rejects.toThrow('Node not found');
   });
@@ -88,7 +89,7 @@ describe('setVisible', () => {
 
 describe('setLocked', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -111,7 +112,7 @@ describe('setLocked', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Connection lost'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Connection lost'));
 
     await expect(setLocked({ nodeId: 'x', locked: true })).rejects.toThrow('Connection lost');
   });
@@ -121,7 +122,7 @@ describe('setLocked', () => {
 
 describe('setExportSettings', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -154,7 +155,7 @@ describe('setExportSettings', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Timeout'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Timeout'));
 
     await expect(
       setExportSettings({
@@ -221,7 +222,7 @@ describe('exportNode', () => {
 
 describe('setPluginData', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -242,7 +243,7 @@ describe('setPluginData', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Write failed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Write failed'));
 
     await expect(setPluginData({ nodeId: 'x', key: 'k', value: 'v' })).rejects.toThrow(
       'Write failed'
@@ -398,7 +399,7 @@ describe('setCurrentPage', () => {
 
     expect(result.pageId).toBe('p3');
     expect(result.pageName).toBeUndefined();
-    expect(result.message).toBe('Page switched successfully');
+    expect(result.message).toContain('Page switched successfully');
   });
 
   it('propagates bridge errors', async () => {

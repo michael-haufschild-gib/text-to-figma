@@ -26,6 +26,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     FigmaBridge: vi.fn(() => mockBridge),
     __mockBridge: mockBridge
@@ -41,13 +42,13 @@ const { addGradientFill } = await import('../../mcp-server/src/tools/add_gradien
 const { setImageFill } = await import('../../mcp-server/src/tools/set_image_fill.js');
 const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) as {
   __mockBridge: {
-    sendToFigmaWithRetry: ReturnType<typeof vi.fn>;
+    sendToFigmaValidated: ReturnType<typeof vi.fn>;
   };
 };
 
 describe('setFills', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -86,8 +87,8 @@ describe('setFills', () => {
   it('sends normalized RGB values (0-1) to bridge', async () => {
     await setFills({ nodeId: 'node-3', color: '#FF8000', opacity: 1 });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledOnce();
-    const callArgs = __mockBridge.sendToFigmaWithRetry.mock.calls[0] as [
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledOnce();
+    const callArgs = __mockBridge.sendToFigmaValidated.mock.calls[0] as [
       string,
       Record<string, unknown>
     ];
@@ -140,7 +141,7 @@ describe('setFills', () => {
   it('sends correct normalized RGB to bridge for pure white', async () => {
     await setFills({ nodeId: 'node-white', color: '#FFFFFF', opacity: 1 });
 
-    const callArgs = __mockBridge.sendToFigmaWithRetry.mock.calls[0] as [
+    const callArgs = __mockBridge.sendToFigmaValidated.mock.calls[0] as [
       string,
       { fills: Array<{ color: { r: number; g: number; b: number } }> }
     ];
@@ -153,7 +154,7 @@ describe('setFills', () => {
   it('sends correct normalized RGB to bridge for pure black', async () => {
     await setFills({ nodeId: 'node-black', color: '#000000', opacity: 1 });
 
-    const callArgs = __mockBridge.sendToFigmaWithRetry.mock.calls[0] as [
+    const callArgs = __mockBridge.sendToFigmaValidated.mock.calls[0] as [
       string,
       { fills: Array<{ color: { r: number; g: number; b: number } }> }
     ];
@@ -164,7 +165,7 @@ describe('setFills', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Connection lost'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Connection lost'));
 
     await expect(setFills({ nodeId: 'node-5', color: '#FF0000', opacity: 1 })).rejects.toThrow(
       'Connection lost'
@@ -174,7 +175,7 @@ describe('setFills', () => {
 
 describe('setCornerRadius', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -206,7 +207,7 @@ describe('setCornerRadius', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Figma disconnected'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Figma disconnected'));
 
     await expect(setCornerRadius({ nodeId: 'rect-3', radius: 4 })).rejects.toThrow(
       'Figma disconnected'
@@ -216,7 +217,7 @@ describe('setCornerRadius', () => {
 
 describe('setStroke', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -268,7 +269,7 @@ describe('setStroke', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Timeout'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Timeout'));
 
     await expect(
       setStroke({
@@ -284,7 +285,7 @@ describe('setStroke', () => {
 
 describe('setAppearance', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -331,7 +332,7 @@ describe('setAppearance', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Bridge down'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Bridge down'));
 
     await expect(setAppearance({ nodeId: 'node-5', opacity: 0.8 })).rejects.toThrow('Bridge down');
   });
@@ -339,7 +340,7 @@ describe('setAppearance', () => {
 
 describe('applyEffects', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -387,7 +388,7 @@ describe('applyEffects', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Plugin crashed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Plugin crashed'));
 
     await expect(
       applyEffects({
@@ -400,7 +401,7 @@ describe('applyEffects', () => {
 
 describe('addGradientFill', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -458,7 +459,7 @@ describe('addGradientFill', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Network error'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Network error'));
 
     await expect(
       addGradientFill({
@@ -477,7 +478,7 @@ describe('addGradientFill', () => {
 
 describe('setImageFill', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -515,7 +516,7 @@ describe('setImageFill', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Image load failed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Image load failed'));
 
     await expect(
       setImageFill({

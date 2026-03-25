@@ -27,6 +27,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     FigmaBridge: vi.fn(() => mockBridge),
     FigmaBridgeError: class extends Error {
@@ -140,6 +141,29 @@ describe('detachComponent', () => {
     expect(registry.has('var-2')).toBe(false);
     // Component set ID removed
     expect(registry.has('set-1')).toBe(false);
+  });
+
+  it('detaches an instance from its source component', async () => {
+    const registry = getNodeRegistry();
+    registry.register('inst-1', {
+      type: 'INSTANCE',
+      name: 'Button Instance',
+      parentId: 'frame-parent',
+      children: []
+    });
+
+    __mockBridge.sendToFigmaValidated.mockResolvedValueOnce({
+      type: 'INSTANCE',
+      detached: [{ oldId: 'inst-1', newId: 'frame-detached', name: 'Button Instance' }],
+      message: 'Detached instance "Button Instance" from its component'
+    });
+
+    const result = await detachComponent({ nodeId: 'inst-1' });
+
+    expect(result.type).toBe('INSTANCE');
+    expect(result.detached).toHaveLength(1);
+    expect(result.detached[0].newId).toBe('frame-detached');
+    expect(registry.has('inst-1')).toBe(false);
   });
 
   it('handles response without frameId (no component set)', async () => {

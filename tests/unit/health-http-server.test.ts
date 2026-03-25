@@ -27,6 +27,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     resetFigmaBridge: vi.fn(),
     __mockBridge: mockBridge

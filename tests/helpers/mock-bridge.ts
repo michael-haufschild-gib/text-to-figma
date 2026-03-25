@@ -58,6 +58,7 @@ export function createBridgeMock(): Record<string, unknown> {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => _mockBridge,
     FigmaBridge: vi.fn(() => _mockBridge),
     FigmaBridgeError: class FigmaBridgeError extends Error {

@@ -16,9 +16,11 @@ import {
   routeRequest,
   routeResponse,
   routeMessage,
+  routeNotification,
   createServerState,
   type ServerState,
   type BridgeMessage,
+  type NotificationMessage,
   type ClientRecord
 } from '../../websocket-server/src/server.js';
 
@@ -482,5 +484,125 @@ describe('routeMessage', () => {
     expect(mcpWs.send).toHaveBeenCalledWith(JSON.stringify(msg));
     // Origin should be cleaned up (response routing cleans up pendingRequestOrigins)
     expect(state.pendingRequestOrigins.has('req-echo')).toBe(false);
+  });
+});
+
+// ─── validateMessage: NotificationMessage ──────────────────────────
+
+describe('validateMessage — NotificationMessage', () => {
+  it('recognizes a valid figma_notification', () => {
+    const msg = { type: 'figma_notification', kind: 'document_changed' };
+    const result = validateMessage(msg);
+    expect(result).toEqual(msg);
+  });
+
+  it('recognizes notification with data payload', () => {
+    const msg = {
+      type: 'figma_notification',
+      kind: 'page_changed',
+      data: { _ctx: { pageId: 'p1', pageName: 'Home', fileName: 'File.fig' } }
+    };
+    expect(validateMessage(msg)).toEqual(msg);
+  });
+
+  it('rejects notification without kind', () => {
+    expect(validateMessage({ type: 'figma_notification' })).toBeNull();
+  });
+
+  it('rejects notification with non-string kind', () => {
+    expect(validateMessage({ type: 'figma_notification', kind: 42 })).toBeNull();
+  });
+});
+
+// ─── routeNotification ─────────────────────────────────────────────
+
+describe('routeNotification', () => {
+  let state: ServerState;
+
+  beforeEach(() => {
+    state = createServerState();
+  });
+
+  it('broadcasts notification to all MCP clients', () => {
+    const figmaWs = mockWs();
+    const mcp1Ws = mockWs();
+    const mcp2Ws = mockWs();
+
+    state.clients.set('figma-1', mockClient({ ws: figmaWs, isFigma: true }));
+    state.clients.set('mcp-1', mockClient({ ws: mcp1Ws, isMCP: true }));
+    state.clients.set('mcp-2', mockClient({ ws: mcp2Ws, isMCP: true }));
+    state.figmaPluginClient = 'figma-1';
+
+    const notification: NotificationMessage = {
+      type: 'figma_notification',
+      kind: 'document_changed'
+    };
+
+    routeNotification(state, notification, 'figma-1');
+
+    expect(mcp1Ws.send).toHaveBeenCalledWith(JSON.stringify(notification));
+    expect(mcp2Ws.send).toHaveBeenCalledWith(JSON.stringify(notification));
+    // Must NOT send back to Figma plugin
+    expect(figmaWs.send).not.toHaveBeenCalled();
+  });
+
+  it('ignores notifications from non-plugin clients', () => {
+    const mcpWs = mockWs();
+    state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
+    state.figmaPluginClient = 'figma-1';
+
+    const notification: NotificationMessage = {
+      type: 'figma_notification',
+      kind: 'document_changed'
+    };
+
+    routeNotification(state, notification, 'imposter');
+
+    expect(mcpWs.send).not.toHaveBeenCalled();
+  });
+
+  it('skips clients with closed WebSockets', () => {
+    const figmaWs = mockWs();
+    const openWs = mockWs(WebSocket.OPEN);
+    const closedWs = mockWs(WebSocket.CLOSED);
+
+    state.clients.set('figma-1', mockClient({ ws: figmaWs, isFigma: true }));
+    state.clients.set('mcp-open', mockClient({ ws: openWs }));
+    state.clients.set('mcp-closed', mockClient({ ws: closedWs }));
+    state.figmaPluginClient = 'figma-1';
+
+    routeNotification(state, { type: 'figma_notification', kind: 'page_changed' }, 'figma-1');
+
+    expect(openWs.send).toHaveBeenCalled();
+    expect(closedWs.send).not.toHaveBeenCalled();
+  });
+});
+
+// ─── routeMessage: notification dispatch ────────────────────────────
+
+describe('routeMessage — notification dispatch', () => {
+  let state: ServerState;
+
+  beforeEach(() => {
+    state = createServerState();
+  });
+
+  it('routes figma_notification to routeNotification (broadcasts)', () => {
+    const figmaWs = mockWs();
+    const mcpWs = mockWs();
+
+    state.clients.set('figma-1', mockClient({ ws: figmaWs, isFigma: true }));
+    state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
+    state.figmaPluginClient = 'figma-1';
+
+    const msg = {
+      type: 'figma_notification',
+      kind: 'document_changed'
+    } as BridgeMessage;
+
+    routeMessage(state, msg, 'figma-1');
+
+    expect(mcpWs.send).toHaveBeenCalledWith(JSON.stringify(msg));
+    expect(figmaWs.send).not.toHaveBeenCalled();
   });
 });

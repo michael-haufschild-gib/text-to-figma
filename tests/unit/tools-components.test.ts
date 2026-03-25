@@ -27,6 +27,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     FigmaBridge: vi.fn(() => mockBridge),
     __mockBridge: mockBridge
@@ -196,7 +197,7 @@ describe('createComponentSet', () => {
 
 describe('setComponentProperties', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -229,7 +230,7 @@ describe('setComponentProperties', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Bridge down'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Bridge down'));
 
     await expect(setComponentProperties({ componentId: 'comp-3', name: 'Fail' })).rejects.toThrow(
       'Bridge down'
@@ -239,7 +240,7 @@ describe('setComponentProperties', () => {
 
 describe('addVariantProperty', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -260,7 +261,7 @@ describe('addVariantProperty', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Network failure'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Network failure'));
 
     await expect(
       addVariantProperty({

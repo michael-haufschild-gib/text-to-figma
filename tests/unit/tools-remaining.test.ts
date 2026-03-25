@@ -32,6 +32,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     FigmaBridge: vi.fn(() => mockBridge),
     __mockBridge: mockBridge
@@ -353,7 +354,7 @@ describe('SetTextPropertiesInputSchema', () => {
 
 describe('setTextProperties', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -370,20 +371,24 @@ describe('setTextProperties', () => {
       paragraphIndent: 24
     });
 
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith('set_text_properties', {
-      nodeId: 'text-1',
-      decoration: 'UNDERLINE',
-      textCase: 'UPPER',
-      letterSpacing: { value: 10, unit: 'PERCENT' },
-      paragraphSpacing: 16,
-      paragraphIndent: 24
-    });
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
+      'set_text_properties',
+      {
+        nodeId: 'text-1',
+        decoration: 'UNDERLINE',
+        textCase: 'UPPER',
+        letterSpacing: { value: 10, unit: 'PERCENT' },
+        paragraphSpacing: 16,
+        paragraphIndent: 24
+      },
+      expect.anything()
+    );
   });
 
   it('only includes specified properties in bridge payload (no undefined keys)', async () => {
     await setTextProperties({ nodeId: 'text-1', decoration: 'UNDERLINE' });
 
-    const payload = __mockBridge.sendToFigmaWithRetry.mock.calls[0][1] as Record<string, unknown>;
+    const payload = __mockBridge.sendToFigmaValidated.mock.calls[0][1] as Record<string, unknown>;
     expect(Object.keys(payload)).toEqual(['nodeId', 'decoration']);
     expect(payload).not.toHaveProperty('textCase');
     expect(payload).not.toHaveProperty('letterSpacing');
@@ -413,7 +418,7 @@ describe('setTextProperties', () => {
     ];
 
     for (const [figmaCase, cssValue] of cases) {
-      __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+      __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
       const result = await setTextProperties({
         nodeId: 'n',
         textCase: figmaCase as 'UPPER' | 'LOWER' | 'TITLE' | 'ORIGINAL'
@@ -468,11 +473,11 @@ describe('setTextProperties', () => {
       'No text properties specified'
     );
     // Bridge should NOT have been called
-    expect(__mockBridge.sendToFigmaWithRetry).not.toHaveBeenCalled();
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Not a text node'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Not a text node'));
 
     await expect(setTextProperties({ nodeId: 'rect-1', decoration: 'UNDERLINE' })).rejects.toThrow(
       'Not a text node'

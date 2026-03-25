@@ -26,6 +26,7 @@ vi.mock('../../mcp-server/src/figma-bridge.js', () => {
   };
 
   return {
+    FigmaAckResponseSchema: { parse: (v: unknown) => v },
     getFigmaBridge: () => mockBridge,
     FigmaBridge: vi.fn(() => mockBridge),
     __mockBridge: mockBridge
@@ -48,7 +49,7 @@ const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) 
 
 describe('setLayoutProperties', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -121,7 +122,7 @@ describe('setLayoutProperties', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Bridge error'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Bridge error'));
 
     await expect(
       setLayoutProperties({ nodeId: 'frame-5', layoutMode: 'VERTICAL' })
@@ -131,7 +132,7 @@ describe('setLayoutProperties', () => {
 
 describe('setLayoutAlign', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -168,7 +169,7 @@ describe('setLayoutAlign', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Plugin crashed'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Plugin crashed'));
 
     await expect(setLayoutAlign({ nodeId: 'card-3', primaryAxis: 'MIN' })).rejects.toThrow(
       'Plugin crashed'
@@ -178,7 +179,7 @@ describe('setLayoutAlign', () => {
 
 describe('setLayoutSizing', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue(undefined);
+    __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -228,12 +229,16 @@ describe('setLayoutSizing', () => {
     expect(result.nodeId).toBe('badge-1');
     expect(result.layoutPositioning).toBe('ABSOLUTE');
     expect(result.cssEquivalent).toContain('position: absolute');
-    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith('set_layout_sizing', {
-      nodeId: 'badge-1',
-      horizontal: undefined,
-      vertical: undefined,
-      layoutPositioning: 'ABSOLUTE'
-    });
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
+      'set_layout_sizing',
+      {
+        nodeId: 'badge-1',
+        horizontal: undefined,
+        vertical: undefined,
+        layoutPositioning: 'ABSOLUTE'
+      },
+      expect.anything()
+    );
   });
 
   it('sets layoutPositioning to AUTO', async () => {
@@ -253,7 +258,7 @@ describe('setLayoutSizing', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Timeout'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Timeout'));
 
     await expect(setLayoutSizing({ nodeId: 'node-2', horizontal: 'FILL' })).rejects.toThrow(
       'Timeout'
@@ -263,7 +268,7 @@ describe('setLayoutSizing', () => {
 
 describe('setConstraints', () => {
   beforeEach(() => {
-    __mockBridge.sendToFigmaWithRetry.mockResolvedValue({ nodeId: 'node-1' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ nodeId: 'node-1' });
   });
 
   afterEach(() => {
@@ -319,7 +324,7 @@ describe('setConstraints', () => {
   });
 
   it('propagates bridge errors', async () => {
-    __mockBridge.sendToFigmaWithRetry.mockRejectedValue(new Error('Figma error'));
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Figma error'));
 
     await expect(setConstraints({ nodeId: 'node-5', horizontal: 'MIN' })).rejects.toThrow(
       'Figma error'
