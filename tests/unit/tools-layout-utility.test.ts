@@ -98,6 +98,22 @@ describe('setLayoutProperties', () => {
     expect(result.cssEquivalent).toContain('position: relative;');
   });
 
+  it('generates individual padding CSS when paddingTop/Right/Bottom/Left are specified', async () => {
+    const result = await setLayoutProperties({
+      nodeId: 'frame-pad',
+      paddingTop: 8,
+      paddingRight: 16,
+      paddingBottom: 24,
+      paddingLeft: 32
+    });
+
+    expect(result.updated).toContain('paddingTop');
+    expect(result.updated).toContain('paddingRight');
+    expect(result.updated).toContain('paddingBottom');
+    expect(result.updated).toContain('paddingLeft');
+    expect(result.cssEquivalent).toContain('padding: 8px 16px 24px 32px;');
+  });
+
   it('throws when no properties are specified', async () => {
     await expect(setLayoutProperties({ nodeId: 'frame-4' })).rejects.toThrow(
       'No properties specified'
@@ -203,9 +219,36 @@ describe('setLayoutSizing', () => {
     expect(result.cssEquivalent).toContain('flex: 1');
   });
 
-  it('throws when neither dimension is specified', async () => {
+  it('sets layoutPositioning to ABSOLUTE', async () => {
+    const result = await setLayoutSizing({
+      nodeId: 'badge-1',
+      layoutPositioning: 'ABSOLUTE'
+    });
+
+    expect(result.nodeId).toBe('badge-1');
+    expect(result.layoutPositioning).toBe('ABSOLUTE');
+    expect(result.cssEquivalent).toContain('position: absolute');
+    expect(__mockBridge.sendToFigmaWithRetry).toHaveBeenCalledWith('set_layout_sizing', {
+      nodeId: 'badge-1',
+      horizontal: undefined,
+      vertical: undefined,
+      layoutPositioning: 'ABSOLUTE'
+    });
+  });
+
+  it('sets layoutPositioning to AUTO', async () => {
+    const result = await setLayoutSizing({
+      nodeId: 'item-1',
+      layoutPositioning: 'AUTO'
+    });
+
+    expect(result.layoutPositioning).toBe('AUTO');
+    expect(result.cssEquivalent).toContain('position: relative');
+  });
+
+  it('throws when no property is specified', async () => {
     await expect(setLayoutSizing({ nodeId: 'node-1' })).rejects.toThrow(
-      'Must specify at least one of horizontal or vertical'
+      'Must specify at least one of horizontal, vertical, or layoutPositioning'
     );
   });
 
@@ -281,6 +324,75 @@ describe('setConstraints', () => {
     await expect(setConstraints({ nodeId: 'node-5', horizontal: 'MIN' })).rejects.toThrow(
       'Figma error'
     );
+  });
+
+  it('auto-enables vertical pins for STRETCH constraint', async () => {
+    const result = await setConstraints({
+      nodeId: 'node-6',
+      vertical: 'STRETCH'
+    });
+
+    expect(result.applied).toContain('vertical: STRETCH');
+    expect(result.applied).toContain('pinTop');
+    expect(result.applied).toContain('pinBottom');
+    expect(result.description).toContain('stretches vertically');
+  });
+
+  it('auto-sets vertical STRETCH when both pinTop and pinBottom are provided', async () => {
+    const result = await setConstraints({
+      nodeId: 'node-7',
+      pinTop: true,
+      pinBottom: true
+    });
+
+    expect(result.applied).toContain('vertical: STRETCH');
+    expect(result.applied).toContain('pinTop');
+    expect(result.applied).toContain('pinBottom');
+  });
+
+  it('includes pinTop and pinBottom in applied list when set explicitly', async () => {
+    const result = await setConstraints({
+      nodeId: 'node-8',
+      vertical: 'MIN',
+      pinTop: true,
+      pinBottom: true
+    });
+
+    expect(result.applied).toContain('vertical: MIN');
+    expect(result.applied).toContain('pinTop');
+    expect(result.applied).toContain('pinBottom');
+  });
+
+  it('generates correct CSS for vertical CENTER constraint', async () => {
+    const result = await setConstraints({
+      nodeId: 'node-9',
+      vertical: 'CENTER'
+    });
+
+    expect(result.cssEquivalent).toContain('top: 50%');
+    expect(result.cssEquivalent).toContain('translateY(-50%)');
+    expect(result.description).toContain('centered vertically');
+  });
+
+  it('generates combined transform for both CENTER constraints', async () => {
+    const result = await setConstraints({
+      nodeId: 'node-10',
+      horizontal: 'CENTER',
+      vertical: 'CENTER'
+    });
+
+    expect(result.cssEquivalent).toContain('translate(-50%, -50%)');
+    expect(result.cssEquivalent).toContain('left: 50%');
+    expect(result.cssEquivalent).toContain('top: 50%');
+  });
+
+  it('returns no-constraints description when nothing is set', async () => {
+    const result = await setConstraints({
+      nodeId: 'node-11'
+    });
+
+    expect(result.description).toBe('No constraints applied');
+    expect(result.applied).toEqual([]);
   });
 });
 
@@ -379,6 +491,12 @@ describe('alignNodes', () => {
       'Failed to align nodes: Nodes not found'
     );
   });
+
+  it('throws when fewer than 2 nodeIds are provided', async () => {
+    await expect(alignNodes({ nodeIds: ['only-one'], alignment: 'LEFT' })).rejects.toThrow(
+      'Must provide at least 2 nodes to align'
+    );
+  });
 });
 
 describe('distributeNodes', () => {
@@ -441,6 +559,12 @@ describe('distributeNodes', () => {
 
     await expect(distributeNodes({ nodeIds: ['a', 'b', 'c'], axis: 'HORIZONTAL' })).rejects.toThrow(
       'Failed to distribute nodes: Invalid nodes'
+    );
+  });
+
+  it('throws when fewer than 3 nodeIds are provided', async () => {
+    await expect(distributeNodes({ nodeIds: ['a', 'b'], axis: 'HORIZONTAL' })).rejects.toThrow(
+      'Must provide at least 3 nodes to distribute'
     );
   });
 });

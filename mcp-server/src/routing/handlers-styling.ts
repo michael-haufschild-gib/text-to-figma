@@ -5,7 +5,6 @@
  * and spatial transforms on existing nodes.
  */
 
-import { z } from 'zod';
 import { defineHandler, textResponse } from './handler-utils.js';
 
 import {
@@ -118,8 +117,8 @@ export const stylingHandlers = [
   // ─── Fills & Stroke ─────────────────────────────────────────────────────
   defineHandler<SetFillsInput, SetFillsResult>({
     name: 'set_fills',
-    schema: SetFillsInputSchema as z.ZodSchema<SetFillsInput>,
-    execute: (input) => setFills(input),
+    schema: SetFillsInputSchema,
+    execute: setFills,
     formatResponse: (r) =>
       textResponse(
         `Fills Applied Successfully\nNode ID: ${r.nodeId}\nApplied Color: ${r.appliedColor}\n\nCSS Equivalent:\n  ${r.cssEquivalent}\n`
@@ -129,7 +128,7 @@ export const stylingHandlers = [
 
   defineHandler<SetCornerRadiusInput, SetCornerRadiusResult>({
     name: 'set_corner_radius',
-    schema: SetCornerRadiusInputSchema as z.ZodSchema<SetCornerRadiusInput>,
+    schema: SetCornerRadiusInputSchema,
     execute: setCornerRadius,
     formatResponse: (r) =>
       textResponse(
@@ -140,7 +139,7 @@ export const stylingHandlers = [
 
   defineHandler<SetStrokeInput, SetStrokeResult>({
     name: 'set_stroke',
-    schema: SetStrokeInputSchema as z.ZodSchema<SetStrokeInput>,
+    schema: SetStrokeInputSchema,
     execute: setStroke,
     formatResponse: (r) =>
       textResponse(
@@ -151,7 +150,7 @@ export const stylingHandlers = [
 
   defineHandler<AddGradientFillInput, AddGradientFillResult>({
     name: 'add_gradient_fill',
-    schema: AddGradientFillInputSchema as z.ZodSchema<AddGradientFillInput>,
+    schema: AddGradientFillInputSchema,
     execute: addGradientFill,
     formatResponse: (r) =>
       textResponse(
@@ -162,7 +161,7 @@ export const stylingHandlers = [
 
   defineHandler<SetImageFillInput, SetImageFillResult>({
     name: 'set_image_fill',
-    schema: SetImageFillInputSchema as z.ZodSchema<SetImageFillInput>,
+    schema: SetImageFillInputSchema,
     execute: setImageFill,
     formatResponse: (r) =>
       textResponse(
@@ -174,7 +173,7 @@ export const stylingHandlers = [
   // ─── Effects ────────────────────────────────────────────────────────────
   defineHandler<ApplyEffectsInput, ApplyEffectsResult>({
     name: 'apply_effects',
-    schema: ApplyEffectsInputSchema as z.ZodSchema<ApplyEffectsInput>,
+    schema: ApplyEffectsInputSchema,
     execute: applyEffects,
     formatResponse: (r) =>
       textResponse(
@@ -186,7 +185,7 @@ export const stylingHandlers = [
   // ─── Transform & Appearance ─────────────────────────────────────────────
   defineHandler<SetTransformInput, SetTransformResult>({
     name: 'set_transform',
-    schema: SetTransformInputSchema as z.ZodSchema<SetTransformInput>,
+    schema: SetTransformInputSchema,
     execute: setTransform,
     formatResponse: (r) =>
       textResponse(
@@ -197,7 +196,7 @@ export const stylingHandlers = [
 
   defineHandler<SetAppearanceInput, SetAppearanceResult>({
     name: 'set_appearance',
-    schema: SetAppearanceInputSchema as z.ZodSchema<SetAppearanceInput>,
+    schema: SetAppearanceInputSchema,
     execute: setAppearance,
     formatResponse: (r) =>
       textResponse(
@@ -209,7 +208,7 @@ export const stylingHandlers = [
   // ─── Text Properties ────────────────────────────────────────────────────
   defineHandler<SetTextPropertiesInput, SetTextPropertiesResult>({
     name: 'set_text_properties',
-    schema: SetTextPropertiesInputSchema as z.ZodSchema<SetTextPropertiesInput>,
+    schema: SetTextPropertiesInputSchema,
     execute: setTextProperties,
     formatResponse: (r) =>
       textResponse(
@@ -221,7 +220,7 @@ export const stylingHandlers = [
   // ─── Named Styles ──────────────────────────────────────────────────────
   defineHandler<CreateColorStyleInput, CreateColorStyleResult>({
     name: 'create_color_style',
-    schema: CreateColorStyleInputSchema as z.ZodSchema<CreateColorStyleInput>,
+    schema: CreateColorStyleInputSchema,
     execute: createColorStyle,
     formatResponse: (r) =>
       textResponse(`${r.message}\nStyle ID: ${r.styleId}\nName: ${r.name}\nColor: ${r.color}\n`),
@@ -230,7 +229,7 @@ export const stylingHandlers = [
 
   defineHandler<ApplyFillStyleInput, ApplyFillStyleResult>({
     name: 'apply_fill_style',
-    schema: ApplyFillStyleInputSchema as z.ZodSchema<ApplyFillStyleInput>,
+    schema: ApplyFillStyleInputSchema,
     execute: applyFillStyle,
     formatResponse: (r) =>
       textResponse(`${r.message}\nNode ID: ${r.nodeId}\nStyle: ${r.styleName}\n`),
@@ -239,7 +238,7 @@ export const stylingHandlers = [
 
   defineHandler<CreateTextStyleInput, CreateTextStyleResult>({
     name: 'create_text_style',
-    schema: CreateTextStyleInputSchema as z.ZodSchema<CreateTextStyleInput>,
+    schema: CreateTextStyleInputSchema,
     execute: createTextStyle,
     formatResponse: (r) =>
       textResponse(
@@ -250,7 +249,7 @@ export const stylingHandlers = [
 
   defineHandler<ApplyTextStyleInput, ApplyTextStyleResult>({
     name: 'apply_text_style',
-    schema: ApplyTextStyleInputSchema as z.ZodSchema<ApplyTextStyleInput>,
+    schema: ApplyTextStyleInputSchema,
     execute: applyTextStyle,
     formatResponse: (r) =>
       textResponse(`${r.message}\nNode ID: ${r.nodeId}\nStyle: ${r.styleName}\n`),
@@ -259,7 +258,7 @@ export const stylingHandlers = [
 
   defineHandler<CreateEffectStyleInput, CreateEffectStyleResult>({
     name: 'create_effect_style',
-    schema: CreateEffectStyleInputSchema as z.ZodSchema<CreateEffectStyleInput>,
+    schema: CreateEffectStyleInputSchema,
     execute: createEffectStyle,
     formatResponse: (r) =>
       textResponse(
@@ -270,7 +269,7 @@ export const stylingHandlers = [
 
   defineHandler<ApplyEffectStyleInput, ApplyEffectStyleResult>({
     name: 'apply_effect_style',
-    schema: ApplyEffectStyleInputSchema as z.ZodSchema<ApplyEffectStyleInput>,
+    schema: ApplyEffectStyleInputSchema,
     execute: applyEffectStyle,
     formatResponse: (r) =>
       textResponse(`${r.message}\nNode ID: ${r.nodeId}\nStyle: ${r.styleName}\n`),

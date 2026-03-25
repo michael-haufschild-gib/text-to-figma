@@ -33,16 +33,44 @@ interface FigmaFill {
 /**
  * Snapshot of a selected Figma node with all relevant properties
  */
+interface FigmaPerCornerRadius {
+  topLeft: number;
+  topRight: number;
+  bottomLeft: number;
+  bottomRight: number;
+}
+
+interface FigmaPerSideStrokeWeight {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+interface FigmaStyledTextSegment {
+  characters: string;
+  start: number;
+  end: number;
+  fontSize: number;
+  fontName: { family: string; style: string };
+  fontWeight: number;
+  textDecoration: string;
+  textCase: string;
+  lineHeight: Record<string, unknown>;
+  letterSpacing: Record<string, unknown>;
+  fills: FigmaFill[];
+}
+
 interface FigmaNodeSnapshot {
   nodeId: string;
   type: string;
   name: string;
-  bounds: { x: number; y: number; width: number; height: number };
+  bounds?: { x: number; y: number; width: number; height: number };
   fills?: FigmaFill[];
   strokes?: FigmaFill[];
-  strokeWeight?: number;
+  strokeWeight?: number | FigmaPerSideStrokeWeight;
   strokeAlign?: string;
-  cornerRadius?: number;
+  cornerRadius?: number | FigmaPerCornerRadius;
   opacity?: number;
   layoutMode?: string;
   itemSpacing?: number;
@@ -56,6 +84,10 @@ interface FigmaNodeSnapshot {
   fontWeight?: number;
   textCase?: string;
   textDecoration?: string;
+  textFills?: FigmaFill[];
+  lineHeight?: Record<string, unknown>;
+  letterSpacing?: Record<string, unknown>;
+  styledSegments?: FigmaStyledTextSegment[];
   children?: FigmaNodeSnapshot[];
 }
 
@@ -71,6 +103,36 @@ export interface GetSelectionResult {
  * Response schema for Figma bridge get_selection response.
  * Uses z.lazy() for recursive children in FigmaNodeSnapshot.
  */
+const perCornerRadiusSchema = z.object({
+  topLeft: z.number(),
+  topRight: z.number(),
+  bottomLeft: z.number(),
+  bottomRight: z.number()
+});
+
+const perSideStrokeWeightSchema = z.object({
+  top: z.number(),
+  right: z.number(),
+  bottom: z.number(),
+  left: z.number()
+});
+
+const styledTextSegmentSchema = z
+  .object({
+    characters: z.string(),
+    start: z.number(),
+    end: z.number(),
+    fontSize: z.number(),
+    fontName: z.object({ family: z.string(), style: z.string() }).passthrough(),
+    fontWeight: z.number(),
+    textDecoration: z.string(),
+    textCase: z.string(),
+    lineHeight: z.record(z.unknown()),
+    letterSpacing: z.record(z.unknown()),
+    fills: z.array(z.object({ type: z.string() }).passthrough())
+  })
+  .passthrough();
+
 const figmaNodeSnapshotSchema: z.ZodType<FigmaNodeSnapshot> = z.lazy(() =>
   z
     .object({
@@ -84,12 +146,13 @@ const figmaNodeSnapshotSchema: z.ZodType<FigmaNodeSnapshot> = z.lazy(() =>
           width: z.number(),
           height: z.number()
         })
-        .passthrough(),
+        .passthrough()
+        .optional(),
       fills: z.array(z.object({ type: z.string() }).passthrough()).optional(),
       strokes: z.array(z.object({ type: z.string() }).passthrough()).optional(),
-      strokeWeight: z.number().optional(),
+      strokeWeight: z.union([z.number(), perSideStrokeWeightSchema]).optional(),
       strokeAlign: z.string().optional(),
-      cornerRadius: z.number().optional(),
+      cornerRadius: z.union([z.number(), perCornerRadiusSchema]).optional(),
       opacity: z.number().optional(),
       layoutMode: z.string().optional(),
       itemSpacing: z.number().optional(),
@@ -103,6 +166,10 @@ const figmaNodeSnapshotSchema: z.ZodType<FigmaNodeSnapshot> = z.lazy(() =>
       fontWeight: z.number().optional(),
       textCase: z.string().optional(),
       textDecoration: z.string().optional(),
+      textFills: z.array(z.object({ type: z.string() }).passthrough()).optional(),
+      lineHeight: z.record(z.unknown()).optional(),
+      letterSpacing: z.record(z.unknown()).optional(),
+      styledSegments: z.array(styledTextSegmentSchema).optional(),
       children: z.array(figmaNodeSnapshotSchema).optional()
     })
     .passthrough()
@@ -136,7 +203,7 @@ const GetSelectionResponseSchema = z
  * ```
  */
 export async function getSelection(_input: GetSelectionInput): Promise<GetSelectionResult> {
-  // Input validated by routing layer
+  // Input input by routing layer
 
   const bridge = getFigmaBridge();
   const response = await bridge.sendToFigmaValidated(

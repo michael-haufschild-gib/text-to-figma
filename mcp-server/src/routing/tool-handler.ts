@@ -82,7 +82,7 @@ export interface ToolHandler<TInput = unknown, TResult = unknown> {
   name: string;
 
   /** Zod schema for input validation */
-  schema: z.ZodSchema<TInput>;
+  schema: z.ZodType<TInput, z.ZodTypeDef, unknown>;
 
   /**
    * Execute the tool with validated input

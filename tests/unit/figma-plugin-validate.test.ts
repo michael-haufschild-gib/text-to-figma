@@ -35,7 +35,7 @@ describe('validatePayload', () => {
   it('returns error when field has wrong type', () => {
     const rules: ValidationRule[] = [{ field: 'count', type: 'number', required: true }];
     const result = validatePayload({ count: 'five' }, rules);
-    expect(result).toBe("Field 'count' must be number, got string");
+    expect(result).toBe("Field 'count' must be a finite number, got string");
   });
 
   it('returns null when optional field is missing', () => {

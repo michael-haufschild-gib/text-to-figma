@@ -7,7 +7,7 @@
  * create_boolean_operation
  */
 
-import { getNode, hexToRgb, resolveParent } from '../helpers.js';
+import { cacheNode, getNode, hexToRgb, resolveParent, uncacheNode } from '../helpers.js';
 import { checkEnum, validatePayload, type ValidationRule } from '../validate.js';
 
 const STROKE_JOINS = ['MITER', 'BEVEL', 'ROUND'] as const;
@@ -34,6 +34,16 @@ const setPluginDataRules: ValidationRule[] = [
   { field: 'value', type: 'string', required: true }
 ];
 const pageIdRules: ValidationRule[] = [{ field: 'pageId', type: 'string', required: true }];
+
+export function handleRenameNode(payload: Record<string, unknown>): unknown {
+  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
+  if (typeof payload.name !== 'string') throw new Error('name must be a string');
+  const node = getNode(payload.nodeId);
+  if (!node) throw new Error('Node not found');
+  const oldName = node.name;
+  node.name = payload.name;
+  return { nodeId: node.id, oldName, name: payload.name, message: 'Node renamed successfully' };
+}
 
 export function handleSetVisible(payload: Record<string, unknown>): unknown {
   const error = validatePayload(payload, nodeIdRules);
@@ -218,9 +228,9 @@ export function handleSetClippingMask(payload: Record<string, unknown>): unknown
   (node as FrameNode).clipsContent = payload.enabled === true;
   return {
     nodeId: payload.nodeId,
-    enabled: payload.enabled,
-    useMask: payload.useMask,
-    message: 'Clipping mask set successfully'
+    clipsContent: payload.enabled === true,
+    message:
+      'Clip content toggled successfully. Note: This controls whether child content is clipped to frame bounds (clipsContent), not Figma mask layers.'
   };
 }
 
@@ -319,6 +329,48 @@ function validateCoord(cmd: Record<string, unknown>, key: string, index: number)
     );
 }
 
+export function handleReparentNode(payload: Record<string, unknown>): unknown {
+  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
+  if (typeof payload.parentId !== 'string') throw new Error('parentId must be a string');
+
+  const node = getNode(payload.nodeId);
+  if (!node) throw new Error('Node not found');
+
+  const parent = getNode(payload.parentId);
+  if (!parent || !('appendChild' in parent)) throw new Error('Parent does not support children');
+
+  const oldParentId = node.parent?.id ?? null;
+  (parent as FrameNode).appendChild(node);
+
+  return {
+    nodeId: node.id,
+    oldParentId,
+    newParentId: parent.id,
+    message: 'Node reparented successfully'
+  };
+}
+
+export function handleRemoveNode(payload: Record<string, unknown>): unknown {
+  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
+
+  const node = getNode(payload.nodeId);
+  if (!node) throw new Error('Node not found');
+
+  const parentId = node.parent?.id ?? null;
+  const removedName = node.name;
+  const removedType = node.type;
+  uncacheNode(payload.nodeId);
+  node.remove();
+
+  return {
+    nodeId: payload.nodeId,
+    parentId,
+    name: removedName,
+    type: removedType,
+    message: 'Node removed successfully'
+  };
+}
+
 export function handleCreateBooleanOperation(payload: Record<string, unknown>): unknown {
   if (
     !Array.isArray(payload.nodeIds) ||
@@ -347,5 +399,111 @@ export function handleCreateBooleanOperation(payload: Record<string, unknown>): 
     operation: booleanNode.booleanOperation,
     nodeCount: nodes.length,
     message: `Boolean operation created: ${booleanNode.booleanOperation}`
+  };
+}
+
+/** Copy visual and layout properties from a component/frame to a new frame */
+function copyFrameProperties(
+  source: FrameNode | ComponentNode | ComponentSetNode,
+  target: FrameNode
+): void {
+  target.resize(source.width, source.height);
+  target.x = source.x;
+  target.y = source.y;
+  target.fills = JSON.parse(JSON.stringify(source.fills)) as Paint[];
+  target.strokes = JSON.parse(JSON.stringify(source.strokes)) as Paint[];
+  target.effects = JSON.parse(JSON.stringify(source.effects)) as Effect[];
+  target.strokeWeight = source.strokeWeight;
+  target.strokeAlign = source.strokeAlign;
+  target.cornerRadius = source.cornerRadius;
+  target.clipsContent = source.clipsContent;
+  target.opacity = source.opacity;
+  if (source.layoutMode !== 'NONE') {
+    target.layoutMode = source.layoutMode;
+    target.primaryAxisSizingMode = source.primaryAxisSizingMode;
+    target.counterAxisSizingMode = source.counterAxisSizingMode;
+    target.primaryAxisAlignItems = source.primaryAxisAlignItems;
+    target.counterAxisAlignItems = source.counterAxisAlignItems;
+    target.itemSpacing = source.itemSpacing;
+    target.paddingLeft = source.paddingLeft;
+    target.paddingRight = source.paddingRight;
+    target.paddingTop = source.paddingTop;
+    target.paddingBottom = source.paddingBottom;
+  }
+}
+
+/** Convert a single COMPONENT node to a FRAME, preserving children and properties */
+function componentToFrame(component: ComponentNode): FrameNode {
+  const frame = figma.createFrame();
+  frame.name = component.name;
+  copyFrameProperties(component, frame);
+
+  const children = [...component.children];
+  for (const child of children) {
+    frame.appendChild(child);
+  }
+
+  return frame;
+}
+
+export function handleDetachComponent(payload: Record<string, unknown>): unknown {
+  if (typeof payload.nodeId !== 'string') throw new Error('nodeId must be a string');
+
+  const node = getNode(payload.nodeId);
+  if (!node) throw new Error('Node not found');
+
+  if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') {
+    throw new Error(`Cannot detach node of type ${node.type}. Must be COMPONENT or COMPONENT_SET.`);
+  }
+
+  const parent = node.parent;
+  if (!parent) throw new Error('Node has no parent');
+
+  const index = parent.children.indexOf(node as SceneNode);
+  const detached: Array<{ oldId: string; newId: string; name: string }> = [];
+
+  if (node.type === 'COMPONENT') {
+    const frame = componentToFrame(node);
+    parent.insertChild(index, frame);
+    uncacheNode(node.id);
+    node.remove();
+    cacheNode(frame);
+    detached.push({ oldId: payload.nodeId, newId: frame.id, name: frame.name });
+
+    return {
+      type: 'COMPONENT',
+      detached,
+      message: `Detached component "${frame.name}" to frame`
+    };
+  }
+
+  // COMPONENT_SET: convert the set and all its child components to frames
+  const outerFrame = figma.createFrame();
+  outerFrame.name = node.name;
+  copyFrameProperties(node, outerFrame);
+
+  const variants = [...node.children];
+  for (const variant of variants) {
+    if (variant.type === 'COMPONENT') {
+      const frame = componentToFrame(variant);
+      outerFrame.appendChild(frame);
+      uncacheNode(variant.id);
+      cacheNode(frame);
+      detached.push({ oldId: variant.id, newId: frame.id, name: frame.name });
+    } else {
+      outerFrame.appendChild(variant);
+    }
+  }
+
+  parent.insertChild(index, outerFrame);
+  uncacheNode(node.id);
+  node.remove();
+  cacheNode(outerFrame);
+
+  return {
+    type: 'COMPONENT_SET',
+    frameId: outerFrame.id,
+    detached,
+    message: `Detached component set "${outerFrame.name}" — ${detached.length} variant(s) converted to frames`
   };
 }

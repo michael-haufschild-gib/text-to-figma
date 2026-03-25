@@ -9,12 +9,87 @@ export const FEW_SHOT_PROMPT = `# Text-to-Figma: Complete Examples
 These examples demonstrate the MANDATORY workflow:
 1. Think in HTML/SVG first
 2. Extract layout patterns
-3. Translate to Figma primitives
+3. Translate to Figma primitives (prefer create_design for multi-element designs)
 4. Apply correct width strategy
 
 ---
 
-## Example 1: Button Component
+## Example 1: Login Form (Recommended: create_design)
+
+**User Request**: "Create a login form with email, password, and submit button"
+
+### Step 1: HTML Mental Model
+\`\`\`html
+<form style="display: flex; flex-direction: column; gap: 24px; padding: 32px; width: 400px; background: white; border-radius: 16px;">
+  <h2 style="font-size: 24px; font-weight: 700;">Sign In</h2>
+  <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+    <label>Email</label>
+    <input style="width: 100%; height: 48px; padding: 16px; background: #F5F5F5; border-radius: 8px;" />
+  </div>
+  <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+    <label>Password</label>
+    <input style="width: 100%; height: 48px; padding: 16px; background: #F5F5F5; border-radius: 8px;" />
+  </div>
+  <button style="padding: 16px; background: #0066FF; color: white; border-radius: 8px;">Sign In</button>
+</form>
+\`\`\`
+
+### Step 2: Translate to create_design (single atomic call)
+\`\`\`typescript
+create_design({
+  spec: {
+    type: 'frame',
+    name: 'Login Form',
+    props: {
+      width: 400,
+      layoutMode: 'VERTICAL',
+      itemSpacing: 24,
+      padding: 32,
+      fillColor: '#FFFFFF',
+      cornerRadius: 16,
+      horizontalSizing: 'FIXED',
+      verticalSizing: 'HUG'
+    },
+    children: [
+      { type: 'text', name: 'Title', props: { content: 'Sign In', fontSize: 24, fontWeight: 700, color: '#000000' } },
+      {
+        type: 'frame', name: 'Email Field', props: { layoutMode: 'VERTICAL', itemSpacing: 8, horizontalSizing: 'FILL' },
+        children: [
+          { type: 'text', name: 'Email Label', props: { content: 'Email', fontSize: 16, fontWeight: 600, color: '#2D3748' } },
+          { type: 'frame', name: 'Email Input', props: { height: 48, layoutMode: 'HORIZONTAL', padding: 16, fillColor: '#F5F5F5', cornerRadius: 8, horizontalSizing: 'FILL', verticalSizing: 'FIXED' },
+            children: [
+              { type: 'text', name: 'Email Placeholder', props: { content: 'you@example.com', fontSize: 16, color: '#A0AEC0' } }
+            ]
+          }
+        ]
+      },
+      {
+        type: 'frame', name: 'Password Field', props: { layoutMode: 'VERTICAL', itemSpacing: 8, horizontalSizing: 'FILL' },
+        children: [
+          { type: 'text', name: 'Password Label', props: { content: 'Password', fontSize: 16, fontWeight: 600, color: '#2D3748' } },
+          { type: 'frame', name: 'Password Input', props: { height: 48, layoutMode: 'HORIZONTAL', padding: 16, fillColor: '#F5F5F5', cornerRadius: 8, horizontalSizing: 'FILL', verticalSizing: 'FIXED' },
+            children: [
+              { type: 'text', name: 'Password Placeholder', props: { content: '********', fontSize: 16, color: '#A0AEC0' } }
+            ]
+          }
+        ]
+      },
+      {
+        type: 'frame', name: 'Submit Button', props: { layoutMode: 'HORIZONTAL', padding: 16, fillColor: '#0066FF', cornerRadius: 8, horizontalSizing: 'FILL', verticalSizing: 'HUG', primaryAxisAlignItems: 'CENTER' },
+        children: [
+          { type: 'text', name: 'Submit Label', props: { content: 'Sign In', fontSize: 16, fontWeight: 600, color: '#FFFFFF' } }
+        ]
+      }
+    ]
+  }
+})
+\`\`\`
+
+**Key Lesson**: create_design builds the entire hierarchy atomically. No parentId coordination, no race conditions, auto-corrects spacing to 8pt grid.
+
+---
+
+## Example 2: Button Component (Step-by-step alternative)
 
 **User Request**: "Create a blue button with white text"
 
@@ -93,7 +168,7 @@ create_text({
 
 ---
 
-## Example 2: Input Field
+## Example 3: Input Field (Step-by-step alternative)
 
 **User Request**: "Create an email input field with label"
 
@@ -196,7 +271,7 @@ create_text({
 
 ---
 
-## Example 3: Card Component
+## Example 4: Card Component (Step-by-step alternative)
 
 **User Request**: "Create a product card with image, title, and description"
 

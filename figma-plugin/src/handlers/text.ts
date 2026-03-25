@@ -28,7 +28,16 @@ export async function handleSetTextProperties(payload: Record<string, unknown>):
   const node = getNode(payload.nodeId as string);
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
-  await figma.loadFontAsync(node.fontName as FontName);
+  const fontName = node.fontName;
+  if (fontName === figma.mixed) {
+    const len = node.characters.length;
+    if (len > 0) {
+      const firstFont = node.getRangeFontName(0, 1) as FontName;
+      await figma.loadFontAsync(firstFont);
+    }
+  } else {
+    await figma.loadFontAsync(fontName);
+  }
 
   const decoration = checkEnum(payload.decoration, TEXT_DECORATIONS);
   if (decoration !== undefined) {

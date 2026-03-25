@@ -28,6 +28,10 @@ export function validatePayload(
       if (!Array.isArray(value)) {
         return `Field '${rule.field}' must be an array, got ${typeof value}`;
       }
+    } else if (rule.type === 'number') {
+      if (typeof value !== 'number' || !isFinite(value)) {
+        return `Field '${rule.field}' must be a finite number, got ${typeof value === 'number' ? String(value) : typeof value}`;
+      }
     } else if (typeof value !== rule.type) {
       return `Field '${rule.field}' must be ${rule.type}, got ${typeof value}`;
     }

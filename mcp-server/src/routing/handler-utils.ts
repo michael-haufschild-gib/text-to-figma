@@ -23,7 +23,7 @@ import type {
  */
 export function defineHandler<TInput, TResult>(opts: {
   name: string;
-  schema: z.ZodSchema<TInput>;
+  schema: z.ZodType<TInput, z.ZodTypeDef, unknown>;
   execute: (input: TInput) => Promise<TResult>;
   formatResponse: (result: TResult) => ResponseContent[];
   definition: ToolDefinition;

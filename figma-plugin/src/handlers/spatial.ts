@@ -34,6 +34,12 @@ export function handleAlignNodes(payload: Record<string, unknown>): unknown {
     throw new Error('nodeIds must be an array of strings');
   }
   const nodeIds: string[] = payload.nodeIds;
+  const missingIds = nodeIds.filter((id) => getNode(id) === null);
+  if (missingIds.length > 0) {
+    throw new Error(
+      `Nodes not found: ${missingIds.join(', ')}. Use get_page_hierarchy to verify node IDs.`
+    );
+  }
   const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 2) throw new Error('At least 2 valid nodes required for alignment');
 
@@ -134,6 +140,12 @@ export function handleDistributeNodes(payload: Record<string, unknown>): unknown
     throw new Error('nodeIds must be an array of strings');
   }
   const nodeIds: string[] = payload.nodeIds;
+  const missingIds = nodeIds.filter((id) => getNode(id) === null);
+  if (missingIds.length > 0) {
+    throw new Error(
+      `Nodes not found: ${missingIds.join(', ')}. Use get_page_hierarchy to verify node IDs.`
+    );
+  }
   const nodes = nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
   if (nodes.length < 3) throw new Error('At least 3 valid nodes required for distribution');
 

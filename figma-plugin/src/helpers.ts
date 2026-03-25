@@ -8,6 +8,9 @@
 /** Convert hex color string to Figma RGB (0-1 range) */
 export function hexToRgb(hex: string): RGB {
   const cleanHex = hex.replace('#', '');
+  if (!/^[0-9A-Fa-f]{6}$/.test(cleanHex)) {
+    throw new Error(`Invalid hex color: "${hex}". Expected format: #RRGGBB or RRGGBB`);
+  }
   return {
     r: parseInt(cleanHex.substring(0, 2), 16) / 255,
     g: parseInt(cleanHex.substring(2, 4), 16) / 255,
@@ -56,10 +59,16 @@ export function cacheNode(node: SceneNode): void {
   }
 }
 
+/** Union of all node types that can contain children */
+export type ContainerNode =
+  | FrameNode
+  | GroupNode
+  | ComponentNode
+  | ComponentSetNode
+  | BooleanOperationNode;
+
 /** Type guard: node can contain children */
-export function isContainerNode(
-  node: BaseNode
-): node is FrameNode | GroupNode | ComponentNode | ComponentSetNode | BooleanOperationNode {
+export function isContainerNode(node: BaseNode): node is ContainerNode {
   return 'appendChild' in node;
 }
 
@@ -86,15 +95,32 @@ export function weightToStyle(fontWeight: number): string {
   return 'Regular';
 }
 
+export interface FontLoadResult {
+  fontName: FontName;
+  usedFallback: boolean;
+  requestedFamily: string;
+  requestedStyle: string;
+}
+
 /** Load a font with fallback to Inter Regular */
-export async function loadFont(family: string, weight: number): Promise<FontName> {
+export async function loadFont(family: string, weight: number): Promise<FontLoadResult> {
   const style = weightToStyle(weight);
   try {
     await figma.loadFontAsync({ family, style });
-    return { family, style };
+    return {
+      fontName: { family, style },
+      usedFallback: false,
+      requestedFamily: family,
+      requestedStyle: style
+    };
   } catch {
     await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
-    return { family: 'Inter', style: 'Regular' };
+    return {
+      fontName: { family: 'Inter', style: 'Regular' },
+      usedFallback: true,
+      requestedFamily: family,
+      requestedStyle: style
+    };
   }
 }
 
@@ -134,6 +160,11 @@ export function convertEffects(effects: Array<Record<string, unknown>>): Effect[
     }
     throw new Error(`Unknown effect type: ${type}`);
   });
+}
+
+/** Remove a node from the cache (call on node deletion) */
+export function uncacheNode(nodeId: string): void {
+  nodeCache.delete(nodeId);
 }
 
 /** Clear the node cache. Used for test isolation. */

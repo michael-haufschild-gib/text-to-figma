@@ -4,7 +4,6 @@
  * Handlers for tools that read/query Figma nodes without modifying them.
  */
 
-import { z } from 'zod';
 import { defineHandler, formatHierarchyTree, textResponse } from './handler-utils.js';
 
 import {
@@ -81,7 +80,7 @@ import {
 export const navigationHandlers = [
   defineHandler<GetPageHierarchyInput, GetPageHierarchyResult>({
     name: 'get_page_hierarchy',
-    schema: GetPageHierarchyInputSchema as z.ZodSchema<GetPageHierarchyInput>,
+    schema: GetPageHierarchyInputSchema,
     execute: getPageHierarchy,
     formatResponse: (result) => {
       const hierarchyTree = formatHierarchyTree(result.hierarchy);
@@ -98,7 +97,7 @@ export const navigationHandlers = [
 
   defineHandler<GetSelectionInput, GetSelectionResult>({
     name: 'get_selection',
-    schema: GetSelectionInputSchema as z.ZodSchema<GetSelectionInput>,
+    schema: GetSelectionInputSchema,
     execute: getSelection,
     formatResponse: (result) => {
       let text = `Selected Nodes\n\nCount: ${result.count}\n\n`;
@@ -114,7 +113,7 @@ export const navigationHandlers = [
 
   defineHandler<GetNodeInfoInput, GetNodeInfoResult>({
     name: 'get_node_info',
-    schema: GetNodeInfoInputSchema as z.ZodSchema<GetNodeInfoInput>,
+    schema: GetNodeInfoInputSchema,
     execute: (input) => Promise.resolve(getNodeInfo(input)),
     formatResponse: (result) => {
       if (!result.node) {
@@ -141,7 +140,7 @@ export const navigationHandlers = [
 
   defineHandler<GetNodeByIdInput, GetNodeByIdResult>({
     name: 'get_node_by_id',
-    schema: GetNodeByIdInputSchema as z.ZodSchema<GetNodeByIdInput>,
+    schema: GetNodeByIdInputSchema,
     execute: getNodeById,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\nName: ${r.name}\nType: ${r.type}\n`;
@@ -151,6 +150,15 @@ export const navigationHandlers = [
       if (r.x !== undefined && r.y !== undefined) {
         text += `Position: (${r.x}, ${r.y})\n`;
       }
+      if (r.layoutMode !== undefined) {
+        text += `Layout Mode: ${r.layoutMode}\n`;
+      }
+      if (r.layoutPositioning !== undefined) {
+        text += `Layout Positioning: ${r.layoutPositioning}\n`;
+      }
+      if (r.itemSpacing !== undefined) {
+        text += `Item Spacing: ${r.itemSpacing}\n`;
+      }
       return textResponse(text);
     },
     definition: getNodeByIdToolDefinition
@@ -158,7 +166,7 @@ export const navigationHandlers = [
 
   defineHandler<GetNodeByNameInput, GetNodeByNameResult>({
     name: 'get_node_by_name',
-    schema: GetNodeByNameInputSchema as z.ZodSchema<GetNodeByNameInput>,
+    schema: GetNodeByNameInputSchema,
     execute: getNodeByName,
     formatResponse: (r) => {
       let text = `${r.message}\nFound: ${r.found} node(s)\n\n`;
@@ -175,7 +183,7 @@ export const navigationHandlers = [
 
   defineHandler<GetChildrenInput, GetChildrenResult>({
     name: 'get_children',
-    schema: GetChildrenInputSchema as z.ZodSchema<GetChildrenInput>,
+    schema: GetChildrenInputSchema,
     execute: getChildren,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\nChild Count: ${r.childCount}\n\n`;
@@ -193,7 +201,7 @@ export const navigationHandlers = [
 
   defineHandler<GetParentInput, GetParentResult>({
     name: 'get_parent',
-    schema: GetParentInputSchema as z.ZodSchema<GetParentInput>,
+    schema: GetParentInputSchema,
     execute: getParent,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\n`;
@@ -207,7 +215,7 @@ export const navigationHandlers = [
 
   defineHandler<GetAbsoluteBoundsInput, GetAbsoluteBoundsResult>({
     name: 'get_absolute_bounds',
-    schema: GetAbsoluteBoundsInputSchema as z.ZodSchema<GetAbsoluteBoundsInput>,
+    schema: GetAbsoluteBoundsInputSchema,
     execute: getAbsoluteBounds,
     formatResponse: (r) =>
       textResponse(
@@ -218,7 +226,7 @@ export const navigationHandlers = [
 
   defineHandler<GetRelativeBoundsInput, GetRelativeBoundsResult>({
     name: 'get_relative_bounds',
-    schema: GetRelativeBoundsInputSchema as z.ZodSchema<GetRelativeBoundsInput>,
+    schema: GetRelativeBoundsInputSchema,
     execute: getRelativeBounds,
     formatResponse: (r) => textResponse(r.message),
     definition: getRelativeBoundsToolDefinition
@@ -226,7 +234,7 @@ export const navigationHandlers = [
 
   defineHandler<GetPluginDataInput, GetPluginDataResult>({
     name: 'get_plugin_data',
-    schema: GetPluginDataInputSchema as z.ZodSchema<GetPluginDataInput>,
+    schema: GetPluginDataInputSchema,
     execute: getPluginData,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\nKey: ${r.key}\n`;

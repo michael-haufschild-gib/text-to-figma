@@ -5,7 +5,7 @@
  * set_component_properties, add_variant_property, set_instance_swap
  */
 
-import { cacheNode, getNode, resolveParent } from '../helpers.js';
+import { cacheNode, getNode, resolveParent, uncacheNode } from '../helpers.js';
 import { validatePayload, type ValidationRule } from '../validate.js';
 
 const createComponentRules: ValidationRule[] = [
@@ -42,11 +42,33 @@ export function handleCreateComponent(payload: Record<string, unknown>): unknown
   component.x = node.x;
   component.y = node.y;
 
+  component.fills = JSON.parse(JSON.stringify(node.fills)) as Paint[];
+  component.strokes = JSON.parse(JSON.stringify(node.strokes)) as Paint[];
+  component.effects = JSON.parse(JSON.stringify(node.effects)) as Effect[];
+  component.strokeWeight = node.strokeWeight;
+  component.strokeAlign = node.strokeAlign;
+  component.cornerRadius = node.cornerRadius;
+  component.clipsContent = node.clipsContent;
+  if (node.layoutMode !== 'NONE') {
+    component.layoutMode = node.layoutMode;
+    component.primaryAxisSizingMode = node.primaryAxisSizingMode;
+    component.counterAxisSizingMode = node.counterAxisSizingMode;
+    component.primaryAxisAlignItems = node.primaryAxisAlignItems;
+    component.counterAxisAlignItems = node.counterAxisAlignItems;
+    component.itemSpacing = node.itemSpacing;
+    component.paddingLeft = node.paddingLeft;
+    component.paddingRight = node.paddingRight;
+    component.paddingTop = node.paddingTop;
+    component.paddingBottom = node.paddingBottom;
+  }
+
   const children = [...node.children];
   for (const child of children) {
     component.appendChild(child);
   }
+  uncacheNode(payload.frameId as string);
   node.remove();
+  cacheNode(component);
 
   if (typeof payload.description === 'string') {
     component.description = payload.description;
@@ -98,31 +120,35 @@ export function handleCreateComponentSet(payload: Record<string, unknown>): unkn
     throw new Error('Component set requires a non-empty array of string IDs');
   }
 
+  const missingIds = variantIds.filter((id) => {
+    const n = getNode(id);
+    return n?.type !== 'COMPONENT';
+  });
+  if (missingIds.length > 0) {
+    throw new Error(
+      `Invalid or missing component IDs: ${missingIds.join(', ')}. All IDs must reference existing COMPONENT nodes.`
+    );
+  }
+
   const components = variantIds
     .map((id) => getNode(id))
     .filter((n): n is ComponentNode => n !== null && n.type === 'COMPONENT');
 
-  if (components.length === 0) throw new Error('No valid components found');
+  if (components.length < 2) throw new Error('Component set requires at least 2 components');
 
-  const frame = figma.createFrame();
-  frame.name = typeof payload.name === 'string' ? payload.name : 'Component Set';
-  frame.layoutMode = 'HORIZONTAL';
-  frame.itemSpacing = 16;
-
-  for (const comp of components) {
-    frame.appendChild(comp);
-  }
+  const componentSet = figma.combineAsVariants(components, figma.currentPage);
+  componentSet.name = typeof payload.name === 'string' ? payload.name : 'Component Set';
 
   if (typeof payload.description === 'string') {
-    frame.setPluginData('description', payload.description);
+    componentSet.description = payload.description;
   }
-  figma.viewport.scrollAndZoomIntoView([frame]);
+  figma.viewport.scrollAndZoomIntoView([componentSet]);
 
   return {
-    componentSetId: frame.id,
-    name: frame.name,
+    componentSetId: componentSet.id,
+    name: componentSet.name,
     variantCount: components.length,
-    message: 'Component set frame created successfully (Note: True component sets require Figma UI)'
+    message: 'Component set created successfully'
   };
 }
 
@@ -159,15 +185,35 @@ export function handleAddVariantProperty(payload: Record<string, unknown>): unkn
   const node = getNode(payload.componentSetId as string);
   if (node?.type !== 'COMPONENT_SET') throw new Error('Node is not a component set');
 
-  const values =
-    Array.isArray(payload.values) && payload.values.every((el: unknown) => typeof el === 'string')
-      ? payload.values
+  const rawValues = payload.values;
+  const values: string[] =
+    Array.isArray(rawValues) && rawValues.every((el): el is string => typeof el === 'string')
+      ? rawValues
       : [];
+
+  const propertyName = String(payload.propertyName);
+  const defaultValue = values.at(0) ?? 'Default';
+
+  const children = [...node.children];
+  if (children.length === 0) {
+    throw new Error('Component set has no children to update');
+  }
+
+  for (const child of children) {
+    if (child.type !== 'COMPONENT') continue;
+    const currentName = child.name.trim();
+    child.name =
+      currentName.length > 0
+        ? `${currentName}, ${propertyName}=${defaultValue}`
+        : `${propertyName}=${defaultValue}`;
+  }
+
   return {
     componentSetId: payload.componentSetId,
-    propertyName: payload.propertyName,
-    valueCount: values.length,
-    message: `Variant property added: ${String(payload.propertyName)}`
+    propertyName,
+    defaultValue,
+    updatedVariants: children.filter((c) => c.type === 'COMPONENT').length,
+    message: `Variant property "${propertyName}" added to ${String(children.length)} variant(s)`
   };
 }
 

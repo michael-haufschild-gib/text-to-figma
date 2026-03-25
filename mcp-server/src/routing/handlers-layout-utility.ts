@@ -5,7 +5,6 @@
  * export, and miscellaneous utility tools.
  */
 
-import { z } from 'zod';
 import { defineHandler, textResponse } from './handler-utils.js';
 
 import {
@@ -143,12 +142,40 @@ import {
   type SetPluginDataInput,
   type SetPluginDataResult
 } from '../tools/set_plugin_data.js';
+import {
+  reparentNode,
+  reparentNodeToolDefinition,
+  ReparentNodeInputSchema,
+  type ReparentNodeInput,
+  type ReparentNodeResult
+} from '../tools/reparent_node.js';
+import {
+  removeNode,
+  removeNodeToolDefinition,
+  RemoveNodeInputSchema,
+  type RemoveNodeInput,
+  type RemoveNodeResult
+} from '../tools/remove_node.js';
+import {
+  renameNode,
+  renameNodeToolDefinition,
+  RenameNodeInputSchema,
+  type RenameNodeInput,
+  type RenameNodeResult
+} from '../tools/rename_node.js';
+import {
+  detachComponent,
+  detachComponentToolDefinition,
+  DetachComponentInputSchema,
+  type DetachComponentInput,
+  type DetachComponentResult
+} from '../tools/detach_component.js';
 
 export const layoutUtilityHandlers = [
   // ─── Layout ─────────────────────────────────────────────────────────────
   defineHandler<SetLayoutPropertiesInput, SetLayoutPropertiesResult>({
     name: 'set_layout_properties',
-    schema: SetLayoutPropertiesInputSchema as z.ZodSchema<SetLayoutPropertiesInput>,
+    schema: SetLayoutPropertiesInputSchema,
     execute: setLayoutProperties,
     formatResponse: (r) =>
       textResponse(
@@ -159,7 +186,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetLayoutSizingInput, SetLayoutSizingResult>({
     name: 'set_layout_sizing',
-    schema: SetLayoutSizingInputSchema as z.ZodSchema<SetLayoutSizingInput>,
+    schema: SetLayoutSizingInputSchema,
     execute: setLayoutSizing,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\n`;
@@ -177,7 +204,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetLayoutAlignInput, SetLayoutAlignResult>({
     name: 'set_layout_align',
-    schema: SetLayoutAlignInputSchema as z.ZodSchema<SetLayoutAlignInput>,
+    schema: SetLayoutAlignInputSchema,
     execute: setLayoutAlign,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\n`;
@@ -195,7 +222,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<AlignNodesInput, AlignNodesResult>({
     name: 'align_nodes',
-    schema: AlignNodesInputSchema as z.ZodSchema<AlignNodesInput>,
+    schema: AlignNodesInputSchema,
     execute: alignNodes,
     formatResponse: (r) => textResponse(r.message),
     definition: alignNodesToolDefinition
@@ -203,7 +230,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<DistributeNodesInput, DistributeNodesResult>({
     name: 'distribute_nodes',
-    schema: DistributeNodesInputSchema as z.ZodSchema<DistributeNodesInput>,
+    schema: DistributeNodesInputSchema,
     execute: distributeNodes,
     formatResponse: (r) => textResponse(r.message),
     definition: distributeNodesToolDefinition
@@ -211,7 +238,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<ConnectShapesInput, ConnectShapesResult>({
     name: 'connect_shapes',
-    schema: ConnectShapesInputSchema as z.ZodSchema<ConnectShapesInput>,
+    schema: ConnectShapesInputSchema,
     execute: connectShapes,
     formatResponse: (r) => textResponse(r.message),
     definition: connectShapesToolDefinition
@@ -219,7 +246,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetLayerOrderInput, SetLayerOrderResult>({
     name: 'set_layer_order',
-    schema: SetLayerOrderInputSchema as z.ZodSchema<SetLayerOrderInput>,
+    schema: SetLayerOrderInputSchema,
     execute: setLayerOrder,
     formatResponse: (r) => textResponse(r.message),
     definition: setLayerOrderToolDefinition
@@ -227,7 +254,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<AddLayoutGridInput, AddLayoutGridResult>({
     name: 'add_layout_grid',
-    schema: AddLayoutGridInputSchema as z.ZodSchema<AddLayoutGridInput>,
+    schema: AddLayoutGridInputSchema,
     execute: addLayoutGrid,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\nPattern: ${r.pattern}\n`;
@@ -242,7 +269,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetConstraintsInput, SetConstraintsResult>({
     name: 'set_constraints',
-    schema: SetConstraintsInputSchema as z.ZodSchema<SetConstraintsInput>,
+    schema: SetConstraintsInputSchema,
     execute: setConstraints,
     formatResponse: (r) =>
       textResponse(
@@ -254,7 +281,7 @@ export const layoutUtilityHandlers = [
   // ─── Validation ─────────────────────────────────────────────────────────
   defineHandler<DesignTokensInput, ValidationReport>({
     name: 'validate_design_tokens',
-    schema: DesignTokensInputSchema as z.ZodSchema<DesignTokensInput>,
+    schema: DesignTokensInputSchema,
     execute: (input) => Promise.resolve(validateDesignTokens(input)),
     formatResponse: (report) => textResponse(formatValidationReport(report)),
     definition: validateDesignTokensToolDefinition
@@ -262,7 +289,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<CheckWcagContrastInput, CheckWcagContrastResult>({
     name: 'check_wcag_contrast',
-    schema: CheckWcagContrastInputSchema as z.ZodSchema<CheckWcagContrastInput>,
+    schema: CheckWcagContrastInputSchema,
     execute: (input) => Promise.resolve(checkWcagContrast(input)),
     formatResponse: (result) => textResponse(formatContrastCheckResult(result)),
     definition: checkWcagContrastToolDefinition
@@ -271,7 +298,7 @@ export const layoutUtilityHandlers = [
   // ─── Pages ──────────────────────────────────────────────────────────────
   defineHandler<CreatePageInput, CreatePageResult>({
     name: 'create_page',
-    schema: CreatePageInputSchema as z.ZodSchema<CreatePageInput>,
+    schema: CreatePageInputSchema,
     execute: createPage,
     formatResponse: (r) => textResponse(`${r.message}\nPage ID: ${r.pageId}\nName: ${r.name}\n`),
     definition: createPageToolDefinition
@@ -279,7 +306,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<ListPagesInput, ListPagesResult>({
     name: 'list_pages',
-    schema: ListPagesInputSchema as z.ZodSchema<ListPagesInput>,
+    schema: ListPagesInputSchema,
     execute: listPages,
     formatResponse: (r) => {
       let text = `${r.message}\n\n`;
@@ -297,7 +324,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetCurrentPageInput, SetCurrentPageResult>({
     name: 'set_current_page',
-    schema: SetCurrentPageInputSchema as z.ZodSchema<SetCurrentPageInput>,
+    schema: SetCurrentPageInputSchema,
     execute: setCurrentPage,
     formatResponse: (r) => {
       let text = `${r.message}\nPage ID: ${r.pageId}\n`;
@@ -312,7 +339,7 @@ export const layoutUtilityHandlers = [
   // ─── Export & Utility ───────────────────────────────────────────────────
   defineHandler<ExportNodeInput, ExportNodeResult>({
     name: 'export_node',
-    schema: ExportNodeInputSchema as z.ZodSchema<ExportNodeInput>,
+    schema: ExportNodeInputSchema,
     execute: exportNode,
     formatResponse: (r) => {
       let text = `${r.message}\nNode ID: ${r.nodeId}\nFormat: ${r.format}\nScale: ${r.scale}x\n`;
@@ -329,7 +356,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetExportSettingsInput, SetExportSettingsResult>({
     name: 'set_export_settings',
-    schema: SetExportSettingsInputSchema as z.ZodSchema<SetExportSettingsInput>,
+    schema: SetExportSettingsInputSchema,
     execute: setExportSettings,
     formatResponse: (r) =>
       textResponse(`${r.message}\nNode ID: ${r.nodeId}\nExport Settings: ${r.settingsCount}\n`),
@@ -338,7 +365,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetVisibleInput, SetVisibleResult>({
     name: 'set_visible',
-    schema: SetVisibleInputSchema as z.ZodSchema<SetVisibleInput>,
+    schema: SetVisibleInputSchema,
     execute: setVisible,
     formatResponse: (r) =>
       textResponse(
@@ -349,7 +376,7 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetLockedInput, SetLockedResult>({
     name: 'set_locked',
-    schema: SetLockedInputSchema as z.ZodSchema<SetLockedInput>,
+    schema: SetLockedInputSchema,
     execute: setLocked,
     formatResponse: (r) =>
       textResponse(`${r.message}\nNode ID: ${r.nodeId}\nLocked: ${r.locked}\n`),
@@ -358,9 +385,54 @@ export const layoutUtilityHandlers = [
 
   defineHandler<SetPluginDataInput, SetPluginDataResult>({
     name: 'set_plugin_data',
-    schema: SetPluginDataInputSchema as z.ZodSchema<SetPluginDataInput>,
+    schema: SetPluginDataInputSchema,
     execute: setPluginData,
     formatResponse: (r) => textResponse(`${r.message}\nNode ID: ${r.nodeId}\nKey: ${r.key}\n`),
     definition: setPluginDataToolDefinition
+  }),
+
+  // ─── Node Operations ──────────────────────────────────────────────────
+  defineHandler<ReparentNodeInput, ReparentNodeResult>({
+    name: 'reparent_node',
+    schema: ReparentNodeInputSchema,
+    execute: reparentNode,
+    formatResponse: (r) =>
+      textResponse(
+        `${r.message}\nNode ID: ${r.nodeId}\nOld Parent: ${r.oldParentId ?? 'none'}\nNew Parent: ${r.newParentId}\n`
+      ),
+    definition: reparentNodeToolDefinition
+  }),
+
+  defineHandler<RemoveNodeInput, RemoveNodeResult>({
+    name: 'remove_node',
+    schema: RemoveNodeInputSchema,
+    execute: removeNode,
+    formatResponse: (r) =>
+      textResponse(
+        `${r.message}\nRemoved: ${r.name} (${r.type})\nFormer Parent: ${r.parentId ?? 'none'}\n`
+      ),
+    definition: removeNodeToolDefinition
+  }),
+
+  defineHandler<RenameNodeInput, RenameNodeResult>({
+    name: 'rename_node',
+    schema: RenameNodeInputSchema,
+    execute: renameNode,
+    formatResponse: (r) => textResponse(`${r.message}\n"${r.oldName}" → "${r.name}"\n`),
+    definition: renameNodeToolDefinition
+  }),
+
+  defineHandler<DetachComponentInput, DetachComponentResult>({
+    name: 'detach_component',
+    schema: DetachComponentInputSchema,
+    execute: detachComponent,
+    formatResponse: (r) => {
+      const lines = [r.message];
+      for (const d of r.detached) {
+        lines.push(`  ${d.name}: ${d.oldId} → ${d.newId}`);
+      }
+      return textResponse(lines.join('\n') + '\n');
+    },
+    definition: detachComponentToolDefinition
   })
 ];

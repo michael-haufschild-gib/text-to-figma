@@ -98,6 +98,34 @@ describe('getNodeById', () => {
 
     await expect(getNodeById({ nodeId: '1:42' })).rejects.toThrow('Connection refused');
   });
+
+  it('returns layout properties when present', async () => {
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
+      exists: true,
+      node: {
+        id: '2:10',
+        name: 'Auto Layout Frame',
+        type: 'FRAME',
+        width: 200,
+        height: 300,
+        x: 0,
+        y: 0,
+        layoutMode: 'VERTICAL',
+        layoutPositioning: 'AUTO',
+        itemSpacing: 16,
+        primaryAxisSizingMode: 'AUTO',
+        counterAxisSizingMode: 'FIXED'
+      }
+    });
+
+    const result = await getNodeById({ nodeId: '2:10' });
+
+    expect(result.layoutMode).toBe('VERTICAL');
+    expect(result.layoutPositioning).toBe('AUTO');
+    expect(result.itemSpacing).toBe(16);
+    expect(result.primaryAxisSizingMode).toBe('AUTO');
+    expect(result.counterAxisSizingMode).toBe('FIXED');
+  });
 });
 
 describe('getNodeByName', () => {

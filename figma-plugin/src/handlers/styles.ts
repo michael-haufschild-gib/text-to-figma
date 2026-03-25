@@ -63,8 +63,8 @@ export async function handleCreateTextStyle(payload: Record<string, unknown>): P
 
   const fontFamily = typeof payload.fontFamily === 'string' ? payload.fontFamily : 'Inter';
   const fontWeight = typeof payload.fontWeight === 'number' ? payload.fontWeight : 400;
-  const fontName = await loadFont(fontFamily, fontWeight);
-  textStyle.fontName = fontName;
+  const fontResult = await loadFont(fontFamily, fontWeight);
+  textStyle.fontName = fontResult.fontName;
   textStyle.fontSize = payload.fontSize as number;
 
   if (typeof payload.lineHeight === 'number') {
@@ -123,8 +123,14 @@ export async function handleApplyFillStyle(payload: Record<string, unknown>): Pr
   if (!node || !('fillStyleId' in node)) throw new Error('Node does not support fill styles');
 
   const styles = await figma.getLocalPaintStylesAsync();
-  const style = styles.find((s) => s.name === payload.styleName);
-  if (!style) throw new Error(`Fill style not found: ${String(payload.styleName)}`);
+  const matching = styles.filter((s) => s.name === payload.styleName);
+  if (matching.length === 0) throw new Error(`Fill style not found: ${String(payload.styleName)}`);
+  if (matching.length > 1)
+    throw new Error(
+      `Multiple fill styles named "${String(payload.styleName)}" found (${matching.length}). Use a unique style name or apply by style ID.`
+    );
+  const style = matching[0];
+  if (!style) throw new Error('Fill style match was empty');
 
   await (
     node as GeometryMixin & {
@@ -147,8 +153,14 @@ export async function handleApplyTextStyle(payload: Record<string, unknown>): Pr
   if (node?.type !== 'TEXT') throw new Error('Node is not a text node');
 
   const styles = await figma.getLocalTextStylesAsync();
-  const style = styles.find((s) => s.name === payload.styleName);
-  if (!style) throw new Error(`Text style not found: ${String(payload.styleName)}`);
+  const matching = styles.filter((s) => s.name === payload.styleName);
+  if (matching.length === 0) throw new Error(`Text style not found: ${String(payload.styleName)}`);
+  if (matching.length > 1)
+    throw new Error(
+      `Multiple text styles named "${String(payload.styleName)}" found (${matching.length}). Use a unique style name or apply by style ID.`
+    );
+  const style = matching[0];
+  if (!style) throw new Error('Text style match was empty');
 
   await node.setTextStyleIdAsync(style.id);
   return {
@@ -166,8 +178,15 @@ export async function handleApplyEffectStyle(payload: Record<string, unknown>): 
   if (!node || !('effectStyleId' in node)) throw new Error('Node does not support effect styles');
 
   const styles = await figma.getLocalEffectStylesAsync();
-  const style = styles.find((s) => s.name === payload.styleName);
-  if (!style) throw new Error(`Effect style not found: ${String(payload.styleName)}`);
+  const matching = styles.filter((s) => s.name === payload.styleName);
+  if (matching.length === 0)
+    throw new Error(`Effect style not found: ${String(payload.styleName)}`);
+  if (matching.length > 1)
+    throw new Error(
+      `Multiple effect styles named "${String(payload.styleName)}" found (${matching.length}). Use a unique style name or apply by style ID.`
+    );
+  const style = matching[0];
+  if (!style) throw new Error('Effect style match was empty');
 
   await (
     node as BlendMixin & {

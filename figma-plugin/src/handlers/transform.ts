@@ -35,13 +35,22 @@ function applyScale(node: SceneNode, scale: unknown): void {
 }
 
 function applyFlip(node: SceneNode, flip: unknown): void {
-  if (typeof flip !== 'string' || !('resize' in node)) return;
+  if (typeof flip !== 'string' || !('relativeTransform' in node)) return;
   if (!(FLIP_DIRECTIONS as readonly string[]).includes(flip)) return;
+  const n = node as SceneNode & { relativeTransform: Transform };
+  const t = n.relativeTransform;
   if (flip === 'HORIZONTAL' || flip === 'BOTH') {
-    (node as FrameNode).resize(-node.width, node.height);
+    n.relativeTransform = [
+      [-t[0][0], t[0][1], t[0][2] + node.width],
+      [t[1][0], t[1][1], t[1][2]]
+    ];
   }
   if (flip === 'VERTICAL' || flip === 'BOTH') {
-    (node as FrameNode).resize(node.width, -node.height);
+    const cur = n.relativeTransform;
+    n.relativeTransform = [
+      [cur[0][0], cur[0][1], cur[0][2]],
+      [cur[1][0], -cur[1][1], cur[1][2] + node.height]
+    ];
   }
 }
 

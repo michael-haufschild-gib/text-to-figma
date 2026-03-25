@@ -284,7 +284,12 @@ describe('loadFont', () => {
   it('returns the requested font when loadFontAsync succeeds', async () => {
     mockFigma.loadFontAsync.mockResolvedValue(undefined);
     const result = await loadFont('Roboto', 700);
-    expect(result).toEqual({ family: 'Roboto', style: 'Bold' });
+    expect(result).toEqual({
+      fontName: { family: 'Roboto', style: 'Bold' },
+      usedFallback: false,
+      requestedFamily: 'Roboto',
+      requestedStyle: 'Bold'
+    });
     expect(mockFigma.loadFontAsync).toHaveBeenCalledWith({ family: 'Roboto', style: 'Bold' });
   });
 
@@ -293,7 +298,12 @@ describe('loadFont', () => {
       .mockRejectedValueOnce(new Error('Font not found'))
       .mockResolvedValueOnce(undefined);
     const result = await loadFont('Nonexistent', 400);
-    expect(result).toEqual({ family: 'Inter', style: 'Regular' });
+    expect(result).toEqual({
+      fontName: { family: 'Inter', style: 'Regular' },
+      usedFallback: true,
+      requestedFamily: 'Nonexistent',
+      requestedStyle: 'Regular'
+    });
     expect(mockFigma.loadFontAsync).toHaveBeenCalledTimes(2);
     expect(mockFigma.loadFontAsync).toHaveBeenLastCalledWith({
       family: 'Inter',

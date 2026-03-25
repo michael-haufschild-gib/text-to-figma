@@ -11,6 +11,7 @@ import type { ValidationRule } from '../validate.js';
 
 const LAYOUT_MODES = ['HORIZONTAL', 'VERTICAL'] as const;
 const SIZING_VALUES = ['FIXED', 'HUG', 'FILL'] as const;
+const LAYOUT_POSITIONING_VALUES = ['AUTO', 'ABSOLUTE'] as const;
 const PRIMARY_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'SPACE_BETWEEN'] as const;
 const COUNTER_AXIS_ALIGNS = ['MIN', 'MAX', 'CENTER', 'BASELINE'] as const;
 const CONSTRAINT_TYPES = ['MIN', 'CENTER', 'MAX', 'STRETCH', 'SCALE'] as const;
@@ -21,7 +22,11 @@ const setLayoutPropertiesRules: ValidationRule[] = [
   { field: 'nodeId', type: 'string', required: true },
   { field: 'layoutMode', type: 'string', enum: LAYOUT_MODES },
   { field: 'itemSpacing', type: 'number' },
-  { field: 'padding', type: 'number' }
+  { field: 'padding', type: 'number' },
+  { field: 'paddingTop', type: 'number' },
+  { field: 'paddingRight', type: 'number' },
+  { field: 'paddingBottom', type: 'number' },
+  { field: 'paddingLeft', type: 'number' }
 ];
 
 export function handleSetLayoutProperties(payload: Record<string, unknown>): unknown {
@@ -41,6 +46,10 @@ export function handleSetLayoutProperties(payload: Record<string, unknown>): unk
     const p = payload.padding;
     frame.paddingLeft = frame.paddingRight = frame.paddingTop = frame.paddingBottom = p;
   }
+  if (typeof payload.paddingTop === 'number') frame.paddingTop = payload.paddingTop;
+  if (typeof payload.paddingRight === 'number') frame.paddingRight = payload.paddingRight;
+  if (typeof payload.paddingBottom === 'number') frame.paddingBottom = payload.paddingBottom;
+  if (typeof payload.paddingLeft === 'number') frame.paddingLeft = payload.paddingLeft;
 
   return { nodeId: payload.nodeId, message: 'Layout properties updated successfully' };
 }
@@ -77,6 +86,11 @@ export function handleSetLayoutSizing(payload: Record<string, unknown>): unknown
   if (vertical !== undefined) {
     frame.layoutSizingVertical = vertical;
   }
+  const layoutPositioning = checkEnum(payload.layoutPositioning, LAYOUT_POSITIONING_VALUES);
+  if (layoutPositioning !== undefined && 'layoutPositioning' in node) {
+    (node as SceneNode & { layoutPositioning: 'AUTO' | 'ABSOLUTE' }).layoutPositioning =
+      layoutPositioning;
+  }
 
   return { nodeId: payload.nodeId, message: 'Layout sizing set successfully' };
 }
@@ -106,37 +120,31 @@ export function handleSetLayerOrder(payload: Record<string, unknown>): unknown {
   const parent = node.parent;
   if (!parent || !('children' in parent)) throw new Error('Node has no valid parent');
 
-  const currentIndex = (parent as FrameNode).children.indexOf(node);
+  const currentIndex = parent.children.indexOf(node);
 
   switch (payload.action) {
     case 'BRING_TO_FRONT':
-      (parent as FrameNode).insertChild((parent as FrameNode).children.length - 1, node);
+      parent.insertChild(parent.children.length - 1, node);
       break;
     case 'BRING_FORWARD':
-      (parent as FrameNode).insertChild(
-        Math.min(currentIndex + 1, (parent as FrameNode).children.length - 1),
-        node
-      );
+      parent.insertChild(Math.min(currentIndex + 1, parent.children.length - 1), node);
       break;
     case 'SEND_BACKWARD':
-      (parent as FrameNode).insertChild(Math.max(currentIndex - 1, 0), node);
+      parent.insertChild(Math.max(currentIndex - 1, 0), node);
       break;
     case 'SEND_TO_BACK':
-      (parent as FrameNode).insertChild(0, node);
+      parent.insertChild(0, node);
       break;
     case 'SET_INDEX':
       if (typeof payload.index !== 'number') throw new Error('index must be a number');
-      (parent as FrameNode).insertChild(
-        Math.max(0, Math.min(payload.index, (parent as FrameNode).children.length - 1)),
-        node
-      );
+      parent.insertChild(Math.max(0, Math.min(payload.index, parent.children.length - 1)), node);
       break;
     default:
       throw new Error('Invalid layer order action');
   }
 
   return {
-    newIndex: (parent as FrameNode).children.indexOf(node),
+    newIndex: parent.children.indexOf(node),
     message: 'Layer order updated successfully'
   };
 }

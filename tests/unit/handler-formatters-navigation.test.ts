@@ -42,6 +42,27 @@ describe('Handler formatResponse — navigation & registration', () => {
       expect(text).toContain('Dimensions: 320x480');
       expect(text).toContain('Position: (10, 20)');
     });
+
+    it('formats node with layout properties', () => {
+      const handler = getHandler('get_node_by_id');
+      const result = handler.formatResponse({
+        message: 'Node found',
+        nodeId: 'n2',
+        name: 'AutoFrame',
+        type: 'FRAME',
+        width: 200,
+        height: 400,
+        x: 0,
+        y: 0,
+        layoutMode: 'VERTICAL',
+        layoutPositioning: 'AUTO',
+        itemSpacing: 16
+      });
+      const text = result[0].text as string;
+      expect(text).toContain('Layout Mode: VERTICAL');
+      expect(text).toContain('Layout Positioning: AUTO');
+      expect(text).toContain('Item Spacing: 16');
+    });
   });
 
   describe('get_node_by_name', () => {
@@ -97,8 +118,10 @@ describe('Handler formatResponse — navigation & registration', () => {
         parentType: 'FRAME'
       });
       const text = result[0].text as string;
-      expect(text).toContain('Container');
-      expect(text).toContain('p1');
+      expect(text).toContain('Parent Name: Container');
+      expect(text).toContain('Parent ID: p1');
+      expect(text).toContain('Parent Type: FRAME');
+      expect(text).toContain('Node ID: c1');
     });
 
     it('formats node without parent', () => {
@@ -108,7 +131,8 @@ describe('Handler formatResponse — navigation & registration', () => {
         message: 'No parent (root node)'
       });
       const text = result[0].text as string;
-      expect(text).toContain('root-1');
+      expect(text).toContain('Node ID: root-1');
+      expect(text).toContain('No parent (root node)');
     });
   });
 

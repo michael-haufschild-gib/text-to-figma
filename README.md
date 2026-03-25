@@ -4,7 +4,7 @@ Design automation for Figma using Claude via Model Context Protocol.
 
 ## What Actually Works
 
-- ✅ MCP Server with 61 Figma tools
+- ✅ MCP Server with 68 Figma tools
 - ✅ WebSocket bridge server
 - ✅ Figma plugin (basic - create frames, text)
 - ✅ Type-safe tool definitions with Zod
@@ -56,14 +56,18 @@ Edit Claude config:
       "command": "node",
       "args": ["/FULL/PATH/TO/text-to-figma/mcp-server/dist/index.js"],
       "env": {
-        "FIGMA_WS_URL": "ws://localhost:8080"
+        "FIGMA_WS_URL": "ws://localhost:8080",
+        "NODE_ENV": "development",
+        "LOG_LEVEL": "info"
       }
     }
   }
 }
 ```
 
-**IMPORTANT**: Use full absolute path, not relative.
+**IMPORTANT**: Replace `/FULL/PATH/TO/` with your actual absolute path.
+Claude Desktop requires absolute paths — relative paths will not work.
+A working local-dev config with relative paths is available in `mcp-config.json` at the repo root.
 
 ### 6. Restart Claude Desktop
 
@@ -95,7 +99,7 @@ Figma Document
 
 ## Available Tools
 
-The MCP server exposes 61 tools. Key ones:
+The MCP server exposes 68 tools. Key ones:
 
 - `create_frame` - Create frames
 - `create_text` - Create text nodes
@@ -182,7 +186,7 @@ npm run test:integration
 
 ### Plugin won't load in Figma
 
-- Check `figma-plugin/code.js` exists after building
+- Check `figma-plugin/code.js` exists after building (`npm run build` in figma-plugin/)
 - Check `figma-plugin/manifest.json` paths are correct
 - Try reloading: Plugins → Development → Remove plugin, then re-import
 

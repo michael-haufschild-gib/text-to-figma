@@ -27,7 +27,12 @@ const GetNodeByIdResponseSchema = z
         x: z.number().optional(),
         y: z.number().optional(),
         parentId: z.string().optional(),
-        childrenCount: z.number().optional()
+        childrenCount: z.number().optional(),
+        layoutMode: z.string().optional(),
+        layoutPositioning: z.string().optional(),
+        itemSpacing: z.number().optional(),
+        primaryAxisSizingMode: z.string().optional(),
+        counterAxisSizingMode: z.string().optional()
       })
       .passthrough()
       .optional(),
@@ -51,21 +56,24 @@ export const getNodeByIdToolDefinition = {
   name: 'get_node_by_id',
   description: `Retrieves basic information about a node when you have its ID.
 
-🎯 WHEN TO USE:
+WHEN TO USE:
 - Verifying a node still exists before modifying it
 - Getting basic properties (type, name, dimensions) quickly
 - Checking if a nodeId from a previous operation is valid
 - Quick lookup when you already know the ID
 
-📋 RETURNS:
+RETURNS:
 - type: FRAME, TEXT, ELLIPSE, RECTANGLE, GROUP, COMPONENT, etc.
 - name: Layer name as shown in Figma
 - width, height: Dimensions in pixels
 - x, y: Position coordinates
 - parentId: ID of containing node
 - childrenCount: Number of direct children
+- layoutMode: Auto-layout direction (HORIZONTAL, VERTICAL, or NONE) — frames only
+- layoutPositioning: AUTO or ABSOLUTE — children of auto-layout frames
+- itemSpacing: Gap between children — frames with auto-layout only
 
-💡 COMMON PATTERNS:
+COMMON PATTERNS:
 
 1. Verify node before modification:
    node = get_node_by_id({ nodeId: "123:456" })
@@ -82,7 +90,7 @@ export const getNodeByIdToolDefinition = {
    node = get_node_by_id({ nodeId: result.rootNodeId })
    // Confirms creation succeeded
 
-⚠️ THROWS ERROR if node doesn't exist. Use try/catch if ID might be invalid.
+THROWS ERROR if node doesn't exist. Use try/catch if ID might be invalid.
 
 🔗 RELATED TOOLS:
 - get_node_by_name: Find nodes when you don't know the ID
@@ -114,6 +122,11 @@ export interface GetNodeByIdResult {
   y?: number;
   parentId?: string;
   childrenCount?: number;
+  layoutMode?: string;
+  layoutPositioning?: string;
+  itemSpacing?: number;
+  primaryAxisSizingMode?: string;
+  counterAxisSizingMode?: string;
   message: string;
   timestamp: string;
 }
@@ -123,16 +136,13 @@ export interface GetNodeByIdResult {
  * @param input
  */
 export async function getNodeById(input: GetNodeByIdInput): Promise<GetNodeByIdResult> {
-  // Validate input
-  const validated = input;
-
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
   // Send command to Figma
   const response = await bridge.sendToFigmaValidated(
     'get_node_by_id',
-    { nodeId: validated.nodeId },
+    { nodeId: input.nodeId },
     GetNodeByIdResponseSchema
   );
 
@@ -153,6 +163,11 @@ export async function getNodeById(input: GetNodeByIdInput): Promise<GetNodeByIdR
     y: node.y,
     parentId: node.parentId,
     childrenCount: node.childrenCount,
+    layoutMode: node.layoutMode,
+    layoutPositioning: node.layoutPositioning,
+    itemSpacing: node.itemSpacing,
+    primaryAxisSizingMode: node.primaryAxisSizingMode,
+    counterAxisSizingMode: node.counterAxisSizingMode,
     message: `Found ${node.type} node "${node.name}"`,
     timestamp: new Date().toISOString()
   };

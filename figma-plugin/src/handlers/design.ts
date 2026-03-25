@@ -214,11 +214,11 @@ function createFrameNode(name: string, props: Record<string, unknown>): FrameNod
 async function createTextNode(name: string, props: Record<string, unknown>): Promise<TextNode> {
   const fontFamily = typeof props.fontFamily === 'string' ? props.fontFamily : 'Inter';
   const fontWeight = typeof props.fontWeight === 'number' ? props.fontWeight : 400;
-  const fontName = await loadFont(fontFamily, fontWeight);
+  const fontResult = await loadFont(fontFamily, fontWeight);
 
   const text = figma.createText();
   text.name = name;
-  text.fontName = fontName;
+  text.fontName = fontResult.fontName;
   const content = typeof props.content === 'string' ? props.content : undefined;
   const textProp = typeof props.text === 'string' ? props.text : undefined;
   text.characters = content ?? textProp ?? '';
@@ -237,6 +237,9 @@ async function createTextNode(name: string, props: Record<string, unknown>): Pro
   if (typeof props.letterSpacing === 'number') {
     text.letterSpacing = { value: props.letterSpacing, unit: 'PIXELS' };
   }
+
+  if (typeof props.x === 'number') text.x = props.x;
+  if (typeof props.y === 'number') text.y = props.y;
 
   return text;
 }
@@ -257,6 +260,9 @@ function createEllipseNode(name: string, props: Record<string, unknown>): Ellips
       ellipse.strokeWeight = props.strokeWeight;
     }
   }
+
+  if (typeof props.x === 'number') ellipse.x = props.x;
+  if (typeof props.y === 'number') ellipse.y = props.y;
 
   return ellipse;
 }
@@ -281,6 +287,9 @@ function createRectangleNode(name: string, props: Record<string, unknown>): Rect
     }
   }
 
+  if (typeof props.x === 'number') rect.x = props.x;
+  if (typeof props.y === 'number') rect.y = props.y;
+
   return rect;
 }
 
@@ -296,6 +305,9 @@ function createLineNode(name: string, props: Record<string, unknown>): LineNode 
       line.strokeWeight = props.strokeWeight;
     }
   }
+
+  if (typeof props.x === 'number') line.x = props.x;
+  if (typeof props.y === 'number') line.y = props.y;
 
   return line;
 }

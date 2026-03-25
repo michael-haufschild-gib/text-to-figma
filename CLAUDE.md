@@ -1,6 +1,6 @@
 ## Project Purpose
 
-Text-to-Figma is a **three-tier MCP server** that gives LLM agents 61 tools to create and manipulate Figma designs.
+Text-to-Figma is a **three-tier MCP server** that gives LLM agents 68 tools to create and manipulate Figma designs.
 
 ## Architecture
 

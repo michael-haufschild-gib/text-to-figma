@@ -9,7 +9,7 @@
 
 ## Overview
 
-This style guide governs the Text-to-Figma MCP Server codebase—a Node.js/TypeScript backend that provides 58+ Figma design tools through the Model Context Protocol. This is **NOT** a frontend/React project. For Figma Plugin (frontend) guidelines, see `docs/architecture-figma-plugin.md`.
+This style guide governs the Text-to-Figma MCP Server codebase—a Node.js/TypeScript backend that provides 68 Figma design tools through the Model Context Protocol. This is **NOT** a frontend/React project. For Figma Plugin (frontend) guidelines, see `docs/architecture-figma-plugin.md`.
 
 ---
 

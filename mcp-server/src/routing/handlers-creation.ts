@@ -129,7 +129,7 @@ export const creationHandlers = [
   // ─── Connection / Design ────────────────────────────────────────────────
   defineHandler<Record<string, never>, CheckConnectionResult>({
     name: 'check_connection',
-    schema: z.object({}) as z.ZodSchema<Record<string, never>>,
+    schema: z.object({}),
     execute: checkConnection,
     formatResponse: (result) => {
       let text = result.connected
@@ -166,7 +166,7 @@ export const creationHandlers = [
 
   defineHandler<CreateDesignParams, CreateDesignResult>({
     name: 'create_design',
-    schema: CreateDesignInputSchema as z.ZodSchema<CreateDesignParams>,
+    schema: CreateDesignInputSchema,
     execute: createDesign,
     formatResponse: (result) => {
       if (!result.success) {
@@ -196,7 +196,7 @@ export const creationHandlers = [
   // ─── Primitive shapes ───────────────────────────────────────────────────
   defineHandler<CreateFrameInput, CreateFrameResult>({
     name: 'create_frame',
-    schema: CreateFrameInputSchema as z.ZodSchema<CreateFrameInput>,
+    schema: CreateFrameInputSchema,
     execute: createFrame,
     formatResponse: (r) =>
       textResponse(
@@ -207,7 +207,7 @@ export const creationHandlers = [
 
   defineHandler<CreateTextInput, CreateTextResult>({
     name: 'create_text',
-    schema: CreateTextInputSchema as z.ZodSchema<CreateTextInput>,
+    schema: CreateTextInputSchema,
     execute: createText,
     formatResponse: (r) =>
       textResponse(
@@ -218,7 +218,7 @@ export const creationHandlers = [
 
   defineHandler<CreateEllipseInput, CreateEllipseResult>({
     name: 'create_ellipse',
-    schema: CreateEllipseInputSchema as z.ZodSchema<CreateEllipseInput>,
+    schema: CreateEllipseInputSchema,
     execute: createEllipse,
     formatResponse: (r) =>
       textResponse(
@@ -229,8 +229,7 @@ export const creationHandlers = [
 
   defineHandler<CreateRectangleWithImageFillInput, CreateRectangleWithImageFillResult>({
     name: 'create_rectangle_with_image_fill',
-    schema:
-      CreateRectangleWithImageFillInputSchema as z.ZodSchema<CreateRectangleWithImageFillInput>,
+    schema: CreateRectangleWithImageFillInputSchema,
     execute: createRectangleWithImageFill,
     formatResponse: (r) =>
       textResponse(
@@ -241,7 +240,7 @@ export const creationHandlers = [
 
   defineHandler<CreateLineInput, CreateLineResult>({
     name: 'create_line',
-    schema: CreateLineInputSchema as z.ZodSchema<CreateLineInput>,
+    schema: CreateLineInputSchema,
     execute: createLine,
     formatResponse: (r) =>
       textResponse(
@@ -252,7 +251,7 @@ export const creationHandlers = [
 
   defineHandler<CreatePolygonInput, CreatePolygonResult>({
     name: 'create_polygon',
-    schema: CreatePolygonInputSchema as z.ZodSchema<CreatePolygonInput>,
+    schema: CreatePolygonInputSchema,
     execute: createPolygon,
     formatResponse: (r) =>
       textResponse(
@@ -263,7 +262,7 @@ export const creationHandlers = [
 
   defineHandler<CreateStarInput, CreateStarResult>({
     name: 'create_star',
-    schema: CreateStarInputSchema as z.ZodSchema<CreateStarInput>,
+    schema: CreateStarInputSchema,
     execute: createStar,
     formatResponse: (r) =>
       textResponse(
@@ -274,7 +273,7 @@ export const creationHandlers = [
 
   defineHandler<CreatePathInput, CreatePathResult>({
     name: 'create_path',
-    schema: CreatePathInputSchema as z.ZodSchema<CreatePathInput>,
+    schema: CreatePathInputSchema,
     execute: createPath,
     formatResponse: (r) => textResponse(r.message),
     definition: createPathToolDefinition
@@ -282,7 +281,7 @@ export const creationHandlers = [
 
   defineHandler<CreateBooleanOperationInput, CreateBooleanOperationResult>({
     name: 'create_boolean_operation',
-    schema: CreateBooleanOperationInputSchema as z.ZodSchema<CreateBooleanOperationInput>,
+    schema: CreateBooleanOperationInputSchema,
     execute: createBooleanOperation,
     formatResponse: (r) =>
       textResponse(
@@ -294,7 +293,7 @@ export const creationHandlers = [
   // ─── Components ─────────────────────────────────────────────────────────
   defineHandler<CreateComponentInput, CreateComponentResult>({
     name: 'create_component',
-    schema: CreateComponentInputSchema as z.ZodSchema<CreateComponentInput>,
+    schema: CreateComponentInputSchema,
     execute: createComponent,
     formatResponse: (r) => {
       let text = `Component Created Successfully\nComponent ID: ${r.componentId}\nName: ${r.name}\n`;
@@ -309,7 +308,7 @@ export const creationHandlers = [
 
   defineHandler<CreateInstanceInput, CreateInstanceResult>({
     name: 'create_instance',
-    schema: CreateInstanceInputSchema as z.ZodSchema<CreateInstanceInput>,
+    schema: CreateInstanceInputSchema,
     execute: createInstance,
     formatResponse: (r) =>
       textResponse(
@@ -320,7 +319,7 @@ export const creationHandlers = [
 
   defineHandler<SetComponentPropertiesInput, SetComponentPropertiesResult>({
     name: 'set_component_properties',
-    schema: SetComponentPropertiesInputSchema as z.ZodSchema<SetComponentPropertiesInput>,
+    schema: SetComponentPropertiesInputSchema,
     execute: setComponentProperties,
     formatResponse: (r) =>
       textResponse(
@@ -331,7 +330,7 @@ export const creationHandlers = [
 
   defineHandler<CreateComponentSetInput, CreateComponentSetResult>({
     name: 'create_component_set',
-    schema: CreateComponentSetInputSchema as z.ZodSchema<CreateComponentSetInput>,
+    schema: CreateComponentSetInputSchema,
     execute: createComponentSet,
     formatResponse: (r) =>
       textResponse(
@@ -342,7 +341,7 @@ export const creationHandlers = [
 
   defineHandler<AddVariantPropertyInput, AddVariantPropertyResult>({
     name: 'add_variant_property',
-    schema: AddVariantPropertyInputSchema as z.ZodSchema<AddVariantPropertyInput>,
+    schema: AddVariantPropertyInputSchema,
     execute: addVariantProperty,
     formatResponse: (r) =>
       textResponse(
@@ -353,7 +352,7 @@ export const creationHandlers = [
 
   defineHandler<SetInstanceSwapInput, SetInstanceSwapResult>({
     name: 'set_instance_swap',
-    schema: SetInstanceSwapInputSchema as z.ZodSchema<SetInstanceSwapInput>,
+    schema: SetInstanceSwapInputSchema,
     execute: setInstanceSwap,
     formatResponse: (r) => {
       let text = `${r.message}\nInstance ID: ${r.instanceId}\nNew Component ID: ${r.newComponentId}\n`;

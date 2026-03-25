@@ -62,7 +62,7 @@ HTML Element → Figma Primitive:
 - \`border\` → \`set_stroke()\`
 - \`box-shadow\` → \`apply_effects()\`
 
-🚨 **MANDATORY FRAME SETUP SEQUENCE** 🚨
+**MANDATORY FRAME SETUP SEQUENCE** 
 After creating EVERY frame with auto-layout, you MUST immediately call \`set_layout_sizing\`:
 
 **Standard Frame Creation Pattern:**
@@ -76,7 +76,7 @@ const frame = await create_frame({
   parentId: parentId  // Always specify parent!
 });
 
-// 2. ⚠️ CRITICAL: Set layout sizing (determines width/height behavior)
+// 2. CRITICAL: Set layout sizing (determines width/height behavior)
 await set_layout_sizing({
   nodeId: frame.frameId,
   horizontal: 'FILL',  // or 'HUG' or 'FIXED'
@@ -102,7 +102,7 @@ await create_text({ content: "...", parentId: frame.frameId });
 - \`HUG\`: Content-based sizing (labels, pills, badges that wrap text)
 - \`FIXED\`: Fixed dimensions (avatars, icons, specific-sized containers)
 
-🚨 **CRITICAL: Maintain HTML-like Hierarchy**
+**CRITICAL: Maintain HTML-like Hierarchy**
 - In HTML, you don't create dozens of <div>s as direct children of <body>
 - Similarly, DON'T create multiple root-level frames in Figma
 - ALWAYS: Create ONE root container first, then nest everything inside it
@@ -114,9 +114,9 @@ await create_text({ content: "...", parentId: frame.frameId });
 3. Create text: \`create_text({ content: "Welcome", parentId: "456" })\`
 
 **WRONG Pattern (Avoid!):**
-1. Create frame1 without parent → ❌ orphaned at root
-2. Create frame2 without parent → ❌ orphaned at root
-3. Create text without parent → ❌ ERROR: text requires parent!
+1. Create frame1 without parent → orphaned at root
+2. Create frame2 without parent → orphaned at root
+3. Create text without parent → ERROR: text requires parent!
 
 ### Step 4: Apply Width Strategy
 **Critical**: HTML's \`width\` property maps to Figma sizing modes:
@@ -215,7 +215,7 @@ const btn = await create_frame({
   itemSpacing: 8
 });
 
-// 3. ⚠️ CRITICAL: Set width behavior IMMEDIATELY after create_frame
+// 3. CRITICAL: Set width behavior IMMEDIATELY after create_frame
 await set_layout_sizing({
   nodeId: btn.frameId,
   horizontal: 'HUG',  // width: fit-content
@@ -249,7 +249,7 @@ A button that shrink-wraps to text (HUG mode), exactly like \`width: fit-content
 
 ## Width Strategy Reference
 
-### ❌ WRONG: Fixed widths on responsive elements
+### WRONG: Fixed widths on responsive elements
 \`\`\`typescript
 // DON'T DO THIS for inputs/buttons/cards
 create_frame({
@@ -258,7 +258,7 @@ create_frame({
 })
 \`\`\`
 
-### ✅ RIGHT: Think in HTML terms
+### RIGHT: Think in HTML terms
 \`\`\`typescript
 // Ask: "What would the CSS width be?"
 // If "width: 100%" → use FILL
@@ -306,8 +306,8 @@ Translation:
 - <h2> → create_text (24px, bold)
 
 Validating constraints...
-✓ Padding 24px (on 8pt grid)
-✓ Font size 24px (in type scale)
+Padding 24px (on 8pt grid)
+Font size 24px (in type scale)
 
 Creating card...
 [shows tool calls]
@@ -320,7 +320,7 @@ For EVERY request:
 1. Think HTML/SVG first
 2. Identify layout patterns
 3. Translate to Figma primitives
-4. ⚠️ CRITICAL: Call set_layout_sizing IMMEDIATELY after EVERY create_frame
+4. CRITICAL: Call set_layout_sizing IMMEDIATELY after EVERY create_frame
 5. Apply correct width strategy (FILL/HUG/FIXED based on desired behavior)
 === END RECALL ===
 
@@ -350,7 +350,7 @@ If a primitive tool fails (create_ellipse, create_line, set_corner_radius, set_s
 
 ## DRAWING WORKFLOW FOR COMPLEX ILLUSTRATIONS
 
-### ⚠️ CRITICAL: Drawing Complex Subjects (Animals, Characters, Objects)
+### CRITICAL: Drawing Complex Subjects (Animals, Characters, Objects)
 
 When asked to draw complex subjects like animals, characters, or detailed objects, follow this MANDATORY workflow:
 
@@ -390,7 +390,7 @@ Use these tools aggressively for complex drawings:
 **PHASE 4: VERIFICATION**
 - Export preview every 5-10 shapes
 - Use get_absolute_bounds to verify positioning
-- Adjust using set_absolute_position if needed
+- Adjust using set_transform if needed
 
 ### Key Takeaways for Drawing Tasks:
 1. **Never work blind** - export previews frequently

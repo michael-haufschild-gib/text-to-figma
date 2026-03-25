@@ -171,16 +171,15 @@ describe('createComponentSet', () => {
     expect(result.message).toBe('Created component set "Button" with 3 variants');
   });
 
-  it('falls back to empty string when bridge returns no componentSetId', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true });
+  it('rejects response when bridge returns no componentSetId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "componentSetId"'));
 
-    const result = await createComponentSet({
-      componentIds: ['comp-a', 'comp-b'],
-      name: 'Card'
-    });
-
-    expect(result.componentSetId).toBe('');
-    expect(result.variantCount).toBe(2);
+    await expect(
+      createComponentSet({
+        componentIds: ['comp-a', 'comp-b'],
+        name: 'Card'
+      })
+    ).rejects.toThrow();
   });
 
   it('propagates bridge errors', async () => {

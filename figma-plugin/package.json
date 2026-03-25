@@ -2,8 +2,8 @@
   "name": "figma-text-to-design-plugin",
   "version": "1.0.0",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --outfile=code.js --target=es2017 --format=iife",
-    "watch": "esbuild src/main.ts --bundle --outfile=code.js --target=es2017 --format=iife --watch",
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --check \"src/**/*.ts\"",

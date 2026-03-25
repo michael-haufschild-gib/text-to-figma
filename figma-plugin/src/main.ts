@@ -86,8 +86,16 @@ import {
   handleSetStrokeCap,
   handleSetClippingMask,
   handleCreatePath,
-  handleCreateBooleanOperation
+  handleCreateBooleanOperation,
+  handleReparentNode,
+  handleRemoveNode,
+  handleRenameNode,
+  handleDetachComponent
 } from './handlers/utility.js';
+
+// ─── Build-time constants (injected by esbuild via build.mjs) ────────────────
+
+declare const __PLUGIN_VERSION__: string;
 
 // ─── Plugin UI ────────────────────────────────────────────────────────────────
 
@@ -124,7 +132,7 @@ const handlers: Record<string, Handler> = {
   ping: () => ({
     pong: true,
     timestamp: Date.now(),
-    pluginVersion: '1.0.0',
+    pluginVersion: __PLUGIN_VERSION__,
     fileName: figma.root.name,
     currentPage: figma.currentPage.name
   }),
@@ -211,7 +219,11 @@ const handlers: Record<string, Handler> = {
   set_current_page: handleSetCurrentPage,
   set_stroke_join: handleSetStrokeJoin,
   set_stroke_cap: handleSetStrokeCap,
-  set_clipping_mask: handleSetClippingMask
+  set_clipping_mask: handleSetClippingMask,
+  reparent_node: handleReparentNode,
+  remove_node: handleRemoveNode,
+  rename_node: handleRenameNode,
+  detach_component: handleDetachComponent
 };
 
 // ─── Message handler ──────────────────────────────────────────────────────────

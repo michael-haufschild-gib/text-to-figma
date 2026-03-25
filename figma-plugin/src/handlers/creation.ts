@@ -116,10 +116,10 @@ export async function handleCreateText(payload: Record<string, unknown>): Promis
 
   const fontFamily = typeof payload.fontFamily === 'string' ? payload.fontFamily : 'Inter';
   const fontWeight = typeof payload.fontWeight === 'number' ? payload.fontWeight : 400;
-  const fontName = await loadFont(fontFamily, fontWeight);
+  const fontResult = await loadFont(fontFamily, fontWeight);
 
   const textNode = figma.createText();
-  textNode.fontName = fontName;
+  textNode.fontName = fontResult.fontName;
   textNode.characters = typeof payload.content === 'string' ? payload.content : '';
   textNode.name = typeof payload.name === 'string' ? payload.name : 'Text';
   textNode.x = typeof payload.x === 'number' ? payload.x : 0;
