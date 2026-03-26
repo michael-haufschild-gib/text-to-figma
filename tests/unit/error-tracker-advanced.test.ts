@@ -316,15 +316,16 @@ describe('ErrorTracker advanced behavior', () => {
     tracker?.destroy();
   });
 
-  describe('context merging behavior', () => {
-    it('later context values overwrite earlier ones for same key', () => {
+  describe('context replacement behavior', () => {
+    it('later context replaces earlier context entirely', () => {
       tracker = new ErrorTracker();
       const err = new Error('ctx-test');
       tracker.track(err, { attempt: 1, tool: 'create_frame' });
       tracker.track(err, { attempt: 2, extra: 'data' });
 
       const tracked = tracker.getAll()[0];
-      expect(tracked.context).toEqual({ attempt: 2, tool: 'create_frame', extra: 'data' });
+      // Context is replaced (not merged) to prevent unbounded growth
+      expect(tracked.context).toEqual({ attempt: 2, extra: 'data' });
     });
 
     it('undefined context on second track does not clear existing context', () => {

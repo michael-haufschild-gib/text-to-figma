@@ -75,6 +75,12 @@ export interface HierarchyNode {
  * Node Registry for tracking Figma hierarchy
  */
 export class NodeRegistry {
+  /**
+   * Maximum number of nodes before oldest-first eviction kicks in.
+   * Prevents unbounded memory growth during long design sessions.
+   */
+  static readonly MAX_NODES = 10_000;
+
   private nodes = new Map<string, NodeInfo>();
   private rootNodes: string[] = [];
 
@@ -130,6 +136,37 @@ export class NodeRegistry {
     }
 
     logger.debug(`Registered node: ${nodeId} (${info.type} "${info.name}")`);
+
+    // Evict oldest nodes when capacity is exceeded
+    if (this.nodes.size > NodeRegistry.MAX_NODES) {
+      this.evictOldest(this.nodes.size - NodeRegistry.MAX_NODES);
+    }
+  }
+
+  /**
+   * Evict the N oldest nodes by createdAt timestamp.
+   * Removes nodes from parent children lists and root nodes.
+   */
+  private evictOldest(count: number): void {
+    const sorted = Array.from(this.nodes.values()).sort((a, b) => a.createdAt - b.createdAt);
+    const toEvict = sorted.slice(0, count);
+
+    for (const node of toEvict) {
+      // Remove from parent's children list
+      if (node.parentId) {
+        const parent = this.nodes.get(node.parentId);
+        if (parent) {
+          parent.children = parent.children.filter((id) => id !== node.nodeId);
+        }
+      } else {
+        this.rootNodes = this.rootNodes.filter((id) => id !== node.nodeId);
+      }
+      this.nodes.delete(node.nodeId);
+    }
+
+    logger.warn(
+      `Evicted ${toEvict.length} oldest nodes (registry exceeded ${NodeRegistry.MAX_NODES} cap)`
+    );
   }
 
   /**

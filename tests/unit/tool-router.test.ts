@@ -250,7 +250,8 @@ describe('routeToolCall', () => {
 
     await routeToolCall('typed_error_tool', { value: 1 }).catch(() => {});
 
-    expect(errors.get({ tool: 'typed_error_tool', error_type: 'CustomError' })).toBe(1);
+    // CustomError is not in the known error types set — normalized to 'other'
+    expect(errors.get({ tool: 'typed_error_tool', error_type: 'other' })).toBe(1);
   });
 
   it('handles async execute function returning a promise', async () => {
@@ -341,7 +342,8 @@ describe('routeToolCall', () => {
 
     await routeToolCall('empty_name_tool', { value: 1 }).catch(() => {});
 
-    expect(errors.get({ tool: 'empty_name_tool', error_type: 'unknown' })).toBe(1);
+    // Empty name falls back to 'unknown', which is not in the known set → 'other'
+    expect(errors.get({ tool: 'empty_name_tool', error_type: 'other' })).toBe(1);
   });
 
   it('formatResponse error increments only error counter, not success counter', async () => {

@@ -29,6 +29,29 @@ const durations = metrics.histogram(
 );
 
 /**
+ * Known error types for metric label normalization.
+ * Prevents unbounded label cardinality from arbitrary error names.
+ */
+const KNOWN_ERROR_TYPES = new Set([
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ZodError',
+  'FigmaBridgeError',
+  'ToolExecutionError',
+  'ValidationError',
+  'FigmaAPIError',
+  'NetworkError',
+  'ConfigurationError',
+  'PathCommandValidationError'
+]);
+
+function normalizeErrorType(name: string): string {
+  return KNOWN_ERROR_TYPES.has(name) ? name : 'other';
+}
+
+/**
  * Route a tool call to the appropriate handler
  *
  * Performs the following steps:
@@ -84,7 +107,7 @@ export async function routeToolCall(toolName: string, args: unknown): Promise<Re
     durations.observe(duration);
 
     const errorObj = error instanceof Error ? error : new Error(String(error));
-    const errorType = errorObj.name !== '' ? errorObj.name : 'unknown';
+    const errorType = normalizeErrorType(errorObj.name !== '' ? errorObj.name : 'unknown');
 
     errors.inc(1, { tool: toolName, error_type: errorType });
     logger.error('Tool execution failed', errorObj, { tool: toolName, duration });

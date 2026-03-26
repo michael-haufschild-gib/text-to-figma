@@ -226,10 +226,14 @@ export class ErrorTracker {
     const existing = this.errors.get(fingerprint);
 
     if (existing) {
-      // Update existing error
+      // Update existing error — replace context rather than merging
+      // to prevent unbounded growth when the same error recurs with
+      // unique per-occurrence fields (e.g., requestId).
       existing.count++;
       existing.lastSeen = now;
-      existing.context = { ...existing.context, ...context };
+      if (context !== undefined) {
+        existing.context = context;
+      }
 
       return existing.id;
     }
