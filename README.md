@@ -4,9 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
 
-LLMs cannot talk to Figma natively. This project bridges that gap: a three-tier [Model Context Protocol](https://modelcontextprotocol.io/) server that gives any MCP-compatible AI agent (Claude, GPT, etc.) **65 tools** to create and manipulate Figma designs programmatically.
+A reference implementation for giving AI agents direct access to the Figma Plugin API. Three-tier architecture: **Figma plugin** → **WebSocket bridge** → **MCP server** exposing 65 tools via [Model Context Protocol](https://modelcontextprotocol.io/).
 
-Tell the AI what you want, and it builds it in Figma — frames, text, shapes, auto-layout, styles, components, effects, and more.
+Vibecoded with [Claude Code](https://claude.ai/code).
 
 ## Architecture
 
