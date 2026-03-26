@@ -3,6 +3,15 @@
   "version": "1.0.0",
   "description": "Text-to-Figma MCP Server with design constraints - monorepo root",
   "private": true,
+  "author": "Michael Haufschild",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michael-haufschild-gib/text-to-figma"
+  },
+  "homepage": "https://github.com/michael-haufschild-gib/text-to-figma#readme",
+  "bugs": {
+    "url": "https://github.com/michael-haufschild-gib/text-to-figma/issues"
+  },
   "engines": {
     "node": ">=20"
   },

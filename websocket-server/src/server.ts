@@ -559,8 +559,9 @@ export function createServer(port: number): ServerHandle {
   return { wss, state, heartbeatInterval, shutdown };
 }
 
-// Auto-start when this file is the entry point
+// Auto-start when this file is the entry point (untestable in unit tests)
 const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
+/* v8 ignore start -- CLI entry point guard, only runs when file is process.argv[1] */
 if (isMainModule) {
   const port = parseInt(process.env.PORT ?? '8080', 10);
   const { shutdown } = createServer(port);

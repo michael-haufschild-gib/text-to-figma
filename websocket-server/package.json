@@ -22,7 +22,16 @@
     "mcp",
     "bridge"
   ],
-  "author": "",
+  "author": "Michael Haufschild",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michael-haufschild-gib/text-to-figma",
+    "directory": "websocket-server"
+  },
+  "homepage": "https://github.com/michael-haufschild-gib/text-to-figma#readme",
+  "bugs": {
+    "url": "https://github.com/michael-haufschild-gib/text-to-figma/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "ws": "^8.19.0"

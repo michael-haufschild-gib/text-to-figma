@@ -5,11 +5,12 @@
 ## First Time Setup
 
 ```bash
-# 1. Build everything (one time only)
-./build-all.sh
-```
+# 1. Install dependencies
+npm install
 
-That's it! Wait 2-5 minutes for installation and compilation.
+# 2. Build everything
+npm run build
+```
 
 ---
 

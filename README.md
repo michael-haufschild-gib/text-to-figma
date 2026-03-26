@@ -1,53 +1,58 @@
 # Text-to-Figma MCP Server
 
-Design automation for Figma using Claude via Model Context Protocol.
+[![CI](https://github.com/michael-haufschild-gib/text-to-figma/actions/workflows/ci.yml/badge.svg)](https://github.com/michael-haufschild-gib/text-to-figma/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
 
-## What Actually Works
+LLMs cannot talk to Figma natively. This project bridges that gap: a three-tier [Model Context Protocol](https://modelcontextprotocol.io/) server that gives any MCP-compatible AI agent (Claude, GPT, etc.) **65 tools** to create and manipulate Figma designs programmatically.
 
-- ✅ MCP Server with 68 Figma tools
-- ✅ WebSocket bridge server
-- ✅ Figma plugin (basic - create frames, text)
-- ✅ Type-safe tool definitions with Zod
-- ✅ Health monitoring
+Tell the AI what you want, and it builds it in Figma — frames, text, shapes, auto-layout, styles, components, effects, and more.
+
+## Architecture
+
+```
+Claude / AI Agent
+   ↓ stdio (JSON-RPC)
+MCP Server (TypeScript)
+   ↓ WebSocket
+WebSocket Bridge (port 8080)
+   ↓ WebSocket
+Figma Plugin
+   ↓ Figma Plugin API
+Figma Document
+```
+
+| Layer | Directory | Role |
+|-|-|-|
+| MCP Server | `mcp-server/` | Exposes tools via MCP, validates input with Zod, enforces design constraints |
+| WebSocket Bridge | `websocket-server/` | Routes messages between MCP server and Figma plugin, manages connections |
+| Figma Plugin | `figma-plugin/` | Executes Figma API calls inside Figma Desktop |
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Install and Build
 
 ```bash
 npm install
-```
-
-### 2. Build Everything
-
-```bash
 npm run build
 ```
 
-### 3. Start WebSocket Server
+### 2. Start WebSocket Server
 
 ```bash
-cd websocket-server
-npm start
+cd websocket-server && npm start
 ```
 
-Should see: `WebSocket bridge server started on port 8080`
-
-### 4. Load Figma Plugin
+### 3. Load Figma Plugin
 
 1. Open Figma Desktop
-2. Menu → Plugins → Development → Import plugin from manifest
+2. Menu > Plugins > Development > Import plugin from manifest
 3. Select `figma-plugin/manifest.json`
-4. Run the plugin
+4. Run the plugin — it should connect to the WebSocket server
 
-You should see the plugin UI connect to WebSocket.
+### 4. Configure Your MCP Client
 
-### 5. Configure Claude Desktop
-
-Edit Claude config:
-
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%/Claude/claude_desktop_config.json`
+Add to your MCP client config (e.g. Claude Desktop `claude_desktop_config.json`):
 
 ```json
 {
@@ -65,156 +70,91 @@ Edit Claude config:
 }
 ```
 
-**IMPORTANT**: Replace `/FULL/PATH/TO/` with your actual absolute path.
-Claude Desktop requires absolute paths — relative paths will not work.
-A working local-dev config with relative paths is available in `mcp-config.json` at the repo root.
+Replace `/FULL/PATH/TO/` with the absolute path to this repo. A local-dev config with relative paths is available in `mcp-config.json`.
 
-### 6. Restart Claude Desktop
+### 5. Test It
 
-Completely quit and restart Claude Desktop.
+Ask your AI agent:
 
-### 7. Test It
+> Create a blue frame at 100,100 with size 400x300, then add white text "Hello World" centered inside it.
 
-In Claude, type:
+Check Figma — the frame and text should appear.
 
-```
-Use the text-to-figma server to create a red frame at position 100,100 with size 200x200
-```
+## Available Tools (65)
 
-Check Figma - you should see the frame appear.
+### Creation
+`create_frame` `create_text` `create_ellipse` `create_line` `create_polygon` `create_star` `create_path` `create_rectangle_with_image_fill` `create_boolean_operation` `create_page` `create_design`
 
-## Architecture
+### Components
+`create_component` `create_component_set` `create_instance` `detach_component` `add_variant_property` `set_component_properties` `set_instance_swap`
 
-```
-Claude Desktop
-   ↓ (stdio)
-MCP Server (port N/A - stdio only)
-   ↓ (WebSocket)
-WebSocket Bridge (port 8080)
-   ↓ (WebSocket)
-Figma Plugin
-   ↓ (Figma API)
-Figma Document
-```
+### Styling
+`set_fills` `set_stroke` `set_appearance` `set_corner_radius` `set_image_fill` `add_gradient_fill` `apply_effects`
 
-## Available Tools
+### Layout
+`set_layout_properties` `set_layout_sizing` `set_layout_align` `set_constraints` `align_nodes` `distribute_nodes` `set_layer_order`
 
-The MCP server exposes 68 tools. Key ones:
+### Text
+`set_text_properties` `create_text_style` `apply_text_style`
 
-- `create_frame` - Create frames
-- `create_text` - Create text nodes
-- `set_fills` - Set node fills/colors
-- `set_transform` - Move, resize, rotate, and scale nodes
-- `set_appearance` - Set opacity, blend mode, visibility
-- `apply_effects` - Add shadows, blurs
-- `check_wcag_contrast` - Validate color contrast
-- `validate_design_tokens` - Check design system compliance
+### Styles
+`create_color_style` `create_effect_style` `apply_fill_style` `apply_effect_style`
 
-See full list: `mcp-server/src/tools/`
+### Transform & Spatial
+`set_transform` `connect_shapes` `reparent_node`
+
+### Query
+`get_node_info` `get_node_by_id` `get_node_by_name` `get_children` `get_parent` `get_selection` `get_absolute_bounds` `get_relative_bounds` `get_page_hierarchy` `list_pages`
+
+### Utility
+`check_connection` `set_visible` `set_locked` `rename_node` `remove_node` `export_node` `set_current_page` `set_export_settings` `get_plugin_data` `set_plugin_data`
+
+### Design System
+`check_wcag_contrast` `validate_design_tokens`
 
 ## Configuration
 
-### MCP Server
+All environment variables with defaults are documented in [`.env.example`](.env.example).
 
-Environment variables:
+Key settings:
 
-- `FIGMA_WS_URL` - WebSocket server URL (default: `ws://localhost:8080`)
-- `NODE_ENV` - Environment (`development`|`production`)
-- `LOG_LEVEL` - Log level (`debug`|`info`|`warn`|`error`)
-
-### WebSocket Server
-
-- Port: `8080` (configurable via `PORT` env var)
-- Max message size: `10MB`
-- Request timeout: `30s`
+| Variable | Default | Description |
+|-|-|-|
+| `FIGMA_WS_URL` | `ws://localhost:8080` | WebSocket bridge URL |
+| `LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` |
+| `HEALTH_CHECK_PORT` | `8081` | HTTP health check port |
+| `CIRCUIT_BREAKER_THRESHOLD` | `5` | Failures before circuit opens |
 
 ## Development
 
-### File Structure
-
-```
-text-to-figma/
-├── mcp-server/          # MCP server (TypeScript)
-│   ├── src/
-│   │   ├── tools/       # 60+ tool implementations
-│   │   ├── constraints/ # Design validation
-│   │   ├── monitoring/  # Logging, metrics
-│   │   └── index.ts     # Main entry
-│   └── dist/            # Compiled JS
-├── websocket-server/    # Bridge (TypeScript → compiled JS)
-│   └── src/server.ts    # Source; builds to dist/server.js
-├── figma-plugin/        # Figma plugin (TypeScript)
-│   ├── src/
-│   │   ├── main.ts      # Entry point
-│   │   └── handlers/    # Command handlers by domain
-│   ├── ui.html          # Plugin UI
-│   └── manifest.json
-└── tests/               # Test suite
-```
-
-### Building
-
 ```bash
-# Build all
-npm run build
-
-# Build specific component
-cd mcp-server && npm run build
-cd figma-plugin && npm run build
+npm install          # Install all workspaces
+npm run build        # Build all (mcp-server + figma-plugin)
+npm test             # Run all tests (vitest, 2100+ tests)
+npm run lint         # ESLint (strict TypeScript rules)
+npm run format       # Prettier check
+npm run type-check   # TypeScript strict mode
+npm run test:coverage  # Coverage report (90%+ thresholds)
+npm run test:mutation  # Mutation testing (Stryker)
 ```
 
-### Linting
-
-```bash
-npm run lint
-```
-
-### Testing
-
-```bash
-# Run all tests
-npm test
-
-# Unit tests only
-npm run test:unit
-
-# Integration tests only
-npm run test:integration
-```
+See [`docs/`](docs/) for detailed architecture and development documentation.
 
 ## Troubleshooting
 
 ### Plugin won't load in Figma
-
-- Check `figma-plugin/code.js` exists after building (`npm run build` in figma-plugin/)
-- Check `figma-plugin/manifest.json` paths are correct
-- Try reloading: Plugins → Development → Remove plugin, then re-import
+- Ensure `figma-plugin/code.js` exists (`npm run build` in figma-plugin/)
+- Try removing and re-importing the plugin
 
 ### WebSocket won't connect
+- Check the server is running: `lsof -i :8080`
+- Check the Figma plugin console for errors
 
-- Check server is running: `lsof -i :8080`
-- Check firewall isn't blocking port 8080
-- Look at browser console in Figma plugin UI
-
-### Claude can't see the server
-
-- Check `claude_desktop_config.json` has absolute path
-- Restart Claude Desktop completely
-- Check MCP server builds: `ls mcp-server/dist/index.js`
-- Run manually to test: `node mcp-server/dist/index.js`
-
-### MCP server crashes
-
-- Check WebSocket server is running first
-- Check `FIGMA_WS_URL` environment variable
-- Look at logs for errors
-
-## Known Issues
-
-- Plugin UI is minimal (just shows connection status)
-- No authentication on WebSocket (localhost only)
-- Circuit breaker may trigger under heavy load
+### MCP client can't see tools
+- Ensure `claude_desktop_config.json` uses an absolute path
+- Restart the MCP client after config changes
+- Test manually: `node mcp-server/dist/index.js`
 
 ## License
 
-MIT
+[MIT](LICENSE)

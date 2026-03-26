@@ -14,7 +14,7 @@
     "unit",
     "integration"
   ],
-  "author": "",
+  "author": "Michael Haufschild",
   "license": "MIT",
   "dependencies": {
     "ws": "^8.19.0"

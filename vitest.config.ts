@@ -15,6 +15,7 @@ export default defineConfig({
       exclude: ['mcp-server/src/**/*.d.ts', 'mcp-server/src/**/index.ts'],
       reporter: ['text', 'lcov', 'html'],
       thresholds: {
+        perFile: true,
         lines: 90,
         functions: 90,
         branches: 80,

@@ -25,11 +25,25 @@
     "figma",
     "design-system"
   ],
-  "author": "",
+  "author": "Michael Haufschild",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michael-haufschild-gib/text-to-figma",
+    "directory": "mcp-server"
+  },
+  "homepage": "https://github.com/michael-haufschild-gib/text-to-figma#readme",
+  "bugs": {
+    "url": "https://github.com/michael-haufschild-gib/text-to-figma/issues"
+  },
   "engines": {
     "node": ">=20"
   },
   "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "ws": "^8.19.0",
