@@ -38,6 +38,9 @@
     "figma-plugin",
     "tests"
   ],
+  "overrides": {
+    "brace-expansion": ">=5.0.5"
+  },
   "devDependencies": {
     "@fast-check/vitest": "^0.3.0",
     "@figma/eslint-plugin-figma-plugins": "^1.0.0",
