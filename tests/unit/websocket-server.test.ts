@@ -272,7 +272,7 @@ describe('routeRequest', () => {
     state.figmaPluginClient = 'figma-1';
 
     routeRequest(state, { type: 'create_frame', payload: {}, id: 'req-42' }, 'mcp-1');
-    expect(state.pendingRequestOrigins.get('req-42')).toBe('mcp-1');
+    expect(state.pendingRequestOrigins.get('req-42')?.clientId).toBe('mcp-1');
   });
 
   it('forwards request to registered Figma plugin', () => {
@@ -317,7 +317,7 @@ describe('routeResponse', () => {
     const mcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
     state.figmaPluginClient = 'figma-1';
-    state.pendingRequestOrigins.set('req-42', 'mcp-1');
+    state.pendingRequestOrigins.set('req-42', { clientId: 'mcp-1', createdAt: Date.now() });
 
     const response = { id: 'req-42', success: true, nodeId: '1:2' };
     routeResponse(state, response, 'figma-1');
@@ -330,7 +330,7 @@ describe('routeResponse', () => {
     const mcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
     state.figmaPluginClient = 'figma-1';
-    state.pendingRequestOrigins.set('req-42', 'mcp-1');
+    state.pendingRequestOrigins.set('req-42', { clientId: 'mcp-1', createdAt: Date.now() });
 
     routeResponse(state, { id: 'req-42', success: true }, 'imposter-client');
     expect(mcpWs.send).not.toHaveBeenCalled();
@@ -355,7 +355,7 @@ describe('routeResponse', () => {
   it('does not send to closed MCP client', () => {
     const mcpWs = mockWs(WebSocket.CLOSED);
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
-    state.pendingRequestOrigins.set('req-42', 'mcp-1');
+    state.pendingRequestOrigins.set('req-42', { clientId: 'mcp-1', createdAt: Date.now() });
 
     routeResponse(state, { id: 'req-42', success: true }, 'figma-1');
     expect(mcpWs.send).not.toHaveBeenCalled();
@@ -366,7 +366,7 @@ describe('routeResponse', () => {
     // The origin ID is tracked but the client is gone from the map.
     const otherMcpWs = mockWs();
     state.clients.set('mcp-2', mockClient({ ws: otherMcpWs, isMCP: true }));
-    state.pendingRequestOrigins.set('req-orphan', 'mcp-gone');
+    state.pendingRequestOrigins.set('req-orphan', { clientId: 'mcp-gone', createdAt: Date.now() });
     // mcp-gone is NOT in state.clients
 
     const response = { id: 'req-orphan', success: true, data: 'orphaned' };
@@ -384,8 +384,8 @@ describe('routeResponse', () => {
   it('cleans up pendingRequestOrigins entry after routing', () => {
     const mcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
-    state.pendingRequestOrigins.set('req-1', 'mcp-1');
-    state.pendingRequestOrigins.set('req-2', 'mcp-1');
+    state.pendingRequestOrigins.set('req-1', { clientId: 'mcp-1', createdAt: Date.now() });
+    state.pendingRequestOrigins.set('req-2', { clientId: 'mcp-1', createdAt: Date.now() });
 
     routeResponse(state, { id: 'req-1', success: true }, 'figma-1');
 
@@ -400,7 +400,7 @@ describe('routeResponse', () => {
     // So ANY client's response is processed, falling through to origin lookup or broadcast.
     const mcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
-    state.pendingRequestOrigins.set('req-1', 'mcp-1');
+    state.pendingRequestOrigins.set('req-1', { clientId: 'mcp-1', createdAt: Date.now() });
     state.figmaPluginClient = null; // No Figma plugin registered
 
     routeResponse(state, { id: 'req-1', success: true, data: 'from-anyone' }, 'random-client');
@@ -415,7 +415,7 @@ describe('routeResponse', () => {
     const mcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
     state.figmaPluginClient = 'figma-1';
-    state.pendingRequestOrigins.set('req-fail', 'mcp-1');
+    state.pendingRequestOrigins.set('req-fail', { clientId: 'mcp-1', createdAt: Date.now() });
 
     const response = { id: 'req-fail', success: false, error: 'Node not found' };
     routeResponse(state, response, 'figma-1');
@@ -447,7 +447,7 @@ describe('routeMessage', () => {
   it('routes messages with id+success as responses', () => {
     const mcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
-    state.pendingRequestOrigins.set('req-1', 'mcp-1');
+    state.pendingRequestOrigins.set('req-1', { clientId: 'mcp-1', createdAt: Date.now() });
 
     // Cast needed because routeMessage checks 'id' in message
     const msg = { id: 'req-1', success: true } as BridgeMessage;
@@ -467,7 +467,7 @@ describe('routeMessage', () => {
     // alongside the id+success fields. routeMessage must treat this as a response.
     const mcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
-    state.pendingRequestOrigins.set('req-echo', 'mcp-1');
+    state.pendingRequestOrigins.set('req-echo', { clientId: 'mcp-1', createdAt: Date.now() });
 
     // Message has type+payload (Request) AND id+success (Response)
     const msg = {

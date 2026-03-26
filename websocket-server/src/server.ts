@@ -114,10 +114,18 @@ export type BridgeMessage =
 /**
  * Mutable server state — isolated per createServer() call for testability.
  */
+/** Maximum age (ms) for a pending request origin before it is swept as stale. */
+export const PENDING_REQUEST_TTL = 120_000; // 2 minutes
+
+export interface PendingRequestEntry {
+  clientId: string;
+  createdAt: number;
+}
+
 export interface ServerState {
   clients: Map<string, ClientRecord>;
   figmaPluginClient: string | null;
-  pendingRequestOrigins: Map<string, string>;
+  pendingRequestOrigins: Map<string, PendingRequestEntry>;
 }
 
 export function createServerState(): ServerState {
@@ -230,7 +238,7 @@ export function routeRequest(state: ServerState, message: RequestMessage, client
   }
   // Track which MCP client originated this request for response routing
   if (typeof message.id === 'string') {
-    state.pendingRequestOrigins.set(message.id, clientId);
+    state.pendingRequestOrigins.set(message.id, { clientId, createdAt: Date.now() });
   }
   if (state.figmaPluginClient && state.clients.has(state.figmaPluginClient)) {
     const figmaClient = state.clients.get(state.figmaPluginClient);
@@ -271,14 +279,14 @@ export function routeResponse(
     log('warn', 'Ignoring response from unregistered client', { clientId });
     return;
   }
-  const originClientId = state.pendingRequestOrigins.get(message.id);
+  const entry = state.pendingRequestOrigins.get(message.id);
   state.pendingRequestOrigins.delete(message.id);
 
-  if (originClientId) {
-    const originClient = state.clients.get(originClientId);
+  if (entry) {
+    const originClient = state.clients.get(entry.clientId);
     if (originClient?.ws.readyState === WebSocket.OPEN) {
       originClient.ws.send(JSON.stringify(message));
-      log('debug', 'Routed to originating MCP client', { originClientId });
+      log('debug', 'Routed to originating MCP client', { originClientId: entry.clientId });
     }
   } else {
     log('warn', 'Orphan response — no tracked origin, dropping', { id: message.id });
@@ -415,8 +423,8 @@ function cleanupClient(state: ServerState, clientId: string, errorMessage: strin
     log('warn', 'Primary Figma plugin lost, clearing assignment', { clientId });
     state.figmaPluginClient = null;
 
-    for (const [reqId, originId] of state.pendingRequestOrigins.entries()) {
-      const originClient = state.clients.get(originId);
+    for (const [reqId, entry] of state.pendingRequestOrigins.entries()) {
+      const originClient = state.clients.get(entry.clientId);
       if (originClient?.ws.readyState === WebSocket.OPEN) {
         originClient.ws.send(JSON.stringify({ id: reqId, success: false, error: errorMessage }));
       }
@@ -427,8 +435,8 @@ function cleanupClient(state: ServerState, clientId: string, errorMessage: strin
   state.clients.delete(clientId);
 
   // Clean up any pending request origins where this client was the requester
-  for (const [reqId, originId] of state.pendingRequestOrigins.entries()) {
-    if (originId === clientId) {
+  for (const [reqId, entry] of state.pendingRequestOrigins.entries()) {
+    if (entry.clientId === clientId) {
       state.pendingRequestOrigins.delete(reqId);
     }
   }
@@ -509,7 +517,7 @@ export function createServer(port: number): ServerHandle {
   });
 
   /**
-   * Heartbeat interval to detect dead connections
+   * Heartbeat interval to detect dead connections and sweep stale request origins
    */
   const heartbeatInterval = setInterval(() => {
     const now = Date.now();
@@ -532,6 +540,19 @@ export function createServer(port: number): ServerHandle {
         client.ws.terminate();
         state.clients.delete(clientId);
       }
+    }
+
+    // Sweep stale pending request origins to prevent memory accumulation
+    // from requests the Figma plugin never responded to
+    let swept = 0;
+    for (const [reqId, entry] of state.pendingRequestOrigins.entries()) {
+      if (now - entry.createdAt > PENDING_REQUEST_TTL) {
+        state.pendingRequestOrigins.delete(reqId);
+        swept++;
+      }
+    }
+    if (swept > 0) {
+      log('warn', 'Swept stale pending request origins', { swept });
     }
   }, HEARTBEAT_INTERVAL);
 
