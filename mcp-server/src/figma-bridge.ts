@@ -1,10 +1,4 @@
-/**
- * Figma Bridge - WebSocket Client
- *
- * Manages WebSocket connection to Figma plugin and provides
- * promise-based request/response communication with retry logic
- * and circuit breaker pattern.
- */
+/** Figma Bridge - WebSocket client with retry logic and circuit breaker. */
 
 import { randomUUID } from 'node:crypto';
 import WebSocket from 'ws';
@@ -238,6 +232,10 @@ export class FigmaBridge {
 
     this.connectingPromise = new Promise<void>((resolve, reject) => {
       try {
+        if (this.ws) {
+          this.ws.removeAllListeners();
+          if (this.ws.readyState <= WebSocket.OPEN) this.ws.close();
+        }
         this.ws = new WebSocket(this.wsUrl);
 
         // Connection timeout — cleared on success or first error
