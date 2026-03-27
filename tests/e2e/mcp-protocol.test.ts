@@ -16,7 +16,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ChildProcess, spawn } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { resolve as pathResolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startTestBridge, type TestBridgeHandle } from './helpers/test-bridge.js';
 import { SimulatedFigmaPlugin } from './helpers/simulated-figma-plugin.js';
@@ -52,12 +52,12 @@ class MCPTestClient {
   private ready = false;
 
   async start(env: Record<string, string>): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolveStart, rejectStart) => {
       const timeout = setTimeout(() => {
-        reject(new Error('MCP server failed to start within 10s'));
+        rejectStart(new Error('MCP server failed to start within 10s'));
       }, 10000);
 
-      const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+      const projectRoot = pathResolve(dirname(fileURLToPath(import.meta.url)), '../..');
       this.server = spawn('node', ['mcp-server/dist/index.js'], {
         cwd: projectRoot,
         env: { ...process.env, ...env },
@@ -70,7 +70,7 @@ class MCPTestClient {
         if (text.includes('Server running and ready for requests')) {
           clearTimeout(timeout);
           this.ready = true;
-          resolve();
+          resolveStart();
         }
       });
 
@@ -82,14 +82,20 @@ class MCPTestClient {
 
       this.server.on('error', (err) => {
         clearTimeout(timeout);
-        reject(err);
+        rejectStart(err);
       });
 
       this.server.on('exit', (code) => {
         if (!this.ready) {
           clearTimeout(timeout);
-          reject(new Error(`MCP server exited with code ${code} before ready`));
+          rejectStart(new Error(`MCP server exited with code ${code} before ready`));
         }
+
+        const exitError = new Error(`MCP server exited with code ${code}`);
+        for (const pending of this.pendingResponses.values()) {
+          pending.reject(exitError);
+        }
+        this.pendingResponses.clear();
       });
     });
   }
@@ -150,6 +156,20 @@ class MCPTestClient {
 
       this.server!.stdin!.write(JSON.stringify(request) + '\n');
     });
+  }
+
+  sendNotification(method: string, params?: Record<string, unknown>): void {
+    if (!this.server?.stdin?.writable) {
+      throw new Error('MCP server not started or stdin not writable');
+    }
+
+    const notification = {
+      jsonrpc: '2.0' as const,
+      method,
+      ...(params !== undefined ? { params } : {})
+    };
+
+    this.server.stdin.write(JSON.stringify(notification) + '\n');
   }
 
   async stop(): Promise<void> {
@@ -224,7 +244,7 @@ beforeAll(async () => {
   expect(capabilities.prompts).toBeTypeOf('object');
 
   // Send initialized notification
-  await client.sendRequest('notifications/initialized', {});
+  client.sendNotification('notifications/initialized', {});
 });
 
 afterAll(async () => {

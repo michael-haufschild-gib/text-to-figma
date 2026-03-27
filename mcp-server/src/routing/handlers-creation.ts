@@ -14,6 +14,7 @@ import { handler as createLine } from '../tools/create_line.js';
 import { handler as createPolygon } from '../tools/create_polygon.js';
 import { handler as createStar } from '../tools/create_star.js';
 import { handler as createPath } from '../tools/create_path.js';
+import { handler as batchCreatePath } from '../tools/batch_create_path.js';
 import { handler as editPath } from '../tools/edit_path.js';
 import { handler as createBooleanOperation } from '../tools/create_boolean_operation.js';
 import { handler as createComponent } from '../tools/create_component.js';
@@ -34,6 +35,7 @@ export const creationHandlers = [
   createPolygon,
   createStar,
   createPath,
+  batchCreatePath,
   editPath,
   createBooleanOperation,
   createComponent,

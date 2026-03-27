@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { getFigmaBridge } from '../figma-bridge.js';
+import { getNodeRegistry } from '../node-registry.js';
 import {
   formatRepairReport,
   repairPathCommands,
@@ -90,6 +91,8 @@ export type PathCommand = z.infer<typeof PathCommandSchema>;
 export const CreatePathInputSchema = z
   .object({
     name: z.string().optional().describe('Name for the path (default: "Path")'),
+    x: z.number().optional().describe('X position of the path node (default: 0)'),
+    y: z.number().optional().describe('Y position of the path node (default: 0)'),
     commands: z
       .array(z.custom<RawPathCommand>())
       .optional()
@@ -146,12 +149,18 @@ Path Commands (SVG-like syntax):
 - A (Arc): Elliptical arc { type: 'A', rx: 50, ry: 50, rotation: 0, largeArcFlag: 1, sweepFlag: 1, x: endx, y: endy }
 - Z (Close): Close path back to start { type: 'Z' }
 
+Positioning:
+- x/y sets the node position on the canvas. Path coordinates are relative to the node origin.
+- If omitted, the node is placed at (0, 0) within its parent.
+
 Example - Using command array:
 create_path({
   name: "Horse Body",
+  x: 200,
+  y: 100,
   commands: [
-    { type: 'M', x: 100, y: 200 },
-    { type: 'C', x1: 150, y1: 150, x2: 250, y2: 150, x: 300, y: 180 },
+    { type: 'M', x: 0, y: 0 },
+    { type: 'C', x1: 50, y1: -50, x2: 150, y2: -50, x: 200, y: -20 },
     { type: 'Z' }
   ],
   fillColor: "#8B4513"
@@ -188,6 +197,14 @@ create_path({
       name: {
         type: 'string' as const,
         description: 'Name for the path (default: "Path")'
+      },
+      x: {
+        type: 'number' as const,
+        description: 'X position of the path node (default: 0)'
+      },
+      y: {
+        type: 'number' as const,
+        description: 'Y position of the path node (default: 0)'
       },
       commands: {
         type: 'array' as const,
@@ -293,6 +310,8 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
     'create_path',
     {
       name,
+      x: input.x,
+      y: input.y,
       commands: normalizedCommands,
       svgPath: svgPathData,
       fillColor: input.fillColor,
@@ -308,6 +327,14 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
   if (!response.pathId) {
     throw new Error('Failed to create path: No pathId returned');
   }
+
+  const registry = getNodeRegistry();
+  registry.register(response.pathId, {
+    type: 'VECTOR',
+    name,
+    parentId: input.parentId ?? null,
+    children: []
+  });
 
   const commandCount = normalizedCommands?.length ?? 0;
   const pathSource = svgPathData ? 'SVG path string' : `${commandCount} commands`;

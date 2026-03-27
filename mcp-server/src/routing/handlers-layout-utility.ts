@@ -28,6 +28,7 @@ import { handler as reparentNode } from '../tools/reparent_node.js';
 import { handler as removeNode } from '../tools/remove_node.js';
 import { handler as renameNode } from '../tools/rename_node.js';
 import { handler as detachComponent } from '../tools/detach_component.js';
+import { handler as groupNodes } from '../tools/group_nodes.js';
 
 export const layoutUtilityHandlers = [
   setLayoutProperties,
@@ -52,5 +53,6 @@ export const layoutUtilityHandlers = [
   reparentNode,
   removeNode,
   renameNode,
-  detachComponent
+  detachComponent,
+  groupNodes
 ];

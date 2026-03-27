@@ -1,12 +1,12 @@
 /**
  * Path Command Handlers
  *
- * Handles: create_path, edit_path
+ * Handles: create_path, edit_path, batch_create_path
  * Supports structured command arrays (M, L, C, Q, A, Z) and raw SVG path strings.
  */
 
 import { z } from 'zod';
-import { getNode, hexToRgb, resolveParent } from '../helpers.js';
+import { cacheNode, getNode, hexToRgb, resolveParent } from '../helpers.js';
 
 // ── Return types ─────────────────────────────────────────────────────────────
 
@@ -34,6 +34,8 @@ const pathCommandSchema = z.object({
 
 const createPathSchema = z.object({
   name: z.string().optional(),
+  x: z.number().optional(),
+  y: z.number().optional(),
   commands: z.array(pathCommandSchema).optional(),
   svgPath: z.string().optional(),
   closed: z.boolean().optional(),
@@ -49,47 +51,10 @@ const createPathSchema = z.object({
 export function handleCreatePath(payload: Record<string, unknown>): OperationResult {
   const input = createPathSchema.parse(payload);
 
-  const vectorNode = figma.createVector();
-  vectorNode.name = input.name ?? 'Path';
-
-  let trimmedPath: string;
-
-  if (input.svgPath !== undefined && input.svgPath.trim() !== '') {
-    trimmedPath = input.svgPath.trim();
-    if (input.closed === true && !trimmedPath.includes('Z')) {
-      trimmedPath += ' Z';
-    }
-  } else if (input.commands !== undefined && input.commands.length > 0) {
-    const firstCmd = input.commands[0];
-    if (firstCmd?.type !== 'M') throw new Error('Path must start with M (Move) command');
-
-    const pathData = buildPathData(input.commands);
-    const finalPath = input.closed === true && !pathData.includes('Z') ? pathData + ' Z' : pathData;
-    trimmedPath = finalPath.trim();
-  } else {
-    throw new Error('Either "commands" or "svgPath" must be provided');
-  }
-
-  if (trimmedPath === '') throw new Error('Generated path data is empty');
-
-  vectorNode.vectorPaths = [{ windingRule: 'NONZERO', data: trimmedPath }];
-
-  if (input.fillColor !== undefined) {
-    const fill: SolidPaint =
-      input.fillOpacity !== undefined
-        ? { type: 'SOLID', color: hexToRgb(input.fillColor), opacity: input.fillOpacity }
-        : { type: 'SOLID', color: hexToRgb(input.fillColor) };
-    vectorNode.fills = [fill];
-  } else {
-    vectorNode.fills = [];
-  }
-  if (input.strokeColor !== undefined) {
-    vectorNode.strokes = [{ type: 'SOLID', color: hexToRgb(input.strokeColor) }];
-    vectorNode.strokeWeight = input.strokeWeight ?? 1;
-  }
-
+  const vectorNode = createVectorFromItem(input);
   const parent = resolveParent(input.parentId);
   parent.appendChild(vectorNode);
+  cacheNode(vectorNode);
   figma.viewport.scrollAndZoomIntoView([vectorNode]);
 
   const source =
@@ -143,6 +108,128 @@ export function handleEditPath(payload: Record<string, unknown>): OperationResul
     nodeId: node.id,
     message: `Path data updated on "${node.name}"`
   };
+}
+
+// ── Batch handler ────────────────────────────────────────────────────────────
+
+const batchCreatePathSchema = z.object({
+  paths: z.array(
+    z.object({
+      name: z.string().optional(),
+      x: z.number().optional(),
+      y: z.number().optional(),
+      commands: z.array(pathCommandSchema).optional(),
+      svgPath: z.string().optional(),
+      closed: z.boolean().optional(),
+      fillColor: z.string().optional(),
+      fillOpacity: z.number().optional(),
+      strokeColor: z.string().optional(),
+      strokeWeight: z.number().optional()
+    })
+  ),
+  parentId: z.string().optional()
+});
+
+export function handleBatchCreatePath(payload: Record<string, unknown>): OperationResult {
+  const input = batchCreatePathSchema.parse(payload);
+  const parent = resolveParent(input.parentId);
+  const results: Array<{ index: number; pathId?: string; name: string; error?: string }> = [];
+
+  for (let i = 0; i < input.paths.length; i++) {
+    const item = input.paths[i];
+    if (!item) continue;
+    const name = item.name ?? 'Path';
+    try {
+      const vectorNode = createVectorFromItem(item);
+      parent.appendChild(vectorNode);
+      cacheNode(vectorNode);
+      results.push({ index: i, pathId: vectorNode.id, name });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      results.push({ index: i, name, error: msg });
+    }
+  }
+
+  const created = results.filter((r) => r.pathId !== undefined).length;
+  if (created > 0) {
+    // Scroll to last successfully created path
+    for (let j = results.length - 1; j >= 0; j--) {
+      const r = results[j];
+      if (!r) continue;
+      if (r.pathId !== undefined) {
+        const node = getNode(r.pathId);
+        if (node) figma.viewport.scrollAndZoomIntoView([node]);
+        break;
+      }
+    }
+  }
+
+  return {
+    results,
+    message:
+      `Batch created ${String(created)} path(s)` +
+      (results.length - created > 0 ? `, ${String(results.length - created)} failed` : '')
+  };
+}
+
+/**
+ * Creates a VectorNode from a path item definition (shared by single and batch handlers).
+ * Does NOT append to parent or scroll viewport — caller handles that.
+ */
+function createVectorFromItem(item: {
+  name?: string;
+  x?: number;
+  y?: number;
+  commands?: z.infer<typeof pathCommandSchema>[];
+  svgPath?: string;
+  closed?: boolean;
+  fillColor?: string;
+  fillOpacity?: number;
+  strokeColor?: string;
+  strokeWeight?: number;
+}): VectorNode {
+  const vectorNode = figma.createVector();
+  vectorNode.name = item.name ?? 'Path';
+  vectorNode.x = item.x ?? 0;
+  vectorNode.y = item.y ?? 0;
+
+  let trimmedPath: string;
+
+  if (item.svgPath !== undefined && item.svgPath.trim() !== '') {
+    trimmedPath = item.svgPath.trim();
+    if (item.closed === true && !trimmedPath.includes('Z')) {
+      trimmedPath += ' Z';
+    }
+  } else if (item.commands !== undefined && item.commands.length > 0) {
+    const firstCmd = item.commands[0];
+    if (firstCmd?.type !== 'M') throw new Error('Path must start with M (Move) command');
+    const pathData = buildPathData(item.commands);
+    trimmedPath =
+      item.closed === true && !pathData.includes('Z') ? (pathData + ' Z').trim() : pathData.trim();
+  } else {
+    throw new Error('Either "commands" or "svgPath" must be provided');
+  }
+
+  if (trimmedPath === '') throw new Error('Generated path data is empty');
+
+  vectorNode.vectorPaths = [{ windingRule: 'NONZERO', data: trimmedPath }];
+
+  if (item.fillColor !== undefined) {
+    const fill: SolidPaint =
+      item.fillOpacity !== undefined
+        ? { type: 'SOLID', color: hexToRgb(item.fillColor), opacity: item.fillOpacity }
+        : { type: 'SOLID', color: hexToRgb(item.fillColor) };
+    vectorNode.fills = [fill];
+  } else {
+    vectorNode.fills = [];
+  }
+
+  if (item.strokeColor !== undefined) {
+    vectorNode.strokes = [{ type: 'SOLID', color: hexToRgb(item.strokeColor) }];
+    vectorNode.strokeWeight = item.strokeWeight ?? 1;
+  }
+
+  return vectorNode;
 }
 
 // ── Internal helpers ─────────────────────────────────────────────────────────

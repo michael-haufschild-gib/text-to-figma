@@ -279,8 +279,48 @@ export function handleSetClippingMask(payload: Record<string, unknown>): Operati
   };
 }
 
-// Path handlers (create_path, edit_path) extracted to ./path.ts
-export { handleCreatePath, handleEditPath } from './path.js';
+// Path handlers (create_path, edit_path, batch_create_path) extracted to ./path.ts
+export { handleCreatePath, handleEditPath, handleBatchCreatePath } from './path.js';
+
+const groupNodesSchema = z.object({
+  nodeIds: z.array(z.string()).min(1, 'Group requires at least 1 node'),
+  name: z.string().optional(),
+  parentId: z.string().optional()
+});
+
+export function handleGroupNodes(payload: Record<string, unknown>): OperationResult {
+  const input = groupNodesSchema.parse(payload);
+
+  const nodes = input.nodeIds.map((id) => getNode(id)).filter((n): n is SceneNode => n !== null);
+  if (nodes.length === 0) throw new Error('Could not find any of the specified nodes');
+
+  // Determine parent: explicit parentId, or first node's current parent
+  let parent: BaseNode & ChildrenMixin;
+  if (input.parentId !== undefined) {
+    const p = getNode(input.parentId);
+    if (!p || !('appendChild' in p)) throw new Error('Parent does not support children');
+    parent = p as BaseNode & ChildrenMixin;
+  } else {
+    const firstNode = nodes[0];
+    if (!firstNode) throw new Error('No valid nodes found');
+    const firstParent = firstNode.parent;
+    if (!firstParent || !('appendChild' in firstParent)) {
+      throw new Error('First node has no valid parent for grouping');
+    }
+    parent = firstParent;
+  }
+
+  const group = figma.group(nodes, parent);
+  group.name = input.name ?? 'Group';
+  cacheNode(group);
+  figma.viewport.scrollAndZoomIntoView([group]);
+
+  return {
+    groupId: group.id,
+    nodeCount: nodes.length,
+    message: `Grouped ${String(nodes.length)} node(s) into "${group.name}"`
+  };
+}
 
 const reparentNodeSchema = z.object({
   nodeId: z.string(),
