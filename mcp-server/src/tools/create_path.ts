@@ -116,6 +116,26 @@ export const CreatePathInputSchema = z
       .boolean()
       .optional()
       .describe('Whether to close the path automatically (default: false)'),
+    gradient: z
+      .object({
+        type: z.enum(['LINEAR', 'RADIAL']).describe('Gradient type'),
+        stops: z
+          .array(
+            z.object({
+              position: z.number().min(0).max(1).describe('Position along gradient (0-1)'),
+              color: z.string().describe('Color in hex format'),
+              opacity: z.number().min(0).max(1).optional().describe('Opacity at this stop (0-1)')
+            })
+          )
+          .min(2)
+          .describe('Gradient color stops (minimum 2)'),
+        angle: z
+          .number()
+          .optional()
+          .describe('Angle in degrees for LINEAR gradient (0 = left to right)')
+      })
+      .optional()
+      .describe('Gradient fill — overrides fillColor when provided'),
     parentId: z.string().optional().describe('Parent frame ID (optional)')
   })
   .refine(
@@ -190,6 +210,20 @@ create_path({
   svgPath: "M 0 0 L 100 0 L 100 100 L 0 100 Z",
   fillColor: "#000000",
   fillOpacity: 0.3
+})
+
+Example - Gradient fill:
+create_path({
+  name: "Gradient shape",
+  svgPath: "M 0 0 C 50 -40 150 -40 200 0 L 200 100 L 0 100 Z",
+  gradient: {
+    type: "LINEAR",
+    angle: 90,
+    stops: [
+      { position: 0, color: "#FF7E5F" },
+      { position: 1, color: "#3B82F6" }
+    ]
+  }
 })`,
   inputSchema: {
     type: 'object' as const,
@@ -235,6 +269,33 @@ create_path({
       strokeWeight: {
         type: 'number' as const,
         description: 'Stroke width in pixels'
+      },
+      gradient: {
+        type: 'object' as const,
+        description: 'Gradient fill (overrides fillColor)',
+        properties: {
+          type: {
+            type: 'string' as const,
+            enum: ['LINEAR', 'RADIAL'],
+            description: 'Gradient type'
+          },
+          stops: {
+            type: 'array' as const,
+            description: 'Color stops (min 2)',
+            items: {
+              type: 'object' as const,
+              properties: {
+                position: { type: 'number' as const, description: 'Position 0-1' },
+                color: { type: 'string' as const, description: 'Hex color' },
+                opacity: { type: 'number' as const, description: 'Opacity 0-1' }
+              },
+              required: ['position', 'color']
+            },
+            minItems: 2
+          },
+          angle: { type: 'number' as const, description: 'Angle for LINEAR (degrees)' }
+        },
+        required: ['type', 'stops']
       },
       closed: {
         type: 'boolean' as const,
@@ -319,6 +380,7 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
       strokeColor: input.strokeColor,
       strokeWeight: input.strokeWeight,
       closed,
+      gradient: input.gradient,
       parentId: input.parentId
     },
     CreatePathResponseSchema

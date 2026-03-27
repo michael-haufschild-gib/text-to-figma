@@ -43,6 +43,19 @@ const createPathSchema = z.object({
   fillOpacity: z.number().optional(),
   strokeColor: z.string().optional(),
   strokeWeight: z.number().optional(),
+  gradient: z
+    .object({
+      type: z.string().optional(),
+      stops: z.array(
+        z.object({
+          position: z.number().optional(),
+          color: z.string().optional(),
+          opacity: z.number().optional()
+        })
+      ),
+      angle: z.number().optional()
+    })
+    .optional(),
   parentId: z.string().optional()
 });
 
@@ -124,7 +137,20 @@ const batchCreatePathSchema = z.object({
       fillColor: z.string().optional(),
       fillOpacity: z.number().optional(),
       strokeColor: z.string().optional(),
-      strokeWeight: z.number().optional()
+      strokeWeight: z.number().optional(),
+      gradient: z
+        .object({
+          type: z.string().optional(),
+          stops: z.array(
+            z.object({
+              position: z.number().optional(),
+              color: z.string().optional(),
+              opacity: z.number().optional()
+            })
+          ),
+          angle: z.number().optional()
+        })
+        .optional()
     })
   ),
   parentId: z.string().optional()
@@ -172,6 +198,61 @@ export function handleBatchCreatePath(payload: Record<string, unknown>): Operati
   };
 }
 
+function resolveFills(item: {
+  fillColor?: string;
+  fillOpacity?: number;
+  gradient?: {
+    type?: string;
+    stops?: Array<{ position?: number; color?: string; opacity?: number }>;
+    angle?: number;
+  };
+}): Paint[] {
+  if (item.gradient?.stops && item.gradient.stops.length >= 2) {
+    return [buildGradientPaint(item.gradient)];
+  }
+  if (item.fillColor !== undefined) {
+    const fill: SolidPaint =
+      item.fillOpacity !== undefined
+        ? { type: 'SOLID', color: hexToRgb(item.fillColor), opacity: item.fillOpacity }
+        : { type: 'SOLID', color: hexToRgb(item.fillColor) };
+    return [fill];
+  }
+  return [];
+}
+
+function buildGradientPaint(gradient: {
+  type?: string;
+  stops?: Array<{ position?: number; color?: string; opacity?: number }>;
+  angle?: number;
+}): GradientPaint {
+  const gradientType = gradient.type === 'RADIAL' ? 'GRADIENT_RADIAL' : 'GRADIENT_LINEAR';
+  const stops: ColorStop[] = (gradient.stops ?? []).map((stop) => ({
+    position: stop.position ?? 0,
+    color: {
+      ...hexToRgb(stop.color ?? '#000000'),
+      a: stop.opacity ?? 1
+    }
+  }));
+
+  let gradientTransform: Transform;
+  if (gradientType === 'GRADIENT_LINEAR' && gradient.angle !== undefined) {
+    const angleRad = (gradient.angle * Math.PI) / 180;
+    const cos = Math.cos(angleRad);
+    const sin = Math.sin(angleRad);
+    gradientTransform = [
+      [cos, sin, 0.5 - sin * 0.5 - cos * 0.5],
+      [-sin, cos, 0.5 + sin * 0.5 - cos * 0.5]
+    ];
+  } else {
+    gradientTransform = [
+      [1, 0, 0],
+      [0, 1, 0]
+    ];
+  }
+
+  return { type: gradientType, gradientStops: stops, gradientTransform } as GradientPaint;
+}
+
 /**
  * Creates a VectorNode from a path item definition (shared by single and batch handlers).
  * Does NOT append to parent or scroll viewport — caller handles that.
@@ -187,6 +268,11 @@ function createVectorFromItem(item: {
   fillOpacity?: number;
   strokeColor?: string;
   strokeWeight?: number;
+  gradient?: {
+    type?: string;
+    stops?: Array<{ position?: number; color?: string; opacity?: number }>;
+    angle?: number;
+  };
 }): VectorNode {
   const vectorNode = figma.createVector();
   vectorNode.name = item.name ?? 'Path';
@@ -214,15 +300,7 @@ function createVectorFromItem(item: {
 
   vectorNode.vectorPaths = [{ windingRule: 'NONZERO', data: trimmedPath }];
 
-  if (item.fillColor !== undefined) {
-    const fill: SolidPaint =
-      item.fillOpacity !== undefined
-        ? { type: 'SOLID', color: hexToRgb(item.fillColor), opacity: item.fillOpacity }
-        : { type: 'SOLID', color: hexToRgb(item.fillColor) };
-    vectorNode.fills = [fill];
-  } else {
-    vectorNode.fills = [];
-  }
+  vectorNode.fills = resolveFills(item);
 
   if (item.strokeColor !== undefined) {
     vectorNode.strokes = [{ type: 'SOLID', color: hexToRgb(item.strokeColor) }];

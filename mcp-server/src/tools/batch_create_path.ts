@@ -39,7 +39,27 @@ const BatchPathItemSchema = z
     fillOpacity: z.number().min(0).max(1).optional().describe('Fill opacity from 0 to 1'),
     strokeColor: z.string().optional().describe('Stroke color in hex format'),
     strokeWeight: z.number().optional().describe('Stroke width in pixels'),
-    closed: z.boolean().optional().describe('Whether to close the path automatically')
+    closed: z.boolean().optional().describe('Whether to close the path automatically'),
+    gradient: z
+      .object({
+        type: z.enum(['LINEAR', 'RADIAL']).describe('Gradient type'),
+        stops: z
+          .array(
+            z.object({
+              position: z.number().min(0).max(1).describe('Position along gradient (0-1)'),
+              color: z.string().describe('Color in hex format'),
+              opacity: z.number().min(0).max(1).optional().describe('Opacity at this stop (0-1)')
+            })
+          )
+          .min(2)
+          .describe('Gradient color stops (minimum 2)'),
+        angle: z
+          .number()
+          .optional()
+          .describe('Angle in degrees for LINEAR gradient (0 = left to right)')
+      })
+      .optional()
+      .describe('Gradient fill — overrides fillColor when provided')
   })
   .refine(
     (data) =>
@@ -76,6 +96,11 @@ interface ProcessedPathItem {
   strokeColor?: string;
   strokeWeight?: number;
   closed: boolean;
+  gradient?: {
+    type: 'LINEAR' | 'RADIAL';
+    stops: Array<{ position: number; color: string; opacity?: number }>;
+    angle?: number;
+  };
 }
 
 /**
@@ -87,15 +112,27 @@ export const batchCreatePathToolDefinition = {
 
 All paths share the same parent frame. Each path item accepts the same options as create_path.
 
+Layer order: Paths are stacked bottom-to-top in array order — paths[0] is at the back, paths[N-1] is on top. Use set_layer_order after creation if you need to adjust stacking.
+
+Fills: Each path supports solid fills (fillColor) or gradient fills (gradient object with type, stops, angle). Gradient overrides fillColor if both are provided.
+
 Limits: 1-200 paths per batch.
 
-Example:
+Example — solid fills:
 batch_create_path({
   parentId: "frame-123",
   paths: [
     { name: "Body", svgPath: "M 0 0 C 50 -30 100 -30 150 0 Z", fillColor: "#8B4513" },
-    { name: "Head", x: 150, y: -40, svgPath: "M 0 20 A 20 20 0 1 1 40 20 A 20 20 0 1 1 0 20 Z", fillColor: "#8B4513" },
-    { name: "Tail", x: -10, y: -10, svgPath: "M 0 0 C -20 -30 -10 -40 5 -35", strokeColor: "#8B4513", strokeWeight: 3 }
+    { name: "Head", x: 150, y: -40, svgPath: "M 0 20 A 20 20 0 1 1 40 20 A 20 20 0 1 1 0 20 Z", fillColor: "#8B4513" }
+  ]
+})
+
+Example — gradient fill:
+batch_create_path({
+  parentId: "frame-123",
+  paths: [
+    { name: "Sky", svgPath: "M 0 0 L 400 0 L 400 200 L 0 200 Z", gradient: { type: "LINEAR", angle: 90, stops: [{ position: 0, color: "#FF7E5F" }, { position: 1, color: "#3B82F6" }] } },
+    { name: "Ground", svgPath: "M 0 0 L 400 0 L 400 100 L 0 100 Z", fillColor: "#4A7C59" }
   ]
 })`,
   inputSchema: {
@@ -120,7 +157,34 @@ batch_create_path({
             fillOpacity: { type: 'number' as const, description: 'Fill opacity 0-1' },
             strokeColor: { type: 'string' as const, description: 'Stroke hex color' },
             strokeWeight: { type: 'number' as const, description: 'Stroke width' },
-            closed: { type: 'boolean' as const, description: 'Close path automatically' }
+            closed: { type: 'boolean' as const, description: 'Close path automatically' },
+            gradient: {
+              type: 'object' as const,
+              description: 'Gradient fill (overrides fillColor)',
+              properties: {
+                type: {
+                  type: 'string' as const,
+                  enum: ['LINEAR', 'RADIAL'],
+                  description: 'Gradient type'
+                },
+                stops: {
+                  type: 'array' as const,
+                  description: 'Color stops (min 2)',
+                  items: {
+                    type: 'object' as const,
+                    properties: {
+                      position: { type: 'number' as const, description: 'Position 0-1' },
+                      color: { type: 'string' as const, description: 'Hex color' },
+                      opacity: { type: 'number' as const, description: 'Opacity 0-1' }
+                    },
+                    required: ['position', 'color']
+                  },
+                  minItems: 2
+                },
+                angle: { type: 'number' as const, description: 'Angle for LINEAR (degrees)' }
+              },
+              required: ['type', 'stops']
+            }
           }
         }
       },
@@ -205,7 +269,8 @@ export async function batchCreatePath(input: BatchCreatePathInput): Promise<Batc
       fillOpacity: item.fillOpacity,
       strokeColor: item.strokeColor,
       strokeWeight: item.strokeWeight,
-      closed: item.closed ?? false
+      closed: item.closed ?? false,
+      gradient: item.gradient
     });
   }
 
