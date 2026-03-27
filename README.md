@@ -22,11 +22,11 @@ Figma Plugin
 Figma Document
 ```
 
-| Layer | Directory | Role |
-|-|-|-|
-| MCP Server | `mcp-server/` | Exposes tools via MCP, validates input with Zod, enforces design constraints |
-| WebSocket Bridge | `websocket-server/` | Routes messages between MCP server and Figma plugin, manages connections |
-| Figma Plugin | `figma-plugin/` | Executes Figma API calls inside Figma Desktop |
+| Layer            | Directory           | Role                                                                         |
+| ---------------- | ------------------- | ---------------------------------------------------------------------------- |
+| MCP Server       | `mcp-server/`       | Exposes tools via MCP, validates input with Zod, enforces design constraints |
+| WebSocket Bridge | `websocket-server/` | Routes messages between MCP server and Figma plugin, manages connections     |
+| Figma Plugin     | `figma-plugin/`     | Executes Figma API calls inside Figma Desktop                                |
 
 ## Quick Start
 
@@ -83,33 +83,43 @@ Check Figma — the frame and text should appear.
 ## Available Tools (65)
 
 ### Creation
+
 `create_frame` `create_text` `create_ellipse` `create_line` `create_polygon` `create_star` `create_path` `create_rectangle_with_image_fill` `create_boolean_operation` `create_page` `create_design`
 
 ### Components
+
 `create_component` `create_component_set` `create_instance` `detach_component` `add_variant_property` `set_component_properties` `set_instance_swap`
 
 ### Styling
+
 `set_fills` `set_stroke` `set_appearance` `set_corner_radius` `set_image_fill` `add_gradient_fill` `apply_effects`
 
 ### Layout
+
 `set_layout_properties` `set_layout_sizing` `set_layout_align` `set_constraints` `align_nodes` `distribute_nodes` `set_layer_order`
 
 ### Text
+
 `set_text_properties` `create_text_style` `apply_text_style`
 
 ### Styles
+
 `create_color_style` `create_effect_style` `apply_fill_style` `apply_effect_style`
 
 ### Transform & Spatial
+
 `set_transform` `connect_shapes` `reparent_node`
 
 ### Query
+
 `get_node_info` `get_node_by_id` `get_node_by_name` `get_children` `get_parent` `get_selection` `get_absolute_bounds` `get_relative_bounds` `get_page_hierarchy` `list_pages`
 
 ### Utility
+
 `check_connection` `set_visible` `set_locked` `rename_node` `remove_node` `export_node` `set_current_page` `set_export_settings` `get_plugin_data` `set_plugin_data`
 
 ### Design System
+
 `check_wcag_contrast` `validate_design_tokens`
 
 ## Configuration
@@ -118,12 +128,12 @@ All environment variables with defaults are documented in [`.env.example`](.env.
 
 Key settings:
 
-| Variable | Default | Description |
-|-|-|-|
-| `FIGMA_WS_URL` | `ws://localhost:8080` | WebSocket bridge URL |
-| `LOG_LEVEL` | `info` | `debug` / `info` / `warn` / `error` |
-| `HEALTH_CHECK_PORT` | `8081` | HTTP health check port |
-| `CIRCUIT_BREAKER_THRESHOLD` | `5` | Failures before circuit opens |
+| Variable                    | Default               | Description                         |
+| --------------------------- | --------------------- | ----------------------------------- |
+| `FIGMA_WS_URL`              | `ws://localhost:8080` | WebSocket bridge URL                |
+| `LOG_LEVEL`                 | `info`                | `debug` / `info` / `warn` / `error` |
+| `HEALTH_CHECK_PORT`         | `8081`                | HTTP health check port              |
+| `CIRCUIT_BREAKER_THRESHOLD` | `5`                   | Failures before circuit opens       |
 
 ## Development
 
@@ -143,14 +153,17 @@ See [`docs/`](docs/) for detailed architecture and development documentation.
 ## Troubleshooting
 
 ### Plugin won't load in Figma
+
 - Ensure `figma-plugin/code.js` exists (`npm run build` in figma-plugin/)
 - Try removing and re-importing the plugin
 
 ### WebSocket won't connect
+
 - Check the server is running: `lsof -i :8080`
 - Check the Figma plugin console for errors
 
 ### MCP client can't see tools
+
 - Ensure `claude_desktop_config.json` uses an absolute path
 - Restart the MCP client after config changes
 - Test manually: `node mcp-server/dist/index.js`
