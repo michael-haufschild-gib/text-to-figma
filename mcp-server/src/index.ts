@@ -34,7 +34,7 @@ import { registerAllTools } from './routing/register-tools.js';
 import { routeToolCall } from './routing/tool-router.js';
 import { getToolRegistry } from './routing/tool-registry.js';
 import { VERSION } from './version.js';
-import { ensureWebSocketServer, stopWebSocketServer } from './websocket-spawner.js';
+import { ensureWebSocketServer } from './websocket-spawner.js';
 
 /**
  * Initialize MCP Server
@@ -208,6 +208,13 @@ function handleFigmaNotification(notification: FigmaNotification): void {
       registry.markStale();
       break;
 
+    case 'peer_operation':
+      // Another AI agent performed an operation via the shared bridge.
+      // Mark registry stale so our next query re-fetches from Figma.
+      console.error('[MCP Server] Peer agent performed operation. Marking registry stale.');
+      registry.markStale();
+      break;
+
     default:
       console.error(`[MCP Server] Unknown notification kind: ${notification.kind}`);
   }
@@ -306,8 +313,9 @@ async function main(): Promise<void> {
       console.error('[MCP Server] Disconnecting from Figma bridge...');
       bridge.disconnect();
 
-      console.error('[MCP Server] Stopping WebSocket server if spawned...');
-      stopWebSocketServer();
+      // Bridge is NOT stopped here — it runs independently and serves
+      // other MCP server processes. Use stopWebSocketServer() only for
+      // explicit full-system shutdown.
 
       console.error('[MCP Server] Closing MCP server transport...');
       await server.close();

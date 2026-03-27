@@ -58,4 +58,11 @@ export interface FigmaRequest {
   id: string;
   type: string;
   payload: unknown;
+  /**
+   * Page the MCP server believes it is operating on. The Figma plugin
+   * switches to this page before executing the handler, making each
+   * request stateless with respect to `figma.currentPage`. This
+   * prevents multi-agent conflicts when agents work on different pages.
+   */
+  _pageId?: string;
 }

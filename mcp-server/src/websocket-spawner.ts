@@ -6,7 +6,9 @@
  */
 
 import { ChildProcess, spawn } from 'child_process';
+import * as fs from 'fs';
 import * as net from 'net';
+import * as os from 'os';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import WebSocket from 'ws';
@@ -18,6 +20,12 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_WEBSOCKET_PORT = 8080;
 const STARTUP_TIMEOUT = 10000; // 10 seconds to wait for server to start
 const PORT_CHECK_INTERVAL = 200; // Check every 200ms
+
+/** PID file location — shared across all MCP server processes. */
+const PID_FILE = path.join(os.tmpdir(), 'text-to-figma-ws-bridge.pid');
+
+/** Log file for the detached bridge process. */
+const BRIDGE_LOG_FILE = path.join(os.tmpdir(), 'text-to-figma-ws-bridge.log');
 
 interface WebSocketTarget {
   port: number;
@@ -249,53 +257,119 @@ export async function ensureWebSocketServer(): Promise<SpawnResult> {
   return spawnLocalServer(port);
 }
 
+/**
+ * Check if a previously spawned bridge is still alive via its PID file.
+ * Returns true if the process exists (even if it hasn't finished starting).
+ */
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0); // signal 0 = existence check, no signal sent
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Write the bridge PID so other MCP server processes can find it.
+ */
+function writePidFile(pid: number): void {
+  try {
+    fs.writeFileSync(PID_FILE, String(pid), { mode: 0o644 });
+  } catch {
+    console.error('[WebSocket Spawner] Warning: could not write PID file');
+  }
+}
+
+/**
+ * Clean up a stale PID file (process no longer running).
+ */
+function cleanPidFile(): void {
+  try {
+    fs.unlinkSync(PID_FILE);
+  } catch {
+    // Already gone — fine
+  }
+}
+
 async function spawnLocalServer(port: number): Promise<SpawnResult> {
+  // Check for a PID file from a previous spawn that may still be starting
+  try {
+    if (fs.existsSync(PID_FILE)) {
+      const existingPid = parseInt(fs.readFileSync(PID_FILE, 'utf-8').trim(), 10);
+      if (Number.isFinite(existingPid) && isPidAlive(existingPid)) {
+        // Process exists but port isn't ready yet — wait for it
+        console.error(
+          `[WebSocket Spawner] Found running bridge (PID ${existingPid}), waiting for readiness...`
+        );
+        const isReady = await waitForServerReady(port, '127.0.0.1', STARTUP_TIMEOUT);
+        if (isReady) {
+          return { success: true, alreadyRunning: true, spawned: false, port };
+        }
+        // Process alive but never became ready — kill and re-spawn
+        console.error('[WebSocket Spawner] Stale bridge process, killing and re-spawning');
+        try {
+          process.kill(existingPid, 'SIGTERM');
+        } catch {
+          // Already dead
+        }
+      }
+      cleanPidFile();
+    }
+  } catch {
+    // PID file check failed — continue to spawn
+  }
+
   console.error(`[WebSocket Spawner] Port ${port} is free. Spawning WebSocket server...`);
 
   const serverPath = getWebSocketServerPath();
   console.error(`[WebSocket Spawner] Server path: ${serverPath}`);
 
   try {
+    // Open a log file for the detached process (stdio pipes can't survive unref)
+    const logFd = fs.openSync(BRIDGE_LOG_FILE, 'a');
+
     spawnedProcess = spawn('node', [serverPath], {
-      detached: false,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      detached: true,
+      stdio: ['ignore', logFd, logFd],
       env: { ...process.env, PORT: String(port) }
     });
 
-    const pipeOutput = (stream: NodeJS.ReadableStream | null): void => {
-      stream?.on('data', (data: Buffer) => {
-        for (const line of data.toString().trim().split('\n')) {
-          console.error(`[WebSocket Server] ${line}`);
-        }
-      });
-    };
-    pipeOutput(spawnedProcess.stdout);
-    pipeOutput(spawnedProcess.stderr);
+    // Write PID file so other MCP servers (and future invocations) can find it
+    if (spawnedProcess.pid !== undefined) {
+      writePidFile(spawnedProcess.pid);
+    }
+
+    // Allow this MCP server to exit without killing the bridge
+    spawnedProcess.unref();
 
     spawnedProcess.on('error', (err) => {
       console.error(`[WebSocket Spawner] Failed to spawn server: ${err.message}`);
+      cleanPidFile();
     });
 
-    spawnedProcess.on('exit', (code, signal) => {
-      if (code !== null) {
-        console.error(`[WebSocket Spawner] Server exited with code ${code}`);
-      } else if (signal !== null) {
-        console.error(`[WebSocket Spawner] Server killed by signal ${signal}`);
-      }
-      spawnedProcess = null;
-    });
+    // Close the fd in this process — the child owns it now
+    fs.closeSync(logFd);
 
     console.error(`[WebSocket Spawner] Waiting for server to become ready...`);
     const isReady = await waitForServerReady(port, '127.0.0.1', STARTUP_TIMEOUT);
 
     if (isReady) {
       console.error(`[WebSocket Spawner] WebSocket server started successfully on port ${port}`);
+      console.error(`[WebSocket Spawner] Bridge logs: ${BRIDGE_LOG_FILE}`);
       return { success: true, alreadyRunning: false, spawned: true, port };
     } else {
       console.error(
         `[WebSocket Spawner] FAIL: Server failed to start within ${STARTUP_TIMEOUT / 1000}s`
       );
-      spawnedProcess.kill();
+      if (spawnedProcess.pid !== undefined) {
+        try {
+          process.kill(spawnedProcess.pid, 'SIGTERM');
+        } catch {
+          // Already dead
+        }
+      }
+      cleanPidFile();
       spawnedProcess = null;
       return {
         success: false,
@@ -319,12 +393,26 @@ async function spawnLocalServer(port: number): Promise<SpawnResult> {
 }
 
 /**
- * Stop the spawned WebSocket server if we started it
+ * Explicitly stop the WebSocket bridge. Only call this when the user
+ * requests a full shutdown — not on normal MCP server exit, since the
+ * bridge is shared across all MCP server processes.
  */
 export function stopWebSocketServer(): void {
-  if (spawnedProcess) {
-    console.error('[WebSocket Spawner] Stopping spawned WebSocket server...');
-    spawnedProcess.kill('SIGTERM');
-    spawnedProcess = null;
+  try {
+    if (fs.existsSync(PID_FILE)) {
+      const pid = parseInt(fs.readFileSync(PID_FILE, 'utf-8').trim(), 10);
+      if (Number.isFinite(pid)) {
+        console.error(`[WebSocket Spawner] Stopping WebSocket bridge (PID ${pid})...`);
+        try {
+          process.kill(pid, 'SIGTERM');
+        } catch {
+          // Already dead
+        }
+      }
+      cleanPidFile();
+    }
+  } catch {
+    // Best-effort cleanup
   }
+  spawnedProcess = null;
 }

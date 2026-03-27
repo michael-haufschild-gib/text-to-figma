@@ -89,9 +89,10 @@ import {
   handleReparentNode,
   handleRemoveNode,
   handleRenameNode,
-  handleDetachComponent
+  handleDetachComponent,
+  handleGroupNodes
 } from './handlers/utility.js';
-import { handleCreatePath, handleEditPath } from './handlers/path.js';
+import { handleCreatePath, handleEditPath, handleBatchCreatePath } from './handlers/path.js';
 
 // ─── Build-time constants (injected by esbuild via build.mjs) ────────────────
 
@@ -147,6 +148,7 @@ const handlers: Record<string, Handler> = {
   create_rectangle_with_image_fill: handleCreateRectangleWithImageFill,
   create_path: handleCreatePath,
   edit_path: handleEditPath,
+  batch_create_path: handleBatchCreatePath,
   create_boolean_operation: handleCreateBooleanOperation,
   create_design: handleCreateDesign,
 
@@ -224,7 +226,8 @@ const handlers: Record<string, Handler> = {
   reparent_node: handleReparentNode,
   remove_node: handleRemoveNode,
   rename_node: handleRenameNode,
-  detach_component: handleDetachComponent
+  detach_component: handleDetachComponent,
+  group_nodes: handleGroupNodes
 };
 
 // ─── Message handler ──────────────────────────────────────────────────────────
@@ -233,8 +236,18 @@ const handlers: Record<string, Handler> = {
  *  documentchange listener to suppress feedback from our own mutations. */
 let mcpCommandInFlight = 0;
 
+/**
+ * Serial request queue — each message fully completes (all awaits resolved)
+ * before the next begins. Eliminates race conditions from concurrent handler
+ * execution, which is critical when multiple AI agents share this plugin.
+ */
+let requestQueue: Promise<void> = Promise.resolve();
+
 figma.ui.onmessage = (msg: Record<string, unknown>): void => {
-  void handleMessage(msg);
+  requestQueue = requestQueue.then(
+    () => handleMessage(msg),
+    () => handleMessage(msg)
+  );
 };
 
 /**
@@ -254,10 +267,11 @@ function getResponseContext(): {
 }
 
 async function handleMessage(msg: Record<string, unknown>): Promise<void> {
-  const { type, payload, requestId } = msg as {
+  const { type, payload, requestId, _pageId } = msg as {
     type: string;
     payload?: Record<string, unknown>;
     requestId?: string;
+    _pageId?: string;
   };
 
   if (typeof type !== 'string' || type === '') {
@@ -272,6 +286,15 @@ async function handleMessage(msg: Record<string, unknown>): Promise<void> {
 
   mcpCommandInFlight++;
   try {
+    // Switch to the page the agent expects. With the serial queue this is
+    // safe — no other request can change the page mid-execution.
+    if (_pageId && figma.currentPage.id !== _pageId) {
+      const targetPage = figma.root.children.find((p) => p.id === _pageId);
+      if (targetPage) {
+        await figma.setCurrentPageAsync(targetPage);
+      }
+    }
+
     const handler = handlers[type];
     if (!handler) {
       throw new Error(`Unknown command type: ${type}`);

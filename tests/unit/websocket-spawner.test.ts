@@ -69,6 +69,17 @@ vi.mock('ws', () => {
   return { default: MockWS, WebSocket: MockWS };
 });
 
+// ── Mock: fs module (PID file + log file operations) ─────────────────────────
+
+vi.mock('fs', () => ({
+  existsSync: () => false,
+  readFileSync: () => '',
+  writeFileSync: () => undefined,
+  unlinkSync: () => undefined,
+  openSync: () => 99,
+  closeSync: () => undefined
+}));
+
 // ── Mock: child_process ───────────────────────────────────────────────────────
 
 const spawnedProcesses: EventEmitter[] = [];
@@ -83,6 +94,9 @@ vi.mock('child_process', () => ({
       kill(): boolean {
         this.killed = true;
         return true;
+      }
+      unref(): void {
+        /* detached process — no-op in tests */
       }
     })();
     spawnedProcesses.push(proc);

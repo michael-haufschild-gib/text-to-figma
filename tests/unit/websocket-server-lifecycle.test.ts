@@ -43,6 +43,28 @@ function nextMessage(ws: WebSocket, timeoutMs = 3000): Promise<Record<string, un
   });
 }
 
+/**
+ * Wait for the next response message (has `id` + `success`), skipping any
+ * peer_operation notifications that the bridge now broadcasts to non-originating
+ * MCP clients after successful responses.
+ */
+function nextResponse(ws: WebSocket, timeoutMs = 3000): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('Response timeout')), timeoutMs);
+    const handler = (data: WebSocket.RawData): void => {
+      const msg = JSON.parse(data.toString()) as Record<string, unknown>;
+      if (typeof msg.id === 'string' && typeof msg.success === 'boolean') {
+        clearTimeout(timeout);
+        resolve(msg);
+      } else {
+        // Not a response (e.g. peer_operation notification) — keep listening
+        ws.once('message', handler);
+      }
+    };
+    ws.once('message', handler);
+  });
+}
+
 describe('createServer', () => {
   let handle: ServerHandle;
   const clients: WebSocket[] = [];
@@ -246,9 +268,11 @@ describe('createServer', () => {
     // All three requests should be tracked
     expect(handle.state.pendingRequestOrigins.size).toBe(3);
 
-    // Figma responds to each — each MCP client should get its own response
+    // Figma responds to each — each MCP client should get its own response.
+    // Use nextResponse to skip peer_operation notifications broadcast to
+    // non-originating clients.
     for (let i = 0; i < 3; i++) {
-      const responsePromise = nextMessage(mcpClients[i]);
+      const responsePromise = nextResponse(mcpClients[i]);
       figmaWs.send(JSON.stringify({ id: `req-${i}`, success: true, data: `result-${i}` }));
       const response = await responsePromise;
       expect(response.data).toBe(`result-${i}`);
@@ -274,14 +298,15 @@ describe('createServer', () => {
     mcp2.send(JSON.stringify({ type: 'op_b', payload: {}, id: 'req-b' }));
     await new Promise((r) => setTimeout(r, 50));
 
-    // Figma responds to req-b first (out of order)
-    const mcp2ResponsePromise = nextMessage(mcp2);
+    // Figma responds to req-b first (out of order).
+    // Use nextResponse to skip peer_operation notifications.
+    const mcp2ResponsePromise = nextResponse(mcp2);
     figmaWs.send(JSON.stringify({ id: 'req-b', success: true, data: 'for-mcp2' }));
     const mcp2Response = await mcp2ResponsePromise;
     expect(mcp2Response.data).toBe('for-mcp2');
 
     // Figma responds to req-a
-    const mcp1ResponsePromise = nextMessage(mcp1);
+    const mcp1ResponsePromise = nextResponse(mcp1);
     figmaWs.send(JSON.stringify({ id: 'req-a', success: true, data: 'for-mcp1' }));
     const mcp1Response = await mcp1ResponsePromise;
     expect(mcp1Response.data).toBe('for-mcp1');

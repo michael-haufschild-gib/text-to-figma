@@ -3,6 +3,11 @@
 import { randomUUID } from 'node:crypto';
 import WebSocket from 'ws';
 import { z } from 'zod';
+import {
+  CircuitBreaker,
+  isNonRetryableValidationError,
+  isPreSendFailure
+} from './circuit-breaker.js';
 import { getConfig } from './config.js';
 import { ErrorCode, FigmaBridgeError, createError } from './errors/index.js';
 import {
@@ -30,128 +35,6 @@ export type {
   FigmaRequest,
   FigmaResponse
 } from './figma-bridge-types.js';
-
-/**
- * Circuit breaker states
- */
-enum CircuitState {
-  CLOSED = 'CLOSED', // Normal operation
-  OPEN = 'OPEN', // Failing, reject requests immediately
-  HALF_OPEN = 'HALF_OPEN' // Testing if service recovered
-}
-
-/**
- * Circuit breaker for preventing cascading failures
- */
-class CircuitBreaker {
-  /** Number of consecutive successes needed in HALF_OPEN state to close the circuit */
-  private static readonly HALF_OPEN_SUCCESS_THRESHOLD = 2;
-
-  private state: CircuitState = CircuitState.CLOSED;
-  private failures = 0;
-  private lastFailureTime = 0;
-  private successCount = 0;
-  private halfOpenProbeInFlight = false;
-
-  constructor(
-    private readonly threshold: number,
-    private readonly resetTimeout: number
-  ) {}
-
-  async execute<T>(fn: () => Promise<T>): Promise<T> {
-    const config = getConfig();
-
-    if (!config.CIRCUIT_BREAKER_ENABLED) {
-      return fn();
-    }
-
-    if (this.state === CircuitState.OPEN) {
-      if (Date.now() - this.lastFailureTime > this.resetTimeout) {
-        // Transition to HALF_OPEN, but only allow one probe request through
-        if (this.halfOpenProbeInFlight) {
-          throw new FigmaBridgeError(
-            createError(
-              ErrorCode.SYS_CIRCUIT_OPEN,
-              'Circuit breaker is HALF_OPEN - probe in progress'
-            )
-          );
-        }
-        this.state = CircuitState.HALF_OPEN;
-        this.successCount = 0;
-        this.halfOpenProbeInFlight = true;
-      } else {
-        throw new FigmaBridgeError(
-          createError(ErrorCode.SYS_CIRCUIT_OPEN, 'Circuit breaker is OPEN - service unavailable')
-        );
-      }
-    } else if (this.state === CircuitState.HALF_OPEN && this.halfOpenProbeInFlight) {
-      // Another request while HALF_OPEN probe is in flight — reject
-      throw new FigmaBridgeError(
-        createError(ErrorCode.SYS_CIRCUIT_OPEN, 'Circuit breaker is HALF_OPEN - probe in progress')
-      );
-    }
-
-    try {
-      const result = await fn();
-      this.onSuccess();
-      return result;
-    } catch (error) {
-      this.onFailure();
-      throw error;
-    }
-  }
-
-  private onSuccess(): void {
-    this.failures = 0;
-    this.halfOpenProbeInFlight = false;
-
-    if (this.state === CircuitState.HALF_OPEN) {
-      this.successCount++;
-      if (this.successCount >= CircuitBreaker.HALF_OPEN_SUCCESS_THRESHOLD) {
-        this.state = CircuitState.CLOSED;
-      }
-    }
-  }
-
-  private onFailure(): void {
-    this.failures++;
-    this.lastFailureTime = Date.now();
-    this.halfOpenProbeInFlight = false;
-
-    if (this.state === CircuitState.HALF_OPEN || this.failures >= this.threshold) {
-      this.state = CircuitState.OPEN;
-    }
-  }
-
-  getState(): CircuitState {
-    return this.state;
-  }
-
-  reset(): void {
-    this.state = CircuitState.CLOSED;
-    this.failures = 0;
-    this.successCount = 0;
-    this.halfOpenProbeInFlight = false;
-  }
-}
-
-/** True when the failure happened before the request reached the plugin (safe to retry). */
-function isPreSendFailure(error: Error): boolean {
-  return (
-    error.message.includes('ECONNREFUSED') ||
-    error.message.includes('not connected') ||
-    error.message.includes('Circuit breaker is OPEN') ||
-    (error instanceof FigmaBridgeError && error.code.startsWith('CONN_'))
-  );
-}
-
-function isNonRetryableValidationError(error: Error): boolean {
-  return (
-    (error instanceof FigmaBridgeError && error.code.startsWith('VAL_')) ||
-    error.name === 'ZodError' ||
-    error.name === 'ValidationError'
-  );
-}
 
 /**
  * Pending request tracking
@@ -421,7 +304,12 @@ export class FigmaBridge {
 
     const ws = this.ws;
     const id = `req_${randomUUID()}`;
-    const request: FigmaRequest = { id, type, payload };
+    const request: FigmaRequest = {
+      id,
+      type,
+      payload,
+      _pageId: this.latestContext?.pageId
+    };
 
     const promise = new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(() => {

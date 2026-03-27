@@ -376,16 +376,19 @@
               log(`Command received: ${command.type}`, 'info');
 
               // Map MCP format (id) to Figma format (requestId)
-              parent.postMessage(
-                {
-                  pluginMessage: {
-                    type: command.type,
-                    payload: command.payload,
-                    requestId: command.id // MCP sends 'id', Figma expects 'requestId'
-                  }
-                },
-                '*'
-              );
+              /** @type {Record<string, unknown>} */
+              const pluginMessage = {
+                type: command.type,
+                payload: command.payload,
+                requestId: command.id // MCP sends 'id', Figma expects 'requestId'
+              };
+
+              // Forward page context so plugin can switch to the correct page
+              if (typeof command._pageId === 'string') {
+                pluginMessage._pageId = command._pageId;
+              }
+
+              parent.postMessage({ pluginMessage }, '*');
             } catch (error) {
               const errorMsg = error instanceof Error ? error.message : String(error);
               log(`Message parse error: ${errorMsg}`, 'error');

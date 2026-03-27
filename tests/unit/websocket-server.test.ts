@@ -361,7 +361,7 @@ describe('routeResponse', () => {
     expect(mcpWs.send).not.toHaveBeenCalled();
   });
 
-  it('falls back to broadcast when origin client has been removed from state', () => {
+  it('drops response when origin client has disconnected, but still notifies peers', () => {
     // Simulate: MCP client sent a request, then disconnected before response arrived.
     // The origin ID is tracked but the client is gone from the map.
     const otherMcpWs = mockWs();
@@ -372,11 +372,16 @@ describe('routeResponse', () => {
     const response = { id: 'req-orphan', success: true, data: 'orphaned' };
     routeResponse(state, response, 'figma-1');
 
-    // Origin client is gone, but the origin ID was found in pendingRequestOrigins,
-    // so it tries to send to the origin (which doesn't exist), and doesn't broadcast.
-    // This is the actual behavior: it finds the origin ID but the client is gone,
-    // so the response is silently dropped. It does NOT fall back to broadcast.
-    expect(otherMcpWs.send).not.toHaveBeenCalled();
+    // Origin client is gone so the response itself is dropped. However,
+    // the peer_operation notification IS sent to remaining MCP clients.
+    expect(otherMcpWs.send).toHaveBeenCalledOnce();
+    const notification = JSON.parse(
+      vi.mocked(otherMcpWs.send).mock.calls[0][0] as string
+    ) as Record<string, unknown>;
+    expect(notification).toMatchObject({
+      type: 'figma_notification',
+      kind: 'peer_operation'
+    });
     // The origin entry is still cleaned up
     expect(state.pendingRequestOrigins.has('req-orphan')).toBe(false);
   });
@@ -423,6 +428,8 @@ describe('routeResponse', () => {
     expect(mcpWs.send).toHaveBeenCalledWith(JSON.stringify(response));
     expect(state.pendingRequestOrigins.has('req-fail')).toBe(false);
   });
+
+  // Peer operation broadcasting tests are in websocket-server-peer-ops.test.ts
 });
 
 // ─── routeMessage ───────────────────────────────────────────────────

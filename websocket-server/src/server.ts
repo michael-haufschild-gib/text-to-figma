@@ -268,6 +268,8 @@ export function routeRequest(state: ServerState, message: RequestMessage, client
 
 /**
  * Route a response message from the Figma plugin back to the originating MCP client.
+ * On successful responses, also broadcasts a `peer_operation` notification to all
+ * other MCP clients so they can mark their local caches as stale.
  */
 export function routeResponse(
   state: ServerState,
@@ -287,6 +289,26 @@ export function routeResponse(
     if (originClient?.ws.readyState === WebSocket.OPEN) {
       originClient.ws.send(JSON.stringify(message));
       log('debug', 'Routed to originating MCP client', { originClientId: entry.clientId });
+    }
+
+    // Notify other MCP clients that a peer performed an operation.
+    // This lets each agent mark its NodeRegistry as stale without relying
+    // on the plugin's document_changed notification (which is suppressed
+    // during MCP command execution).
+    if (message.success) {
+      const notification = JSON.stringify({
+        type: 'figma_notification',
+        kind: 'peer_operation',
+        data: { requestId: message.id }
+      });
+
+      for (const [mcpClientId, client] of state.clients.entries()) {
+        if (mcpClientId === entry.clientId) continue;
+        if (mcpClientId === state.figmaPluginClient) continue;
+        if (client.ws.readyState === WebSocket.OPEN) {
+          client.ws.send(notification);
+        }
+      }
     }
   } else {
     log('warn', 'Orphan response — no tracked origin, dropping', { id: message.id });
