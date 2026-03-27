@@ -34,6 +34,16 @@ export type PathCommand =
   | { type: 'L'; x: number; y: number }
   | { type: 'C'; x1: number; y1: number; x2: number; y2: number; x: number; y: number }
   | { type: 'Q'; x1: number; y1: number; x: number; y: number }
+  | {
+      type: 'A';
+      rx: number;
+      ry: number;
+      rotation: number;
+      largeArcFlag: number;
+      sweepFlag: number;
+      x: number;
+      y: number;
+    }
   | { type: 'Z' };
 
 /**
@@ -191,6 +201,37 @@ function repairQCommand(cmd: RawPathCommand, index: number): RepairResult {
 }
 
 /**
+ * Repairs and validates an Arc (A) command
+ */
+function repairACommand(cmd: RawPathCommand, index: number): RepairResult {
+  const fixes: string[] = [];
+  const rx = coerceCoord(cmd.rx, 'rx', index, 'A', fixes);
+  const ry = coerceCoord(cmd.ry, 'ry', index, 'A', fixes);
+  const rotation = coerceCoord(cmd.rotation, 'rotation', index, 'A', fixes);
+  const rawLargeArc = coerceCoord(cmd.largeArcFlag, 'largeArcFlag', index, 'A', fixes);
+  const rawSweep = coerceCoord(cmd.sweepFlag, 'sweepFlag', index, 'A', fixes);
+  const x = coerceCoord(cmd.x, 'x', index, 'A', fixes);
+  const y = coerceCoord(cmd.y, 'y', index, 'A', fixes);
+
+  // Clamp flags to 0 or 1
+  const largeArcFlag = rawLargeArc === 0 ? 0 : 1;
+  const sweepFlag = rawSweep === 0 ? 0 : 1;
+
+  if (rawLargeArc !== 0 && rawLargeArc !== 1) {
+    fixes.push(`Clamped largeArcFlag from ${rawLargeArc} to ${largeArcFlag}`);
+  }
+  if (rawSweep !== 0 && rawSweep !== 1) {
+    fixes.push(`Clamped sweepFlag from ${rawSweep} to ${sweepFlag}`);
+  }
+
+  return {
+    command: { type: 'A', rx, ry, rotation, largeArcFlag, sweepFlag, x, y },
+    fixed: fixes.length > 0,
+    fixes
+  };
+}
+
+/**
  * Repairs a single path command with intelligent error handling
  */
 function repairCommand(cmd: RawPathCommand, index: number): RepairResult {
@@ -225,6 +266,8 @@ function repairCommand(cmd: RawPathCommand, index: number): RepairResult {
       return repairCCommand(cmd, index);
     case 'Q':
       return repairQCommand(cmd, index);
+    case 'A':
+      return repairACommand(cmd, index);
     case 'Z':
       return { command: { type: 'Z' }, fixed: false, fixes: [] };
     default:
@@ -232,7 +275,7 @@ function repairCommand(cmd: RawPathCommand, index: number): RepairResult {
         `Unknown command type '${type}'`,
         index,
         type,
-        `Valid types are: M (move), L (line), C (cubic bezier), Q (quadratic bezier), Z (close)`,
+        `Valid types are: M (move), L (line), C (cubic bezier), Q (quadratic bezier), A (arc), Z (close)`,
         `{ type: "M", x: 100, y: 200 }`
       );
   }

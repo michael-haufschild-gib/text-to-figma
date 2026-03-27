@@ -85,13 +85,13 @@ import {
   handleSetStrokeJoin,
   handleSetStrokeCap,
   handleSetClippingMask,
-  handleCreatePath,
   handleCreateBooleanOperation,
   handleReparentNode,
   handleRemoveNode,
   handleRenameNode,
   handleDetachComponent
 } from './handlers/utility.js';
+import { handleCreatePath, handleEditPath } from './handlers/path.js';
 
 // ─── Build-time constants (injected by esbuild via build.mjs) ────────────────
 
@@ -146,6 +146,7 @@ const handlers: Record<string, Handler> = {
   create_star: handleCreateStar,
   create_rectangle_with_image_fill: handleCreateRectangleWithImageFill,
   create_path: handleCreatePath,
+  edit_path: handleEditPath,
   create_boolean_operation: handleCreateBooleanOperation,
   create_design: handleCreateDesign,
 

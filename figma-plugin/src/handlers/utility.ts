@@ -8,7 +8,7 @@
  */
 
 import { z } from 'zod';
-import { cacheNode, getNode, hexToRgb, resolveParent, uncacheNode } from '../helpers.js';
+import { cacheNode, getNode, uncacheNode } from '../helpers.js';
 
 // ── Return types ─────────────────────────────────────────────────────────────
 
@@ -279,128 +279,8 @@ export function handleSetClippingMask(payload: Record<string, unknown>): Operati
   };
 }
 
-const pathCommandSchema = z.object({
-  type: z.string(),
-  x: z.number().optional(),
-  y: z.number().optional(),
-  x1: z.number().optional(),
-  y1: z.number().optional(),
-  x2: z.number().optional(),
-  y2: z.number().optional()
-});
-
-const createPathSchema = z.object({
-  name: z.string().optional(),
-  commands: z.array(pathCommandSchema),
-  closed: z.boolean().optional(),
-  fillColor: z.string().optional(),
-  strokeColor: z.string().optional(),
-  strokeWeight: z.number().optional(),
-  parentId: z.string().optional()
-});
-
-export function handleCreatePath(payload: Record<string, unknown>): OperationResult {
-  const input = createPathSchema.parse(payload);
-
-  const vectorNode = figma.createVector();
-  vectorNode.name = input.name ?? 'Path';
-
-  if (input.commands.length === 0) {
-    throw new Error('Path requires at least one command');
-  }
-  const firstCmd = input.commands[0];
-  if (firstCmd?.type !== 'M') throw new Error('Path must start with M (Move) command');
-
-  const pathData = buildPathData(input.commands);
-  const finalPath = input.closed === true && !pathData.includes('Z') ? pathData + ' Z' : pathData;
-  const trimmedPath = finalPath.trim();
-  if (trimmedPath === '') throw new Error('Generated path data is empty');
-
-  vectorNode.vectorPaths = [{ windingRule: 'NONZERO', data: trimmedPath }];
-
-  if (input.fillColor !== undefined) {
-    vectorNode.fills = [{ type: 'SOLID', color: hexToRgb(input.fillColor) }];
-  } else {
-    vectorNode.fills = [];
-  }
-  if (input.strokeColor !== undefined) {
-    vectorNode.strokes = [{ type: 'SOLID', color: hexToRgb(input.strokeColor) }];
-    vectorNode.strokeWeight = input.strokeWeight ?? 1;
-  }
-
-  const parent = resolveParent(input.parentId);
-  parent.appendChild(vectorNode);
-  figma.viewport.scrollAndZoomIntoView([vectorNode]);
-
-  return {
-    pathId: vectorNode.id,
-    message: `Path created successfully with ${String(input.commands.length)} commands`
-  };
-}
-
-interface PathCommand {
-  type: string;
-  x?: number;
-  y?: number;
-  x1?: number;
-  y1?: number;
-  x2?: number;
-  y2?: number;
-}
-
-function buildPathData(commands: PathCommand[]): string {
-  let pathData = '';
-
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
-    if (!cmd) {
-      continue;
-    }
-    switch (cmd.type) {
-      case 'M':
-        validateCoord(cmd, 'x', i);
-        validateCoord(cmd, 'y', i);
-        pathData += `M ${String(cmd.x)} ${String(cmd.y)} `;
-        break;
-      case 'L':
-        validateCoord(cmd, 'x', i);
-        validateCoord(cmd, 'y', i);
-        pathData += `L ${String(cmd.x)} ${String(cmd.y)} `;
-        break;
-      case 'C':
-        for (const k of ['x1', 'y1', 'x2', 'y2', 'x', 'y']) {
-          validateCoord(cmd, k, i);
-        }
-        pathData += `C ${String(cmd.x1)} ${String(cmd.y1)} ${String(cmd.x2)} ${String(cmd.y2)} ${String(cmd.x)} ${String(cmd.y)} `;
-        break;
-      case 'Q':
-        for (const k of ['x1', 'y1', 'x', 'y']) {
-          validateCoord(cmd, k, i);
-        }
-        pathData += `Q ${String(cmd.x1)} ${String(cmd.y1)} ${String(cmd.x)} ${String(cmd.y)} `;
-        break;
-      case 'Z':
-        pathData += 'Z ';
-        break;
-      default:
-        throw new Error(`Unknown path command type '${String(cmd.type)}' at index ${String(i)}`);
-    }
-  }
-
-  return pathData;
-}
-
-function validateCoord(cmd: PathCommand, key: string, index: number): void {
-  const val = cmd[key as keyof PathCommand];
-  if (typeof val !== 'number')
-    throw new Error(
-      `Command ${String(index)} (${String(cmd.type)}): Property '${key}' must be a number`
-    );
-  if (!isFinite(val))
-    throw new Error(
-      `Command ${String(index)} (${String(cmd.type)}): Property '${key}' must be a finite number`
-    );
-}
+// Path handlers (create_path, edit_path) extracted to ./path.ts
+export { handleCreatePath, handleEditPath } from './path.js';
 
 const reparentNodeSchema = z.object({
   nodeId: z.string(),

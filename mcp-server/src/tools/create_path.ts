@@ -1,8 +1,8 @@
 /**
  * MCP Tool: create_path
  *
- * Creates a custom vector path using Bezier curves and line segments.
- * Essential for creating organic, smooth shapes like animals, characters, and logos.
+ * Creates a custom vector path using Bezier curves, arc segments, and line segments.
+ * Supports both structured command arrays and raw SVG path strings.
  *
  * PRIMITIVE: Raw Figma vector network primitive.
  * Use for: custom shapes, organic forms, smooth curves, complex illustrations
@@ -56,6 +56,18 @@ export const PathCommandSchema = z.discriminatedUnion('type', [
     y: z.number() // End point Y
   }),
 
+  // Elliptical arc
+  z.object({
+    type: z.literal('A'),
+    rx: z.number(), // X radius
+    ry: z.number(), // Y radius
+    rotation: z.number(), // X-axis rotation in degrees
+    largeArcFlag: z.number(), // 0 or 1
+    sweepFlag: z.number(), // 0 or 1
+    x: z.number(), // End point X
+    y: z.number() // End point Y
+  }),
+
   // Close path (connect back to start)
   z.object({
     type: z.literal('Z')
@@ -70,19 +82,45 @@ export type PathCommand = z.infer<typeof PathCommandSchema>;
 
 /**
  * Input schema
+ *
+ * Either `commands` or `svgPath` must be provided. When `svgPath` is given,
+ * the raw SVG path data string is sent directly to Figma, bypassing command
+ * repair. This enables importing paths from external vectorization tools.
  */
-export const CreatePathInputSchema = z.object({
-  name: z.string().optional().describe('Name for the path (default: "Path")'),
-  commands: z.array(z.custom<RawPathCommand>()).min(2).describe('Array of path commands'),
-  fillColor: z.string().optional().describe('Fill color in hex format'),
-  strokeColor: z.string().optional().describe('Stroke color in hex format'),
-  strokeWeight: z.number().optional().describe('Stroke width in pixels'),
-  closed: z
-    .boolean()
-    .optional()
-    .describe('Whether to close the path automatically (default: false)'),
-  parentId: z.string().optional().describe('Parent frame ID (optional)')
-});
+export const CreatePathInputSchema = z
+  .object({
+    name: z.string().optional().describe('Name for the path (default: "Path")'),
+    commands: z
+      .array(z.custom<RawPathCommand>())
+      .optional()
+      .describe('Array of path commands (M, L, C, Q, A, Z)'),
+    svgPath: z
+      .string()
+      .optional()
+      .describe(
+        'Raw SVG path d attribute string — alternative to commands array. Example: "M 10 20 L 100 200 Z"'
+      ),
+    fillColor: z.string().optional().describe('Fill color in hex format'),
+    fillOpacity: z
+      .number()
+      .min(0)
+      .max(1)
+      .optional()
+      .describe('Fill opacity from 0 (transparent) to 1 (opaque)'),
+    strokeColor: z.string().optional().describe('Stroke color in hex format'),
+    strokeWeight: z.number().optional().describe('Stroke width in pixels'),
+    closed: z
+      .boolean()
+      .optional()
+      .describe('Whether to close the path automatically (default: false)'),
+    parentId: z.string().optional().describe('Parent frame ID (optional)')
+  })
+  .refine(
+    (data) =>
+      (data.commands !== undefined && data.commands.length >= 2) ||
+      (data.svgPath !== undefined && data.svgPath.trim().length > 0),
+    { message: 'Either "commands" (min 2) or "svgPath" must be provided' }
+  );
 
 export type CreatePathInput = z.infer<typeof CreatePathInputSchema>;
 
@@ -91,68 +129,59 @@ export type CreatePathInput = z.infer<typeof CreatePathInputSchema>;
  */
 export const createPathToolDefinition = {
   name: 'create_path',
-  description: `Creates a custom vector path using Bezier curves and line segments.
+  description: `Creates a custom vector path using Bezier curves, arcs, and line segments.
 
 PRIMITIVE: Raw Figma vector network primitive - not a pre-made component.
 Use for: organic shapes, smooth curves, custom illustrations, logos, characters.
+
+TWO INPUT MODES:
+1. Command array: Structured path commands (M, L, C, Q, A, Z)
+2. SVG path string: Raw SVG d attribute (e.g., "M 10 20 C 30 40 50 60 70 80 Z")
 
 Path Commands (SVG-like syntax):
 - M (Move): Move to point { type: 'M', x: 100, y: 100 }
 - L (Line): Draw line to point { type: 'L', x: 200, y: 100 }
 - C (Cubic Bezier): Smooth curve { type: 'C', x1: cp1x, y1: cp1y, x2: cp2x, y2: cp2y, x: endx, y: endy }
 - Q (Quadratic Bezier): Simple curve { type: 'Q', x1: cpx, y1: cpy, x: endx, y: endy }
+- A (Arc): Elliptical arc { type: 'A', rx: 50, ry: 50, rotation: 0, largeArcFlag: 1, sweepFlag: 1, x: endx, y: endy }
 - Z (Close): Close path back to start { type: 'Z' }
 
-Example - Smooth Curved Shape (Horse Body):
+Example - Using command array:
 create_path({
   name: "Horse Body",
   commands: [
-    { type: 'M', x: 100, y: 200 },  // Start at back
-    { type: 'C', x1: 150, y1: 150, x2: 250, y2: 150, x: 300, y: 180 },  // Smooth top curve
-    { type: 'C', x1: 320, y1: 200, x2: 320, y2: 250, x: 300, y: 270 },  // Front curve down
-    { type: 'L', x: 280, y: 280 },  // Belly line
-    { type: 'C', x1: 200, y1: 290, x2: 120, y2: 280, x: 100, y: 260 },  // Back curve
-    { type: 'Z' }  // Close path
-  ],
-  fillColor: "#8B4513",
-  strokeColor: "#654321",
-  strokeWeight: 2
-})
-
-Example - Simple Curved Line (Tail):
-create_path({
-  name: "Tail Curve",
-  commands: [
-    { type: 'M', x: 400, y: 300 },  // Start
-    { type: 'Q', x1: 450, y1: 250, x: 480, y: 320 }  // Smooth curve
-  ],
-  strokeColor: "#654321",
-  strokeWeight: 3,
-  closed: false
-})
-
-Example - Complex Shape with Multiple Curves:
-create_path({
-  name: "Horse Head Profile",
-  commands: [
-    { type: 'M', x: 100, y: 150 },  // Forehead
-    { type: 'C', x1: 105, y1: 140, x2: 110, y2: 135, x: 120, y: 138 },  // Ear curve
-    { type: 'L', x: 125, y: 145 },  // Ear tip
-    { type: 'C', x1: 130, y1: 155, x2: 140, y2: 165, x: 145, y: 180 },  // Nose curve
-    { type: 'C', x1: 140, y1: 190, x2: 130, y2: 195, x: 120, y: 195 },  // Jaw
-    { type: 'C', x1: 110, y1: 190, x2: 100, y2: 175, x: 100, y: 150 },  // Neck
-    { type: 'Z' }  // Close
+    { type: 'M', x: 100, y: 200 },
+    { type: 'C', x1: 150, y1: 150, x2: 250, y2: 150, x: 300, y: 180 },
+    { type: 'Z' }
   ],
   fillColor: "#8B4513"
 })
 
-Use Cases:
-- Create smooth animal bodies (horses, dogs, cats)
-- Draw character outlines
-- Create logos with smooth curves
-- Draw organic shapes (leaves, clouds, water)
-- Create complex illustrations
-- Draw smooth connecting shapes`,
+Example - Using SVG path string:
+create_path({
+  name: "Imported Shape",
+  svgPath: "M 100 200 C 150 150 250 150 300 180 Z",
+  fillColor: "#8B4513"
+})
+
+Example - Arc command (semicircle):
+create_path({
+  name: "Semicircle",
+  commands: [
+    { type: 'M', x: 0, y: 50 },
+    { type: 'A', rx: 50, ry: 50, rotation: 0, largeArcFlag: 1, sweepFlag: 1, x: 100, y: 50 },
+    { type: 'Z' }
+  ],
+  fillColor: "#0066FF"
+})
+
+Example - With fill opacity:
+create_path({
+  name: "Semi-transparent overlay",
+  svgPath: "M 0 0 L 100 0 L 100 100 L 0 100 Z",
+  fillColor: "#000000",
+  fillOpacity: 0.3
+})`,
   inputSchema: {
     type: 'object' as const,
     properties: {
@@ -162,14 +191,25 @@ Use Cases:
       },
       commands: {
         type: 'array' as const,
-        description: 'Array of path commands (M, L, C, Q, Z)',
+        description: 'Array of path commands (M, L, C, Q, A, Z)',
         items: {
           type: 'object' as const
         }
       },
+      svgPath: {
+        type: 'string' as const,
+        description:
+          'Raw SVG path d attribute string — alternative to commands. Example: "M 10 20 L 100 200 Z"'
+      },
       fillColor: {
         type: 'string' as const,
         description: 'Fill color in hex format'
+      },
+      fillOpacity: {
+        type: 'number' as const,
+        description: 'Fill opacity 0-1 (default: 1)',
+        minimum: 0,
+        maximum: 1
       },
       strokeColor: {
         type: 'string' as const,
@@ -188,7 +228,7 @@ Use Cases:
         description: 'Parent frame ID (optional)'
       }
     },
-    required: ['commands']
+    required: [] as string[]
   }
 };
 
@@ -215,42 +255,48 @@ export interface CreatePathResult {
 
 /**
  * Implementation
- * @param input
  */
 export async function createPath(input: CreatePathInput): Promise<CreatePathResult> {
-  // Validate input schema
-
-  // Use intelligent repair system to normalize and fix common issues
-  let normalizedCommands: RepairedPathCommand[];
+  let normalizedCommands: RepairedPathCommand[] | undefined;
   let repairMessage = '';
-  try {
-    const repairReport = repairPathCommands(input.commands);
-    normalizedCommands = repairReport.commands;
+  let svgPathData: string | undefined;
 
-    // Generate repair message if fixes were applied
-    if (repairReport.totalFixed > 0) {
-      repairMessage = '\n\n' + formatRepairReport(repairReport);
-      // MCP: Use console.error to send logs to stderr, not stdout
-      console.error(`[create_path] Applied automatic repairs:\n${repairMessage}`);
+  if (input.svgPath !== undefined) {
+    // Direct SVG path string — pass through to plugin without repair
+    svgPathData = input.svgPath.trim();
+    if (svgPathData === '') {
+      throw new Error('svgPath cannot be empty');
     }
-  } catch (repairError) {
-    const errMsg = repairError instanceof Error ? repairError.message : String(repairError);
-    throw new Error(`Path command validation failed:\n\n${errMsg}`);
+  } else if (input.commands !== undefined && input.commands.length >= 2) {
+    // Command array — use intelligent repair system
+    try {
+      const repairReport = repairPathCommands(input.commands);
+      normalizedCommands = repairReport.commands;
+
+      if (repairReport.totalFixed > 0) {
+        repairMessage = '\n\n' + formatRepairReport(repairReport);
+        console.error(`[create_path] Applied automatic repairs:\n${repairMessage}`);
+      }
+    } catch (repairError) {
+      const errMsg = repairError instanceof Error ? repairError.message : String(repairError);
+      throw new Error(`Path command validation failed:\n\n${errMsg}`);
+    }
+  } else {
+    throw new Error('Either "commands" (min 2) or "svgPath" must be provided');
   }
 
-  // Get Figma bridge
   const bridge = getFigmaBridge();
-
   const name = input.name ?? 'Path';
   const closed = input.closed ?? false;
 
-  // Send command to Figma with normalized commands
   const response = await bridge.sendToFigmaValidated(
     'create_path',
     {
       name,
       commands: normalizedCommands,
+      svgPath: svgPathData,
       fillColor: input.fillColor,
+      fillOpacity: input.fillOpacity,
       strokeColor: input.strokeColor,
       strokeWeight: input.strokeWeight,
       closed,
@@ -263,14 +309,15 @@ export async function createPath(input: CreatePathInput): Promise<CreatePathResu
     throw new Error('Failed to create path: No pathId returned');
   }
 
+  const commandCount = normalizedCommands?.length ?? 0;
+  const pathSource = svgPathData ? 'SVG path string' : `${commandCount} commands`;
+
   return {
     pathId: response.pathId,
     name,
-    commandCount: normalizedCommands.length,
+    commandCount,
     closed,
-    message:
-      `Created path "${name}" with ${normalizedCommands.length} commands${closed ? ' (closed)' : ''}` +
-      repairMessage
+    message: `Created path "${name}" with ${pathSource}${closed ? ' (closed)' : ''}` + repairMessage
   };
 }
 
