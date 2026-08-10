@@ -10,7 +10,7 @@ import { getFigmaBridge } from '../figma-bridge.js';
 import { getLogger } from '../monitoring/logger.js';
 import { getNodeRegistry } from '../node-registry.js';
 import type { NodeSpec } from '../types/node-spec.js';
-import { autoCorrectSpec, type Correction } from '../utils/auto-validator.js';
+import { autoCorrectSpec, validateSpec, type Correction } from '../utils/auto-validator.js';
 import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
 const logger = getLogger().child({ component: 'create-design' });
@@ -87,6 +87,15 @@ const CreateDesignResponseSchema = z.object({
  */
 export async function createDesign(params: CreateDesignParams): Promise<CreateDesignResult> {
   const bridge = getFigmaBridge();
+
+  const validation = validateSpec(params.spec);
+  const structuralErrors = validation.issues.filter((issue) => issue.severity === 'error');
+  if (structuralErrors.length > 0) {
+    const messages = structuralErrors.map(
+      (issue) => `${issue.path}.${issue.field}: ${issue.message}`
+    );
+    throw new Error(`Invalid design spec: ${messages.join('; ')}`);
+  }
 
   // Apply auto-correction unless explicitly disabled
   const shouldAutoCorrect = params.autoCorrect !== false;

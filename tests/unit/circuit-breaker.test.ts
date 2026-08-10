@@ -106,6 +106,11 @@ describe('isPreSendFailure', () => {
     expect(isPreSendFailure(err)).toBe(true);
   });
 
+  it('returns false for CONN_LOST because the request may have reached the plugin', () => {
+    const err = new FigmaBridgeError(createError(ErrorCode.CONN_LOST, 'Connection lost'));
+    expect(isPreSendFailure(err)).toBe(false);
+  });
+
   it('returns false for generic errors', () => {
     expect(isPreSendFailure(new Error('Something else'))).toBe(false);
   });

@@ -111,7 +111,7 @@ Note: Order matters for SUBTRACT (first shape is the base)`,
  */
 const CreateBooleanOperationResponseSchema = z
   .object({
-    nodeId: z.string()
+    booleanNodeId: z.string()
   })
   .passthrough();
 
@@ -175,7 +175,7 @@ export async function createBooleanOperation(
 </svg>`;
 
   const registry = getNodeRegistry();
-  registry.register(response.nodeId, {
+  registry.register(response.booleanNodeId, {
     type: 'BOOLEAN_OPERATION',
     name: input.name,
     parentId: null,
@@ -183,7 +183,7 @@ export async function createBooleanOperation(
   });
 
   return {
-    booleanNodeId: response.nodeId,
+    booleanNodeId: response.booleanNodeId,
     operation: input.operation,
     nodeCount: input.nodeIds.length,
     cssEquivalent,

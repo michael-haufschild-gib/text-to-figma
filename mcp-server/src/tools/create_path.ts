@@ -414,6 +414,6 @@ export const handler = defineHandler<CreatePathInput, CreatePathResult>({
   name: 'create_path',
   schema: CreatePathInputSchema,
   execute: createPath,
-  formatResponse: (r) => textResponse(r.message),
+  formatResponse: (r) => textResponse(`${r.message}\nPath ID: ${r.pathId}`),
   definition: createPathToolDefinition
 });

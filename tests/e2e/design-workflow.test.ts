@@ -127,6 +127,24 @@ describe('Design Workflow E2E — create_design', () => {
       expect(props.itemSpacing).toBe(8);
     });
 
+    it('preserves node IDs for duplicate node names', async () => {
+      const result = await routeToolCall('create_design', {
+        spec: {
+          type: 'frame',
+          name: 'List',
+          children: [
+            { type: 'text', name: 'Item', props: { content: 'First' } },
+            { type: 'text', name: 'Item', props: { content: 'Second' } }
+          ]
+        }
+      });
+
+      const text = result[0].text!;
+      expect(text).toContain('Total Nodes: 3');
+      expect(text).toContain('  - Item:');
+      expect(text).toContain('  - Item (2):');
+    });
+
     it('skips auto-correction when explicitly disabled', async () => {
       const result = await routeToolCall('create_design', {
         spec: {

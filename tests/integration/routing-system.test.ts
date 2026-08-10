@@ -125,6 +125,16 @@ describe('Routing System Integration', () => {
         })
       ).rejects.toThrow();
     });
+
+    it('rejects check_wcag_contrast with non-finite font size', async () => {
+      await expect(
+        routeToolCall('check_wcag_contrast', {
+          foreground: '#000000',
+          background: '#FFFFFF',
+          fontSize: Infinity
+        })
+      ).rejects.toThrow();
+    });
   });
 
   describe('tool definition structure', () => {
@@ -199,26 +209,28 @@ describe('Routing System Integration', () => {
       expect(text).toContain('PASS');
     });
 
-    it('detects large text for fontSize >= 18 and normal weight', async () => {
+    it('detects large text for 18pt converted to px at normal weight', async () => {
       const result = await routeToolCall('check_wcag_contrast', {
         foreground: '#767676',
         background: '#FFFFFF',
-        fontSize: 24,
+        fontSize: 18 * (96 / 72),
         fontWeight: 400
       });
       const text = result[0].text as string;
       expect(text).toContain('Contrast Check');
+      expect(text).toContain('Text Size: Large');
     });
 
-    it('detects large text for fontSize >= 14 and bold weight', async () => {
+    it('detects large text for 14pt converted to px at bold weight', async () => {
       const result = await routeToolCall('check_wcag_contrast', {
         foreground: '#767676',
         background: '#FFFFFF',
-        fontSize: 14,
+        fontSize: 14 * (96 / 72),
         fontWeight: 700
       });
       const text = result[0].text as string;
       expect(text).toContain('Contrast Check');
+      expect(text).toContain('Text Size: Large');
     });
   });
 });

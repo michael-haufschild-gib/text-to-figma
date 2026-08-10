@@ -26,7 +26,14 @@ describe('validateDesignTokens', () => {
       expect(report.spacing.valid).toBe(0);
       expect(report.spacing.invalid).toBe(6);
       expect(report.summary.allValid).toBe(false);
-      expect(report.summary.issues.length).toBeGreaterThanOrEqual(6);
+      expect(report.summary.issues).toEqual([
+        'Spacing 1px is not on 8pt grid',
+        'Spacing 3px is not on 8pt grid',
+        'Spacing 5px is not on 8pt grid',
+        'Spacing 10px is not on 8pt grid',
+        'Spacing 15px is not on 8pt grid',
+        'Spacing 20px is not on 8pt grid'
+      ]);
     });
 
     it('reports mixed valid/invalid spacing', () => {
@@ -110,6 +117,15 @@ describe('validateDesignTokens', () => {
       expect(report.colors.total).toBe(3);
       expect(report.colors.passesAA).toBe(2); // black/white and dark gray pass
     });
+
+    it('marks the report invalid for malformed color strings', () => {
+      const report = validateDesignTokens({
+        colors: [{ foreground: 'not-a-color', background: '#FFFFFF', name: 'bad token' }]
+      });
+
+      expect(report.summary.allValid).toBe(false);
+      expect(report.summary.issues).toContain('Invalid color format: bad token');
+    });
   });
 
   describe('combined validation', () => {
@@ -171,6 +187,15 @@ describe('formatValidationReport', () => {
     expect(text).toContain('PASS');
     expect(text).toContain('FAIL');
   });
+
+  it('shows FAIL overall status for malformed color tokens', () => {
+    const report = validateDesignTokens({
+      colors: [{ foreground: 'bad', background: '#FFFFFF', name: 'bad token' }]
+    });
+    const text = formatValidationReport(report);
+    expect(text).toContain('Overall Status: FAIL: Issues found');
+    expect(text).toContain('Invalid color format: bad token');
+  });
 });
 
 describe('validateDesignTokens edge cases', () => {
@@ -208,7 +233,15 @@ describe('validateDesignTokens edge cases', () => {
     });
     // Every invalid item should generate an issue
     expect(report.summary.allValid).toBe(false);
-    expect(report.summary.issues.length).toBeGreaterThanOrEqual(3);
+    expect(report.summary.issues).toHaveLength(4);
+    expect(report.summary.issues).toEqual(
+      expect.arrayContaining([
+        'Spacing 10px is not on 8pt grid',
+        'Spacing 15px is not on 8pt grid',
+        'Font size 14px is not in type scale',
+        expect.stringMatching(/^Color pair low-contrast fails WCAG AA \(\d+\.\d{2}:1\)$/)
+      ])
+    );
   });
 
   it('all-valid report has empty issues and recommendations', () => {

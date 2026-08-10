@@ -215,11 +215,13 @@ describe('LCh Color — gradients & edge cases', () => {
       expect(lch.l).toBeCloseTo(0, 0);
     });
 
-    it('createPerceptualGradient with 0 steps produces start and end only', () => {
+    it('createPerceptualGradient with 0 steps returns the start color', () => {
       const from = { r: 0, g: 0, b: 0 };
       const to = { r: 255, g: 255, b: 255 };
       const gradient = createPerceptualGradient(from, to, 0);
       expect(gradient).toHaveLength(1);
+      expect(gradient[0]).toEqual(from);
+      expect(Object.values(gradient[0] ?? {}).every(Number.isFinite)).toBe(true);
     });
 
     it('adjustLightness with extreme positive delta clamps to max', () => {

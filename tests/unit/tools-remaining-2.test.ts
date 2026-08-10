@@ -393,12 +393,17 @@ describe('CreateBooleanOperationInputSchema', () => {
 // ─── createBooleanOperation ──────────────────────────────────────────────────
 
 describe('createBooleanOperation', () => {
+  beforeEach(() => {
+    resetNodeRegistry();
+    __mockBridge.sendToFigmaValidated.mockReset();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
   it('sends correct payload to bridge', async () => {
-    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true, nodeId: 'bool-1' });
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true, booleanNodeId: 'bool-1' });
 
     await createBooleanOperation({
       nodeIds: ['circle-1', 'circle-2'],
@@ -420,7 +425,7 @@ describe('createBooleanOperation', () => {
   it('creates a UNION boolean operation', async () => {
     __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
-      nodeId: 'bool-1'
+      booleanNodeId: 'bool-1'
     });
 
     const result = await createBooleanOperation({
@@ -434,6 +439,33 @@ describe('createBooleanOperation', () => {
     expect(result.nodeCount).toBe(2);
     expect(result.message).toContain('UNION');
     expect(result.message).toContain('2 shapes');
+
+    expect(getNodeRegistry().getNode('bool-1')).toMatchObject({
+      nodeId: 'bool-1',
+      type: 'BOOLEAN_OPERATION',
+      name: 'Merged Shape',
+      parentId: null,
+      children: []
+    });
+  });
+
+  it('uses a bridge response schema that rejects the legacy nodeId-only shape', async () => {
+    __mockBridge.sendToFigmaValidated.mockResolvedValue({
+      success: true,
+      booleanNodeId: 'bool-schema'
+    });
+
+    await createBooleanOperation({
+      nodeIds: ['circle-1', 'circle-2'],
+      operation: 'UNION',
+      name: 'Merged Shape'
+    });
+
+    const responseSchema = __mockBridge.sendToFigmaValidated.mock.calls[0][2] as {
+      safeParse: (value: unknown) => { success: boolean };
+    };
+    expect(responseSchema.safeParse({ booleanNodeId: 'bool-schema' }).success).toBe(true);
+    expect(responseSchema.safeParse({ nodeId: 'legacy-node-id' }).success).toBe(false);
   });
 
   it('generates different messages for each operation type', async () => {
@@ -445,7 +477,7 @@ describe('createBooleanOperation', () => {
     ];
 
     for (const [op, keyword] of ops) {
-      __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true, nodeId: 'b' });
+      __mockBridge.sendToFigmaValidated.mockResolvedValue({ success: true, booleanNodeId: 'b' });
       const result = await createBooleanOperation({
         nodeIds: ['a', 'b'],
         operation: op as 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE',
@@ -458,7 +490,7 @@ describe('createBooleanOperation', () => {
   it('creates a SUBTRACT boolean operation with 3 shapes', async () => {
     __mockBridge.sendToFigmaValidated.mockResolvedValue({
       success: true,
-      nodeId: 'bool-2'
+      booleanNodeId: 'bool-2'
     });
 
     const result = await createBooleanOperation({
@@ -472,8 +504,8 @@ describe('createBooleanOperation', () => {
     expect(result.message).toContain('3 shapes');
   });
 
-  it('rejects response when bridge returns no nodeId', async () => {
-    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "nodeId"'));
+  it('rejects response when bridge returns no booleanNodeId', async () => {
+    __mockBridge.sendToFigmaValidated.mockRejectedValue(new Error('Required at "booleanNodeId"'));
 
     await expect(
       createBooleanOperation({

@@ -103,11 +103,18 @@ export class CircuitBreaker {
 
 /** True when the failure happened before the request reached the plugin (safe to retry). */
 export function isPreSendFailure(error: Error): boolean {
+  if (error instanceof FigmaBridgeError) {
+    return (
+      error.code === ErrorCode.CONN_NOT_CONNECTED ||
+      error.code === ErrorCode.CONN_TIMEOUT ||
+      error.code === ErrorCode.CONN_FAILED
+    );
+  }
+
   return (
     error.message.includes('ECONNREFUSED') ||
     error.message.includes('not connected') ||
-    error.message.includes('Circuit breaker is OPEN') ||
-    (error instanceof FigmaBridgeError && error.code.startsWith('CONN_'))
+    error.message.includes('Circuit breaker is OPEN')
   );
 }
 

@@ -91,67 +91,65 @@ export function autoCorrectSpec(spec: NodeSpec): AutoCorrectionResult {
    * @param path
    */
   function walkNode(node: NodeSpec, path: string): void {
-    if (!node.props) {
-      return;
-    }
+    if (node.props) {
+      const props = node.props;
 
-    const props = node.props;
-
-    // Correct spacing values to 8pt grid
-    for (const field of SPACING_FIELDS) {
-      const value = props[field];
-      if (typeof value === 'number' && !isValidSpacing(value)) {
-        const snapped = snapToGrid(value);
-        corrections.push({
-          path,
-          field,
-          originalValue: value,
-          correctedValue: snapped,
-          reason: `Snapped to 8pt grid (was ${value}px, now ${snapped}px)`
-        });
-        props[field] = snapped;
+      // Correct spacing values to 8pt grid
+      for (const field of SPACING_FIELDS) {
+        const value = props[field];
+        if (typeof value === 'number' && !isValidSpacing(value)) {
+          const snapped = snapToGrid(value);
+          corrections.push({
+            path,
+            field,
+            originalValue: value,
+            correctedValue: snapped,
+            reason: `Snapped to 8pt grid (was ${value}px, now ${snapped}px)`
+          });
+          props[field] = snapped;
+        }
       }
-    }
 
-    // Correct font sizes to type scale
-    if (typeof props.fontSize === 'number' && !isValidFontSize(props.fontSize)) {
-      const snapped = snapToTypeScale(props.fontSize);
-      corrections.push({
-        path,
-        field: 'fontSize',
-        originalValue: props.fontSize,
-        correctedValue: snapped,
-        reason: `Snapped to type scale (was ${props.fontSize}px, now ${snapped}px)`
-      });
-      props.fontSize = snapped;
-    }
-
-    // Correct corner radius to spacing scale (commonly uses same scale)
-    if (typeof props.cornerRadius === 'number' && !isValidSpacing(props.cornerRadius)) {
-      const snapped = snapToGrid(props.cornerRadius);
-      corrections.push({
-        path,
-        field: 'cornerRadius',
-        originalValue: props.cornerRadius,
-        correctedValue: snapped,
-        reason: `Snapped to 8pt grid (was ${props.cornerRadius}px, now ${snapped}px)`
-      });
-      props.cornerRadius = snapped;
-    }
-
-    // Round dimensions to whole pixels (for cleaner rendering)
-    for (const field of DIMENSION_FIELDS) {
-      const value = props[field];
-      if (typeof value === 'number' && !Number.isInteger(value)) {
-        const rounded = Math.round(value);
+      // Correct font sizes to type scale
+      if (typeof props.fontSize === 'number' && !isValidFontSize(props.fontSize)) {
+        const snapped = snapToTypeScale(props.fontSize);
         corrections.push({
           path,
-          field,
-          originalValue: value,
-          correctedValue: rounded,
-          reason: `Rounded to whole pixel (was ${value}px, now ${rounded}px)`
+          field: 'fontSize',
+          originalValue: props.fontSize,
+          correctedValue: snapped,
+          reason: `Snapped to type scale (was ${props.fontSize}px, now ${snapped}px)`
         });
-        props[field] = rounded;
+        props.fontSize = snapped;
+      }
+
+      // Correct corner radius to spacing scale (commonly uses same scale)
+      if (typeof props.cornerRadius === 'number' && !isValidSpacing(props.cornerRadius)) {
+        const snapped = snapToGrid(props.cornerRadius);
+        corrections.push({
+          path,
+          field: 'cornerRadius',
+          originalValue: props.cornerRadius,
+          correctedValue: snapped,
+          reason: `Snapped to 8pt grid (was ${props.cornerRadius}px, now ${snapped}px)`
+        });
+        props.cornerRadius = snapped;
+      }
+
+      // Round dimensions to whole pixels (for cleaner rendering)
+      for (const field of DIMENSION_FIELDS) {
+        const value = props[field];
+        if (typeof value === 'number' && !Number.isInteger(value)) {
+          const rounded = Math.round(value);
+          corrections.push({
+            path,
+            field,
+            originalValue: value,
+            correctedValue: rounded,
+            reason: `Rounded to whole pixel (was ${value}px, now ${rounded}px)`
+          });
+          props[field] = rounded;
+        }
       }
     }
 
@@ -262,19 +260,19 @@ export function validateSpec(spec: NodeSpec): ValidationResult {
           severity: 'warning'
         });
       }
+    }
 
-      // Validate text node has content
-      if (node.type === 'text') {
-        const content = props.content ?? props.text;
-        if (content === undefined || (typeof content === 'string' && content.trim() === '')) {
-          issues.push({
-            path,
-            field: 'content',
-            value: content,
-            message: 'Text node has empty or missing content',
-            severity: 'warning'
-          });
-        }
+    // Validate text node has content even when props is omitted entirely.
+    if (node.type === 'text') {
+      const content = node.props?.content ?? node.props?.text;
+      if (content === undefined || (typeof content === 'string' && content.trim() === '')) {
+        issues.push({
+          path,
+          field: 'content',
+          value: content,
+          message: 'Text node has empty or missing content',
+          severity: 'warning'
+        });
       }
     }
 

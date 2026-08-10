@@ -345,6 +345,33 @@ describe('Design Validation Pipeline — Design System', () => {
       expect(secondPass.corrections).toHaveLength(0);
     });
 
+    it('auto-corrects descendants when a parent node has no props', () => {
+      const spec = {
+        type: 'frame' as const,
+        name: 'Root',
+        children: [
+          {
+            type: 'frame' as const,
+            name: 'Child',
+            props: { padding: 15 },
+            children: [
+              { type: 'text' as const, name: 'Label', props: { fontSize: 14, content: 'Label' } }
+            ]
+          }
+        ]
+      };
+
+      const corrected = autoCorrectSpec(spec);
+
+      expect(corrected.wasModified).toBe(true);
+      expect(corrected.corrections.map((c) => c.path)).toEqual([
+        'root.children[0]',
+        'root.children[0].children[0]'
+      ]);
+      expect(corrected.corrected.children?.[0]?.props?.padding).toBe(16);
+      expect(corrected.corrected.children?.[0]?.children?.[0]?.props?.fontSize).toBe(16);
+    });
+
     it('validates that every VALID_SPACING_VALUE passes the spacing schema', () => {
       for (const value of VALID_SPACING_VALUES) {
         const spec = {

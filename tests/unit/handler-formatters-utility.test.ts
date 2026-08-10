@@ -58,11 +58,12 @@ describe('Handler formatResponse — utility tools', () => {
     it('formats path creation using message field', () => {
       const handler = getHandler('create_path');
       const result = handler.formatResponse({
-        message: 'Path created: path-1 with 5 commands'
+        message: 'Created path "Path" with 5 commands',
+        pathId: 'path-1'
       });
       const text = result[0].text as string;
-      expect(text).toContain('Path created');
-      expect(text).toContain('path-1');
+      expect(text).toContain('Created path');
+      expect(text).toContain('Path ID: path-1');
     });
   });
 

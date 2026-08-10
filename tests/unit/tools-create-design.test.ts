@@ -299,6 +299,21 @@ describe('createDesign', () => {
     expect(result.autoCorrections).toBeUndefined();
   });
 
+  it('rejects non-frame nodes with children before sending to Figma', async () => {
+    await expect(
+      createDesign({
+        spec: {
+          type: 'text',
+          name: 'BadParent',
+          props: { content: 'Parent' },
+          children: [{ type: 'text', name: 'DroppedChild', props: { content: 'Child' } }]
+        }
+      })
+    ).rejects.toThrow('Only frames can have children');
+
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
+  });
+
   it('passes parentId to bridge when provided', async () => {
     await createDesign({
       spec: { type: 'frame', name: 'Nested' },
@@ -376,9 +391,45 @@ describe('createDesign', () => {
     });
 
     expect(result.success).toBe(true);
-    // Multiple off-grid values should be auto-corrected
-    expect(result.autoCorrections).toBeInstanceOf(Array);
-    expect(result.autoCorrections!.length).toBeGreaterThanOrEqual(3);
+    // Every off-grid value in the nested tree should be reported with its path.
+    expect(result.autoCorrections).toEqual([
+      expect.objectContaining({
+        path: 'root',
+        field: 'padding',
+        originalValue: 15,
+        correctedValue: 16
+      }),
+      expect.objectContaining({
+        path: 'root',
+        field: 'itemSpacing',
+        originalValue: 10,
+        correctedValue: 8
+      }),
+      expect.objectContaining({
+        path: 'root.children[0]',
+        field: 'padding',
+        originalValue: 10,
+        correctedValue: 8
+      }),
+      expect.objectContaining({
+        path: 'root.children[0]',
+        field: 'itemSpacing',
+        originalValue: 6,
+        correctedValue: 4
+      }),
+      expect.objectContaining({
+        path: 'root.children[0].children[0]',
+        field: 'fontSize',
+        originalValue: 14,
+        correctedValue: 16
+      }),
+      expect.objectContaining({
+        path: 'root.children[1]',
+        field: 'padding',
+        originalValue: 20,
+        correctedValue: 16
+      })
+    ]);
   });
 
   it('propagates Figma-internal errors with original message', async () => {

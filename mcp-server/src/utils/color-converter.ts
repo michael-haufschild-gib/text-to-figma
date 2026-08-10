@@ -307,6 +307,10 @@ export function generateColorHarmony(rgb: RGB, type: ColorHarmonyType): RGB[] {
  * @param steps - Number of intermediate steps
  */
 export function createPerceptualGradient(from: RGB, to: RGB, steps: number): RGB[] {
+  if (steps <= 0) {
+    return [from];
+  }
+
   const fromLch = rgbToLch(from);
   const toLch = rgbToLch(to);
 

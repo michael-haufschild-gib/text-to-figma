@@ -19,6 +19,9 @@ import {
 import { adjustLightness, rgbToLch } from '../utils/color-converter.js';
 import { defineHandler, textResponse } from '../routing/handler-utils.js';
 
+const LARGE_TEXT_NORMAL_PX = 18 * (96 / 72);
+const LARGE_TEXT_BOLD_PX = 14 * (96 / 72);
+
 /**
  * Input schema for check_wcag_contrast tool
  */
@@ -31,7 +34,7 @@ export const CheckWcagContrastInputSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .describe('Background color in hex format (e.g., #FFFFFF)'),
-  fontSize: z.number().positive().describe('Font size in pixels (px)'),
+  fontSize: z.number().finite().positive().describe('Font size in pixels (px)'),
   fontWeight: z
     .number()
     .min(100)
@@ -76,15 +79,15 @@ export interface CheckWcagContrastResult {
 
 /**
  * Determines if text is considered "large" according to WCAG
- * Large text: 24px+ regular or 19px+ bold (WCAG 2.1: 18pt/14pt bold converted to px)
+ * Large text: 24px+ regular or 18.67px+ bold (WCAG 2.1: 18pt/14pt bold converted to px)
  * @param fontSize
  * @param fontWeight
  */
 function isLargeText(fontSize: number, fontWeight: number): boolean {
-  if (fontSize >= 24) {
+  if (fontSize >= LARGE_TEXT_NORMAL_PX) {
     return true;
   }
-  if (fontSize >= 19 && fontWeight >= 700) {
+  if (fontSize >= LARGE_TEXT_BOLD_PX && fontWeight >= 700) {
     return true;
   }
   return false;
@@ -312,7 +315,7 @@ Determines if text meets accessibility standards based on:
 
 WCAG defines "large text" as:
 - 24px or larger (regardless of weight)
-- 19px or larger with bold weight (700+)
+- 18.67px or larger with bold weight (700+)
 
 WCAG Standards:
 - AA Normal Text: 4.5:1 minimum

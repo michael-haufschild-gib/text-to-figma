@@ -179,6 +179,7 @@ function validateColorTokens(
     const fgRgb = hexToRgb(colorPair.foreground);
     const bgRgb = hexToRgb(colorPair.background);
     if (fgRgb === null || bgRgb === null) {
+      report.summary.allValid = false;
       report.summary.issues.push(
         `Invalid color format: ${colorPair.name ?? `${colorPair.foreground} / ${colorPair.background}`}`
       );

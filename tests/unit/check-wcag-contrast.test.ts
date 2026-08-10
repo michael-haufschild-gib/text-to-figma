@@ -7,11 +7,25 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  CheckWcagContrastInputSchema,
   checkWcagContrast,
   formatContrastCheckResult
 } from '../../mcp-server/src/tools/check_wcag_contrast.js';
 
 describe('checkWcagContrast', () => {
+  describe('schema validation', () => {
+    it('rejects non-finite font sizes', () => {
+      const result = CheckWcagContrastInputSchema.safeParse({
+        foreground: '#000000',
+        background: '#FFFFFF',
+        fontSize: Infinity,
+        fontWeight: 400
+      });
+
+      expect(result.success).toBe(false);
+    });
+  });
+
   describe('contrast ratio calculation', () => {
     it('calculates 21:1 for black on white', () => {
       const result = checkWcagContrast({
@@ -136,25 +150,24 @@ describe('checkWcagContrast', () => {
     });
 
     it('uses lower threshold for large text', () => {
-      // #959595 on white has ratio ~3.0-3.5
+      // #949494 on white has ratio ~3.03, which fails normal AA but passes large-text AA.
       const normalResult = checkWcagContrast({
-        foreground: '#959595',
+        foreground: '#949494',
         background: '#FFFFFF',
         fontSize: 16,
         fontWeight: 400
       });
       const largeResult = checkWcagContrast({
-        foreground: '#959595',
+        foreground: '#949494',
         background: '#FFFFFF',
-        fontSize: 18,
+        fontSize: 24,
         fontWeight: 400
       });
 
-      // Same colors, but large text should have better compliance
-      if (normalResult.contrastRatio >= 3.0 && normalResult.contrastRatio < 4.5) {
-        expect(normalResult.compliance.aa.passes).toBe(false);
-        expect(largeResult.compliance.aa.passes).toBe(true);
-      }
+      expect(normalResult.contrastRatio).toBeGreaterThanOrEqual(3.0);
+      expect(normalResult.contrastRatio).toBeLessThan(4.5);
+      expect(normalResult.compliance.aa.passes).toBe(false);
+      expect(largeResult.compliance.aa.passes).toBe(true);
     });
 
     it('compliance includes correct thresholds', () => {
@@ -247,21 +260,21 @@ describe('checkWcagContrast — boundaries and quality', () => {
       expect(result.isLargeText).toBe(true);
     });
 
-    it('18.99px bold weight is not large text', () => {
+    it('18.66px bold weight is not large text', () => {
       const result = checkWcagContrast({
         foreground: '#000000',
         background: '#FFFFFF',
-        fontSize: 18.99,
+        fontSize: 18.66,
         fontWeight: 700
       });
       expect(result.isLargeText).toBe(false);
     });
 
-    it('19px bold weight is large text', () => {
+    it('14pt converted to px with bold weight is large text', () => {
       const result = checkWcagContrast({
         foreground: '#000000',
         background: '#FFFFFF',
-        fontSize: 19,
+        fontSize: 14 * (96 / 72),
         fontWeight: 700
       });
       expect(result.isLargeText).toBe(true);

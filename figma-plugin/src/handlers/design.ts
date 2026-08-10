@@ -33,6 +33,21 @@ interface NodeSpec {
   children?: NodeSpec[];
 }
 
+function uniqueNodeKey(existingKeys: Iterable<string>, baseName: string): string {
+  const existing = new Set(existingKeys);
+  if (!existing.has(baseName)) {
+    return baseName;
+  }
+
+  let suffix = 2;
+  let candidate = `${baseName} (${suffix})`;
+  while (existing.has(candidate)) {
+    suffix += 1;
+    candidate = `${baseName} (${suffix})`;
+  }
+  return candidate;
+}
+
 function instantiateNode(name: string, props: Record<string, unknown>, type: string): SceneNode {
   switch (type) {
     case 'frame':
@@ -86,7 +101,7 @@ async function buildNodeTree(
   }
 
   cacheNode(node);
-  nodeMap.set(name, node);
+  nodeMap.set(uniqueNodeKey(nodeMap.keys(), name), node);
 
   if (nodeSpec.children !== undefined && nodeSpec.children.length > 0 && 'appendChild' in node) {
     for (const childSpec of nodeSpec.children) {
