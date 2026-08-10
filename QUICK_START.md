@@ -25,6 +25,8 @@ cd websocket-server
 npm start
 ```
 
+If port `8080` is occupied, the MCP auto-spawner and plugin scan `8080-8099`.
+
 **Terminal 2 - MCP Server:**
 
 ```bash
@@ -37,6 +39,8 @@ npm start
 1. Open Figma Desktop
 2. Plugins → Development → Text-to-Figma Bridge
 3. See "Connected to WebSocket server"
+
+The plugin picks the bridge port automatically. Server field is only an override.
 
 ---
 

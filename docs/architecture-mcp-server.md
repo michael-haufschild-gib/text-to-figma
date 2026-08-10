@@ -243,8 +243,9 @@ async function main() {
 8. **Node Management Tools** (7 tools):
    - `set_visible` - Show/hide
    - `set_locked` - Lock/unlock
-   - `set_export_settings` - Export configuration
-   - `export_node` - Export as image
+   - `set_export_settings` - Figma export-panel presets
+   - `export_node` - Export one node to a file or inline data
+   - `export_nodes` - Batch-export nodes to a directory
    - `set_plugin_data` - Store plugin data
 
 9. **Validation Tools** (3 tools):

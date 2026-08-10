@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
 
-A reference implementation for giving AI agents direct access to the Figma Plugin API. Three-tier architecture: **Figma plugin** → **WebSocket bridge** → **MCP server** exposing 65 tools via [Model Context Protocol](https://modelcontextprotocol.io/).
+A reference implementation for giving AI agents direct access to the Figma Plugin API. Three-tier architecture: **Figma plugin** → **WebSocket bridge** → **MCP server** exposing 69 tools via [Model Context Protocol](https://modelcontextprotocol.io/).
 
 Vibecoded with [Claude Code](https://claude.ai/code).
 
@@ -15,7 +15,7 @@ Claude / AI Agent
    ↓ stdio (JSON-RPC)
 MCP Server (TypeScript)
    ↓ WebSocket
-WebSocket Bridge (port 8080)
+WebSocket Bridge (default port 8080)
    ↓ WebSocket
 Figma Plugin
    ↓ Figma Plugin API
@@ -43,12 +43,16 @@ npm run build
 cd websocket-server && npm start
 ```
 
+If port `8080` is occupied, no manual port coordination is needed in the default local setup. The MCP auto-spawner and Figma plugin scan `8080-8099` and use the first available Text-to-Figma bridge.
+
 ### 3. Load Figma Plugin
 
 1. Open Figma Desktop
 2. Menu > Plugins > Development > Import plugin from manifest
 3. Select `figma-plugin/manifest.json`
 4. Run the plugin — it should connect to the WebSocket server
+
+The plugin scans local bridge ports automatically. The Server field is only an override.
 
 ### 4. Configure Your MCP Client
 
@@ -70,7 +74,7 @@ Add to your MCP client config (e.g. Claude Desktop `claude_desktop_config.json`)
 }
 ```
 
-Replace `/FULL/PATH/TO/` with the absolute path to this repo. A local-dev config with relative paths is available in `mcp-config.json`.
+Replace `/FULL/PATH/TO/` with the absolute path to this repo. For default local use, leave `FIGMA_WS_URL` at `ws://localhost:8080`; MCP updates its effective URL when the auto-spawner selects another port. A local-dev config with relative paths is available in `mcp-config.json`.
 
 ### 5. Test It
 
@@ -80,7 +84,7 @@ Ask your AI agent:
 
 Check Figma — the frame and text should appear.
 
-## Available Tools (65)
+## Available Tools (69)
 
 ### Creation
 
@@ -116,7 +120,23 @@ Check Figma — the frame and text should appear.
 
 ### Utility
 
-`check_connection` `set_visible` `set_locked` `rename_node` `remove_node` `export_node` `set_current_page` `set_export_settings` `get_plugin_data` `set_plugin_data`
+`check_connection` `set_visible` `set_locked` `rename_node` `remove_node` `export_node` `export_nodes` `set_current_page` `set_export_settings` `get_plugin_data` `set_plugin_data`
+
+### Exporting Assets
+
+`export_node` writes a single node to a file (`outputPath`) or returns the data inline (base64, or SVG source text); `export_nodes` writes many nodes — typically a frame's children — into a directory, optionally at several scales:
+
+```js
+get_selection({ maxDepth: 1 }); // collect child node IDs
+export_nodes({
+  nodeIds: ['2486:4475', '2486:4484'],
+  outputDir: 'public/assets/icons',
+  format: 'PNG',
+  scales: [1, 2] // writes icon.png and icon@2x.png
+});
+```
+
+Relative paths resolve against `EXPORT_OUTPUT_DIR` (default: the server's working directory); absolute paths are used as given. Exports above 7MB cannot cross the plugin bridge — lower the scale or export a smaller node.
 
 ### Design System
 
@@ -128,12 +148,14 @@ All environment variables with defaults are documented in [`.env.example`](.env.
 
 Key settings:
 
-| Variable                    | Default               | Description                         |
-| --------------------------- | --------------------- | ----------------------------------- |
-| `FIGMA_WS_URL`              | `ws://localhost:8080` | WebSocket bridge URL                |
-| `LOG_LEVEL`                 | `info`                | `debug` / `info` / `warn` / `error` |
-| `HEALTH_CHECK_PORT`         | `8081`                | HTTP health check port              |
-| `CIRCUIT_BREAKER_THRESHOLD` | `5`                   | Failures before circuit opens       |
+| Variable                           | Default               | Description                         |
+| ---------------------------------- | --------------------- | ----------------------------------- |
+| `FIGMA_WS_URL`                     | `ws://localhost:8080` | WebSocket bridge base URL           |
+| `TEXT_TO_FIGMA_WS_PORT_SCAN_LIMIT` | `20`                  | Local auto-discovery port count     |
+| `EXPORT_OUTPUT_DIR`                | server cwd            | Root for relative export paths      |
+| `LOG_LEVEL`                        | `info`                | `debug` / `info` / `warn` / `error` |
+| `HEALTH_CHECK_PORT`                | `8081`                | HTTP health check port              |
+| `CIRCUIT_BREAKER_THRESHOLD`        | `5`                   | Failures before circuit opens       |
 
 ## Development
 
@@ -159,7 +181,8 @@ See [`docs/`](docs/) for detailed architecture and development documentation.
 
 ### WebSocket won't connect
 
-- Check the server is running: `lsof -i :8080`
+- Check MCP logs for the selected bridge URL
+- Confirm the plugin UI shows the same URL after scan
 - Check the Figma plugin console for errors
 
 ### MCP client can't see tools

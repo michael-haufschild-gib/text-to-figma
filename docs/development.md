@@ -86,21 +86,19 @@ cd websocket-server && npm run build && npm start
 
 ## Port Configuration
 
-| Component        | Default Port    | Environment Variable |
-| ---------------- | --------------- | -------------------- |
-| WebSocket Server | 8080            | `PORT`               |
-| MCP Server       | stdio (no port) | N/A                  |
+| Component        | Default Port    | Environment Variable         |
+| ---------------- | --------------- | ---------------------------- |
+| WebSocket Server | 8080-8099 scan  | `PORT` / `FIGMA_WS_URL` base |
+| MCP Server       | stdio (no port) | N/A                          |
 
 ---
 
 ## Checking What's Running
 
 ```bash
-# Check if WebSocket server is running on port 8080
-lsof -i :8080
-
-# Kill process on port 8080 if stuck
-kill $(lsof -t -i :8080)
+# Check MCP logs for selected bridge URL
+# Default local discovery scans ws://localhost:8080 through ws://localhost:8099
+lsof -nP -iTCP | rg ':(808[0-9]|8099)\b'
 ```
 
 ---
@@ -144,17 +142,17 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node mcp-server/dist/ind
 ### WebSocket Connection Issues
 
 ```bash
-# Check WebSocket server is running
+# Check default bridge URL manually
 curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:8080
 
-# Should show "Upgrade Required" or connection attempt
+# MCP/plugin may choose another port in 8080-8099 if 8080 is occupied
 ```
 
 ### Figma Plugin Not Connecting
 
 1. Open plugin in Figma
 2. Check status indicator (should be green)
-3. If red: Check WebSocket server is running on port 8080
+3. If red: Check MCP logs for the selected bridge URL
 4. Right-click plugin UI → Inspect → Console for errors
 
 ---
@@ -199,11 +197,9 @@ cd mcp-server && npm run build
 
 ### Problem: "Port 8080 already in use"
 
-**Solution**: Kill existing process
+**Solution**: No action needed for default local setup. MCP and plugin scan `8080-8099`.
 
-```bash
-kill $(lsof -t -i :8080)
-```
+Only kill a process when you explicitly need `8080` for this bridge.
 
 ### Problem: "No tools available" in Claude
 
