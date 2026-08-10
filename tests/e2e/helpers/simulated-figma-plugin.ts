@@ -24,6 +24,31 @@ export type CommandHandler = (
 
 type SuccessResponse = { success: true; data: unknown };
 
+const CONNECT_RETRY_ATTEMPTS = 5;
+const CONNECT_RETRY_DELAY_MS = 10;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function uid(): string {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function uniqueObjectKey(record: Record<string, unknown>, baseName: string): string {
+  if (!(baseName in record)) {
+    return baseName;
+  }
+
+  let suffix = 2;
+  let candidate = `${baseName} (${suffix})`;
+  while (candidate in record) {
+    suffix += 1;
+    candidate = `${baseName} (${suffix})`;
+  }
+  return candidate;
+}
+
 /** Handle create_design — returns a multi-node response tree. */
 function handleCreateDesign(payload: Record<string, unknown>): SuccessResponse {
   const spec = payload.spec as Record<string, unknown> | undefined;
@@ -38,7 +63,7 @@ function handleCreateDesign(payload: Record<string, unknown>): SuccessResponse {
   ): string {
     const id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const nodeName = (node.name as string) ?? `${String(node.type)}_${depth}`;
-    nodeIds[nodeName] = id;
+    nodeIds[uniqueObjectKey(nodeIds, nodeName)] = id;
     nodes.push({
       nodeId: id,
       type: ((node.type as string) ?? 'FRAME').toUpperCase(),
@@ -325,6 +350,15 @@ function handleUtilityTool(type: string, payload: Record<string, unknown>): Succ
       }
     };
   }
+  if (type === 'group_nodes') {
+    return {
+      success: true,
+      data: {
+        groupId: `group_${uid()}`,
+        nodeCount: (payload.nodeIds as unknown[])?.length ?? 0
+      }
+    };
+  }
   return null;
 }
 
@@ -333,7 +367,6 @@ function handleComponentTool(
   type: string,
   payload: Record<string, unknown>
 ): SuccessResponse | null {
-  const uid = () => `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   if (type === 'create_component') return { success: true, data: { componentId: `comp_${uid()}` } };
   if (type === 'create_instance')
     return {
@@ -356,7 +389,7 @@ function handleComponentTool(
     return {
       success: true,
       data: {
-        nodeId: `bool_${Date.now()}`,
+        booleanNodeId: `bool_${Date.now()}`,
         operation: payload.operation,
         nodeCount: (payload.nodeIds as string[])?.length ?? 0
       }
@@ -442,6 +475,20 @@ function defaultCommandHandler(command: FigmaCommand): SuccessResponse {
     };
   }
 
+  if (type === 'batch_create_path') {
+    const paths = (payload.paths as Array<Record<string, unknown>> | undefined) ?? [];
+    return {
+      success: true,
+      data: {
+        results: paths.map((path, index) => ({
+          index,
+          pathId: `path_${uid()}`,
+          name: (path.name as string | undefined) ?? 'Path'
+        }))
+      }
+    };
+  }
+
   // Other creation tools return a nodeId
   if (type.startsWith('create_')) {
     return {
@@ -469,7 +516,31 @@ export class SimulatedFigmaPlugin {
       return this.connectionPromise;
     }
 
-    this.connectionPromise = new Promise<void>((resolve, reject) => {
+    this.connectionPromise = this.connectWithRetry(wsUrl);
+    return this.connectionPromise;
+  }
+
+  private async connectWithRetry(wsUrl: string): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= CONNECT_RETRY_ATTEMPTS; attempt++) {
+      try {
+        await this.connectOnce(wsUrl);
+        return;
+      } catch (error) {
+        lastError = error;
+        this.ws?.terminate();
+        this.ws = null;
+        if (attempt < CONNECT_RETRY_ATTEMPTS) {
+          await delay(CONNECT_RETRY_DELAY_MS * attempt);
+        }
+      }
+    }
+    this.connectionPromise = null;
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
+  }
+
+  private connectOnce(wsUrl: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error('SimulatedFigmaPlugin: connection timeout'));
       }, 5000);
@@ -505,8 +576,6 @@ export class SimulatedFigmaPlugin {
         this.connectionPromise = null;
       });
     });
-
-    return this.connectionPromise;
   }
 
   /**

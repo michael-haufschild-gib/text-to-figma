@@ -36,6 +36,24 @@ class HeartbeatTestClient {
   }> = [];
 
   async connect(url: string): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        await this.connectOnce(url);
+        return;
+      } catch (error) {
+        lastError = error;
+        this.ws?.terminate();
+        this.ws = null;
+        if (attempt < 5) {
+          await new Promise((resolve) => setTimeout(resolve, attempt * 10));
+        }
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
+  }
+
+  private connectOnce(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
       this.ws = new WebSocket(url);
