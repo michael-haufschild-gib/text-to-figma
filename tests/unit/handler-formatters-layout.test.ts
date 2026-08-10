@@ -346,21 +346,28 @@ describe('Handler formatResponse — additional tools & registration', () => {
   });
 
   describe('export_node', () => {
-    it('formats export with format, scale, and base64 length', () => {
+    it('formats export metadata and returns the base64 payload itself', () => {
       const handler = getHandler('export_node');
       const result = handler.formatResponse({
         message: 'Node exported',
         nodeId: 'n1',
         format: 'PNG',
         scale: 2,
-        base64Data: 'iVBORw0KGgoAAAANSUhEUgAA'
+        requestedScale: 2,
+        byteLength: 18,
+        mimeType: 'image/png',
+        base64Data: 'iVBORw0KGgoAAAANSUhEUgAA',
+        notes: []
       });
       const text = result[0].text as string;
       expect(text).toContain('Node exported');
       expect(text).toContain('Node ID: n1');
       expect(text).toContain('Format: PNG');
       expect(text).toContain('Scale: 2x');
-      expect(text).toContain('Base64 Data:');
+
+      // The data itself must reach the caller, not just its length.
+      const joined = result.map((c) => c.text ?? '').join('\n');
+      expect(joined).toContain('iVBORw0KGgoAAAANSUhEUgAA');
     });
 
     it('formats export with file path when present', () => {
@@ -370,10 +377,17 @@ describe('Handler formatResponse — additional tools & registration', () => {
         nodeId: 'n1',
         format: 'SVG',
         scale: 1,
-        filePath: '/tmp/export.svg'
+        requestedScale: 1,
+        byteLength: 42,
+        mimeType: 'image/svg+xml',
+        filePath: '/tmp/export.svg',
+        relativePath: 'export.svg',
+        notes: ['Inline data omitted: too large.']
       });
       const text = result[0].text as string;
-      expect(text).toContain('File Path: /tmp/export.svg');
+      expect(text).toContain('File: /tmp/export.svg');
+      expect(text).toContain('Relative Path: export.svg');
+      expect(text).toContain('Note: Inline data omitted: too large.');
     });
   });
 });

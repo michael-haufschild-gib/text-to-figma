@@ -1,10 +1,12 @@
 /**
  * Utility Command Handlers
  *
- * Handles: set_visible, set_locked, set_export_settings, export_node,
- * set_plugin_data, get_plugin_data, create_page, list_pages, set_current_page,
- * set_stroke_join, set_stroke_cap, set_clipping_mask, create_path,
- * create_boolean_operation
+ * Handles: set_visible, set_locked, set_plugin_data, get_plugin_data,
+ * create_page, list_pages, set_current_page, set_stroke_join, set_stroke_cap,
+ * set_clipping_mask, create_path, create_boolean_operation
+ *
+ * Export handlers (export_node, set_export_settings) are re-exported from
+ * ./export.ts; path handlers from ./path.ts.
  */
 
 import { z } from 'zod';
@@ -29,6 +31,9 @@ const STROKE_CAPS = [
   'CIRCLE_FILLED'
 ] as const;
 const BOOLEAN_OPS = ['UNION', 'INTERSECT', 'SUBTRACT', 'EXCLUDE'] as const;
+
+// Export handlers (export_node, set_export_settings) live in ./export.ts
+export { handleExportNode, handleSetExportSettings } from './export.js';
 
 const renameNodeSchema = z.object({
   nodeId: z.string(),
@@ -75,81 +80,6 @@ export function handleSetLocked(payload: Record<string, unknown>): OperationResu
   if (!node) throw new Error('Node not found');
   node.locked = input.locked;
   return { nodeId: input.nodeId, locked: input.locked, message: 'Lock state set successfully' };
-}
-
-const setExportSettingsSchema = z.object({
-  nodeId: z.string(),
-  settings: z.array(
-    z.object({
-      format: z.string().optional(),
-      constraint: z.record(z.string(), z.unknown()).optional(),
-      suffix: z.string().optional()
-    })
-  )
-});
-
-export function handleSetExportSettings(payload: Record<string, unknown>): OperationResult {
-  const input = setExportSettingsSchema.parse(payload);
-
-  const node = getNode(input.nodeId);
-  if (!node) throw new Error('Node not found');
-
-  const settings: ExportSettings[] = input.settings.map((s) => {
-    const fmt = s.format ?? 'PNG';
-    const constraint =
-      s.constraint !== undefined
-        ? (s.constraint as unknown as ExportSettingsConstraints)
-        : { type: 'SCALE' as const, value: 1 };
-    const suffix = s.suffix ?? '';
-
-    if (fmt === 'SVG') return { format: 'SVG' as const, constraint, suffix } as ExportSettings;
-    if (fmt === 'PDF') return { format: 'PDF' as const, constraint, suffix } as ExportSettings;
-    if (fmt === 'JPG') return { format: 'JPG' as const, constraint, suffix } as ExportSettings;
-    return { format: 'PNG' as const, constraint, suffix } as ExportSettings;
-  });
-
-  node.exportSettings = settings;
-  return {
-    nodeId: input.nodeId,
-    settingsCount: settings.length,
-    message: 'Export settings applied successfully'
-  };
-}
-
-const exportNodeSchema = z.object({
-  nodeId: z.string(),
-  format: z.string().optional(),
-  scale: z.number().optional(),
-  returnBase64: z.boolean().optional()
-});
-
-export async function handleExportNode(payload: Record<string, unknown>): Promise<OperationResult> {
-  const input = exportNodeSchema.parse(payload);
-
-  const node = getNode(input.nodeId);
-  if (!node) throw new Error('Node not found');
-
-  const format = input.format ?? 'PNG';
-  const scale = input.scale ?? 1;
-
-  const exportFormat = format === 'JPG' ? 'JPG' : format === 'SVG' ? 'SVG' : 'PNG';
-  const bytes = await node.exportAsync({
-    format: exportFormat,
-    constraint: { type: 'SCALE', value: scale }
-  });
-
-  let base64Data = null;
-  if (input.returnBase64 !== false) {
-    base64Data = figma.base64Encode(bytes);
-  }
-
-  return {
-    nodeId: input.nodeId,
-    format,
-    scale,
-    base64Data,
-    message: 'Node exported successfully'
-  };
 }
 
 const setPluginDataSchema = z.object({

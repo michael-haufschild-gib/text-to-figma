@@ -18,7 +18,15 @@ import { defineHandler, textResponse } from '../routing/handler-utils.js';
 const ExportSettingSchema = z.object({
   format: z.enum(['PNG', 'JPG', 'SVG', 'PDF']).describe('Export format'),
   suffix: z.string().optional().describe('Filename suffix (e.g., "@2x", "-icon")'),
-  scale: z.number().positive().optional().default(1).describe('Export scale (1 = 1x, 2 = 2x, etc.)')
+  scale: z
+    .number()
+    .positive()
+    .max(10)
+    .optional()
+    .default(1)
+    .describe(
+      'Export scale (1 = 1x, 2 = 2x). Ignored by SVG and PDF, which have no size constraint.'
+    )
 });
 
 /**
@@ -80,7 +88,9 @@ set_export_settings({
   ]
 })
 
-After setting, use export_node to generate files.`,
+Scope: this configures the presets shown in Figma's own export panel. It does
+NOT affect export_node / export_nodes, which take format and scale directly.
+SVG and PDF presets ignore scale.`,
   inputSchema: {
     type: 'object' as const,
     properties: {

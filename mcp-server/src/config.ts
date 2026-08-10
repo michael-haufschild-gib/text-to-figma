@@ -48,6 +48,16 @@ const configSchema = z.object({
   CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().positive().default(5),
   CIRCUIT_BREAKER_RESET_TIMEOUT: z.coerce.number().int().positive().default(30000), // 30 seconds
 
+  // Export
+  /** Root directory for relative export paths. Defaults to the server's working directory. */
+  EXPORT_OUTPUT_DIR: z.string().min(1).default(process.cwd()),
+  /** Largest export returned inline (base64/SVG text) before the caller must write a file. */
+  EXPORT_MAX_INLINE_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1024 * 1024),
+
   // Retry
   RETRY_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
   RETRY_BASE_DELAY: z.coerce.number().int().positive().default(1000), // 1 second

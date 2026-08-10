@@ -20,6 +20,7 @@ import { resolve as pathResolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startTestBridge, type TestBridgeHandle } from './helpers/test-bridge.js';
 import { SimulatedFigmaPlugin } from './helpers/simulated-figma-plugin.js';
+import { EXPECTED_TOOL_NAMES } from '../helpers/expected-tool-names.js';
 
 interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -259,8 +260,7 @@ describe('MCP Protocol — tools/list', () => {
     expect(response.error).toBeUndefined();
     const result = response.result as { tools: Array<Record<string, unknown>> };
     expect(result.tools).toBeInstanceOf(Array);
-    // Tool count must be non-trivial (catches registration failures)
-    expect(result.tools.length).toBeGreaterThanOrEqual(65);
+    expect(result.tools.map((tool) => tool.name).sort()).toEqual([...EXPECTED_TOOL_NAMES].sort());
 
     // Verify tool structure
     for (const tool of result.tools) {

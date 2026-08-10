@@ -8,20 +8,22 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { getToolRegistry, resetToolRegistry } from '../../mcp-server/src/routing/tool-registry.js';
 import { registerAllTools } from '../../mcp-server/src/routing/register-tools.js';
+import { EXPECTED_TOOL_NAMES } from '../helpers/expected-tool-names.js';
 
 describe('registerAllTools', () => {
   afterEach(() => {
     resetToolRegistry();
   });
 
-  it('registers the expected number of tools (guards against accidentally dropping a handler)', () => {
+  it('registers the exact public tool surface', () => {
     registerAllTools();
     const registry = getToolRegistry();
-    const all = registry.getAll();
-    // If this fails after adding/removing tools, update the count.
-    // Catching both accidental additions and accidental deletions.
-    expect(all.length).toBeGreaterThanOrEqual(50);
-    expect(all.length).toBeLessThanOrEqual(70);
+    const names = registry
+      .getAll()
+      .map((handler) => handler.name)
+      .sort();
+
+    expect(names).toEqual([...EXPECTED_TOOL_NAMES].sort());
   });
 
   it('every registered handler has name, schema, execute, formatResponse, and definition', () => {
@@ -74,6 +76,8 @@ describe('registerAllTools', () => {
     // Layout/utility tools
     expect(names).toContain('set_layout_properties');
     expect(names).toContain('align_nodes');
+    expect(names).toContain('batch_create_path');
+    expect(names).toContain('group_nodes');
     expect(names).toContain('check_connection');
   });
 
@@ -82,7 +86,7 @@ describe('registerAllTools', () => {
     const registry = getToolRegistry();
     const defs = registry.listDefinitions();
 
-    expect(defs.length).toBeGreaterThan(40);
+    expect(defs).toHaveLength(EXPECTED_TOOL_NAMES.length);
     for (const def of defs) {
       expect(def.name).toBeTypeOf('string');
       expect(def.inputSchema.type).toBe('object');

@@ -20,6 +20,7 @@ import { handler as createPage } from '../tools/create_page.js';
 import { handler as listPages } from '../tools/list_pages.js';
 import { handler as setCurrentPage } from '../tools/set_current_page.js';
 import { handler as exportNode } from '../tools/export_node.js';
+import { handler as exportNodes } from '../tools/export_nodes.js';
 import { handler as setExportSettings } from '../tools/set_export_settings.js';
 import { handler as setVisible } from '../tools/set_visible.js';
 import { handler as setLocked } from '../tools/set_locked.js';
@@ -46,6 +47,7 @@ export const layoutUtilityHandlers = [
   listPages,
   setCurrentPage,
   exportNode,
+  exportNodes,
   setExportSettings,
   setVisible,
   setLocked,

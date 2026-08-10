@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- E2E simulator centralizes mocked Figma behavior for full-stack tests. */
 /**
  * Simulated Figma Plugin
  *
@@ -235,23 +236,59 @@ function handlePageTool(type: string, payload: Record<string, unknown>): Success
   return null;
 }
 
+const SIMULATED_MIME_TYPES: Record<string, string> = {
+  PNG: 'image/png',
+  JPG: 'image/jpeg',
+  SVG: 'image/svg+xml',
+  PDF: 'application/pdf'
+};
+
+/**
+ * Mirror the real plugin's export response: base64Data (omitted when the caller
+ * opts out), byteLength, mimeType and the scale Figma actually applied.
+ */
+function simulateExportNode(payload: Record<string, unknown>): SuccessResponse {
+  const format = (payload.format as string) ?? 'PNG';
+  const requestedScale = (payload.scale as number) ?? 1;
+  const scaleApplied = format === 'PNG' || format === 'JPG';
+  const bytes =
+    format === 'SVG'
+      ? Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>', 'utf8')
+      : Buffer.from('simulated-export-bytes', 'utf8');
+
+  return {
+    success: true,
+    data: {
+      nodeId: payload.nodeId,
+      nodeName: 'Simulated Node',
+      nodeType: 'FRAME',
+      format,
+      scale: scaleApplied ? requestedScale : 1,
+      requestedScale,
+      scaleApplied,
+      byteLength: bytes.byteLength,
+      mimeType: SIMULATED_MIME_TYPES[format] ?? 'image/png',
+      width: 100,
+      height: 100,
+      ...(payload.returnBase64 === false ? {} : { base64Data: bytes.toString('base64') })
+    }
+  };
+}
+
 /** Handle export, node-op, and data tools. */
 function handleUtilityTool(type: string, payload: Record<string, unknown>): SuccessResponse | null {
   const pageResult = handlePageTool(type, payload);
   if (pageResult) return pageResult;
 
   if (type === 'export_node') {
-    return {
-      success: true,
-      data: {
-        imageData: 'base64encodeddata',
-        format: (payload.format as string) ?? 'PNG',
-        scale: (payload.scale as number) ?? 1
-      }
-    };
+    return simulateExportNode(payload);
   }
   if (type === 'set_export_settings') {
-    return { success: true, data: { nodeId: payload.nodeId, settingsCount: 1 } };
+    const settings = Array.isArray(payload.settings) ? payload.settings : [];
+    return {
+      success: true,
+      data: { nodeId: payload.nodeId, settingsCount: settings.length }
+    };
   }
   if (type === 'set_plugin_data') {
     return {

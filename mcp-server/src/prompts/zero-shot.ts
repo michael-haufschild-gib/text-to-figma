@@ -397,7 +397,8 @@ Use these tools aggressively for complex drawings:
 2. **Use spatial tools** - connect_shapes, align_nodes, get_relative_bounds
 3. **Plan first** - define coordinates before creating
 4. **Work back-to-front** - use set_layer_order for depth
-5. **Verify constantly** - get_absolute_bounds, export_node
+5. **Verify constantly** - get_absolute_bounds, export_node with returnImage: true
+6. **Hand off assets** - export_node with outputPath, or export_nodes for a whole folder
 `;
 
 export function getZeroShotPrompt(): string {

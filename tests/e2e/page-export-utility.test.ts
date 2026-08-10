@@ -2,7 +2,8 @@
  * Page Management, Export, and Utility Tools E2E Tests
  *
  * Tests page creation/navigation, node export, export settings,
- * create_path, and create_rectangle_with_image_fill through the full chain.
+ * create_path, edit_path, batch_create_path, group_nodes, and
+ * create_rectangle_with_image_fill through the full chain.
  *
  * Bug this catches:
  * - create_page doesn't forward page name correctly
@@ -10,7 +11,9 @@
  * - list_pages response not parsed correctly
  * - export_node doesn't forward format/scale parameters
  * - set_export_settings doesn't send settings array
- * - create_path command data or SVG path not forwarded
+ * - create_path/edit_path command data or SVG path not forwarded
+ * - batch_create_path response parsing or payload normalization breaks
+ * - group_nodes does not preserve nodeIds/parentId through the bridge
  * - create_rectangle_with_image_fill doesn't send imageUrl
  * - Page workflow: create → switch → verify sequence breaks
  */
@@ -198,6 +201,105 @@ describe('Utility Tools E2E — create_path', () => {
 
     const cmd = ctx.plugin.getReceivedCommands().find((c) => c.type === 'create_path');
     expect(cmd!.payload.name).toBe('Curve');
+  });
+
+  it('exposes pathId so edit_path can chain from create_path', async () => {
+    const created = await routeToolCall('create_path', {
+      name: 'EditablePath',
+      svgPath: 'M 0 0 L 10 10'
+    });
+    const pathId = extractId(created[0].text!, /Path ID:\s*(\S+)/);
+    ctx.plugin.clearCommands();
+
+    const result = await routeToolCall('edit_path', {
+      nodeId: pathId,
+      svgPath: '  M 0 0 L 20 20 Z  ',
+      windingRule: 'EVENODD'
+    });
+
+    expect(result[0].text).toContain(`Node ID: ${pathId}`);
+    const cmd = ctx.plugin.getReceivedCommands().find((c) => c.type === 'edit_path');
+    expect(cmd).toEqual(expect.objectContaining({ type: 'edit_path' }));
+    expect(cmd!.payload.nodeId).toBe(pathId);
+    expect(cmd!.payload.svgPath).toBe('M 0 0 L 20 20 Z');
+    expect(cmd!.payload.windingRule).toBe('EVENODD');
+  });
+
+  it('forwards edit_path payload using trimmed SVG path data for a known vector id', async () => {
+    const result = await routeToolCall('edit_path', {
+      nodeId: 'path-existing',
+      svgPath: '  M 0 0 L 20 20 Z  ',
+      windingRule: 'EVENODD'
+    });
+
+    expect(result[0].text).toContain('Node ID: path-existing');
+    const cmd = ctx.plugin.getReceivedCommands().find((c) => c.type === 'edit_path');
+    expect(cmd).toEqual(expect.objectContaining({ type: 'edit_path' }));
+    expect(cmd!.payload.nodeId).toBe('path-existing');
+    expect(cmd!.payload.svgPath).toBe('M 0 0 L 20 20 Z');
+    expect(cmd!.payload.windingRule).toBe('EVENODD');
+  });
+
+  it('creates a batch of paths in one bridge round trip', async () => {
+    const parentId = await createParentFrame('BatchPathParent');
+    ctx.plugin.clearCommands();
+
+    const result = await routeToolCall('batch_create_path', {
+      parentId,
+      paths: [
+        { name: 'Body', svgPath: ' M 0 0 L 100 0 Z ', fillColor: '#8B4513' },
+        {
+          name: 'Tail',
+          commands: [
+            { type: 'M', x: 100, y: 0 },
+            { type: 'L', x: 130, y: 20 }
+          ],
+          strokeColor: '#000000',
+          strokeWeight: 2
+        }
+      ]
+    });
+
+    expect(result[0].text).toContain('Batch created 2 path(s)');
+    const cmd = ctx.plugin.getReceivedCommands().find((c) => c.type === 'batch_create_path');
+    expect(cmd).toEqual(expect.objectContaining({ type: 'batch_create_path' }));
+    expect(cmd!.payload.parentId).toBe(parentId);
+    expect((cmd!.payload.paths as Array<Record<string, unknown>>)[0]).toMatchObject({
+      name: 'Body',
+      svgPath: 'M 0 0 L 100 0 Z',
+      fillColor: '#8B4513'
+    });
+    expect((cmd!.payload.paths as Array<Record<string, unknown>>)[1]).toMatchObject({
+      name: 'Tail',
+      strokeColor: '#000000',
+      strokeWeight: 2
+    });
+  });
+});
+
+// ─── group_nodes ─────────────────────────────────────────────────────────
+
+describe('Utility Tools E2E — group_nodes', () => {
+  it('groups created nodes while preserving node order and parentId', async () => {
+    const parentId = await createParentFrame('GroupParent');
+    const first = await routeToolCall('create_frame', { name: 'FirstGroupedNode', parentId });
+    const second = await routeToolCall('create_frame', { name: 'SecondGroupedNode', parentId });
+    const firstId = extractId(first[0].text!, /Frame ID:\s*(\S+)/);
+    const secondId = extractId(second[0].text!, /Frame ID:\s*(\S+)/);
+    ctx.plugin.clearCommands();
+
+    const result = await routeToolCall('group_nodes', {
+      nodeIds: [firstId, secondId],
+      name: 'Grouped Pair',
+      parentId
+    });
+
+    expect(result[0].text).toContain('Grouped 2 node(s) into "Grouped Pair"');
+    expect(result[0].text).toContain('Group ID:');
+    const cmd = ctx.plugin.getReceivedCommands().find((c) => c.type === 'group_nodes');
+    expect(cmd).toEqual(expect.objectContaining({ type: 'group_nodes' }));
+    expect(cmd!.payload.nodeIds).toEqual([firstId, secondId]);
+    expect(cmd!.payload.parentId).toBe(parentId);
   });
 });
 
