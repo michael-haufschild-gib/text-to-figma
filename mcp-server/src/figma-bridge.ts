@@ -46,6 +46,10 @@ interface PendingRequest {
   aborted: boolean;
 }
 
+function unrefTimer(timer: ReturnType<typeof setTimeout> | ReturnType<typeof setInterval>): void {
+  timer.unref();
+}
+
 /**
  * Abort controller for cancelling requests
  */
@@ -128,6 +132,7 @@ export class FigmaBridge {
             reject(new FigmaBridgeError(createError(ErrorCode.CONN_TIMEOUT, 'Connection timeout')));
           }
         }, FigmaBridge.CONNECTION_TIMEOUT_MS);
+        unrefTimer(connectionTimeout);
 
         this.ws.on('open', () => {
           clearTimeout(connectionTimeout);
@@ -282,6 +287,7 @@ export class FigmaBridge {
           console.error('[FigmaBridge] Reconnection failed:', errorMessage);
         });
       }, delay);
+      unrefTimer(this.reconnectTimeout);
     }
   }
 
@@ -558,6 +564,7 @@ export class FigmaBridge {
         });
       }
     }, this.healthCheckIntervalMs);
+    unrefTimer(this.healthCheckInterval);
   }
 
   /**

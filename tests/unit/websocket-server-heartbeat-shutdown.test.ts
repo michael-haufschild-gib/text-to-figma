@@ -59,15 +59,21 @@ describe('TokenBucket', () => {
     expect(bucket.consume()).toBe(false);
   });
 
-  it('refills tokens over time', async () => {
-    const bucket = new TokenBucket(2, 1000);
-    bucket.consume();
-    bucket.consume();
-    expect(bucket.consume()).toBe(false);
+  it('refills tokens over time', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    try {
+      const bucket = new TokenBucket(2, 1000);
+      bucket.consume();
+      bucket.consume();
+      expect(bucket.consume()).toBe(false);
 
-    await new Promise((r) => setTimeout(r, 15));
+      vi.advanceTimersByTime(1);
 
-    expect(bucket.consume()).toBe(true);
+      expect(bucket.consume()).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -125,6 +131,45 @@ describe('Heartbeat interval callback', () => {
 
     expect(deadWs.terminate).toHaveBeenCalled();
     expect(handle.state.clients.has('dead-client')).toBe(false);
+  });
+
+  it('cleans up Figma assignment and pending requests when plugin dies by heartbeat', () => {
+    handle = createServerWithHeartbeatCapture();
+
+    const figmaWs = mockWs();
+    const mcpWs = mockWs();
+    handle.state.clients.set('figma-client', {
+      ws: figmaWs,
+      isAlive: false,
+      lastPong: Date.now() - 120_000,
+      isFigma: true,
+      rateLimiter: new TokenBucket()
+    });
+    handle.state.clients.set('mcp-client', {
+      ws: mcpWs,
+      isAlive: true,
+      lastPong: Date.now(),
+      isMCP: true,
+      rateLimiter: new TokenBucket()
+    });
+    handle.state.figmaPluginClient = 'figma-client';
+    handle.state.pendingRequestOrigins.set('req-dead-plugin', {
+      clientId: 'mcp-client',
+      createdAt: Date.now()
+    });
+
+    heartbeatCallback();
+
+    expect(figmaWs.terminate).toHaveBeenCalled();
+    expect(handle.state.figmaPluginClient).toBeNull();
+    expect(handle.state.pendingRequestOrigins.has('req-dead-plugin')).toBe(false);
+    expect(mcpWs.send).toHaveBeenCalledWith(
+      JSON.stringify({
+        id: 'req-dead-plugin',
+        success: false,
+        error: 'Figma plugin disconnected during operation'
+      })
+    );
   });
 
   it('pings alive clients and sets isAlive=false', () => {
@@ -264,15 +309,132 @@ describe('Graceful shutdown via handle.shutdown()', () => {
 });
 
 describe('Server error event', () => {
-  it('handles wss error event without crashing', async () => {
+  const handles: ServerHandle[] = [];
+
+  afterEach(async () => {
+    vi.useRealTimers();
+    for (const h of handles) {
+      clearInterval(h.heartbeatInterval);
+      try {
+        await new Promise<void>((resolve) => {
+          h.wss.close(() => resolve());
+        });
+      } catch {
+        // already closed
+      }
+    }
+    handles.length = 0;
+  });
+
+  it('handles wss error event without crashing', () => {
     const handle = createServer(0);
+    handles.push(handle);
 
     handle.wss.emit('error', new Error('test server error'));
+  });
 
-    clearInterval(handle.heartbeatInterval);
-    await new Promise<void>((resolve) => {
-      handle.wss.close(() => resolve());
+  it('clears heartbeat when startup fails because the port is already bound', () => {
+    const handle = createServer(0);
+    handles.push(handle);
+    const clearSpy = vi.spyOn(global, 'clearInterval');
+    const error = Object.assign(new Error('listen EADDRINUSE: address already in use :::8080'), {
+      code: 'EADDRINUSE'
     });
+
+    handle.wss.emit('error', error);
+
+    expect(clearSpy).toHaveBeenCalledWith(handle.heartbeatInterval);
+    clearSpy.mockRestore();
+  });
+
+  it('clears heartbeat on a real port bind failure', async () => {
+    const first = createServer(0);
+    handles.push(first);
+    await new Promise<void>((resolve) => first.wss.once('listening', () => resolve()));
+    const port = (first.wss.address() as { port: number }).port;
+    const clearSpy = vi.spyOn(global, 'clearInterval');
+
+    const second = createServer(port);
+    handles.push(second);
+    const error = await new Promise<NodeJS.ErrnoException>((resolve) => {
+      second.wss.once('error', (err) => resolve(err as NodeJS.ErrnoException));
+    });
+
+    expect(error.code).toBe('EADDRINUSE');
+    expect(clearSpy).toHaveBeenCalledWith(second.heartbeatInterval);
+    clearSpy.mockRestore();
+  });
+
+  it('shuts down after the configured idle timeout with no clients', async () => {
+    vi.useFakeTimers();
+    const handle = createServer(0, { idleShutdownMs: 1000 });
+    handles.push(handle);
+    await new Promise<void>((resolve) => handle.wss.once('listening', () => resolve()));
+    const closed = new Promise<void>((resolve) => handle.wss.once('close', () => resolve()));
+
+    await vi.advanceTimersByTimeAsync(999);
+    const addressBeforeTimeout = handle.wss.address();
+    if (typeof addressBeforeTimeout !== 'object' || addressBeforeTimeout === null) {
+      throw new Error('Expected server to still be listening before idle timeout');
+    }
+    expect(addressBeforeTimeout.port).toBeGreaterThan(0);
+
+    await vi.advanceTimersByTimeAsync(1);
+    await closed;
+
+    expect(handle.wss.address()).toBeNull();
+  });
+
+  it('cancels the pending idle shutdown when a client connects before the timeout', async () => {
+    vi.useFakeTimers();
+    const handle = createServer(0, { idleShutdownMs: 1000 });
+    handles.push(handle);
+    await new Promise<void>((resolve) => handle.wss.once('listening', () => resolve()));
+
+    handle.wss.emit('connection', mockWs(), {});
+    await vi.advanceTimersByTimeAsync(1000);
+
+    const addressAfterTimeout = handle.wss.address();
+    if (typeof addressAfterTimeout !== 'object' || addressAfterTimeout === null) {
+      throw new Error('Expected server to keep listening after client connection');
+    }
+    expect(addressAfterTimeout.port).toBeGreaterThan(0);
+    expect(handle.state.clients.size).toBe(1);
+  });
+
+  it('reschedules idle shutdown after the last client disconnects', async () => {
+    vi.useFakeTimers();
+    const handle = createServer(0, { idleShutdownMs: 1000 });
+    handles.push(handle);
+    await new Promise<void>((resolve) => handle.wss.once('listening', () => resolve()));
+
+    const clientWs = mockWs();
+    handle.wss.emit('connection', clientWs, {});
+    const closeHandler = vi
+      .mocked(clientWs.on)
+      .mock.calls.find(([event]) => event === 'close')?.[1] as (() => void) | undefined;
+    if (!closeHandler) throw new Error('Expected close handler to be registered');
+
+    closeHandler();
+    const closed = new Promise<void>((resolve) => handle.wss.once('close', () => resolve()));
+    await vi.advanceTimersByTimeAsync(1000);
+    await closed;
+
+    expect(handle.state.clients.size).toBe(0);
+    expect(handle.wss.address()).toBeNull();
+  });
+
+  it('makes shutdown idempotent after the first signal starts closing the server', async () => {
+    const handle = createServer(0);
+    handles.push(handle);
+    await new Promise<void>((resolve) => handle.wss.once('listening', () => resolve()));
+    const clearSpy = vi.spyOn(global, 'clearInterval');
+
+    await Promise.all([handle.shutdown('SIGTERM'), handle.shutdown('SIGINT')]);
+
+    expect(clearSpy).toHaveBeenCalledTimes(1);
+    expect(clearSpy).toHaveBeenCalledWith(handle.heartbeatInterval);
+    clearSpy.mockRestore();
   });
 });
 

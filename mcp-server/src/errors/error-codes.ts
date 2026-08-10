@@ -106,7 +106,7 @@ const ERROR_SUGGESTIONS: Partial<Record<ErrorCode, string>> = {
   [ErrorCode.CONN_LOST]:
     'Connection was lost. Ensure Figma is still open and try the operation again.',
   [ErrorCode.CONN_FAILED]:
-    'Could not connect to Figma. Verify the WebSocket server is running on port 8080.',
+    'Could not connect to Figma. Verify the WebSocket server is running at FIGMA_WS_URL and the plugin UI uses the same URL.',
 
   [ErrorCode.NODE_NOT_FOUND]:
     'The node ID may be stale. Use get_page_hierarchy to get current node IDs.',

@@ -20,7 +20,7 @@ import { EventEmitter } from 'events';
 
 const mockSockets: EventEmitter[] = [];
 const mockServers: EventEmitter[] = [];
-const mockWebSockets: EventEmitter[] = [];
+const mockWebSockets: Array<EventEmitter & { url: string; readyState: number }> = [];
 
 // ── Mock: net module ──────────────────────────────────────────────────────────
 
@@ -58,12 +58,18 @@ vi.mock('net', () => {
 
 vi.mock('ws', () => {
   const MockWS = class extends EventEmitter {
-    constructor(_url: string) {
+    static CONNECTING = 0;
+    static OPEN = 1;
+    static CLOSED = 3;
+
+    readyState = 0;
+
+    constructor(readonly url: string) {
       super();
       mockWebSockets.push(this);
     }
     close(): void {
-      /* no-op */
+      this.readyState = MockWS.CLOSED;
     }
   };
   return { default: MockWS, WebSocket: MockWS };
@@ -119,6 +125,7 @@ const { ensureWebSocketServer, stopWebSocketServer } =
 
 beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  process.env.TEXT_TO_FIGMA_WS_PORT_SCAN_LIMIT = '1';
   mockSockets.length = 0;
   mockServers.length = 0;
   mockWebSockets.length = 0;
@@ -126,6 +133,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  delete process.env.TEXT_TO_FIGMA_WS_PORT_SCAN_LIMIT;
   vi.restoreAllMocks();
 });
 
@@ -140,6 +148,14 @@ async function waitForInstance<T>(arr: T[], count = 1): Promise<T> {
     { timeout: 3000, interval: 10 }
   );
   return arr[count - 1] as T;
+}
+
+function bridgeWelcome(): string {
+  return JSON.stringify({
+    type: 'connection',
+    server: 'text-to-figma-websocket-bridge',
+    message: 'Connected to WebSocket bridge server'
+  });
 }
 
 describe('stopWebSocketServer', () => {
@@ -158,18 +174,19 @@ describe('ensureWebSocketServer', () => {
     const socket = await waitForInstance(mockSockets);
     socket.emit('connect');
 
-    // isWebSocketServerReady: WebSocket connects → WS server is ready
+    // isWebSocketServerReady: bridge welcome → Text-to-Figma bridge is ready
     const ws = await waitForInstance(mockWebSockets);
-    ws.emit('open');
+    ws.emit('message', bridgeWelcome());
 
     const result = await promise;
     expect(result.success).toBe(true);
     expect(result.alreadyRunning).toBe(true);
     expect(result.spawned).toBe(false);
     expect(result.port).toBe(9999);
+    expect(result.url).toBe('ws://localhost:9999');
   });
 
-  it('returns failure when port is in use by non-WebSocket service', async () => {
+  it('returns failure when only scanned port is occupied by non-bridge service', async () => {
     const promise = ensureWebSocketServer();
 
     // isPortInUse: socket connects → port in use
@@ -183,7 +200,7 @@ describe('ensureWebSocketServer', () => {
     const result = await promise;
     expect(result.success).toBe(false);
     expect(result.alreadyRunning).toBe(false);
-    expect(result.error).toContain('Port 9999 is already in use');
+    expect(result.error).toContain('No available local WebSocket bridge port');
     expect(result.port).toBe(9999);
   });
 
@@ -203,7 +220,7 @@ describe('ensureWebSocketServer', () => {
     const result = await promise;
     expect(result.success).toBe(false);
     expect(result.alreadyRunning).toBe(false);
-    expect(result.error).toContain('Port 9999 is already in use');
+    expect(result.error).toContain('No available local WebSocket bridge port');
   });
 
   it('spawns server and succeeds when port is free and server becomes ready', async () => {
@@ -220,14 +237,15 @@ describe('ensureWebSocketServer', () => {
     server.emit('listening');
 
     // waitForServerReady polls isWebSocketServerReady every 200ms.
-    // Each poll creates a new WebSocket. The first one should succeed.
+    // Each poll creates a new WebSocket. The first bridge welcome should succeed.
     const ws = await waitForInstance(mockWebSockets);
-    ws.emit('open');
+    ws.emit('message', bridgeWelcome());
 
     const result = await promise;
     expect(result.success).toBe(true);
     expect(result.spawned).toBe(true);
     expect(result.port).toBe(9999);
+    expect(result.url).toBe('ws://localhost:9999');
   });
 
   it('extracts port 9999 from configured ws://localhost:9999 URL', async () => {
@@ -238,9 +256,66 @@ describe('ensureWebSocketServer', () => {
     socket.emit('connect');
 
     const ws = await waitForInstance(mockWebSockets);
-    ws.emit('open');
+    ws.emit('message', bridgeWelcome());
 
     const result = await promise;
     expect(result.port).toBe(9999);
+  });
+
+  it('skips a port occupied by another service and spawns on the next port', async () => {
+    process.env.TEXT_TO_FIGMA_WS_PORT_SCAN_LIMIT = '2';
+
+    const promise = ensureWebSocketServer();
+
+    const occupiedSocket = await waitForInstance(mockSockets, 1);
+    occupiedSocket.emit('connect');
+
+    const nonBridgeWs = await waitForInstance(mockWebSockets, 1);
+    nonBridgeWs.emit('error', new Error('not our bridge'));
+
+    const freeSocket = await waitForInstance(mockSockets, 2);
+    const err = new Error('ECONNREFUSED') as NodeJS.ErrnoException;
+    err.code = 'ECONNREFUSED';
+    freeSocket.emit('error', err);
+
+    const bindServer = await waitForInstance(mockServers, 1);
+    bindServer.emit('listening');
+
+    const spawnedBridgeProbe = await waitForInstance(mockWebSockets, 2);
+    spawnedBridgeProbe.emit('message', bridgeWelcome());
+
+    const result = await promise;
+    expect(result.success).toBe(true);
+    expect(result.spawned).toBe(true);
+    expect(result.port).toBe(10000);
+    expect(result.url).toBe('ws://localhost:10000');
+  });
+
+  it('prefers an existing bridge later in the range over spawning on an earlier free port', async () => {
+    process.env.TEXT_TO_FIGMA_WS_PORT_SCAN_LIMIT = '2';
+
+    const promise = ensureWebSocketServer();
+
+    const freeSocket = await waitForInstance(mockSockets, 1);
+    const err = new Error('ECONNREFUSED') as NodeJS.ErrnoException;
+    err.code = 'ECONNREFUSED';
+    freeSocket.emit('error', err);
+
+    const bindServer = await waitForInstance(mockServers, 1);
+    bindServer.emit('listening');
+
+    const bridgePortSocket = await waitForInstance(mockSockets, 2);
+    bridgePortSocket.emit('connect');
+
+    const existingBridgeProbe = await waitForInstance(mockWebSockets, 1);
+    existingBridgeProbe.emit('message', bridgeWelcome());
+
+    const result = await promise;
+    expect(result.success).toBe(true);
+    expect(result.alreadyRunning).toBe(true);
+    expect(result.spawned).toBe(false);
+    expect(result.port).toBe(10000);
+    expect(result.url).toBe('ws://localhost:10000');
+    expect(spawnedProcesses).toHaveLength(0);
   });
 });

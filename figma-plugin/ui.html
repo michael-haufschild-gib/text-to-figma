@@ -55,9 +55,57 @@
         margin-bottom: 0;
       }
 
+      .server-row {
+        align-items: flex-start;
+        gap: 8px;
+      }
+
       .status-label {
         font-weight: 500;
         color: #666;
+      }
+
+      .url-controls {
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        gap: 6px;
+      }
+
+      .url-input {
+        flex: 1;
+        min-width: 0;
+        height: 28px;
+        padding: 4px 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #fff;
+        color: #222;
+        font-family: 'Monaco', 'Courier New', monospace;
+        font-size: 10px;
+      }
+
+      .url-input:focus {
+        outline: 2px solid #1976d2;
+        outline-offset: 1px;
+        border-color: #1976d2;
+      }
+
+      .connect-button {
+        flex: 0 0 auto;
+        height: 28px;
+        padding: 0 10px;
+        border: 1px solid #1976d2;
+        border-radius: 4px;
+        background: #1976d2;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .connect-button:hover {
+        background: #1565c0;
       }
 
       .status-indicator {
@@ -196,10 +244,20 @@
             <span>Disconnected</span>
           </span>
         </div>
-        <div class="status-row">
-          <span class="status-label">Server:</span>
-          <code id="ws-url">ws://localhost:8080</code>
-        </div>
+        <form id="ws-url-form" class="status-row server-row">
+          <label class="status-label" for="ws-url-input">Server:</label>
+          <div class="url-controls">
+            <input
+              id="ws-url-input"
+              class="url-input"
+              type="text"
+              value="ws://localhost:8080"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button id="ws-connect" class="connect-button" type="submit">Connect</button>
+          </div>
+        </form>
         <p class="reconnect-info">Auto-reconnect enabled (5s interval)</p>
       </div>
 
@@ -236,8 +294,236 @@
        */
       let ws = null;
       let reconnectInterval = null;
-      const WS_URL = 'ws://localhost:8080';
+      let connecting = false;
+      let connectionAttemptId = 0;
+      const DEFAULT_WS_PORT = 8080;
+      const DEFAULT_WS_URL = `ws://localhost:${DEFAULT_WS_PORT}`;
+      let wsUrl = DEFAULT_WS_URL;
+      const WS_URL_STORAGE_KEY = 'text-to-figma.wsUrl';
+      const WS_PORT_SCAN_LIMIT = 20;
+      const BRIDGE_PROBE_TIMEOUT = 1000;
+      const BRIDGE_SERVER_ID = 'text-to-figma-websocket-bridge';
       const RECONNECT_DELAY = 5000; // 5 seconds
+
+      /**
+       * Safely access localStorage. Figma may disable storage in some contexts.
+       * @returns {Storage | null}
+       */
+      function getStorage() {
+        try {
+          return window.localStorage || null;
+        } catch (_error) {
+          return null;
+        }
+      }
+
+      /**
+       * Validate that the bridge URL is a WebSocket endpoint.
+       * @param {string} value
+       * @returns {boolean}
+       */
+      function isValidWebSocketUrl(value) {
+        try {
+          const url = new URL(value);
+          return (url.protocol === 'ws:' || url.protocol === 'wss:') && Boolean(url.hostname);
+        } catch (_error) {
+          return false;
+        }
+      }
+
+      /**
+       * Extract a URL's effective port.
+       * @param {string} value
+       * @returns {number}
+       */
+      function getWebSocketPort(value) {
+        try {
+          const url = new URL(value);
+          const parsedPort = Number.parseInt(url.port, 10);
+          if (Number.isFinite(parsedPort) && parsedPort > 0) {
+            return parsedPort;
+          }
+          return url.protocol === 'wss:' ? 443 : 80;
+        } catch (_error) {
+          return DEFAULT_WS_PORT;
+        }
+      }
+
+      /**
+       * Add a candidate URL once.
+       * @param {string[]} candidates
+       * @param {Set<string>} seen
+       * @param {string} candidateUrl
+       */
+      function addCandidateUrl(candidates, seen, candidateUrl) {
+        if (!isValidWebSocketUrl(candidateUrl) || seen.has(candidateUrl)) {
+          return;
+        }
+        seen.add(candidateUrl);
+        candidates.push(candidateUrl);
+      }
+
+      /**
+       * Build candidate bridge URLs. Manual/stored URL wins, then local range.
+       * @returns {string[]}
+       */
+      function getCandidateWebSocketUrls() {
+        const candidates = [];
+        const seen = new Set();
+        const preferredPort = getWebSocketPort(wsUrl);
+
+        addCandidateUrl(candidates, seen, wsUrl);
+
+        for (let offset = 0; offset < WS_PORT_SCAN_LIMIT; offset += 1) {
+          addCandidateUrl(candidates, seen, `ws://localhost:${preferredPort + offset}`);
+        }
+
+        if (preferredPort !== DEFAULT_WS_PORT) {
+          for (let offset = 0; offset < WS_PORT_SCAN_LIMIT; offset += 1) {
+            addCandidateUrl(candidates, seen, `ws://localhost:${DEFAULT_WS_PORT + offset}`);
+          }
+        }
+
+        return candidates;
+      }
+
+      /**
+       * Check for the bridge welcome payload.
+       * @param {unknown} raw
+       * @returns {boolean}
+       */
+      function isBridgeWelcomeMessage(raw) {
+        try {
+          const message = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          if (!message || typeof message !== 'object') {
+            return false;
+          }
+          const msg = /** @type {Record<string, unknown>} */ (message);
+          return (
+            msg.type === 'connection' &&
+            (msg.server === BRIDGE_SERVER_ID ||
+              String(msg.message || '').includes('WebSocket bridge server'))
+          );
+        } catch (_error) {
+          return false;
+        }
+      }
+
+      /**
+       * Read persisted URL, falling back to the default bridge endpoint.
+       * @returns {string}
+       */
+      function getStoredWebSocketUrl() {
+        const storage = getStorage();
+        try {
+          const stored = storage ? storage.getItem(WS_URL_STORAGE_KEY) : null;
+          return stored && isValidWebSocketUrl(stored) ? stored : DEFAULT_WS_URL;
+        } catch (_error) {
+          return DEFAULT_WS_URL;
+        }
+      }
+
+      /**
+       * Reflect current URL in the input.
+       */
+      function updateWebSocketUrlDisplay() {
+        const input = document.getElementById('ws-url-input');
+        if (input && 'value' in input) {
+          input.value = wsUrl;
+        }
+      }
+
+      /**
+       * Update configured URL if valid.
+       * @param {string} nextUrl
+       * @param {boolean} [persist]
+       * @returns {boolean}
+       */
+      function setWebSocketUrl(nextUrl, persist = true) {
+        const trimmedUrl = nextUrl.trim();
+        if (!isValidWebSocketUrl(trimmedUrl)) {
+          updateWebSocketUrlDisplay();
+          log('Invalid WebSocket URL', 'error');
+          return false;
+        }
+
+        wsUrl = trimmedUrl;
+        updateWebSocketUrlDisplay();
+
+        if (!persist) {
+          return true;
+        }
+
+        const storage = getStorage();
+        if (storage) {
+          try {
+            storage.setItem(WS_URL_STORAGE_KEY, wsUrl);
+          } catch (_error) {
+            log('Could not save WebSocket URL', 'warning');
+          }
+        }
+
+        return true;
+      }
+
+      /**
+       * Stop scheduled reconnect attempts.
+       */
+      function clearReconnectInterval() {
+        if (reconnectInterval) {
+          clearInterval(reconnectInterval);
+          reconnectInterval = null;
+        }
+      }
+
+      /**
+       * Close the active socket without scheduling another reconnect.
+       */
+      function closeCurrentSocket() {
+        connecting = false;
+        connectionAttemptId += 1;
+        clearReconnectInterval();
+
+        if (!ws) {
+          return;
+        }
+
+        const socket = ws;
+        ws = null;
+        socket.onopen = null;
+        socket.onmessage = null;
+        socket.onerror = null;
+        socket.onclose = null;
+        socket.close();
+      }
+
+      /**
+       * Reconnect using the current URL.
+       */
+      function reconnectNow() {
+        closeCurrentSocket();
+        connect();
+      }
+
+      /**
+       * Bind URL form behavior.
+       */
+      function bindWebSocketUrlForm() {
+        const form = document.getElementById('ws-url-form');
+        const input = document.getElementById('ws-url-input');
+
+        if (!form || !input || !('value' in input)) {
+          return;
+        }
+
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+          if (setWebSocketUrl(String(input.value))) {
+            log(`Server set to ${wsUrl}`, 'info');
+            reconnectNow();
+          }
+        });
+      }
 
       /**
        * Log entry to the UI
@@ -314,41 +600,128 @@
       }
 
       /**
+       * Probe a candidate URL and return an open socket only if it is the bridge.
+       * @param {string} candidateUrl
+       * @returns {Promise<WebSocket | null>}
+       */
+      function probeWebSocketUrl(candidateUrl) {
+        return new Promise((resolve) => {
+          let socket = null;
+          let settled = false;
+
+          const settle = (result) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+
+            if (!result && socket) {
+              socket.onopen = null;
+              socket.onmessage = null;
+              socket.onerror = null;
+              socket.onclose = null;
+              socket.close();
+            }
+
+            resolve(result);
+          };
+
+          const timeout = setTimeout(() => {
+            settle(null);
+          }, BRIDGE_PROBE_TIMEOUT);
+
+          try {
+            socket = new WebSocket(candidateUrl);
+
+            socket.onmessage = (event) => {
+              if (isBridgeWelcomeMessage(event.data)) {
+                settle(socket);
+              } else {
+                settle(null);
+              }
+            };
+
+            socket.onerror = () => {
+              settle(null);
+            };
+
+            socket.onclose = () => {
+              settle(null);
+            };
+          } catch (_error) {
+            settle(null);
+          }
+        });
+      }
+
+      /**
+       * Schedule reconnect attempts.
+       */
+      function scheduleReconnect() {
+        if (!reconnectInterval) {
+          log(`Will retry in ${RECONNECT_DELAY / 1000}s...`, 'info');
+          reconnectInterval = setInterval(connect, RECONNECT_DELAY);
+        }
+      }
+
+      /**
+       * Mark an already-probed socket connected and register with the bridge.
+       * @param {WebSocket} socket
+       */
+      function handleSocketConnected(socket) {
+        updateStatus('connected');
+        log('WebSocket connected', 'success');
+
+        socket.send(
+          JSON.stringify({
+            type: 'figma_hello',
+            source: 'figma-plugin',
+            timestamp: Date.now()
+          })
+        );
+        log('Sent registration message to server', 'info');
+        clearReconnectInterval();
+      }
+
+      /**
        * Connect to WebSocket server
        */
-      function connect() {
-        if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+      async function connect() {
+        if (
+          connecting ||
+          (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN))
+        ) {
           return; // Already connected or connecting
         }
 
+        const attemptId = connectionAttemptId + 1;
+        connectionAttemptId = attemptId;
+        connecting = true;
         updateStatus('connecting');
-        log('Connecting to WebSocket server...', 'info');
+        log('Scanning for WebSocket bridge...', 'info');
 
-        try {
-          ws = new WebSocket(WS_URL);
+        for (const candidateUrl of getCandidateWebSocketUrls()) {
+          if (attemptId !== connectionAttemptId) {
+            return;
+          }
 
-          ws.onopen = () => {
-            updateStatus('connected');
-            log('WebSocket connected', 'success');
+          log(`Trying ${candidateUrl}`, 'info');
 
-            // Send initial "hello" message to register as Figma plugin
-            ws.send(
-              JSON.stringify({
-                type: 'figma_hello',
-                source: 'figma-plugin',
-                timestamp: Date.now()
-              })
-            );
-            log('Sent registration message to server', 'info');
+          const socket = await probeWebSocketUrl(candidateUrl);
+          if (!socket) {
+            continue;
+          }
 
-            // Clear reconnect interval
-            if (reconnectInterval) {
-              clearInterval(reconnectInterval);
-              reconnectInterval = null;
-            }
-          };
+          if (attemptId !== connectionAttemptId) {
+            socket.close();
+            return;
+          }
 
-          ws.onmessage = (event) => {
+          ws = socket;
+          connecting = false;
+          setWebSocketUrl(candidateUrl);
+
+          socket.onmessage = (event) => {
+            if (ws !== socket) return;
             try {
               // Parse and validate message
               const data = JSON.parse(event.data);
@@ -395,32 +768,32 @@
             }
           };
 
-          ws.onerror = (error) => {
-            log('WebSocket error occurred', 'error');
+          socket.onerror = (error) => {
+            if (ws !== socket) return;
+            log(`WebSocket error for ${candidateUrl}`, 'error');
             console.error('WebSocket error:', error);
           };
 
-          ws.onclose = () => {
+          socket.onclose = () => {
+            if (ws !== socket) return;
             updateStatus('disconnected');
             log('WebSocket disconnected', 'warning');
             ws = null;
-
-            // Start reconnection attempts
-            if (!reconnectInterval) {
-              log(`Will retry in ${RECONNECT_DELAY / 1000}s...`, 'info');
-              reconnectInterval = setInterval(connect, RECONNECT_DELAY);
-            }
+            scheduleReconnect();
           };
-        } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          log(`Connection error: ${errorMsg}`, 'error');
-          updateStatus('disconnected');
 
-          // Start reconnection attempts
-          if (!reconnectInterval) {
-            reconnectInterval = setInterval(connect, RECONNECT_DELAY);
-          }
+          handleSocketConnected(socket);
+          return;
         }
+
+        if (attemptId !== connectionAttemptId) {
+          return;
+        }
+
+        connecting = false;
+        updateStatus('disconnected');
+        log('No Text-to-Figma WebSocket bridge found', 'warning');
+        scheduleReconnect();
       }
 
       /**
@@ -479,6 +852,9 @@
        * Initialize plugin UI
        */
       function init() {
+        wsUrl = getStoredWebSocketUrl();
+        updateWebSocketUrlDisplay();
+        bindWebSocketUrlForm();
         log('Plugin UI initialized', 'info');
         connect();
       }
@@ -492,12 +868,7 @@
 
       // Cleanup on unload
       window.addEventListener('beforeunload', () => {
-        if (reconnectInterval) {
-          clearInterval(reconnectInterval);
-        }
-        if (ws) {
-          ws.close();
-        }
+        closeCurrentSocket();
       });
     </script>
   </body>

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Bridge routing and lifecycle stay in one small executable. */
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer, WebSocket, RawData } from 'ws';
@@ -33,6 +34,7 @@ export const HEARTBEAT_INTERVAL = 30000; // 30 seconds - ping interval
 export const HEARTBEAT_TIMEOUT = 60000; // 60 seconds - connection timeout
 export const RATE_LIMIT_BURST = 500; // Max tokens in bucket
 export const RATE_LIMIT_REFILL_RATE = 200; // Tokens per second
+export const DEFAULT_IDLE_SHUTDOWN_MS = 5 * 60 * 1000; // 5 minutes with no clients
 
 /**
  * Token bucket rate limiter for per-client message throttling.
@@ -207,6 +209,12 @@ export function handleFigmaRegistration(
   const client = state.clients.get(clientId);
   if (client) {
     client.isFigma = true;
+    if (state.figmaPluginClient && state.figmaPluginClient !== clientId) {
+      const primaryClient = state.clients.get(state.figmaPluginClient);
+      if (primaryClient?.ws.readyState !== WebSocket.OPEN) {
+        cleanupClient(state, state.figmaPluginClient, 'Figma plugin disconnected during operation');
+      }
+    }
     if (!state.figmaPluginClient) {
       state.figmaPluginClient = clientId;
       log('info', 'Registered as primary Figma plugin', { clientId });
@@ -232,37 +240,47 @@ export function handleFigmaRegistration(
  */
 export function routeRequest(state: ServerState, message: RequestMessage, clientId: string): void {
   log('info', 'MCP -> Figma request', { clientId, type: message.type, id: message.id ?? 'none' });
-  const client = state.clients.get(clientId);
-  if (client) {
-    client.isMCP = true;
+  const originClient = state.clients.get(clientId);
+  if (originClient) {
+    originClient.isMCP = true;
   }
+  const requestId = typeof message.id === 'string' ? message.id : null;
   // Track which MCP client originated this request for response routing
-  if (typeof message.id === 'string') {
-    state.pendingRequestOrigins.set(message.id, { clientId, createdAt: Date.now() });
+  if (requestId) {
+    state.pendingRequestOrigins.set(requestId, { clientId, createdAt: Date.now() });
   }
-  if (state.figmaPluginClient && state.clients.has(state.figmaPluginClient)) {
-    const figmaClient = state.clients.get(state.figmaPluginClient);
-    if (figmaClient?.ws.readyState === WebSocket.OPEN) {
-      figmaClient.ws.send(JSON.stringify(message));
-      log('debug', 'Routed to Figma plugin', { figmaClient: state.figmaPluginClient });
-    }
+
+  const figmaClient = state.figmaPluginClient
+    ? state.clients.get(state.figmaPluginClient)
+    : undefined;
+  if (figmaClient?.ws.readyState === WebSocket.OPEN) {
+    figmaClient.ws.send(JSON.stringify(message));
+    log('debug', 'Routed to Figma plugin', { figmaClient: state.figmaPluginClient });
+    return;
+  }
+
+  if (figmaClient) {
+    log('error', 'Registered Figma plugin connection is not open', {
+      figmaClient: state.figmaPluginClient,
+      readyState: figmaClient.ws.readyState
+    });
   } else {
     log('error', 'No Figma plugin connected');
-    // Send error response back to the requesting MCP client
-    const originClient = state.clients.get(clientId);
-    if (originClient?.ws.readyState === WebSocket.OPEN && typeof message.id === 'string') {
-      originClient.ws.send(
-        JSON.stringify({
-          id: message.id,
-          success: false,
-          error: 'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin.'
-        })
-      );
-    }
-    // Clean up the pending origin since we handled it
-    if (typeof message.id === 'string') {
-      state.pendingRequestOrigins.delete(message.id);
-    }
+  }
+
+  // Send error response back to the requesting MCP client
+  if (originClient?.ws.readyState === WebSocket.OPEN && requestId) {
+    originClient.ws.send(
+      JSON.stringify({
+        id: requestId,
+        success: false,
+        error: 'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin.'
+      })
+    );
+  }
+  // Clean up the pending origin since we handled it
+  if (requestId) {
+    state.pendingRequestOrigins.delete(requestId);
   }
 }
 
@@ -380,6 +398,27 @@ export interface ServerHandle {
   shutdown: (signal: string) => Promise<void>;
 }
 
+export interface ServerOptions {
+  /**
+   * Optional idle timeout used by the standalone bridge process. Leave unset
+   * for embedded/unit-test servers that should stay alive until explicitly
+   * closed.
+   */
+  idleShutdownMs?: number;
+  /** Exit the process if the standalone bridge cannot bind its port. */
+  exitOnStartupError?: boolean;
+  /** Exit the process after idle shutdown completes. */
+  exitOnIdle?: boolean;
+}
+
+function unrefTimer(timer: ReturnType<typeof setInterval> | ReturnType<typeof setTimeout>): void {
+  timer.unref();
+}
+
+function isAddressInUse(error: Error): boolean {
+  return (error as NodeJS.ErrnoException).code === 'EADDRINUSE';
+}
+
 /**
  * Process an incoming WebSocket message: validate size, rate-limit, parse, route.
  */
@@ -467,7 +506,7 @@ function cleanupClient(state: ServerState, clientId: string, errorMessage: strin
 /**
  * Wire up event handlers for a newly connected WebSocket client.
  */
-function setupConnection(state: ServerState, ws: WebSocket): void {
+function setupConnection(state: ServerState, ws: WebSocket, onClientRemoved?: () => void): void {
   const clientId = `client-${randomUUID()}`;
 
   log('info', 'Client connected', { clientId });
@@ -497,11 +536,13 @@ function setupConnection(state: ServerState, ws: WebSocket): void {
   ws.on('close', () => {
     log('info', 'Client disconnected', { clientId });
     cleanupClient(state, clientId, 'Figma plugin disconnected during operation');
+    onClientRemoved?.();
   });
 
   ws.on('error', (error: Error) => {
     log('error', 'WebSocket error', { clientId, error: error.message });
     cleanupClient(state, clientId, 'Figma plugin connection error during operation');
+    onClientRemoved?.();
     try {
       ws.terminate();
     } catch {
@@ -513,6 +554,8 @@ function setupConnection(state: ServerState, ws: WebSocket): void {
   ws.send(
     JSON.stringify({
       type: 'connection',
+      server: 'text-to-figma-websocket-bridge',
+      protocolVersion: 1,
       message: 'Connected to WebSocket bridge server',
       clientId
     })
@@ -523,19 +566,68 @@ function setupConnection(state: ServerState, ws: WebSocket): void {
  * Create and start a WebSocket bridge server on the given port.
  * Returns a handle for testing and graceful shutdown.
  */
-export function createServer(port: number): ServerHandle {
+// eslint-disable-next-line max-lines-per-function -- Keeps server lifecycle wiring in one place.
+export function createServer(port: number, options: ServerOptions = {}): ServerHandle {
   const state = createServerState();
 
   const wss = new WebSocketServer({ port });
+  let hasListened = false;
+  let isShuttingDown = false;
+  let idleShutdownTimer: ReturnType<typeof setTimeout> | null = null;
 
-  log('info', `WebSocket bridge server started on port ${port}`);
+  const clearIdleShutdown = (): void => {
+    if (idleShutdownTimer) {
+      clearTimeout(idleShutdownTimer);
+      idleShutdownTimer = null;
+    }
+  };
+
+  const scheduleIdleShutdown = (): void => {
+    if (options.idleShutdownMs === undefined || options.idleShutdownMs <= 0) {
+      return;
+    }
+    if (isShuttingDown || state.clients.size > 0 || idleShutdownTimer) {
+      return;
+    }
+
+    idleShutdownTimer = setTimeout(() => {
+      idleShutdownTimer = null;
+      log('info', 'No clients connected, shutting down idle WebSocket server', {
+        idleShutdownMs: options.idleShutdownMs
+      });
+      void shutdown('IDLE_TIMEOUT').then(() => {
+        if (options.exitOnIdle) {
+          process.exit(0);
+        }
+      });
+    }, options.idleShutdownMs);
+    unrefTimer(idleShutdownTimer);
+  };
 
   wss.on('connection', (ws: WebSocket, _req: IncomingMessage) => {
-    setupConnection(state, ws);
+    clearIdleShutdown();
+    setupConnection(state, ws, () => {
+      if (state.clients.size === 0) {
+        scheduleIdleShutdown();
+      }
+    });
   });
 
   wss.on('error', (error: Error) => {
     log('error', 'WebSocket server error', { error: error.message });
+    if (!hasListened && isAddressInUse(error)) {
+      clearInterval(heartbeatInterval);
+      clearIdleShutdown();
+      if (options.exitOnStartupError) {
+        process.exit(1);
+      }
+    }
+  });
+
+  wss.on('listening', () => {
+    hasListened = true;
+    log('info', `WebSocket bridge server started on port ${port}`);
+    scheduleIdleShutdown();
   });
 
   /**
@@ -549,7 +641,7 @@ export function createServer(port: number): ServerHandle {
       if (!client.isAlive || now - client.lastPong > HEARTBEAT_TIMEOUT) {
         log('info', 'Client appears dead, terminating', { clientId });
         client.ws.terminate();
-        state.clients.delete(clientId);
+        cleanupClient(state, clientId, 'Figma plugin disconnected during operation');
         continue;
       }
 
@@ -560,7 +652,7 @@ export function createServer(port: number): ServerHandle {
       } catch (_error) {
         log('error', 'Failed to ping client', { clientId });
         client.ws.terminate();
-        state.clients.delete(clientId);
+        cleanupClient(state, clientId, 'Figma plugin disconnected during operation');
       }
     }
 
@@ -576,6 +668,10 @@ export function createServer(port: number): ServerHandle {
     if (swept > 0) {
       log('warn', 'Swept stale pending request origins', { swept });
     }
+
+    if (state.clients.size === 0) {
+      scheduleIdleShutdown();
+    }
   }, HEARTBEAT_INTERVAL);
 
   /**
@@ -583,9 +679,14 @@ export function createServer(port: number): ServerHandle {
    * The caller (CLI entrypoint) is responsible for exiting the process.
    */
   function shutdown(signal: string): Promise<void> {
+    if (isShuttingDown) {
+      return Promise.resolve();
+    }
+    isShuttingDown = true;
     log('info', `${signal} received, shutting down WebSocket server`);
 
     clearInterval(heartbeatInterval);
+    clearIdleShutdown();
 
     for (const [_clientId, client] of state.clients.entries()) {
       client.ws.close();
@@ -607,7 +708,15 @@ const isMainModule = process.argv[1] === fileURLToPath(import.meta.url);
 /* v8 ignore start -- CLI entry point guard, only runs when file is process.argv[1] */
 if (isMainModule) {
   const port = parseInt(process.env.PORT ?? '8080', 10);
-  const { shutdown } = createServer(port);
+  const idleShutdownMs = parseInt(
+    process.env.TEXT_TO_FIGMA_WS_IDLE_TIMEOUT_MS ?? String(DEFAULT_IDLE_SHUTDOWN_MS),
+    10
+  );
+  const { shutdown } = createServer(port, {
+    idleShutdownMs: Number.isFinite(idleShutdownMs) ? idleShutdownMs : DEFAULT_IDLE_SHUTDOWN_MS,
+    exitOnStartupError: true,
+    exitOnIdle: true
+  });
 
   const handleSignal = (signal: string): void => {
     const forceTimer = setTimeout(() => {

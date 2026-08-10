@@ -168,6 +168,9 @@ export class HealthCheckServer {
 
       server.listen(this.port, '127.0.0.1', () => {
         console.error(`[HealthCheck] Health check server started on 127.0.0.1:${this.port}`);
+        // The stdio transport owns the MCP server lifetime; health checks
+        // must not keep an orphaned process alive after the client exits.
+        server.unref();
         resolve();
       });
     });

@@ -41,6 +41,30 @@ const { __mockBridge } = (await import('../../mcp-server/src/figma-bridge.js')) 
   };
 };
 
+describe('HealthCheckServer process lifetime', () => {
+  let server: InstanceType<typeof HealthCheckServer> | null = null;
+
+  afterEach(async () => {
+    if (server) {
+      await server.stop();
+      server = null;
+    }
+    resetConfig();
+    resetHealthCheck();
+    vi.restoreAllMocks();
+  });
+
+  it('unrefs the listening HTTP server so health checks do not keep stdio alive', async () => {
+    loadConfig();
+    const unrefSpy = vi.spyOn(http.Server.prototype, 'unref');
+    server = new HealthCheckServer(0);
+
+    await server.start();
+
+    expect(unrefSpy).toHaveBeenCalledOnce();
+  });
+});
+
 /** Helper: make an HTTP request and return status, body, and headers */
 function httpGet(
   port: number,

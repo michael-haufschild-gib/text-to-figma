@@ -18,8 +18,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DEFAULT_WEBSOCKET_PORT = 8080;
+const DEFAULT_WEBSOCKET_PORT_SCAN_LIMIT = 20;
 const STARTUP_TIMEOUT = 10000; // 10 seconds to wait for server to start
 const PORT_CHECK_INTERVAL = 200; // Check every 200ms
+const BRIDGE_SERVER_ID = 'text-to-figma-websocket-bridge';
 
 /** PID file location — shared across all MCP server processes. */
 const PID_FILE = path.join(os.tmpdir(), 'text-to-figma-ws-bridge.pid');
@@ -34,6 +36,50 @@ interface WebSocketTarget {
 }
 
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
+
+function getPortScanLimit(): number {
+  const parsed = Number.parseInt(process.env.TEXT_TO_FIGMA_WS_PORT_SCAN_LIMIT ?? '', 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_WEBSOCKET_PORT_SCAN_LIMIT;
+  }
+  return Math.min(parsed, 100);
+}
+
+function getCandidatePorts(startPort: number): number[] {
+  const limit = Math.min(getPortScanLimit(), 65535 - startPort + 1);
+  return Array.from({ length: limit }, (_value, index) => startPort + index);
+}
+
+function formatUrlHostname(hostname: string): string {
+  return hostname.includes(':') && !hostname.startsWith('[') ? `[${hostname}]` : hostname;
+}
+
+function buildWebSocketUrl(hostname: string, port: number): string {
+  return `ws://${formatUrlHostname(hostname)}:${port}`;
+}
+
+function rawDataToString(data: WebSocket.Data): string | null {
+  if (typeof data === 'string') return data;
+  if (Buffer.isBuffer(data)) return data.toString('utf-8');
+  if (Array.isArray(data)) return Buffer.concat(data).toString('utf-8');
+  return null;
+}
+
+function isBridgeWelcomeMessage(data: WebSocket.Data): boolean {
+  const messageStr = rawDataToString(data);
+  if (!messageStr) return false;
+
+  try {
+    const message = JSON.parse(messageStr) as Record<string, unknown>;
+    return (
+      message.type === 'connection' &&
+      (message.server === BRIDGE_SERVER_ID ||
+        String(message.message ?? '').includes('WebSocket bridge server'))
+    );
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Extract port and hostname from the configured WebSocket URL.
@@ -117,26 +163,43 @@ async function canBindPort(port: number): Promise<boolean> {
  */
 async function isWebSocketServerReady(port: number, hostname: string): Promise<boolean> {
   return new Promise((resolve) => {
+    let settled = false;
+    let ws: WebSocket | null = null;
+
+    const settle = (ready: boolean): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (ws) {
+        ws.removeAllListeners();
+        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+          ws.close();
+        }
+      }
+      resolve(ready);
+    };
+
     const timeout = setTimeout(() => {
-      resolve(false);
+      settle(false);
     }, 2000);
+    timeout.unref();
 
     try {
-      const ws = new WebSocket(`ws://${hostname}:${port}`);
+      ws = new WebSocket(buildWebSocketUrl(hostname, port));
 
-      ws.on('open', () => {
-        clearTimeout(timeout);
-        ws.close();
-        resolve(true);
+      ws.on('message', (data: WebSocket.Data) => {
+        settle(isBridgeWelcomeMessage(data));
       });
 
       ws.on('error', () => {
-        clearTimeout(timeout);
-        resolve(false);
+        settle(false);
+      });
+
+      ws.on('close', () => {
+        settle(false);
       });
     } catch {
-      clearTimeout(timeout);
-      resolve(false);
+      settle(false);
     }
   });
 }
@@ -174,30 +237,13 @@ function getWebSocketServerPath(): string {
   return path.join(repoRoot, 'websocket-server', 'dist', 'server.js');
 }
 
-/**
- * Build a SpawnResult for port-in-use errors with a user-friendly message
- */
-function portInUseResult(port: number): SpawnResult {
-  console.error(
-    `[WebSocket Spawner] Port ${port} is already in use. ` +
-      `Run 'lsof -i :${port}' to find the process, ` +
-      `or set FIGMA_WS_URL to use a different port.`
-  );
-  return {
-    success: false,
-    alreadyRunning: false,
-    spawned: false,
-    error: `Port ${port} is already in use by another application. Run 'lsof -i :${port}' to find the process.`,
-    port
-  };
-}
-
 export interface SpawnResult {
   success: boolean;
   alreadyRunning: boolean;
   spawned: boolean;
   error?: string;
   port: number;
+  url: string;
 }
 
 /**
@@ -206,55 +252,86 @@ export interface SpawnResult {
  */
 export async function ensureWebSocketServer(): Promise<SpawnResult> {
   const { port, hostname, isLocal } = getWebSocketTarget();
+  const checkHostname = isLocal ? '127.0.0.1' : hostname;
+  const candidatePorts = isLocal ? getCandidatePorts(port) : [port];
+  let firstBindablePort: number | null = null;
 
-  console.error(
-    `[WebSocket Spawner] Checking if WebSocket server is running on ${hostname}:${port}...`
-  );
+  console.error(`[WebSocket Spawner] Checking WebSocket bridge ports on ${hostname}...`);
 
-  // First check if something is already listening
-  const portUsed = await isPortInUse(port, isLocal ? '127.0.0.1' : hostname);
+  for (const candidatePort of candidatePorts) {
+    const candidateUrl = buildWebSocketUrl(hostname, candidatePort);
+    console.error(`[WebSocket Spawner] Checking ${candidateUrl}...`);
 
-  if (portUsed) {
-    const isReady = await isWebSocketServerReady(port, isLocal ? '127.0.0.1' : hostname);
+    const portUsed = await isPortInUse(candidatePort, checkHostname);
 
-    if (isReady) {
-      console.error(`[WebSocket Spawner] WebSocket server already running on ${hostname}:${port}`);
-      return { success: true, alreadyRunning: true, spawned: false, port };
-    } else if (!isLocal) {
+    if (portUsed) {
+      const isReady = await isWebSocketServerReady(candidatePort, checkHostname);
+
+      if (isReady) {
+        console.error(`[WebSocket Spawner] WebSocket bridge already running at ${candidateUrl}`);
+        return {
+          success: true,
+          alreadyRunning: true,
+          spawned: false,
+          port: candidatePort,
+          url: candidateUrl
+        };
+      }
+
+      if (!isLocal) {
+        return {
+          success: false,
+          alreadyRunning: false,
+          spawned: false,
+          error: `Remote host ${hostname}:${candidatePort} is reachable but not responding as a Text-to-Figma WebSocket bridge`,
+          port: candidatePort,
+          url: candidateUrl
+        };
+      }
+
+      console.error(
+        `[WebSocket Spawner] Port ${candidatePort} is occupied by another service; trying next port.`
+      );
+      continue;
+    }
+
+    // Remote host not reachable — cannot spawn there
+    if (!isLocal) {
+      console.error(
+        `[WebSocket Spawner] Remote WebSocket bridge at ${candidateUrl} is not reachable. ` +
+          `Cannot auto-spawn on a remote host.`
+      );
       return {
         success: false,
         alreadyRunning: false,
         spawned: false,
-        error: `Remote host ${hostname}:${port} is reachable but not responding as a WebSocket server`,
-        port
+        error: `Remote WebSocket bridge at ${candidateUrl} is not reachable. Start it manually or use a local FIGMA_WS_URL.`,
+        port: candidatePort,
+        url: candidateUrl
       };
-    } else {
-      return portInUseResult(port);
+    }
+
+    if (firstBindablePort === null && (await canBindPort(candidatePort))) {
+      firstBindablePort = candidatePort;
+      console.error(`[WebSocket Spawner] Port ${candidatePort} is available if spawn is needed.`);
     }
   }
 
-  // Remote host not reachable — cannot spawn there
-  if (!isLocal) {
-    console.error(
-      `[WebSocket Spawner] Remote WebSocket server at ${hostname}:${port} is not reachable. ` +
-        `Cannot auto-spawn on a remote host.`
-    );
-    return {
-      success: false,
-      alreadyRunning: false,
-      spawned: false,
-      error: `Remote WebSocket server at ${hostname}:${port} is not reachable. Start it manually or use a local FIGMA_WS_URL.`,
-      port
-    };
+  if (firstBindablePort !== null) {
+    return spawnLocalServer(firstBindablePort, hostname);
   }
 
-  // Local host — check if we can bind the port
-  const canBind = await canBindPort(port);
-  if (!canBind) {
-    return portInUseResult(port);
-  }
-
-  return spawnLocalServer(port);
+  console.error(
+    `[WebSocket Spawner] No available bridge port found in ${candidatePorts[0]}-${candidatePorts[candidatePorts.length - 1]}.`
+  );
+  return {
+    success: false,
+    alreadyRunning: false,
+    spawned: false,
+    error: `No available local WebSocket bridge port found in ${candidatePorts[0]}-${candidatePorts[candidatePorts.length - 1]}.`,
+    port,
+    url: buildWebSocketUrl(hostname, port)
+  };
 }
 
 /**
@@ -292,7 +369,9 @@ function cleanPidFile(): void {
   }
 }
 
-async function spawnLocalServer(port: number): Promise<SpawnResult> {
+async function spawnLocalServer(port: number, hostname: string): Promise<SpawnResult> {
+  const url = buildWebSocketUrl(hostname, port);
+
   // Check for a PID file from a previous spawn that may still be starting
   try {
     if (fs.existsSync(PID_FILE)) {
@@ -304,7 +383,7 @@ async function spawnLocalServer(port: number): Promise<SpawnResult> {
         );
         const isReady = await waitForServerReady(port, '127.0.0.1', STARTUP_TIMEOUT);
         if (isReady) {
-          return { success: true, alreadyRunning: true, spawned: false, port };
+          return { success: true, alreadyRunning: true, spawned: false, port, url };
         }
         // Process alive but never became ready — kill and re-spawn
         console.error('[WebSocket Spawner] Stale bridge process, killing and re-spawning');
@@ -357,7 +436,7 @@ async function spawnLocalServer(port: number): Promise<SpawnResult> {
     if (isReady) {
       console.error(`[WebSocket Spawner] WebSocket server started successfully on port ${port}`);
       console.error(`[WebSocket Spawner] Bridge logs: ${BRIDGE_LOG_FILE}`);
-      return { success: true, alreadyRunning: false, spawned: true, port };
+      return { success: true, alreadyRunning: false, spawned: true, port, url };
     } else {
       console.error(
         `[WebSocket Spawner] FAIL: Server failed to start within ${STARTUP_TIMEOUT / 1000}s`
@@ -376,7 +455,8 @@ async function spawnLocalServer(port: number): Promise<SpawnResult> {
         alreadyRunning: false,
         spawned: false,
         error: `WebSocket server failed to start within ${STARTUP_TIMEOUT / 1000} seconds`,
-        port
+        port,
+        url
       };
     }
   } catch (err) {
@@ -387,7 +467,8 @@ async function spawnLocalServer(port: number): Promise<SpawnResult> {
       alreadyRunning: false,
       spawned: false,
       error: errorMessage,
-      port
+      port,
+      url
     };
   }
 }

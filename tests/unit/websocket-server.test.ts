@@ -237,6 +237,23 @@ describe('handleFigmaRegistration', () => {
     expect(ws.close).not.toHaveBeenCalled();
   });
 
+  it('replaces a stale primary Figma plugin record when a new plugin registers', () => {
+    const staleWs = mockWs(WebSocket.CLOSED);
+    const newWs = mockWs();
+    state.clients.set('client-stale', mockClient({ ws: staleWs, isFigma: true }));
+    state.clients.set('client-new', mockClient({ ws: newWs }));
+    state.figmaPluginClient = 'client-stale';
+
+    const msg: BridgeMessage = { type: 'figma_hello', source: 'figma-plugin' };
+    const result = handleFigmaRegistration(state, msg, 'client-new', newWs);
+
+    expect(result).toBe(true);
+    expect(state.figmaPluginClient).toBe('client-new');
+    expect(state.clients.has('client-stale')).toBe(false);
+    expect(state.clients.get('client-new')?.isFigma).toBe(true);
+    expect(newWs.close).not.toHaveBeenCalled();
+  });
+
   it('handles registration when client is not in the map', () => {
     const ws = mockWs();
     // Don't add client-1 to state.clients
@@ -301,6 +318,29 @@ describe('routeRequest', () => {
 
     routeRequest(state, { type: 'test', payload: {} }, 'mcp-1');
     expect(figmaWs.send).not.toHaveBeenCalled();
+  });
+
+  it('fails and cleans up requests when registered Figma connection is closed', () => {
+    const figmaWs = mockWs(WebSocket.CLOSED);
+    const mcpWs = mockWs();
+    state.clients.set('figma-1', mockClient({ ws: figmaWs }));
+    state.clients.set('mcp-1', mockClient({ ws: mcpWs }));
+    state.figmaPluginClient = 'figma-1';
+
+    routeRequest(state, { type: 'create_frame', payload: {}, id: 'req-closed' }, 'mcp-1');
+
+    expect(figmaWs.send).not.toHaveBeenCalled();
+    expect(state.pendingRequestOrigins.has('req-closed')).toBe(false);
+    expect(mcpWs.send).toHaveBeenCalledOnce();
+    const response = JSON.parse(vi.mocked(mcpWs.send).mock.calls[0][0] as string) as Record<
+      string,
+      unknown
+    >;
+    expect(response).toMatchObject({
+      id: 'req-closed',
+      success: false,
+      error: 'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin.'
+    });
   });
 });
 
@@ -399,21 +439,16 @@ describe('routeResponse', () => {
     expect(state.pendingRequestOrigins.has('req-2')).toBe(true);
   });
 
-  it('when figmaPluginClient is null, all clients pass the guard (no imposter check)', () => {
-    // The guard is: if (figmaPluginClient && clientId !== figmaPluginClient) → warn and return
-    // When figmaPluginClient is null, the guard is skipped entirely.
-    // So ANY client's response is processed, falling through to origin lookup or broadcast.
+  it.fails('KNOWN BUG: ignores responses when no Figma plugin is registered', () => {
     const mcpWs = mockWs();
     state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
     state.pendingRequestOrigins.set('req-1', { clientId: 'mcp-1', createdAt: Date.now() });
-    state.figmaPluginClient = null; // No Figma plugin registered
+    state.figmaPluginClient = null;
 
     routeResponse(state, { id: 'req-1', success: true, data: 'from-anyone' }, 'random-client');
 
-    // Response should be routed to the origin MCP client despite coming from 'random-client'
-    expect(mcpWs.send).toHaveBeenCalledWith(
-      JSON.stringify({ id: 'req-1', success: true, data: 'from-anyone' })
-    );
+    expect(mcpWs.send).not.toHaveBeenCalled();
+    expect(state.pendingRequestOrigins.has('req-1')).toBe(true);
   });
 
   it('response with success:false is still routed to origin MCP client', () => {
@@ -564,6 +599,20 @@ describe('routeNotification', () => {
     };
 
     routeNotification(state, notification, 'imposter');
+
+    expect(mcpWs.send).not.toHaveBeenCalled();
+  });
+
+  it.fails('KNOWN BUG: ignores notifications when no Figma plugin is registered', () => {
+    const mcpWs = mockWs();
+    state.clients.set('mcp-1', mockClient({ ws: mcpWs, isMCP: true }));
+    state.figmaPluginClient = null;
+
+    routeNotification(
+      state,
+      { type: 'figma_notification', kind: 'document_changed' },
+      'random-client'
+    );
 
     expect(mcpWs.send).not.toHaveBeenCalled();
   });

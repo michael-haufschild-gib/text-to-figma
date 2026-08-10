@@ -17,7 +17,7 @@ import {
   type CallToolRequest
 } from '@modelcontextprotocol/sdk/types.js';
 
-import { getConfig, loadConfig } from './config.js';
+import { getConfig, loadConfig, resetConfig } from './config.js';
 import {
   isToolExecutionError,
   isFigmaBridgeError,
@@ -220,11 +220,81 @@ function handleFigmaNotification(notification: FigmaNotification): void {
   }
 }
 
+interface ParentWatch {
+  interval: ReturnType<typeof setInterval> | null;
+}
+
+function createShutdownHandler(
+  bridge: ReturnType<typeof getFigmaBridge>,
+  parentWatch: ParentWatch
+): (signal: string) => Promise<void> {
+  let shutdownStarted = false;
+
+  return async (signal: string): Promise<void> => {
+    if (shutdownStarted) return;
+    shutdownStarted = true;
+    console.error(`[MCP Server] Received ${signal}, shutting down gracefully...`);
+
+    const forceShutdownTimer = setTimeout(() => {
+      console.error('[MCP Server] Graceful shutdown timeout exceeded, forcing exit');
+      process.exit(1);
+    }, getConfig().GRACEFUL_SHUTDOWN_TIMEOUT);
+
+    try {
+      if (parentWatch.interval) {
+        clearInterval(parentWatch.interval);
+        parentWatch.interval = null;
+      }
+      console.error('[MCP Server] Stopping health check server...');
+      await stopHealthCheck();
+      console.error('[MCP Server] Disconnecting from Figma bridge...');
+      bridge.disconnect();
+      console.error('[MCP Server] Closing MCP server transport...');
+      await server.close();
+      clearTimeout(forceShutdownTimer);
+      console.error('[MCP Server] Shutdown complete');
+      process.exit(0);
+    } catch (error) {
+      console.error('[MCP Server] Error during shutdown:', error);
+      clearTimeout(forceShutdownTimer);
+      process.exit(1);
+    }
+  };
+}
+
+function registerShutdownHandlers(
+  shutdown: (signal: string) => Promise<void>,
+  initialParentPid: number
+): ReturnType<typeof setInterval> {
+  const requestShutdown = (signal: string): void => {
+    shutdown(signal).catch((err: unknown) => {
+      console.error('[MCP Server] Shutdown error:', err);
+      process.exit(1);
+    });
+  };
+
+  process.on('SIGINT', () => requestShutdown('SIGINT'));
+  process.on('SIGTERM', () => requestShutdown('SIGTERM'));
+  process.on('disconnect', () => requestShutdown('PARENT_DISCONNECT'));
+  process.stdin.on('end', () => requestShutdown('STDIN_EOF'));
+  process.stdin.on('close', () => requestShutdown('STDIN_CLOSED'));
+
+  const parentWatchInterval = setInterval(() => {
+    if (initialParentPid !== 1 && process.ppid === 1) {
+      requestShutdown('PARENT_EXITED');
+    }
+  }, 30000);
+  parentWatchInterval.unref();
+  return parentWatchInterval;
+}
+
 /**
  * Main server startup
  */
 async function main(): Promise<void> {
   console.error('[MCP Server] Starting Text-to-Figma MCP Server...');
+  const initialParentPid = process.ppid;
+  const parentWatch: ParentWatch = { interval: null };
 
   // Load configuration
   loadConfig();
@@ -267,6 +337,13 @@ async function main(): Promise<void> {
     console.error('[MCP Server] WebSocket server auto-started successfully.');
   }
 
+  if (spawnResult.success && spawnResult.url !== getConfig().FIGMA_WS_URL) {
+    process.env.FIGMA_WS_URL = spawnResult.url;
+    resetConfig();
+    loadConfig();
+    console.error(`[MCP Server] Using WebSocket bridge URL ${spawnResult.url}`);
+  }
+
   // Connect to Figma bridge with retry
   const bridge = getFigmaBridge();
 
@@ -294,54 +371,10 @@ async function main(): Promise<void> {
 
   console.error('[MCP Server] Server running and ready for requests');
 
-  // Handle cleanup on exit
-  const shutdown = async (signal: string): Promise<void> => {
-    console.error(`[MCP Server] Received ${signal}, shutting down gracefully...`);
-
-    const config = getConfig();
-    const shutdownTimeout = config.GRACEFUL_SHUTDOWN_TIMEOUT;
-
-    const forceShutdownTimer = setTimeout(() => {
-      console.error('[MCP Server] Graceful shutdown timeout exceeded, forcing exit');
-      process.exit(1);
-    }, shutdownTimeout);
-
-    try {
-      console.error('[MCP Server] Stopping health check server...');
-      await stopHealthCheck();
-
-      console.error('[MCP Server] Disconnecting from Figma bridge...');
-      bridge.disconnect();
-
-      // Bridge is NOT stopped here — it runs independently and serves
-      // other MCP server processes. Use stopWebSocketServer() only for
-      // explicit full-system shutdown.
-
-      console.error('[MCP Server] Closing MCP server transport...');
-      await server.close();
-
-      clearTimeout(forceShutdownTimer);
-      console.error('[MCP Server] Shutdown complete');
-      process.exit(0);
-    } catch (error) {
-      console.error('[MCP Server] Error during shutdown:', error);
-      clearTimeout(forceShutdownTimer);
-      process.exit(1);
-    }
-  };
-
-  process.on('SIGINT', () => {
-    shutdown('SIGINT').catch((err: unknown) => {
-      console.error('[MCP Server] Shutdown error:', err);
-      process.exit(1);
-    });
-  });
-  process.on('SIGTERM', () => {
-    shutdown('SIGTERM').catch((err: unknown) => {
-      console.error('[MCP Server] Shutdown error:', err);
-      process.exit(1);
-    });
-  });
+  parentWatch.interval = registerShutdownHandlers(
+    createShutdownHandler(bridge, parentWatch),
+    initialParentPid
+  );
 }
 
 // Start the server
