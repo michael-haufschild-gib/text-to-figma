@@ -483,8 +483,11 @@ describe('Connection error and no-Figma paths', () => {
     await new Promise((r) => setTimeout(r, 50));
     expect(handle.state.clients.size).toBe(1);
 
-    const serverWs = Array.from(handle.state.clients.values())[0].ws;
-    serverWs.emit('error', new Error('simulated connection reset'));
+    const [serverClient] = Array.from(handle.state.clients.values());
+    if (!serverClient) {
+      throw new Error('Expected the bridge to track the connected client');
+    }
+    serverClient.ws.emit('error', new Error('simulated connection reset'));
 
     await new Promise((r) => setTimeout(r, 50));
     expect(handle.state.clients.size).toBe(0);
