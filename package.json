@@ -30,6 +30,8 @@
     "test:integration": "vitest run --config vitest.workspace.ts --project integration",
     "test:prop": "vitest run --config vitest.workspace.ts --project mcp-server-unit tests/unit/property-based.test.ts",
     "bench": "vitest bench",
+    "figma": "bash scripts/launch-figma.sh",
+    "figma:restart": "bash scripts/launch-figma.sh --restart",
     "test:mutation": "stryker run"
   },
   "workspaces": [
