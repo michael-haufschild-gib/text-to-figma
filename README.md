@@ -152,10 +152,13 @@ Key settings:
 | ---------------------------------- | --------------------- | ----------------------------------- |
 | `FIGMA_WS_URL`                     | `ws://localhost:8080` | WebSocket bridge base URL           |
 | `TEXT_TO_FIGMA_WS_PORT_SCAN_LIMIT` | `20`                  | Local auto-discovery port count     |
+| `TEXT_TO_FIGMA_WS_HOST`            | `127.0.0.1`           | Bridge listen address (see below)   |
 | `EXPORT_OUTPUT_DIR`                | server cwd            | Root for relative export paths      |
 | `LOG_LEVEL`                        | `info`                | `debug` / `info` / `warn` / `error` |
 | `HEALTH_CHECK_PORT`                | `8081`                | HTTP health check port              |
 | `CIRCUIT_BREAKER_THRESHOLD`        | `5`                   | Failures before circuit opens       |
+
+The bridge has no authentication and forwards every command to the open Figma file, so it listens on loopback only. Set `TEXT_TO_FIGMA_WS_HOST=0.0.0.0` only inside a container (the bridge `Dockerfile` does this) or when the bridge runs on a different machine from Figma on a trusted network.
 
 ## Development
 
