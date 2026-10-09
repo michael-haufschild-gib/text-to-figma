@@ -104,11 +104,47 @@ export interface SetImageFillResult {
   message: string;
 }
 
+/** Abort image downloads that stall instead of holding the tool call open. */
+export const IMAGE_FETCH_TIMEOUT_MS = 30_000;
+
+/**
+ * Largest image the bridge can carry. Bytes travel as a JSON number array (up to 4 characters
+ * per byte) and the bridge drops messages over 10MB without echoing the request id, which would
+ * leave the call waiting for its timeout instead of failing.
+ */
+export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+/**
+ * Download image bytes on the MCP host; the plugin main thread has no fetch API.
+ * @param imageUrl - http(s) or data: URL
+ */
+async function fetchImageBytes(imageUrl: string): Promise<number[]> {
+  let response: Response;
+  try {
+    response = await fetch(imageUrl, { signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS) });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Image load failed: ${reason}`);
+  }
+  if (!response.ok) throw new Error(`Image load failed: HTTP ${response.status}`);
+
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  if (bytes.length === 0) throw new Error('Image load failed: empty image');
+  if (bytes.length > MAX_IMAGE_BYTES) {
+    throw new Error(
+      `Image is ${bytes.length} bytes; the Figma bridge accepts at most ${MAX_IMAGE_BYTES} bytes. Use a smaller or more compressed image.`
+    );
+  }
+  return Array.from(bytes);
+}
+
 /**
  * Implementation
  * @param input
  */
 export async function setImageFill(input: SetImageFillInput): Promise<SetImageFillResult> {
+  const imageBytes = await fetchImageBytes(input.imageUrl);
+
   // Get Figma bridge
   const bridge = getFigmaBridge();
 
@@ -117,7 +153,7 @@ export async function setImageFill(input: SetImageFillInput): Promise<SetImageFi
     'set_image_fill',
     {
       nodeId: input.nodeId,
-      imageUrl: input.imageUrl,
+      imageBytes,
       scaleMode: input.scaleMode,
       opacity: input.opacity
     },
