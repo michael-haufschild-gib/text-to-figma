@@ -19,6 +19,10 @@ RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
 
+# The bridge listens on loopback by default; a container must listen on all interfaces so the
+# published port reaches it.
+ENV TEXT_TO_FIGMA_WS_HOST=0.0.0.0
+
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \

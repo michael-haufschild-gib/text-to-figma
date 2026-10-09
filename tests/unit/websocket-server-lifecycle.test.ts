@@ -8,7 +8,11 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
-import { createServer, type ServerHandle } from '../../websocket-server/src/server.js';
+import {
+  createServer,
+  resolveBindHost,
+  type ServerHandle
+} from '../../websocket-server/src/server.js';
 
 // Helper: connect a WebSocket client and wait for welcome message
 function connectClient(port: number): Promise<{ ws: WebSocket; welcome: Record<string, unknown> }> {
@@ -503,5 +507,48 @@ describe('createServer', () => {
 
     // No entry in pendingRequestOrigins (id was not present)
     expect(handle.state.pendingRequestOrigins.size).toBe(0);
+  });
+});
+
+describe('createServer bind address', () => {
+  let handle: ServerHandle | null = null;
+
+  afterEach(async () => {
+    if (!handle) return;
+    const closing = handle;
+    handle = null;
+    clearInterval(closing.heartbeatInterval);
+    await new Promise<void>((resolve) => {
+      closing.wss.close(() => resolve());
+    });
+  });
+
+  async function boundAddress(server: ServerHandle): Promise<string> {
+    if (!server.wss.address()) {
+      await new Promise<void>((resolve) => {
+        server.wss.once('listening', () => resolve());
+      });
+    }
+    const addr = server.wss.address();
+    if (typeof addr !== 'object' || addr === null) {
+      throw new Error('Server not listening');
+    }
+    return addr.address;
+  }
+
+  it('listens only on the configured host', async () => {
+    handle = createServer(0, { host: '127.0.0.1' });
+
+    expect(await boundAddress(handle)).toBe('127.0.0.1');
+  });
+
+  it('defaults the standalone bridge to loopback', () => {
+    expect(resolveBindHost({})).toBe('127.0.0.1');
+    expect(resolveBindHost({ TEXT_TO_FIGMA_WS_HOST: '' })).toBe('127.0.0.1');
+    expect(resolveBindHost({ TEXT_TO_FIGMA_WS_HOST: '  ' })).toBe('127.0.0.1');
+  });
+
+  it('lets TEXT_TO_FIGMA_WS_HOST open the bridge to other interfaces', () => {
+    expect(resolveBindHost({ TEXT_TO_FIGMA_WS_HOST: '0.0.0.0' })).toBe('0.0.0.0');
   });
 });

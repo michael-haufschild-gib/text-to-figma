@@ -289,10 +289,10 @@ describe('Layout Tools E2E — set_constraints', () => {
     const cmd = ctx.plugin.getReceivedCommands().find((c) => c.type === 'set_constraints');
     expect(cmd).toEqual(expect.objectContaining({ type: 'set_constraints' }));
     expect(cmd!.payload.nodeId).toBe(frameId);
-    // The tool nests horizontal/vertical under a `constraints` object
-    const constraints = cmd!.payload.constraints as Record<string, string>;
-    expect(constraints.horizontal).toBe('STRETCH');
-    expect(constraints.vertical).toBe('CENTER');
+    // The plugin handler reads horizontal/vertical at the top level of the payload
+    expect(cmd!.payload.horizontal).toBe('STRETCH');
+    expect(cmd!.payload.vertical).toBe('CENTER');
+    expect(cmd!.payload).not.toHaveProperty('constraints');
   });
 });
 

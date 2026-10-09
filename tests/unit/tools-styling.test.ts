@@ -479,9 +479,11 @@ describe('addGradientFill', () => {
 describe('setImageFill', () => {
   beforeEach(() => {
     __mockBridge.sendToFigmaValidated.mockResolvedValue(undefined);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(new Uint8Array([1, 2, 3]))));
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -501,6 +503,11 @@ describe('setImageFill', () => {
       "background-image: url('https://example.com/photo.jpg')"
     );
     expect(result.cssEquivalent).toContain('background-size: cover;');
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
+      'set_image_fill',
+      { nodeId: 'rect-1', imageBytes: [1, 2, 3], scaleMode: 'FILL', opacity: 1 },
+      expect.anything()
+    );
   });
 
   it('applies image fill with FIT mode', async () => {
@@ -513,6 +520,59 @@ describe('setImageFill', () => {
 
     expect(result.cssEquivalent).toContain('background-size: contain;');
     expect(result.opacity).toBe(0.8);
+  });
+
+  it('rejects failed image downloads before touching Figma', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 404 }));
+    await expect(
+      setImageFill({
+        nodeId: 'rect-1',
+        imageUrl: 'https://example.com/missing.png',
+        scaleMode: 'FIT',
+        opacity: 1
+      })
+    ).rejects.toThrow('HTTP 404');
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
+  });
+
+  it('rejects an empty image download before touching Figma', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(new Uint8Array(0)));
+    await expect(
+      setImageFill({
+        nodeId: 'rect-1',
+        imageUrl: 'https://example.com/empty.png',
+        scaleMode: 'FILL',
+        opacity: 1
+      })
+    ).rejects.toThrow('Image load failed: empty image');
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
+  });
+
+  it('rejects images the bridge cannot carry before touching Figma', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(new Uint8Array(2 * 1024 * 1024 + 1)));
+    await expect(
+      setImageFill({
+        nodeId: 'rect-1',
+        imageUrl: 'https://example.com/huge.png',
+        scaleMode: 'FILL',
+        opacity: 1
+      })
+    ).rejects.toThrow('Image is 2097153 bytes; the Figma bridge accepts at most 2097152 bytes');
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
+  });
+
+  it('reports network failures as image load failures', async () => {
+    vi.mocked(fetch).mockRejectedValue(new Error('getaddrinfo ENOTFOUND example.invalid'));
+    await expect(
+      setImageFill({
+        nodeId: 'rect-1',
+        imageUrl: 'https://example.invalid/photo.png',
+        scaleMode: 'FILL',
+        opacity: 1
+      })
+    ).rejects.toThrow('Image load failed: getaddrinfo ENOTFOUND example.invalid');
+    expect(vi.mocked(fetch).mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
   });
 
   it('propagates bridge errors', async () => {

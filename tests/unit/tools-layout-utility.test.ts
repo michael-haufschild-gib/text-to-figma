@@ -271,6 +271,17 @@ describe('setConstraints', () => {
     __mockBridge.sendToFigmaValidated.mockResolvedValue({ nodeId: 'node-1' });
   });
 
+  it('sends scale constraints in the flat shape consumed by the Figma handler', async () => {
+    await setConstraints({ nodeId: 'tile-art', horizontal: 'SCALE', vertical: 'SCALE' });
+    expect(__mockBridge.sendToFigmaValidated).toHaveBeenCalledWith(
+      'set_constraints',
+      expect.objectContaining({ nodeId: 'tile-art', horizontal: 'SCALE', vertical: 'SCALE' }),
+      expect.anything()
+    );
+    const payload: unknown = __mockBridge.sendToFigmaValidated.mock.calls.at(-1)?.[1];
+    expect(payload).not.toHaveProperty('constraints');
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });

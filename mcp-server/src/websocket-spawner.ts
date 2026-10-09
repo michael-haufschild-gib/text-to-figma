@@ -150,7 +150,8 @@ async function canBindPort(port: number): Promise<boolean> {
       });
     });
 
-    // Try binding on all interfaces like the WebSocket server does
+    // Bind all interfaces: stricter than the bridge's loopback bind, so a port that passes here
+    // is free for the bridge whichever TEXT_TO_FIGMA_WS_HOST it uses.
     server.listen(port);
   });
 }

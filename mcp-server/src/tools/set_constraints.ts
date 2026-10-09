@@ -250,10 +250,8 @@ export async function setConstraints(input: SetConstraintsInput): Promise<SetCon
     'set_constraints',
     {
       nodeId: resolvedInput.nodeId,
-      constraints: {
-        horizontal: resolvedInput.horizontal,
-        vertical: resolvedInput.vertical
-      },
+      horizontal: resolvedInput.horizontal,
+      vertical: resolvedInput.vertical,
       aspectRatioLocked: resolvedInput.aspectRatioLocked,
       pinLeft: resolvedInput.pinLeft,
       pinRight: resolvedInput.pinRight,

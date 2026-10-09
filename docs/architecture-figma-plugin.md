@@ -220,28 +220,30 @@ UI Thread              Main Thread
 #### WebSocket Connection Management
 
 ```javascript
-const WS_URL = 'ws://localhost:8080';
-const RECONNECT_DELAY = 5000; // 5 seconds
+const BRIDGE_CONNECT_TIMEOUT = 10000; // outlasts Chromium's 1-5s WebSocket throttle delay
+const BRIDGE_WELCOME_TIMEOUT = 2000; // after the socket opens
+const RECONNECT_DELAY = 3000;
 
-function connect() {
-  ws = new WebSocket(WS_URL);
-
-  ws.onopen = () => {
-    updateStatus('connected');
-    clearInterval(reconnectInterval);
-  };
-
-  ws.onclose = () => {
-    updateStatus('disconnected');
-    reconnectInterval = setInterval(connect, RECONNECT_DELAY);
-  };
+async function connect() {
+  // Stored URL first, then ws://localhost:8080-8099, all probed in parallel.
+  const found = await findBridge(getCandidateWebSocketUrls());
+  if (!found) {
+    scheduleReconnect(); // setInterval(connect, RECONNECT_DELAY)
+    return;
+  }
+  ws = found.socket;
+  handleSocketConnected(ws); // sends figma_hello
 }
 ```
 
 **Auto-Reconnect Strategy**:
 
 - Detects disconnection immediately
-- Attempts reconnection every 5 seconds
+- Retries every 3 seconds; each retry probes every candidate port in parallel and picks the
+  highest-priority bridge
+- Keeps each probe open for up to 10 seconds. Chromium delays new WebSockets by 1-5 seconds once
+  about 16 attempts have failed in the last 2-4 minutes, so a shorter timeout aborts every probe
+  and the plugin never reconnects
 - Shows reconnect status in UI
 - Continues indefinitely until connection restored
 

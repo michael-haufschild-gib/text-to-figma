@@ -35,6 +35,21 @@ export const HEARTBEAT_TIMEOUT = 60000; // 60 seconds - connection timeout
 export const RATE_LIMIT_BURST = 500; // Max tokens in bucket
 export const RATE_LIMIT_REFILL_RATE = 200; // Tokens per second
 export const DEFAULT_IDLE_SHUTDOWN_MS = 5 * 60 * 1000; // 5 minutes with no clients
+/**
+ * Loopback only by default. The bridge has no authentication and forwards every command to the
+ * open Figma file, so listening on all interfaces would let any device on the network edit it.
+ * Set TEXT_TO_FIGMA_WS_HOST=0.0.0.0 for containers or a bridge on another machine.
+ */
+export const DEFAULT_BIND_HOST = '127.0.0.1';
+
+/**
+ * Listen address for the standalone bridge process. An unset or blank override keeps loopback.
+ * @param env - Process environment; TEXT_TO_FIGMA_WS_HOST overrides the loopback default
+ */
+export function resolveBindHost(env: NodeJS.ProcessEnv): string {
+  const host = env.TEXT_TO_FIGMA_WS_HOST?.trim() ?? '';
+  return host === '' ? DEFAULT_BIND_HOST : host;
+}
 
 /**
  * Token bucket rate limiter for per-client message throttling.
@@ -114,8 +129,14 @@ export type BridgeMessage =
   | NotificationMessage;
 
 /**
- * Mutable server state — isolated per createServer() call for testability.
+ * Error returned to an MCP client when no Figma plugin is registered. An open plugin retries
+ * every few seconds, so a request sent right after the bridge starts can arrive before the
+ * plugin's next attempt; the message says to retry rather than to restart anything.
  */
+export const NO_PLUGIN_CONNECTED_ERROR =
+  'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin. An open plugin ' +
+  'reconnects on its own within about 15 seconds of the bridge starting, so retry shortly.';
+
 /** Maximum age (ms) for a pending request origin before it is swept as stale. */
 export const PENDING_REQUEST_TTL = 120_000; // 2 minutes
 
@@ -124,6 +145,9 @@ export interface PendingRequestEntry {
   createdAt: number;
 }
 
+/**
+ * Mutable server state — isolated per createServer() call for testability.
+ */
 export interface ServerState {
   clients: Map<string, ClientRecord>;
   figmaPluginClient: string | null;
@@ -274,7 +298,7 @@ export function routeRequest(state: ServerState, message: RequestMessage, client
       JSON.stringify({
         id: requestId,
         success: false,
-        error: 'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin.'
+        error: NO_PLUGIN_CONNECTED_ERROR
       })
     );
   }
@@ -399,6 +423,11 @@ export interface ServerHandle {
 }
 
 export interface ServerOptions {
+  /**
+   * Interface to listen on. The standalone bridge passes resolveBindHost(); omitting it listens
+   * on all interfaces and binds synchronously, which embedded/unit-test servers rely on.
+   */
+  host?: string;
   /**
    * Optional idle timeout used by the standalone bridge process. Leave unset
    * for embedded/unit-test servers that should stay alive until explicitly
@@ -570,7 +599,8 @@ function setupConnection(state: ServerState, ws: WebSocket, onClientRemoved?: ()
 export function createServer(port: number, options: ServerOptions = {}): ServerHandle {
   const state = createServerState();
 
-  const wss = new WebSocketServer({ port });
+  const { host } = options;
+  const wss = new WebSocketServer({ port, host });
   let hasListened = false;
   let isShuttingDown = false;
   let idleShutdownTimer: ReturnType<typeof setTimeout> | null = null;
@@ -626,7 +656,7 @@ export function createServer(port: number, options: ServerOptions = {}): ServerH
 
   wss.on('listening', () => {
     hasListened = true;
-    log('info', `WebSocket bridge server started on port ${port}`);
+    log('info', `WebSocket bridge server started on ${host ?? 'all interfaces'}:${port}`);
     scheduleIdleShutdown();
   });
 
@@ -713,6 +743,7 @@ if (isMainModule) {
     10
   );
   const { shutdown } = createServer(port, {
+    host: resolveBindHost(process.env),
     idleShutdownMs: Number.isFinite(idleShutdownMs) ? idleShutdownMs : DEFAULT_IDLE_SHUTDOWN_MS,
     exitOnStartupError: true,
     exitOnIdle: true

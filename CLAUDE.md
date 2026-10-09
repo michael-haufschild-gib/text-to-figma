@@ -63,6 +63,8 @@ npm run type-check   # TypeScript strict mode, both workspaces
 
 **8pt spacing grid enforcement** — Design system constraint validated at the Zod schema level (`spacingSchema`). Values snapped to grid automatically by `auto-validator.ts` for `create_design` tool. This prevents LLM agents from generating non-standard spacing values.
 
+**Plugin reconnect vs. Chromium WebSocket throttling** — Chromium delays every new WebSocket by 1-5s once ~16 attempts in the last 2-4 minutes failed (`services/network/websocket_throttler.cc`), and a socket aborted during that delay counts as another failure. The plugin UI (`figma-plugin/ui.html`) therefore probes all candidate ports in parallel with a 10s connect timeout and a 2s welcome timeout, retrying every 3s. A probe timeout under 5s locks an open plugin out of any bridge that starts after it, which is the "plugin never connects on a new session" failure. `scripts/launch-figma.sh` (`npm run figma`) is only a fallback for a console error of `ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`; Figma 126.9 already disables `LocalNetworkAccessChecks`, which allows plugin WebSockets.
+
 **WebSocket bridge as separate process** — The bridge runs independently so the MCP server (stdio) doesn't need to host a WebSocket server. The `websocket-spawner.ts` auto-starts it if not running. Single Figma plugin instance enforced by the bridge.
 
 **Request→client tracking** — The WebSocket bridge tracks which MCP client sent each request (by request ID) to route responses to the correct originator, preventing cross-talk between multiple MCP sessions.

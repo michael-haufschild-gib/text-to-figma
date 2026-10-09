@@ -152,10 +152,13 @@ Key settings:
 | ---------------------------------- | --------------------- | ----------------------------------- |
 | `FIGMA_WS_URL`                     | `ws://localhost:8080` | WebSocket bridge base URL           |
 | `TEXT_TO_FIGMA_WS_PORT_SCAN_LIMIT` | `20`                  | Local auto-discovery port count     |
+| `TEXT_TO_FIGMA_WS_HOST`            | `127.0.0.1`           | Bridge listen address (see below)   |
 | `EXPORT_OUTPUT_DIR`                | server cwd            | Root for relative export paths      |
 | `LOG_LEVEL`                        | `info`                | `debug` / `info` / `warn` / `error` |
 | `HEALTH_CHECK_PORT`                | `8081`                | HTTP health check port              |
 | `CIRCUIT_BREAKER_THRESHOLD`        | `5`                   | Failures before circuit opens       |
+
+The bridge has no authentication and forwards every command to the open Figma file, so it listens on loopback only. Set `TEXT_TO_FIGMA_WS_HOST=0.0.0.0` only inside a container (the bridge `Dockerfile` does this) or when the bridge runs on a different machine from Figma on a trusted network.
 
 ## Development
 
@@ -184,6 +187,17 @@ See [`docs/`](docs/) for detailed architecture and development documentation.
 - Check MCP logs for the selected bridge URL
 - Confirm the plugin UI shows the same URL after scan
 - Check the Figma plugin console for errors
+
+An open plugin retries every 3 seconds and connects within about 15 seconds of the bridge starting, so it can stay open between MCP sessions. Each retry probes `8080-8099` in parallel and keeps every socket open for up to 10 seconds. Chromium throttles WebSockets per renderer process: once roughly 16 attempts in the last 2-4 minutes have failed, every new socket waits 1-5 seconds before it is attempted (`services/network/websocket_throttler.cc`). A shorter probe timeout aborts the socket during that wait, which counts as another failure and locks the plugin out until it is re-run.
+
+If the plugin console shows `net::ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`, Figma Desktop itself is blocking the connection. Figma 126.9 disables Chromium's `LocalNetworkAccessChecks` feature, which also allows plugin WebSockets, so this error is not expected. If a Figma build shows it, relaunch Figma with the WebSocket check disabled (macOS):
+
+```bash
+npm run figma          # launch Figma with --disable-features=LocalNetworkAccessChecksWebSockets
+npm run figma:restart  # quit a running Figma first, then relaunch it with the switch
+```
+
+Launching Figma from the Dock, from Spotlight, or after an auto-update drops the switch.
 
 ### MCP client can't see tools
 
