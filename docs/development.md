@@ -155,6 +155,15 @@ curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:808
 3. If red: Check MCP logs for the selected bridge URL
 4. Right-click plugin UI → Inspect → Console for errors
 
+An open plugin reconnects within about 15 seconds of the bridge starting. The bridge log
+(`$TMPDIR/text-to-figma-ws-bridge.log`) records `Figma plugin registering` when it does. Do not
+shorten the plugin's 10-second connect timeout: Chromium holds new WebSockets for 1-5 seconds once
+earlier attempts failed, and aborting them during that wait locks the plugin out.
+
+Only if the console shows `net::ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS` is Figma Desktop itself
+blocking the connection. Relaunch Figma with `npm run figma:restart`; the script adds
+`--disable-features=LocalNetworkAccessChecksWebSockets` and verifies the running process.
+
 ---
 
 ## Testing After Changes
@@ -218,6 +227,10 @@ cd mcp-server && npm run build
 cd websocket-server && npm start
 # Then reload plugin in Figma
 ```
+
+An open plugin finds a newly started bridge within about 15 seconds without a reload. If the
+plugin console shows `net::ERR_BLOCKED_BY_LOCAL_NETWORK_ACCESS_CHECKS`, relaunch Figma with
+`npm run figma:restart`.
 
 ### Problem: Tests fail with "module not found"
 

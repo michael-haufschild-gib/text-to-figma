@@ -18,6 +18,7 @@ import {
   routeMessage,
   routeNotification,
   createServerState,
+  NO_PLUGIN_CONNECTED_ERROR,
   type ServerState,
   type BridgeMessage,
   type NotificationMessage,
@@ -339,7 +340,7 @@ describe('routeRequest', () => {
     expect(response).toMatchObject({
       id: 'req-closed',
       success: false,
-      error: 'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin.'
+      error: NO_PLUGIN_CONNECTED_ERROR
     });
   });
 });

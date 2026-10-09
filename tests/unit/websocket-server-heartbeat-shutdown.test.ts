@@ -502,6 +502,7 @@ describe('Connection error and no-Figma paths', () => {
 
     expect(error.success).toBe(false);
     expect(error.error).toContain('No Figma plugin connected');
+    expect(error.error).toContain('reconnects on its own');
     expect(error.id).toBe('req-fail');
   });
 });

@@ -114,8 +114,14 @@ export type BridgeMessage =
   | NotificationMessage;
 
 /**
- * Mutable server state — isolated per createServer() call for testability.
+ * Error returned to an MCP client when no Figma plugin is registered. An open plugin retries
+ * every few seconds, so a request sent right after the bridge starts can arrive before the
+ * plugin's next attempt; the message says to retry rather than to restart anything.
  */
+export const NO_PLUGIN_CONNECTED_ERROR =
+  'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin. An open plugin ' +
+  'reconnects on its own within about 15 seconds of the bridge starting, so retry shortly.';
+
 /** Maximum age (ms) for a pending request origin before it is swept as stale. */
 export const PENDING_REQUEST_TTL = 120_000; // 2 minutes
 
@@ -124,6 +130,9 @@ export interface PendingRequestEntry {
   createdAt: number;
 }
 
+/**
+ * Mutable server state — isolated per createServer() call for testability.
+ */
 export interface ServerState {
   clients: Map<string, ClientRecord>;
   figmaPluginClient: string | null;
@@ -274,7 +283,7 @@ export function routeRequest(state: ServerState, message: RequestMessage, client
       JSON.stringify({
         id: requestId,
         success: false,
-        error: 'No Figma plugin connected. Open Figma and run the Text-to-Figma plugin.'
+        error: NO_PLUGIN_CONNECTED_ERROR
       })
     );
   }
