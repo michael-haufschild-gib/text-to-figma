@@ -113,13 +113,14 @@ describe('Styling Tools E2E — add_gradient_fill', () => {
 // ─── set_image_fill ──────────────────────────────────────────────────────
 
 describe('Styling Tools E2E — set_image_fill', () => {
-  it('applies an image fill with URL and scale mode', async () => {
+  it('downloads the image on the MCP host and sends its bytes', async () => {
     const frameId = await createParentFrame('ImageFrame');
     ctx.plugin.clearCommands();
 
+    // A data: URL keeps the download offline; it decodes to the 8-byte PNG signature.
     const result = await routeToolCall('set_image_fill', {
       nodeId: frameId,
-      imageUrl: 'https://example.com/image.png',
+      imageUrl: 'data:image/png;base64,iVBORw0KGgo=',
       scaleMode: 'FILL'
     });
 
@@ -130,7 +131,8 @@ describe('Styling Tools E2E — set_image_fill', () => {
     const cmd = ctx.plugin.getReceivedCommands().find((c) => c.type === 'set_image_fill');
     expect(cmd).toEqual(expect.objectContaining({ type: 'set_image_fill' }));
     expect(cmd!.payload.nodeId).toBe(frameId);
-    expect(cmd!.payload.imageUrl).toBe('https://example.com/image.png');
+    expect(cmd!.payload.imageBytes).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+    expect(cmd!.payload).not.toHaveProperty('imageUrl');
     expect(cmd!.payload.scaleMode).toBe('FILL');
   });
 });

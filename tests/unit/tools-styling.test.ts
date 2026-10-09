@@ -535,6 +535,19 @@ describe('setImageFill', () => {
     expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
   });
 
+  it('rejects an empty image download before touching Figma', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(new Uint8Array(0)));
+    await expect(
+      setImageFill({
+        nodeId: 'rect-1',
+        imageUrl: 'https://example.com/empty.png',
+        scaleMode: 'FILL',
+        opacity: 1
+      })
+    ).rejects.toThrow('Image load failed: empty image');
+    expect(__mockBridge.sendToFigmaValidated).not.toHaveBeenCalled();
+  });
+
   it('rejects images the bridge cannot carry before touching Figma', async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(new Uint8Array(2 * 1024 * 1024 + 1)));
     await expect(
